@@ -107,11 +107,11 @@ export default function CheckoutPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-3xl md:text-4xl font-headline text-center mb-10">Finalizar Compra</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-center mb-10">Finalizar Compra</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Customer Info Form */}
           <div>
-            <h2 className="text-2xl font-headline mb-6">Información del Cliente</h2>
+            <h2 className="text-2xl font-bold mb-6">Información del Cliente</h2>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
@@ -150,7 +150,7 @@ export default function CheckoutPage() {
 
           {/* Order Summary */}
           <div>
-            <h2 className="text-2xl font-headline mb-6">Resumen del Pedido</h2>
+            <h2 className="text-2xl font-bold mb-6">Resumen del Pedido</h2>
             <div className="bg-muted/30 rounded-lg p-6">
               <div className="space-y-4">
                 {items.map((item) => (

@@ -68,18 +68,18 @@ export default function ProductDetailPage({ params }: { params: { productId: str
           {/* Product Details */}
           <div className="flex flex-col gap-6">
             <div>
-                <Badge variant="outline" className="mb-2 w-fit font-body text-md">{product.category}</Badge>
-                <h1 className="text-4xl md:text-5xl font-headline text-primary">{product.name}</h1>
+                <Badge variant="outline" className="mb-2 w-fit text-md">{product.category}</Badge>
+                <h1 className="text-4xl md:text-5xl font-bold text-primary">{product.name}</h1>
             </div>
-            <p className="text-lg text-muted-foreground font-body leading-relaxed">
+            <p className="text-lg text-muted-foreground leading-relaxed">
               {product.description}
             </p>
             <div className="flex items-center gap-4">
-                <p className="text-4xl font-bold font-headline text-foreground">${product.price.toFixed(2)}</p>
+                <p className="text-4xl font-bold text-foreground">${product.price.toFixed(2)}</p>
             </div>
             <Button 
               size="lg"
-              className="w-full md:w-auto font-body text-lg"
+              className="w-full md:w-auto text-lg"
               disabled={product.stock <= 0}
               onClick={handleAddToCart}
             >
@@ -93,7 +93,7 @@ export default function ProductDetailPage({ params }: { params: { productId: str
         {relatedProducts.length > 0 && (
           <div className="mt-20">
             <Separator className="my-12" />
-            <h2 className="text-4xl md:text-5xl font-headline text-center mb-10 md:mb-14">También te podría interesar</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 md:mb-14">También te podría interesar</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
               {relatedProducts.map(related => (
                 <ProductCard key={related.id} product={related as Product} />

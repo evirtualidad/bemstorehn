@@ -54,15 +54,15 @@ export function ProductCard({ product, className }: ProductCardProps) {
           </Badge>
         </CardHeader>
         <CardContent className="p-4 flex-grow flex flex-col">
-          {product.category && <Badge variant="outline" className="mb-2 w-fit font-body">{product.category}</Badge>}
-          <h4 className="font-headline text-xl leading-tight flex-grow group-hover:text-primary transition-colors">{product.name}</h4>
-          {product.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2 font-body">{product.description}</p>}
+          {product.category && <Badge variant="outline" className="mb-2 w-fit">{product.category}</Badge>}
+          <h4 className="font-bold text-xl leading-tight flex-grow group-hover:text-primary transition-colors">{product.name}</h4>
+          {product.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{product.description}</p>}
         </CardContent>
         <CardFooter className="p-4 pt-0 flex flex-col items-start gap-4 mt-auto">
-          <p className="text-2xl font-bold font-headline text-foreground">${product.price.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-foreground">${product.price.toFixed(2)}</p>
           <Button 
             variant="outline" 
-            className="w-full font-body"
+            className="w-full"
             disabled={product.stock <= 0}
             onClick={handleAddToCart}
           >

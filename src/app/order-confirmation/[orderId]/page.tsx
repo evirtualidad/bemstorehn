@@ -15,9 +15,9 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-16 flex items-center justify-center">
-        <div className="text-center bg-muted/30 p-8 rounded-lg shadow-lg max-w-lg w-full">
+        <div className="text-center bg-card p-8 rounded-lg shadow-lg max-w-lg w-full">
           <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-6" />
-          <h1 className="text-4xl font-headline mb-4">¡Gracias por tu pedido!</h1>
+          <h1 className="text-4xl font-bold mb-4">¡Gracias por tu pedido!</h1>
           <p className="text-muted-foreground text-lg mb-2">
             Tu pedido ha sido realizado con éxito.
           </p>

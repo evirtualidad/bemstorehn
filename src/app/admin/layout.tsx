@@ -46,7 +46,7 @@ export default function AdminLayout({
   ];
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
+    <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
         <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
           <Link
@@ -60,11 +60,17 @@ export default function AdminLayout({
              <Button 
                 key={item.label}
                 asChild
-                variant={pathname === item.href ? 'secondary' : 'ghost'}
+                variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
                 className="w-full justify-start"
               >
-                 <Link href={item.href}>
+                 <Link href={item.href} className="flex items-center gap-2">
+                  <item.icon className="h-4 w-4" />
                   {item.label}
+                  {item.badge && (
+                    <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+                      {item.badge}
+                    </Badge>
+                  )}
                 </Link>
               </Button>
           ))}
@@ -81,16 +87,16 @@ export default function AdminLayout({
             </Button>
           </SheetTrigger>
           <SheetContent side="left">
-            <SheetHeader>
-                <SheetTitle className="sr-only">Menú Principal</SheetTitle>
+            <SheetHeader className='sr-only'>
+                <SheetTitle>Menú Principal</SheetTitle>
             </SheetHeader>
             <nav className="grid gap-6 text-lg font-medium">
               <Link
                 href="#"
-                className="flex items-center gap-2 text-lg font-semibold"
+                className="flex items-center gap-2 text-lg font-semibold mb-4"
               >
                 <Package2 className="h-6 w-6" />
-                <span className="sr-only">Admin Cosmetica</span>
+                <span>Admin Cosmetica</span>
               </Link>
               {navItems.map((item) => (
                 <Link
@@ -98,7 +104,7 @@ export default function AdminLayout({
                   href={item.href}
                   className={cn(
                     'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
-                     pathname === item.href && 'bg-muted text-foreground'
+                     pathname.startsWith(item.href) && 'bg-muted text-foreground'
                   )}
                 >
                   <item.icon className="h-5 w-5" />
@@ -135,7 +141,7 @@ export default function AdminLayout({
           </DropdownMenu>
         </div>
       </header>
-      <div className="flex-1">
+      <div className="flex-1 p-4 sm:p-6 md:p-8">
         {children}
       </div>
     </div>
