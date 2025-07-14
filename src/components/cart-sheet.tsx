@@ -12,6 +12,7 @@ import { ScrollArea } from './ui/scroll-area';
 import Image from 'next/image';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { Separator } from './ui/separator';
+import Link from 'next/link';
 
 export function CartSheet() {
   const {
@@ -89,8 +90,8 @@ export function CartSheet() {
                 <p>Subtotal</p>
                 <p>${total.toFixed(2)}</p>
               </div>
-              <Button className="mt-4 w-full" size="lg">
-                Proceed to Checkout
+              <Button asChild className="mt-4 w-full" size="lg">
+                <Link href="/checkout" onClick={toggleCart}>Proceed to Checkout</Link>
               </Button>
             </div>
           </>

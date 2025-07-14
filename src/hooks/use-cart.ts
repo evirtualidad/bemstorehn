@@ -17,6 +17,7 @@ type CartState = {
   increaseQuantity: (productId: string) => void;
   decreaseQuantity: (productId: string) => void;
   toggleCart: () => void;
+  clearCart: () => void;
 };
 
 const calculateTotal = (items: CartItem[]) =>
@@ -72,6 +73,7 @@ export const useCart = create<CartState>()(
           set({ items: updatedItems, total: calculateTotal(updatedItems) });
         }
       },
+      clearCart: () => set({ items: [], total: 0 }),
     }),
     {
       name: 'cart-storage', // name of the item in the storage (must be unique)
