@@ -1,12 +1,18 @@
+
+'use client';
+
 import { Header } from '@/components/header';
 import { ProductCard } from '@/components/product-card';
-import { products, type Product } from '@/lib/products';
+import { type Product } from '@/lib/products';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useProductsStore } from '@/hooks/use-products';
 
 export default function Home() {
+  const { products } = useProductsStore();
+
   const productsByCategory = products.reduce((acc, product) => {
     const { category } = product;
     if (!acc[category]) {

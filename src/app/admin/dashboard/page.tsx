@@ -52,8 +52,8 @@ import {
   CartesianGrid,
 } from 'recharts';
 import Link from 'next/link';
-import { products } from '@/lib/products';
 import React from 'react';
+import { useProductsStore } from '@/hooks/use-products';
 
 const salesData = [
     { name: 'Ene', sales: 4000 },
@@ -66,6 +66,7 @@ const salesData = [
   ];
 
 export default function Dashboard() {
+  const { products } = useProductsStore();
 
   // Simulate dynamic data
   const totalRevenue = 45231.89;

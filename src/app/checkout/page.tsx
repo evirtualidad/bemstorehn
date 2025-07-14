@@ -23,6 +23,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { createOrder } from '@/ai/flows/create-order-flow';
+import { useProductsStore } from '@/hooks/use-products';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(2, {
@@ -35,6 +36,7 @@ const checkoutFormSchema = z.object({
 
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCart();
+  const { decreaseStock } = useProductsStore();
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,6 +59,11 @@ export default function CheckoutPage() {
       });
 
       if (result.success) {
+        // Decrease stock locally after successful order creation
+        items.forEach(item => {
+          decreaseStock(item.id, item.quantity);
+        });
+
         toast({
           title: '¡Pedido Realizado!',
           description: 'Gracias por tu compra.',

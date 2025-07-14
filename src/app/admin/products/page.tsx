@@ -42,7 +42,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { products as initialProducts, Product } from '@/lib/products';
+import { type Product } from '@/lib/products';
 import Image from 'next/image';
 import {
   Dialog,
@@ -54,9 +54,10 @@ import {
 } from '@/components/ui/dialog';
 import { ProductForm, productFormSchema } from '@/components/product-form';
 import { z } from 'zod';
+import { useProductsStore } from '@/hooks/use-products';
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = React.useState<Product[]>(initialProducts);
+  const { products, addProduct, updateProduct, deleteProduct } = useProductsStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
 
@@ -70,31 +71,26 @@ export default function AdminProductsPage() {
       price: Number(values.price),
       stock: Number(values.stock),
     };
-    setProducts((prev) => [newProduct, ...prev]);
+    addProduct(newProduct);
     setIsDialogOpen(false);
   };
   
   const handleEditProduct = (values: z.infer<typeof productFormSchema>) => {
     if (!editingProduct) return;
     
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === editingProduct.id
-          ? {
-              ...p,
-              ...values,
-              price: Number(values.price),
-              stock: Number(values.stock),
-            }
-          : p
-      )
-    );
+    updateProduct({
+      ...editingProduct,
+      ...values,
+      price: Number(values.price),
+      stock: Number(values.stock),
+    });
+
     setEditingProduct(null);
     setIsDialogOpen(false);
   };
   
   const handleDeleteProduct = (productId: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== productId));
+    deleteProduct(productId);
   };
   
   const openEditDialog = (product: Product) => {

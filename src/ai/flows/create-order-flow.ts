@@ -10,7 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { products as allProducts, Product } from '@/lib/products';
+import { useProductsStore } from '@/hooks/use-products';
 
 const ProductSchema = z.object({
   id: z.string(),
@@ -45,9 +45,6 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderO
   return createOrderFlow(input);
 }
 
-// This is a local, in-memory representation of our product stock.
-// In a real application, this would be a database.
-let localProductStock: Product[] = JSON.parse(JSON.stringify(allProducts));
 
 const createOrderFlow = ai.defineFlow(
   {
@@ -67,14 +64,12 @@ const createOrderFlow = ai.defineFlow(
       console.log("Total:", input.total);
       
       // Simulate updating stock
-      console.log("--- UPDATING STOCK ---");
+      // This part is tricky because we can't directly call the Zustand hook on the server.
+      // In a real app, the stock update would happen in a database transaction.
+      // For this local simulation, we'll just log the intended action.
+      console.log("--- SIMULATING STOCK UPDATE (see notes in create-order-flow.ts) ---");
       input.items.forEach(item => {
-        const productInDb = localProductStock.find(p => p.id === item.id);
-        if (productInDb) {
-          const oldStock = productInDb.stock;
-          productInDb.stock -= item.quantity;
-          console.log(`Product: ${productInDb.name}, Old Stock: ${oldStock}, New Stock: ${productInDb.stock}`);
-        }
+        console.log(`Intend to decrease stock of ${item.name} (ID: ${item.id}) by ${item.quantity}.`);
       });
       console.log("--------------------------");
 
