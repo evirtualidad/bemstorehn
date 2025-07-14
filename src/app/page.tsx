@@ -50,7 +50,7 @@ export default function Home() {
           <section className="py-12 md:py-20">
             <div className="container mx-auto px-4">
               <h2 className="text-4xl md:text-5xl font-headline text-center mb-10 md:mb-14">Featured Products</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
                 {featuredProducts.map(product => (
                   <ProductCard key={product.id} product={product} />
                 ))}
