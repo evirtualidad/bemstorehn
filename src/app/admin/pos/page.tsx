@@ -40,6 +40,7 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { es } from 'date-fns/locale';
+import { ProductSearch } from '@/components/product-search';
 
 
 type PosCartItem = Product & { quantity: number };
@@ -53,6 +54,7 @@ const checkoutFormSchema = z.object({
   paymentDueDate: z.date().optional(),
   cashAmount: z.coerce.number().optional(),
   paymentReference: z.string().optional(),
+  total: z.number().optional(),
 })
 .refine(
   (data) => {
@@ -84,7 +86,7 @@ function ProductGrid({ onProductSelect }: { onProductSelect: (product: Product) 
   const { products } = useProductsStore();
 
   return (
-    <ScrollArea className="h-[calc(100vh-120px)]">
+    <ScrollArea className="h-full">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
         {products.map((product) => (
           <Card
@@ -253,8 +255,13 @@ export default function PosPage() {
 
   return (
     <div className="grid md:grid-cols-[2fr_1fr] h-full">
-      <div className="border-r bg-muted/20">
-        <ProductGrid onProductSelect={handleProductSelect} />
+      <div className="border-r bg-muted/20 flex flex-col h-full">
+        <div className="p-4 border-b">
+          <ProductSearch onProductSelect={handleProductSelect} />
+        </div>
+        <div className="flex-grow hidden md:block">
+            <ProductGrid onProductSelect={handleProductSelect} />
+        </div>
       </div>
 
       <div className="flex flex-col">
@@ -268,7 +275,7 @@ export default function PosPage() {
              <div className="min-h-[200px]">
               {cart.length === 0 ? (
                 <p className="text-center text-muted-foreground py-10">
-                  Selecciona productos para empezar
+                  Busca o selecciona productos para empezar
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -462,3 +469,5 @@ export default function PosPage() {
     </div>
   );
 }
+
+    
