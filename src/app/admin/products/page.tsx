@@ -51,7 +51,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { ProductForm, productFormSchema } from '@/components/product-form';
 import { z } from 'zod';
@@ -59,6 +58,7 @@ import { z } from 'zod';
 export default function AdminProductsPage() {
   const [products, setProducts] = React.useState<Product[]>(initialProducts);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
 
   const handleAddProduct = (values: z.infer<typeof productFormSchema>) => {
     const newProduct: Product = {
@@ -66,12 +66,56 @@ export default function AdminProductsPage() {
       featured: false,
       aiHint: `${values.category.toLowerCase()} ${values.name.toLowerCase().split(' ').slice(0, 1).join('')}`,
       ...values,
+      image: values.image || `https://placehold.co/400x400.png?text=${values.name.replace(/\s/g, '+')}`,
       price: Number(values.price),
       stock: Number(values.stock),
     };
     setProducts((prev) => [newProduct, ...prev]);
     setIsDialogOpen(false);
   };
+  
+  const handleEditProduct = (values: z.infer<typeof productFormSchema>) => {
+    if (!editingProduct) return;
+    
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === editingProduct.id
+          ? {
+              ...p,
+              ...values,
+              price: Number(values.price),
+              stock: Number(values.stock),
+            }
+          : p
+      )
+    );
+    setEditingProduct(null);
+    setIsDialogOpen(false);
+  };
+  
+  const handleDeleteProduct = (productId: string) => {
+    setProducts((prev) => prev.filter((p) => p.id !== productId));
+  };
+  
+  const openEditDialog = (product: Product) => {
+    setEditingProduct(product);
+    setIsDialogOpen(true);
+  };
+
+  const openAddDialog = () => {
+    setEditingProduct(null);
+    setIsDialogOpen(true);
+  };
+  
+  const handleDialogChange = (open: boolean) => {
+    if (!open) {
+      setEditingProduct(null);
+    }
+    setIsDialogOpen(open);
+  }
+
+  const onSubmit = editingProduct ? handleEditProduct : handleAddProduct;
+
 
   return (
     <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
@@ -111,9 +155,9 @@ export default function AdminProductsPage() {
                 Exportar
               </span>
             </Button>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
               <DialogTrigger asChild>
-                <Button size="sm" className="h-8 gap-1">
+                <Button size="sm" className="h-8 gap-1" onClick={openAddDialog}>
                   <PlusCircle className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     Añadir Producto
@@ -122,14 +166,16 @@ export default function AdminProductsPage() {
               </DialogTrigger>
               <DialogContent className="sm:max-w-[525px]">
                 <DialogHeader>
-                  <DialogTitle>Añadir Nuevo Producto</DialogTitle>
+                  <DialogTitle>{editingProduct ? 'Editar Producto' : 'Añadir Nuevo Producto'}</DialogTitle>
                   <DialogDescription>
-                    Rellena los detalles del nuevo producto. Haz clic en guardar cuando termines.
+                    {editingProduct ? 'Modifica los detalles del producto.' : 'Rellena los detalles del nuevo producto.'} Haz clic en guardar cuando termines.
                   </DialogDescription>
                 </DialogHeader>
                 <ProductForm
-                  onSubmit={handleAddProduct}
-                  onCancel={() => setIsDialogOpen(false)}
+                  key={editingProduct?.id || 'new'}
+                  product={editingProduct}
+                  onSubmit={onSubmit}
+                  onCancel={() => handleDialogChange(false)}
                 />
               </DialogContent>
             </Dialog>
@@ -205,8 +251,8 @@ export default function AdminProductsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                            <DropdownMenuItem>Editar</DropdownMenuItem>
-                            <DropdownMenuItem>Eliminar</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEditDialog(product)}>Editar</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDeleteProduct(product.id)}>Eliminar</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
