@@ -460,7 +460,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                                 <FormControl>
                                     <Input type="number" placeholder="Ej: 50.00" {...field} className="h-11" onChange={(e) => {
                                         const value = e.target.value;
-                                        field.onChange(value);
+                                        field.onChange(value === '' ? '' : Number(value));
                                     }}/>
                                 </FormControl>
                                 <FormMessage />
@@ -735,9 +735,8 @@ export default function PosPage() {
              {cart.length > 0 && (
                 <div className="lg:hidden fixed bottom-4 right-4 z-20">
                     <Button 
-                        variant="secondary"
                         size="lg" 
-                        className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1"
+                        className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 text-primary bg-primary/20 hover:bg-primary/30"
                         onClick={() => setIsTicketVisible(true)}
                     >
                         <Receipt className="h-7 w-7" />
