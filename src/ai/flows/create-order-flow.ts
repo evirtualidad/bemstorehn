@@ -10,7 +10,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { useProductsStore } from '@/hooks/use-products';
 
 const ProductSchema = z.object({
   id: z.string(),
@@ -30,6 +29,8 @@ const CreateOrderInputSchema = z.object({
   }),
   items: z.array(ProductSchema),
   total: z.number(),
+  paymentMethod: z.enum(['efectivo', 'tarjeta', 'transferencia', 'credito']),
+  paymentDueDate: z.date().optional(),
 });
 
 export type CreateOrderInput = z.infer<typeof CreateOrderInputSchema>;
@@ -62,6 +63,10 @@ const createOrderFlow = ai.defineFlow(
       console.log("Customer:", input.customer);
       console.log("Items:", input.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })));
       console.log("Total:", input.total);
+      console.log("Payment Method:", input.paymentMethod);
+      if (input.paymentDueDate) {
+        console.log("Payment Due Date:", input.paymentDueDate.toLocaleDateString());
+      }
       console.log("--------------------------");
 
       // In a real app, stock update would happen here in a secure server-side transaction.

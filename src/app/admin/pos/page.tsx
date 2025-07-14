@@ -5,6 +5,7 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -28,15 +29,41 @@ import { useProductsStore } from '@/hooks/use-products';
 import { createOrder } from '@/ai/flows/create-order-flow';
 import type { Product } from '@/lib/products';
 import Image from 'next/image';
-import { Loader2, Minus, Plus, Trash2 } from 'lucide-react';
+import { CalendarIcon, Loader2, Minus, Plus, Trash2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { es } from 'date-fns/locale';
+
 
 type PosCartItem = Product & { quantity: number };
 
 const checkoutFormSchema = z.object({
   name: z.string().min(2, { message: 'El nombre es obligatorio.' }),
   phone: z.string().optional(),
-});
+  paymentMethod: z.enum(['efectivo', 'tarjeta', 'transferencia', 'credito'], {
+    required_error: 'Debes seleccionar una forma de pago.',
+  }),
+  paymentDueDate: z.date().optional(),
+})
+.refine(
+  (data) => {
+    if (data.paymentMethod === 'credito' && !data.paymentDueDate) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: 'La fecha de pago es obligatoria para pagos a crédito.',
+    path: ['paymentDueDate'],
+  }
+);
 
 function ProductGrid({ onProductSelect }: { onProductSelect: (product: Product) => void }) {
   const { products } = useProductsStore();
@@ -79,16 +106,36 @@ export default function PosPage() {
 
   const form = useForm<z.infer<typeof checkoutFormSchema>>({
     resolver: zodResolver(checkoutFormSchema),
-    defaultValues: { name: '', phone: '' },
+    defaultValues: { name: '', phone: '', paymentMethod: 'efectivo' },
   });
 
+  const paymentMethod = form.watch('paymentMethod');
+
   const handleProductSelect = (product: Product) => {
+    if(product.stock <= 0) {
+      toast({
+        title: 'Producto Agotado',
+        description: `${product.name} no tiene stock disponible.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === product.id);
       if (existingItem) {
-        return prevCart.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
+        if(existingItem.quantity < product.stock) {
+          return prevCart.map((item) =>
+            item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          );
+        } else {
+           toast({
+            title: 'Stock Máximo Alcanzado',
+            description: `No puedes añadir más ${product.name}.`,
+            variant: 'destructive',
+          });
+          return prevCart;
+        }
       }
       return [...prevCart, { ...product, quantity: 1 }];
     });
@@ -96,15 +143,27 @@ export default function PosPage() {
 
   const updateQuantity = (productId: string, amount: number) => {
     setCart((prevCart) => {
-      const updatedCart = prevCart
-        .map((item) => {
-          if (item.id === productId) {
-            return { ...item, quantity: item.quantity + amount };
-          }
-          return item;
-        })
-        .filter((item) => item.quantity > 0);
-      return updatedCart;
+      const itemToUpdate = prevCart.find(item => item.id === productId);
+      if (!itemToUpdate) return prevCart;
+
+      const newQuantity = itemToUpdate.quantity + amount;
+
+      if (newQuantity > itemToUpdate.stock) {
+         toast({
+          title: 'Stock Insuficiente',
+          description: `Solo hay ${itemToUpdate.stock} unidades de ${itemToUpdate.name}.`,
+          variant: 'destructive',
+        });
+        return prevCart;
+      }
+
+      if (newQuantity <= 0) {
+        return prevCart.filter(item => item.id !== productId);
+      }
+      
+      return prevCart.map(item =>
+          item.id === productId ? { ...item, quantity: newQuantity } : item
+        );
     });
   };
 
@@ -118,7 +177,7 @@ export default function PosPage() {
 
   const clearCartAndForm = () => {
     setCart([]);
-    form.reset();
+    form.reset({ name: '', phone: '', paymentMethod: 'efectivo', paymentDueDate: undefined });
   }
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
@@ -137,6 +196,8 @@ export default function PosPage() {
         customer: { name: values.name, phone: values.phone || 'N/A' },
         items: cart,
         total: total,
+        paymentMethod: values.paymentMethod,
+        paymentDueDate: values.paymentDueDate,
       });
 
       if (result.success) {
@@ -168,13 +229,14 @@ export default function PosPage() {
       </div>
 
       <div className="flex flex-col">
+       <ScrollArea className="h-full">
         <Card className="flex-1 rounded-none border-0 border-b">
           <CardHeader>
             <CardTitle>Ticket de Venta</CardTitle>
             <CardDescription>Productos añadidos al pedido actual.</CardDescription>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[300px]">
+             <div className="min-h-[200px]">
               {cart.length === 0 ? (
                 <p className="text-center text-muted-foreground py-10">
                   Selecciona productos para empezar
@@ -198,7 +260,7 @@ export default function PosPage() {
                   ))}
                 </div>
               )}
-            </ScrollArea>
+             </div>
             <Separator className='my-4'/>
              <div className="flex justify-between text-xl font-bold">
                 <p>Total</p>
@@ -239,6 +301,84 @@ export default function PosPage() {
                     </FormItem>
                   )}
                 />
+                 <FormField
+                  control={form.control}
+                  name="paymentMethod"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Forma de Pago</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex flex-col space-y-1"
+                        >
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl><RadioGroupItem value="efectivo" /></FormControl>
+                            <FormLabel className="font-normal">Efectivo</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl><RadioGroupItem value="tarjeta" /></FormControl>
+                            <FormLabel className="font-normal">Tarjeta de Débito/Crédito</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl><RadioGroupItem value="transferencia" /></FormControl>
+                            <FormLabel className="font-normal">Transferencia</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl><RadioGroupItem value="credito" /></FormControl>
+                            <FormLabel className="font-normal">Al Crédito</FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {paymentMethod === 'credito' && (
+                  <FormField
+                    control={form.control}
+                    name="paymentDueDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Fecha de Pago</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={'outline'}
+                                className={cn(
+                                  'w-full pl-3 text-left font-normal',
+                                  !field.value && 'text-muted-foreground'
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, 'PPP', { locale: es })
+                                ) : (
+                                  <span>Selecciona una fecha</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              locale={es}
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) =>
+                                date < new Date() || date < new Date('1900-01-01')
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <div className="flex gap-2 pt-4">
                     <Button type="button" variant="outline" className='w-full' onClick={clearCartAndForm} disabled={isSubmitting}>
                         Cancelar
@@ -252,6 +392,7 @@ export default function PosPage() {
             </Form>
           </CardContent>
         </Card>
+       </ScrollArea>
       </div>
     </div>
   );
