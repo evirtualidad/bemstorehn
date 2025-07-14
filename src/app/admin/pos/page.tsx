@@ -165,6 +165,7 @@ function TicketView({
   onRemoveFromCart,
   onClearCart,
   onCheckout,
+  isMobile = false,
 }: {
   cart: PosCartItem[];
   total: number;
@@ -172,9 +173,10 @@ function TicketView({
   onRemoveFromCart: (productId: string) => void;
   onClearCart: () => void;
   onCheckout: () => void;
+  isMobile?: boolean;
 }) {
-  return (
-    <div className="bg-muted/30 h-full flex flex-col">
+  const ticketContent = (
+    <>
       <div className="p-4 border-b">
         <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Pedido Actual</h2>
@@ -236,19 +238,33 @@ function TicketView({
           Facturar
         </Button>
       </div>
-    </div>
+    </>
   );
+
+  if (isMobile) {
+    return <div className="bg-muted/30 h-full flex flex-col">{ticketContent}</div>;
+  }
+
+  return <aside className="hidden lg:flex flex-col border-l">{ticketContent}</aside>;
 }
 
 
 function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, change, isInDialog }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, cart: PosCartItem[], total: number, change: number, isInDialog?: boolean }) {
     const paymentMethod = form.watch('paymentMethod');
 
-    const CancelButton = () => (
-      <Button type="button" variant="outline" className='w-full sm:w-auto' onClick={onCancel} disabled={isSubmitting}>
-        Cancelar
-      </Button>
-    );
+    const CancelButton = () => {
+        const button = (
+            <Button type="button" variant="outline" className='w-full sm:w-auto' onClick={onCancel} disabled={isSubmitting}>
+                Cancelar
+            </Button>
+        );
+
+        if (isInDialog) {
+            return <DialogClose asChild>{button}</DialogClose>
+        }
+        return button;
+    };
+
 
     return (
         <Form {...form}>
@@ -391,13 +407,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                     />
                 )}
                 <DialogFooter className='pt-4 sm:justify-between'>
-                   {isInDialog ? (
-                     <DialogClose asChild>
-                       <CancelButton />
-                     </DialogClose>
-                   ) : (
-                     <CancelButton />
-                   )}
+                    <CancelButton />
                     <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting || cart.length === 0}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Crear Pedido
@@ -557,8 +567,9 @@ export default function PosPage() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] h-screen max-h-screen overflow-hidden">
+        
         {/* Main Content: Product Selection */}
-        <main className="flex flex-col h-screen">
+        <main className="flex flex-col h-screen lg:h-auto">
             <header className="p-4 border-b flex flex-wrap items-center gap-4">
                 <h1 className="text-xl font-bold flex-1">Punto de Venta</h1>
                  <div className="w-full sm:w-auto sm:flex-initial">
@@ -572,42 +583,36 @@ export default function PosPage() {
                     onSelectCategory={setSelectedCategory}
                 />
                 <Separator />
-                <ScrollArea className="h-[calc(100vh-200px)]">
+                <ScrollArea className="h-[calc(100vh-200px)] lg:h-auto">
                     <ProductGrid products={filteredProducts} onProductSelect={handleProductSelect} />
                 </ScrollArea>
             </div>
+             {/* Mobile-only Ticket View */}
+            <div className="lg:hidden flex-shrink-0 h-[45vh] flex flex-col border-t">
+                 <TicketView
+                    cart={cart}
+                    total={total}
+                    onUpdateQuantity={updateQuantity}
+                    onRemoveFromCart={removeFromCart}
+                    onClearCart={clearCartAndForm}
+                    onCheckout={() => setIsCheckoutOpen(true)}
+                    isMobile={true}
+                />
+            </div>
         </main>
         
-        {/* Right Panel: Ticket */}
-        <aside className="hidden lg:flex flex-col border-l">
-             <TicketView
-                cart={cart}
-                total={total}
-                onUpdateQuantity={updateQuantity}
-                onRemoveFromCart={removeFromCart}
-                onClearCart={clearCartAndForm}
-                onCheckout={() => setIsCheckoutOpen(true)}
-            />
-        </aside>
-
-        {/* Mobile Ticket / Checkout Trigger */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t p-4">
-             <div className="flex justify-between items-center text-lg font-bold mb-2">
-                <p>Total</p>
-                <p>${total.toFixed(2)}</p>
-            </div>
-             <Button
-                size="lg"
-                className="w-full"
-                onClick={() => setIsCheckoutOpen(true)}
-                disabled={cart.length === 0}
-            >
-                <CreditCard className="mr-2 h-5 w-5" />
-                Facturar
-            </Button>
-        </div>
+        {/* Desktop-only Right Panel: Ticket */}
+        <TicketView
+            cart={cart}
+            total={total}
+            onUpdateQuantity={updateQuantity}
+            onRemoveFromCart={removeFromCart}
+            onClearCart={clearCartAndForm}
+            onCheckout={() => setIsCheckoutOpen(true)}
+        />
 
 
+        {/* Checkout Dialog */}
         <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
@@ -615,30 +620,6 @@ export default function PosPage() {
                 </DialogHeader>
                 <ScrollArea className="max-h-[70vh] p-1">
                     <div className="p-4">
-                         {/* Mobile Cart View inside Dialog */}
-                        <div className="lg:hidden mb-6">
-                            <h3 className="text-lg font-semibold mb-2">Resumen del Pedido</h3>
-                            <ScrollArea className="max-h-48 border rounded-md">
-                                <div className="p-2 space-y-2">
-                                {cart.map((item) => (
-                                <div key={item.id} className="flex items-center gap-2 text-sm">
-                                    <Image src={item.image} alt={item.name} width={40} height={40} className="rounded" />
-                                    <div className="flex-1">
-                                        <p className="font-medium truncate">{item.name}</p>
-                                        <p className="text-muted-foreground">{item.quantity} x ${item.price.toFixed(2)}</p>
-                                    </div>
-                                    <p className="font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
-                                </div>
-                                ))}
-                                </div>
-                            </ScrollArea>
-                            <div className="flex justify-between text-lg font-bold mt-2">
-                                <p>Total</p>
-                                <p>${total.toFixed(2)}</p>
-                            </div>
-                             <Separator className="my-4" />
-                        </div>
-                       
                         <CheckoutForm 
                             form={form} 
                             onSubmit={onSubmit} 
@@ -655,3 +636,5 @@ export default function PosPage() {
     </div>
   );
 }
+
+    
