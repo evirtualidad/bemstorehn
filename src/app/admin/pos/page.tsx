@@ -26,7 +26,7 @@ import { useProductsStore } from '@/hooks/use-products';
 import { createOrder } from '@/ai/flows/create-order-flow';
 import type { Product } from '@/lib/products';
 import Image from 'next/image';
-import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard, Banknote, Landmark } from 'lucide-react';
+import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard, Banknote, Landmark, X } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -182,7 +182,6 @@ function TicketView({
   onRemoveFromCart,
   onClearCart,
   onCheckout,
-  isMobile = false,
 }: {
   cart: PosCartItem[];
   total: number;
@@ -190,88 +189,180 @@ function TicketView({
   onRemoveFromCart: (productId:string) => void;
   onClearCart: () => void;
   onCheckout: () => void;
-  isMobile?: boolean;
 }) {
-  const ticketContent = (
-    <div className="h-full flex flex-col bg-muted/40">
-      <div className="p-4 border-b flex-shrink-0 bg-background">
-        <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Pedido Actual</h2>
-            <Button variant="ghost" size="sm" onClick={onClearCart} disabled={cart.length === 0}>
-                Borrar
-            </Button>
-        </div>
-      </div>
-      <div className="flex-grow overflow-hidden bg-background">
-        <ScrollArea className="h-full">
-            {cart.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-                <p className="text-center text-muted-foreground p-10">
-                    Selecciona productos para empezar
-                </p>
+  return (
+    <aside className="fixed top-0 right-0 h-screen w-[420px] hidden lg:flex flex-col border-l z-10 bg-muted/40">
+        <div className="p-4 border-b flex-shrink-0 bg-background">
+            <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Pedido Actual</h2>
+                <Button variant="ghost" size="sm" onClick={onClearCart} disabled={cart.length === 0}>
+                    Borrar
+                </Button>
             </div>
-            ) : (
-            <div className="p-4 space-y-4">
-            {cart.map((item) => (
-                <div key={item.id} className="flex items-start gap-3">
-                <Image
-                    src={item.image}
-                    alt={item.name}
-                    width={48}
-                    height={48}
-                    className="rounded-md object-cover aspect-square"
-                />
-                <div className="flex-1">
-                    <p className="font-semibold text-sm leading-tight">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">${item.price.toFixed(2)}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, -1)}>
-                        <Minus className="h-4 w-4" />
-                    </Button>
-                    <span className="w-8 text-center text-md font-bold">{item.quantity}</span>
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, 1)}>
-                        <Plus className="h-4 w-4" />
+        </div>
+        <div className="flex-grow overflow-hidden bg-background">
+            <ScrollArea className="h-full">
+                {cart.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                    <p className="text-center text-muted-foreground p-10">
+                        Selecciona productos para empezar
+                    </p>
+                </div>
+                ) : (
+                <div className="p-4 space-y-4">
+                {cart.map((item) => (
+                    <div key={item.id} className="flex items-start gap-3">
+                    <Image
+                        src={item.image}
+                        alt={item.name}
+                        width={48}
+                        height={48}
+                        className="rounded-md object-cover aspect-square"
+                    />
+                    <div className="flex-1">
+                        <p className="font-semibold text-sm leading-tight">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">${item.price.toFixed(2)}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, -1)}>
+                            <Minus className="h-4 w-4" />
+                        </Button>
+                        <span className="w-8 text-center text-md font-bold">{item.quantity}</span>
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, 1)}>
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                        </div>
+                    </div>
+                    <p className="w-16 text-right font-medium text-sm">${(item.price * item.quantity).toFixed(2)}</p>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onRemoveFromCart(item.id)}>
+                        <Trash2 className="h-5 w-5" />
                     </Button>
                     </div>
+                ))}
                 </div>
-                <p className="w-16 text-right font-medium text-sm">${(item.price * item.quantity).toFixed(2)}</p>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onRemoveFromCart(item.id)}>
-                    <Trash2 className="h-5 w-5" />
-                </Button>
-                </div>
-            ))}
-            </div>
-            )}
-        </ScrollArea>
-      </div>
-      <div className="p-4 border-t bg-background space-y-4 flex-shrink-0">
-        <div className="flex justify-between text-xl font-bold">
-          <p>Total</p>
-          <p>${total.toFixed(2)}</p>
+                )}
+            </ScrollArea>
         </div>
-        <Button
-          size="lg"
-          className="w-full h-12 text-lg"
-          onClick={onCheckout}
-          disabled={cart.length === 0}
-        >
-          <CreditCard className="mr-2 h-5 w-5" />
-          Facturar
-        </Button>
-      </div>
-    </div>
-  );
-
-  if (isMobile) {
-    return <div className="lg:hidden flex-shrink-0 h-[45vh] flex flex-col border-t">{ticketContent}</div>;
-  }
-
-  return (
-    <aside className="fixed top-0 right-0 h-screen w-[420px] hidden lg:flex flex-col border-l z-10">
-        {ticketContent}
+        <div className="p-4 border-t bg-background space-y-4 flex-shrink-0">
+            <div className="flex justify-between text-xl font-bold">
+            <p>Total</p>
+            <p>${total.toFixed(2)}</p>
+            </div>
+            <Button
+            size="lg"
+            className="w-full h-12 text-lg"
+            onClick={onCheckout}
+            disabled={cart.length === 0}
+            >
+            <CreditCard className="mr-2 h-5 w-5" />
+            Facturar
+            </Button>
+        </div>
     </aside>
   );
 }
+
+function MobileTicketView({
+  cart,
+  total,
+  isVisible,
+  onUpdateQuantity,
+  onRemoveFromCart,
+  onClearCart,
+  onCheckout,
+  onClose,
+}: {
+  cart: PosCartItem[];
+  total: number;
+  isVisible: boolean;
+  onUpdateQuantity: (productId: string, amount: number) => void;
+  onRemoveFromCart: (productId:string) => void;
+  onClearCart: () => void;
+  onCheckout: () => void;
+  onClose: () => void;
+}) {
+  if (!isVisible) return null;
+
+  return (
+    <div className="lg:hidden fixed inset-0 bg-black/60 z-30" onClick={onClose}>
+        <div 
+            className="fixed bottom-0 left-0 right-0 h-[60vh] flex flex-col bg-muted/40 rounded-t-2xl"
+            onClick={(e) => e.stopPropagation()}
+        >
+            <div className="p-4 border-b flex-shrink-0 bg-background rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">Pedido Actual</h2>
+                     <div className='flex items-center gap-2'>
+                        <Button variant="ghost" size="sm" onClick={onClearCart} disabled={cart.length === 0}>
+                            Borrar
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={onClose}>
+                            <X className="h-5 w-5" />
+                        </Button>
+                    </div>
+                </div>
+            </div>
+            <div className="flex-grow overflow-hidden bg-background">
+                <ScrollArea className="h-full">
+                    {cart.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                        <p className="text-center text-muted-foreground p-10">
+                            Selecciona productos para empezar
+                        </p>
+                    </div>
+                    ) : (
+                    <div className="p-4 space-y-4">
+                    {cart.map((item) => (
+                        <div key={item.id} className="flex items-start gap-3">
+                        <Image
+                            src={item.image}
+                            alt={item.name}
+                            width={48}
+                            height={48}
+                            className="rounded-md object-cover aspect-square"
+                        />
+                        <div className="flex-1">
+                            <p className="font-semibold text-sm leading-tight">{item.name}</p>
+                            <p className="text-xs text-muted-foreground">${item.price.toFixed(2)}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, -1)}>
+                                <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="w-8 text-center text-md font-bold">{item.quantity}</span>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, 1)}>
+                                <Plus className="h-4 w-4" />
+                            </Button>
+                            </div>
+                        </div>
+                        <p className="w-16 text-right font-medium text-sm">${(item.price * item.quantity).toFixed(2)}</p>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onRemoveFromCart(item.id)}>
+                            <Trash2 className="h-5 w-5" />
+                        </Button>
+                        </div>
+                    ))}
+                    </div>
+                    )}
+                </ScrollArea>
+            </div>
+            <div className="p-4 border-t bg-background space-y-4 flex-shrink-0">
+                <div className="flex justify-between text-xl font-bold">
+                <p>Total</p>
+                <p>${total.toFixed(2)}</p>
+                </div>
+                <Button
+                size="lg"
+                className="w-full h-12 text-lg"
+                onClick={onCheckout}
+                disabled={cart.length === 0}
+                >
+                <CreditCard className="mr-2 h-5 w-5" />
+                Facturar
+                </Button>
+            </div>
+        </div>
+    </div>
+  );
+}
+
 
 const paymentMethods = [
     { value: 'efectivo', label: 'Efectivo', icon: Banknote },
@@ -457,6 +548,7 @@ export default function PosPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
+  const [isTicketVisible, setIsTicketVisible] = React.useState(false);
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
 
   const categories = [...new Set(products.map((p) => p.category))];
@@ -510,7 +602,7 @@ export default function PosPage() {
     }
 
     setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id);
+      const existingItem = prevCart.find((item)id === product.id);
       if (existingItem) {
         if(existingItem.quantity < product.stock) {
           return prevCart.map((item) =>
@@ -594,6 +686,7 @@ export default function PosPage() {
         });
         clearCartAndForm();
         setIsCheckoutOpen(false);
+        setIsTicketVisible(false);
       } else {
         throw new Error('La creación del pedido falló');
       }
@@ -629,15 +722,17 @@ export default function PosPage() {
              <ScrollArea className="flex-1 px-4 bg-background">
                 <ProductGrid products={filteredProducts} onProductSelect={handleProductSelect} />
             </ScrollArea>
-            <TicketView
-                cart={cart}
-                total={total}
-                onUpdateQuantity={updateQuantity}
-                onRemoveFromCart={removeFromCart}
-                onClearCart={clearCartAndForm}
-                onCheckout={() => setIsCheckoutOpen(true)}
-                isMobile={true}
-            />
+
+             <div className="lg:hidden fixed bottom-4 right-4 z-20">
+                <Button 
+                  size="lg" 
+                  className='h-14 w-14 rounded-full shadow-lg' 
+                  onClick={() => setIsTicketVisible(true)}
+                >
+                    <Receipt className="h-7 w-7" />
+                    <span className='sr-only'>Ver Pedido</span>
+                </Button>
+            </div>
         </main>
         
         <TicketView
@@ -646,7 +741,24 @@ export default function PosPage() {
             onUpdateQuantity={updateQuantity}
             onRemoveFromCart={removeFromCart}
             onClearCart={clearCartAndForm}
-            onCheckout={() => setIsCheckoutOpen(true)}
+            onCheckout={() => {
+                setIsCheckoutOpen(true)
+                setIsTicketVisible(false)
+            }}
+        />
+        
+        <MobileTicketView
+            cart={cart}
+            total={total}
+            isVisible={isTicketVisible}
+            onUpdateQuantity={updateQuantity}
+            onRemoveFromCart={removeFromCart}
+            onClearCart={clearCartAndForm}
+            onCheckout={() => {
+                setIsCheckoutOpen(true)
+                setIsTicketVisible(false)
+            }}
+            onClose={() => setIsTicketVisible(false)}
         />
 
         <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
@@ -672,3 +784,5 @@ export default function PosPage() {
     </div>
   );
 }
+
+    
