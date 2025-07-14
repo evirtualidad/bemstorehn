@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -31,6 +32,7 @@ export const products: Product[] = [
     description: 'A lightweight, hyaluronic acid-based moisturizer for all-day hydration without a greasy feel.',
     category: 'Skincare',
     stock: 50,
+    featured: false,
   },
   {
     id: 'prod_003',
@@ -63,7 +65,7 @@ export const products: Product[] = [
     description: 'Nourishing argan oil treatment to tame frizz, add shine, and protect hair from heat damage.',
     category: 'Haircare',
     stock: 0,
-    featured: true,
+    featured: false,
   },
   {
     id: 'prod_006',
@@ -74,6 +76,7 @@ export const products: Product[] = [
     description: 'Absorbs oil and adds instant volume and texture, leaving hair feeling fresh and clean.',
     category: 'Haircare',
     stock: 15,
+    featured: false,
   },
   {
     id: 'prod_007',
@@ -84,6 +87,7 @@ export const products: Product[] = [
     description: 'A deep-cleansing clay mask with activated charcoal to detoxify pores and refine skin texture.',
     category: 'Skincare',
     stock: 40,
+    featured: true,
   },
   {
     id: 'prod_008',
@@ -94,6 +98,7 @@ export const products: Product[] = [
     description: 'A clump-free, waterproof mascara that lengthens and defines lashes for a dramatic look.',
     category: 'Makeup',
     stock: 60,
+    featured: false,
   },
   {
     id: 'prod_009',
@@ -104,6 +109,7 @@ export const products: Product[] = [
     description: 'A soothing cleansing foam that removes impurities without stripping natural oils. Ideal for sensitive skin.',
     category: 'Skincare',
     stock: 35,
+    featured: false,
   },
   {
     id: 'prod_010',
@@ -114,6 +120,7 @@ export const products: Product[] = [
     description: 'A versatile palette of 12 neutral and bold eyeshadows in matte and shimmer finishes.',
     category: 'Makeup',
     stock: 20,
+    featured: true,
   },
   {
     id: 'prod_011',
@@ -124,6 +131,7 @@ export const products: Product[] = [
     description: 'Sulfate-free shampoo infused with keratin to strengthen and smooth frizzy, unmanageable hair.',
     category: 'Haircare',
     stock: 45,
+    featured: false,
   },
   {
     id: 'prod_012',
@@ -134,5 +142,6 @@ export const products: Product[] = [
     description: 'A rich conditioner that detangles and provides intense moisture to dry, brittle hair.',
     category: 'Haircare',
     stock: 40,
+    featured: false,
   },
 ];

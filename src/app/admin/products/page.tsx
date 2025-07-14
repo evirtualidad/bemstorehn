@@ -64,12 +64,11 @@ export default function AdminProductsPage() {
   const handleAddProduct = (values: z.infer<typeof productFormSchema>) => {
     const newProduct: Product = {
       id: `prod_${Math.random().toString(36).substr(2, 9)}`,
-      featured: false,
-      aiHint: `${values.category.toLowerCase()} ${values.name.toLowerCase().split(' ').slice(0, 1).join('')}`,
       ...values,
       image: values.image || `https://placehold.co/400x400.png?text=${values.name.replace(/\s/g, '+')}`,
       price: Number(values.price),
       stock: Number(values.stock),
+      featured: values.featured,
     };
     addProduct(newProduct);
     setIsDialogOpen(false);
@@ -83,6 +82,7 @@ export default function AdminProductsPage() {
       ...values,
       price: Number(values.price),
       stock: Number(values.stock),
+      featured: values.featured,
     });
 
     setEditingProduct(null);
@@ -194,6 +194,7 @@ export default function AdminProductsPage() {
                     </TableHead>
                     <TableHead>Nombre</TableHead>
                     <TableHead>Estado</TableHead>
+                    <TableHead className="hidden md:table-cell">Destacado</TableHead>
                     <TableHead>Precio</TableHead>
                     <TableHead className="hidden md:table-cell">
                       Stock
@@ -225,6 +226,9 @@ export default function AdminProductsPage() {
                         <Badge variant={product.stock > 0 ? 'default' : 'destructive'}>
                           {product.stock > 0 ? 'En Stock' : 'Agotado'}
                         </Badge>
+                      </TableCell>
+                       <TableCell className="hidden md:table-cell">
+                        {product.featured ? 'Sí' : 'No'}
                       </TableCell>
                       <TableCell>${product.price.toFixed(2)}</TableCell>
                       <TableCell className="hidden md:table-cell">

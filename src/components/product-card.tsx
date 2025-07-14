@@ -32,8 +32,8 @@ export function ProductCard({ product, className }: ProductCardProps) {
   }
 
   return (
-    <Link href={`/product/${product.id}`} className="group block">
-      <Card className={cn("flex flex-col overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 animate-in fade-in-0 slide-in-from-bottom-5 ease-in-out", className)}>
+    <Link href={`/product/${product.id}`} className="group block h-full">
+      <Card className={cn("flex flex-col overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 animate-in fade-in-0 slide-in-from-bottom-5 ease-in-out h-full", className)}>
         <CardHeader className="p-0 border-b relative">
           <Image
             src={product.image || 'https://placehold.co/400x400.png'}
@@ -58,7 +58,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
           <h4 className="font-headline text-xl leading-tight flex-grow group-hover:text-primary transition-colors">{product.name}</h4>
           {product.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2 font-body">{product.description}</p>}
         </CardContent>
-        <CardFooter className="p-4 pt-0 flex flex-col items-start gap-4">
+        <CardFooter className="p-4 pt-0 flex flex-col items-start gap-4 mt-auto">
           <p className="text-2xl font-bold font-headline text-foreground">${product.price.toFixed(2)}</p>
           <Button 
             variant="outline" 

@@ -9,6 +9,13 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useProductsStore } from '@/hooks/use-products';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
 
 export default function Home() {
   const { products } = useProductsStore();
@@ -22,7 +29,7 @@ export default function Home() {
     return acc;
   }, {} as Record<string, Product[]>);
 
-  const featuredProducts = products.filter(p => p.featured).slice(0, 4);
+  const featuredProducts = products.filter((p) => p.featured);
 
   return (
     <div className="bg-background min-h-screen">
@@ -56,11 +63,23 @@ export default function Home() {
           <section className="py-12 md:py-20">
             <div className="container mx-auto px-4">
               <h2 className="text-4xl md:text-5xl font-headline text-center mb-10 md:mb-14">Productos Destacados</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-                {featuredProducts.map(product => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
+              <Carousel
+                opts={{
+                  align: 'start',
+                  loop: true,
+                }}
+                className="w-full"
+              >
+                <CarouselContent>
+                  {featuredProducts.map((product) => (
+                    <CarouselItem key={product.id} className="md:basis-1/2 lg:basis-1/4">
+                        <ProductCard product={product} />
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="hidden sm:flex" />
+                <CarouselNext className="hidden sm:flex" />
+              </Carousel>
             </div>
           </section>
         )}
