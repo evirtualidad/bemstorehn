@@ -10,8 +10,8 @@
     --card-foreground: 240 6% 10%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 6% 10%;
-    --primary: 173 58% 39%; /* Teal/Green */
-    --primary-light: 173 50% 90%; /* Light Teal/Green */
+    --primary: 160 70% 42%; /* A more vibrant green */
+    --primary-light: 160 60% 92%; /* A lighter, solid green */
     --primary-foreground: 0 0% 98%;
     --secondary: 240 5% 90%;
     --secondary-foreground: 240 6% 10%;
@@ -39,8 +39,8 @@
     --card-foreground: 0 0% 98%;
     --popover: 240 4% 12%;
     --popover-foreground: 0 0% 98%;
-    --primary: 173 50% 55%;
-    --primary-light: 173 50% 20%;
+    --primary: 160 60% 55%;
+    --primary-light: 160 50% 20%;
     --primary-foreground: 240 6% 10%;
     --secondary: 240 4% 16%;
     --secondary-foreground: 0 0% 98%;
