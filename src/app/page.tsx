@@ -40,7 +40,7 @@ export default function Home() {
           <Image
             src="https://placehold.co/1920x1080.png"
             alt="Cosméticos naturales sobre un fondo de mármol"
-            layout="fill"
+            fill
             objectFit="cover"
             className="z-[-1] brightness-75"
             data-ai-hint="cosmetics flatlay"
