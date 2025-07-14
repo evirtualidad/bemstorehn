@@ -53,9 +53,10 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
     try {
       const result = await createOrder({
-        customer: values,
+        customer: {name: values.name, phone: values.phone},
         items: items,
         total: total,
+        paymentMethod: 'tarjeta', // Default for online checkout
       });
 
       if (result.success) {
