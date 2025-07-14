@@ -154,8 +154,15 @@ function CartView({ cart, onUpdateQuantity, onRemoveFromCart }: { cart: PosCartI
     )
 }
 
-function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, change }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, cart: PosCartItem[], total: number, change: number }) {
+function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, change, isInDialog }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, cart: PosCartItem[], total: number, change: number, isInDialog?: boolean }) {
     const paymentMethod = form.watch('paymentMethod');
+
+    const CancelButton = () => (
+      <Button type="button" variant="outline" className='w-full sm:w-auto' onClick={onCancel} disabled={isSubmitting}>
+        Cancelar
+      </Button>
+    );
+
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -294,11 +301,13 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                     />
                 )}
                 <DialogFooter className='pt-4 sm:justify-between'>
-                    <DialogClose asChild>
-                        <Button type="button" variant="outline" className='w-full sm:w-auto' onClick={onCancel} disabled={isSubmitting}>
-                            Cancelar
-                        </Button>
-                    </DialogClose>
+                    {isInDialog ? (
+                        <DialogClose asChild>
+                           <CancelButton />
+                        </DialogClose>
+                    ) : (
+                        <CancelButton />
+                    )}
                     <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting || cart.length === 0}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Crear Pedido
@@ -521,7 +530,7 @@ export default function PosPage() {
                         </DialogHeader>
                         <ScrollArea className="max-h-[70vh] p-1">
                             <div className="p-4">
-                                <CheckoutForm form={form} onSubmit={onSubmit} isSubmitting={isSubmitting} onCancel={() => setIsCheckoutOpen(false)} cart={cart} total={total} change={change} />
+                                <CheckoutForm form={form} onSubmit={onSubmit} isSubmitting={isSubmitting} onCancel={() => setIsCheckoutOpen(false)} cart={cart} total={total} change={change} isInDialog={true} />
                             </div>
                         </ScrollArea>
                     </DialogContent>
