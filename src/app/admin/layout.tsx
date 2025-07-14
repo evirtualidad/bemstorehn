@@ -18,13 +18,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -32,7 +25,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -54,31 +46,59 @@ export default function AdminLayout({
   ];
 
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-muted/40 md:block">
-        <div className="flex h-full max-h-screen flex-col gap-2">
-          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
-              <Package2 className="h-6 w-6" />
-              <span className="">Admin Cosmetica</span>
-            </Link>
-            <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
-              <Bell className="h-4 w-4" />
-              <span className="sr-only">Alternar notificaciones</span>
+    <div className="flex min-h-screen w-full flex-col">
+      <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
+        <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
+          <Link
+            href="#"
+            className="flex items-center gap-2 text-lg font-semibold md:text-base"
+          >
+            <Package2 className="h-6 w-6" />
+            <span className="sr-only">Admin Cosmetica</span>
+          </Link>
+          {navItems.map((item) => (
+             <Link
+                key={item.label}
+                href={item.href}
+                className={cn(
+                  'transition-colors hover:text-foreground',
+                  pathname === item.href ? 'text-foreground' : 'text-muted-foreground'
+                )}
+              >
+                {item.label}
+              </Link>
+          ))}
+        </nav>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="shrink-0 md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Alternar menú de navegación</span>
             </Button>
-          </div>
-          <div className="flex-1">
-            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+          </SheetTrigger>
+          <SheetContent side="left">
+            <nav className="grid gap-6 text-lg font-medium">
+              <Link
+                href="#"
+                className="flex items-center gap-2 text-lg font-semibold"
+              >
+                <Package2 className="h-6 w-6" />
+                <span className="sr-only">Admin Cosmetica</span>
+              </Link>
               {navItems.map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                    pathname === item.href && 'bg-muted text-primary'
+                    'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
+                     pathname === item.href && 'bg-muted text-foreground'
                   )}
                 >
-                  <item.icon className="h-4 w-4" />
+                  <item.icon className="h-5 w-5" />
                   {item.label}
                   {item.badge && (
                     <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
@@ -88,87 +108,11 @@ export default function AdminLayout({
                 </Link>
               ))}
             </nav>
-          </div>
-          <div className="mt-auto p-4">
-            <Card>
-              <CardHeader className="p-2 pt-0 md:p-4">
-                <CardTitle>Actualizar a Pro</CardTitle>
-                <CardDescription>
-                  Desbloquea todas las funciones y obtén acceso ilimitado a nuestro equipo de soporte.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
-                <Button size="sm" className="w-full">
-                  Actualizar
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-      <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="shrink-0 md:hidden"
-              >
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Alternar menú de navegación</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col">
-                <SheetHeader>
-                    <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
-                </SheetHeader>
-              <nav className="grid gap-2 text-lg font-medium">
-                <Link
-                  href="#"
-                  className="flex items-center gap-2 text-lg font-semibold"
-                >
-                  <Package2 className="h-6 w-6" />
-                  <span className="sr-only">Admin Cosmetica</span>
-                </Link>
-                {navItems.map((item) => (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className={cn(
-                      'mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
-                      pathname === item.href && 'bg-muted text-foreground'
-                    )}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    {item.label}
-                    {item.badge && (
-                      <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                        {item.badge}
-                      </Badge>
-                    )}
-                  </Link>
-                ))}
-              </nav>
-              <div className="mt-auto">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Actualizar a Pro</CardTitle>
-                    <CardDescription>
-                      Desbloquea todas las funciones y obtén acceso ilimitado a nuestro equipo de soporte.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button size="sm" className="w-full">
-                      Actualizar
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </SheetContent>
-          </Sheet>
-          <div className="w-full flex-1">
-            {/* You can add a search bar here if needed */}
+          </SheetContent>
+        </Sheet>
+        <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
+          <div className="ml-auto flex-1 sm:flex-initial">
+             {/* You can add a search bar here if needed */}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -186,7 +130,9 @@ export default function AdminLayout({
               <DropdownMenuItem>Cerrar Sesión</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </header>
+        </div>
+      </header>
+      <div className="flex-1">
         {children}
       </div>
     </div>
