@@ -50,18 +50,22 @@ export default function CheckoutPage() {
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
     setIsSubmitting(true);
     try {
-      await createOrder({
+      const result = await createOrder({
         customer: values,
         items: items,
         total: total,
       });
 
-      toast({
-        title: 'Order Placed!',
-        description: 'Thank you for your purchase.',
-      });
-      clearCart();
-      router.push('/');
+      if (result.success) {
+        toast({
+          title: 'Order Placed!',
+          description: 'Thank you for your purchase.',
+        });
+        clearCart();
+        router.push(`/order-confirmation/${result.orderId}`);
+      } else {
+        throw new Error('Order creation failed');
+      }
     } catch (error) {
       console.error('Failed to create order:', error);
       toast({
@@ -74,7 +78,7 @@ export default function CheckoutPage() {
     }
   }
 
-  if (items.length === 0) {
+  if (items.length === 0 && !isSubmitting) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />

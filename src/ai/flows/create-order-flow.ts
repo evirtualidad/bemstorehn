@@ -1,7 +1,7 @@
 
 'use server';
 /**
- * @fileOverview A flow for creating an order.
+ * @fileOverview A flow for creating an order and saving it to Firestore.
  *
  * - createOrder - A function that handles the order creation process.
  * - CreateOrderInput - The input type for the createOrder function.
@@ -10,12 +10,18 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { app } from '@/lib/firebase';
 
 const ProductSchema = z.object({
   id: z.string(),
   name: z.string(),
   price: z.number(),
   quantity: z.number(),
+  image: z.string(),
+  category: z.string(),
+  description: z.string(),
+  stock: z.number(),
 });
 
 const CreateOrderInputSchema = z.object({
@@ -47,19 +53,41 @@ const createOrderFlow = ai.defineFlow(
     outputSchema: CreateOrderOutputSchema,
   },
   async (input) => {
-    console.log('Creating order with input:', JSON.stringify(input, null, 2));
+    try {
+      const db = getFirestore(app);
+      const ordersCollection = collection(db, 'orders');
 
-    // In a real application, you would save the order to Firestore here.
-    // For now, we'll just simulate it.
-    const orderId = `ord_${new Date().getTime()}`;
+      // Prepare items for Firestore, removing unnecessary fields if any
+      const itemsForDb = input.items.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      }));
 
-    console.log(`Order ${orderId} created successfully.`);
+      const docRef = await addDoc(ordersCollection, {
+        customer: input.customer,
+        items: itemsForDb,
+        total: input.total,
+        createdAt: serverTimestamp(),
+        status: 'pending', // Initial status
+      });
 
-    // And you would also decrease the stock for each product.
+      console.log(`Order ${docRef.id} created successfully in Firestore.`);
 
-    return {
-      orderId,
-      success: true,
-    };
+      // In a real application, you would also decrease the stock for each product here.
+      // We will tackle this in a future step.
+
+      return {
+        orderId: docRef.id,
+        success: true,
+      };
+    } catch (error) {
+      console.error("Error creating order in Firestore:", error);
+      return {
+        orderId: '',
+        success: false,
+      };
+    }
   }
 );
