@@ -39,7 +39,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose,
   DialogFooter,
 } from '@/components/ui/dialog';
@@ -58,7 +57,6 @@ const checkoutFormSchema = z
     }),
     paymentDueDate: z.date().optional(),
     cashAmount: z.string().optional(),
-    paymentReference: z.string().optional(),
     total: z.number().optional(),
   })
   .refine(
@@ -203,44 +201,42 @@ function TicketView({
             </Button>
         </div>
       </div>
-      <ScrollArea className="flex-grow">
-        <div className="p-4 space-y-4">
-          {cart.length === 0 ? (
-            <p className="text-center text-muted-foreground py-10">
-              Selecciona productos para empezar
-            </p>
-          ) : (
-            cart.map((item) => (
-              <div key={item.id} className="flex items-start gap-3">
-                <Image
-                  src={item.image}
-                  alt={item.name}
-                  width={48}
-                  height={48}
-                  className="rounded-md object-cover aspect-square"
-                />
-                <div className="flex-1">
-                  <p className="font-semibold text-sm leading-tight">{item.name}</p>
-                  <p className="text-xs text-muted-foreground">${item.price.toFixed(2)}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, -1)}>
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <span className="w-8 text-center text-md font-bold">{item.quantity}</span>
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, 1)}>
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
+      <div className="flex-grow p-4 space-y-4 overflow-y-auto">
+        {cart.length === 0 ? (
+          <p className="text-center text-muted-foreground py-10">
+            Selecciona productos para empezar
+          </p>
+        ) : (
+          cart.map((item) => (
+            <div key={item.id} className="flex items-start gap-3">
+              <Image
+                src={item.image}
+                alt={item.name}
+                width={48}
+                height={48}
+                className="rounded-md object-cover aspect-square"
+              />
+              <div className="flex-1">
+                <p className="font-semibold text-sm leading-tight">{item.name}</p>
+                <p className="text-xs text-muted-foreground">${item.price.toFixed(2)}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, -1)}>
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="w-8 text-center text-md font-bold">{item.quantity}</span>
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, 1)}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-                <p className="w-16 text-right font-medium text-sm">${(item.price * item.quantity).toFixed(2)}</p>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onRemoveFromCart(item.id)}>
-                  <Trash2 className="h-5 w-5" />
-                </Button>
               </div>
-            ))
-          )}
-        </div>
-      </ScrollArea>
+              <p className="w-16 text-right font-medium text-sm">${(item.price * item.quantity).toFixed(2)}</p>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onRemoveFromCart(item.id)}>
+                <Trash2 className="h-5 w-5" />
+              </Button>
+            </div>
+          ))
+        )}
+      </div>
       <div className="p-4 border-t bg-background space-y-4">
         <div className="flex justify-between text-xl font-bold">
           <p>Total</p>
@@ -466,7 +462,6 @@ export default function PosPage() {
       name: '',
       phone: '',
       paymentMethod: 'efectivo',
-      total,
       cashAmount: '',
       paymentReference: '',
       paymentDueDate: undefined,
