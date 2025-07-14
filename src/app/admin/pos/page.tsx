@@ -732,21 +732,21 @@ export default function PosPage() {
                 <ProductGrid products={filteredProducts} onProductSelect={handleProductSelect} />
             </ScrollArea>
 
-             {cart.length > 0 && (
-                <div className="lg:hidden fixed bottom-4 right-4 z-20">
-                    <Button
-                        size="lg"
-                        className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 text-primary bg-primary-light hover:bg-primary-light/90 border-4 border-background"
-                        onClick={() => setIsTicketVisible(true)}
-                    >
-                        <Receipt className="h-7 w-7" />
-                        <span className="text-md font-bold">${total.toFixed(2)}</span>
+            <div className="lg:hidden fixed bottom-4 right-4 z-20">
+                <Button
+                    size="lg"
+                    className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 text-primary bg-primary-light hover:bg-primary-light/90 border-4 border-background"
+                    onClick={() => setIsTicketVisible(true)}
+                >
+                    <Receipt className="h-7 w-7" />
+                    <span className="text-md font-bold">${total.toFixed(2)}</span>
+                    {totalItems > 0 && (
                         <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-bold rounded-full h-8 w-8 flex items-center justify-center border-4 border-background">
                             {totalItems}
                         </div>
-                    </Button>
-                </div>
-            )}
+                    )}
+                </Button>
+            </div>
         </main>
         
         <TicketView
