@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -32,7 +33,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
     <Card className={cn("flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-in fade-in-0 slide-in-from-bottom-5 ease-in-out group", className)}>
       <CardHeader className="p-0 border-b relative">
         <Image
-          src={product.image}
+          src={product.image || 'https://placehold.co/400x400.png'}
           alt={product.name}
           width={400}
           height={400}
@@ -50,9 +51,9 @@ export function ProductCard({ product, className }: ProductCardProps) {
         </Badge>
       </CardHeader>
       <CardContent className="p-4 flex-grow flex flex-col">
-        <Badge variant="outline" className="mb-2 w-fit font-body">{product.category}</Badge>
+        {product.category && <Badge variant="outline" className="mb-2 w-fit font-body">{product.category}</Badge>}
         <h4 className="font-headline text-xl leading-tight flex-grow group-hover:text-primary transition-colors">{product.name}</h4>
-        <p className="text-sm text-muted-foreground mt-2 line-clamp-2 font-body">{product.description}</p>
+        {product.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2 font-body">{product.description}</p>}
       </CardContent>
       <CardFooter className="p-4 pt-0 flex flex-col items-start gap-4">
         <p className="text-2xl font-bold font-headline text-foreground">${product.price.toFixed(2)}</p>

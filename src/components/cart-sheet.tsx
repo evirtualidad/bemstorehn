@@ -1,5 +1,7 @@
+
 'use client';
 
+import * as React from 'react';
 import {
   Sheet,
   SheetContent,
@@ -10,9 +12,76 @@ import { useCart } from '@/hooks/use-cart';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import Image from 'next/image';
-import { Minus, Plus, Trash2 } from 'lucide-react';
+import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 import Link from 'next/link';
+import { getRecommendedProducts, type RecommendedProductsOutput } from '@/ai/flows/product-recommendations';
+import { useProductsStore } from '@/hooks/use-products';
+import { ProductCard } from './product-card';
+import { Skeleton } from './ui/skeleton';
+
+function RecommendedProducts() {
+  const { items } = useCart();
+  const { products } = useProductsStore();
+  const [recommendations, setRecommendations] = React.useState<RecommendedProductsOutput['recommendations']>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function fetchRecommendations() {
+      if (items.length === 0) {
+        setRecommendations([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const result = await getRecommendedProducts({
+          productsInCart: items,
+          allProducts: products,
+        });
+        setRecommendations(result.recommendations || []);
+      } catch (error) {
+        console.error("Error fetching recommendations:", error);
+        setRecommendations([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchRecommendations();
+  }, [items, products]);
+
+  if (loading) {
+    return (
+      <div className="p-4 space-y-4">
+        <h3 className="font-semibold text-lg">También te podría interesar...</h3>
+        <div className="grid grid-cols-3 gap-4">
+          <Skeleton className="h-48 w-full" />
+          <Skeleton className="h-48 w-full" />
+          <Skeleton className="h-48 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (recommendations.length === 0) return null;
+
+  return (
+    <div className="p-4 space-y-4">
+      <h3 className="font-semibold text-lg">También te podría interesar...</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {recommendations.map(product => (
+          <ProductCard 
+            key={product.id}
+            // We need to cast here as ProductCard expects a full Product type
+            product={product as any}
+            className="shadow-none border-none"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function CartSheet() {
   const {
@@ -27,7 +96,7 @@ export function CartSheet() {
 
   return (
     <Sheet open={isOpen} onOpenChange={toggleCart}>
-      <SheetContent className="flex w-full flex-col pr-0 sm:max-w-lg">
+      <SheetContent className="flex w-full flex-col pr-0 sm:max-w-xl">
         <SheetHeader className="px-4">
           <SheetTitle>Carrito de Compras ({items.length})</SheetTitle>
         </SheetHeader>
@@ -83,6 +152,8 @@ export function CartSheet() {
                     </div>
                   ))}
                 </div>
+                <Separator />
+                <RecommendedProducts />
               </ScrollArea>
             </div>
             <div className="border-t p-4">
@@ -97,7 +168,12 @@ export function CartSheet() {
           </>
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-4">
-            <p className="text-lg text-muted-foreground">Tu carrito está vacío.</p>
+            <ShoppingCart className="w-16 h-16 text-muted-foreground" />
+            <h2 className="text-xl font-semibold">Tu carrito está vacío.</h2>
+            <p className="text-center text-muted-foreground">
+              Parece que no has añadido nada todavía. <br />
+              ¡Explora nuestros productos!
+            </p>
             <Button onClick={toggleCart} variant="outline">
               Continuar Comprando
             </Button>
