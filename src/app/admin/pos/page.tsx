@@ -51,6 +51,8 @@ const checkoutFormSchema = z.object({
     required_error: 'Debes seleccionar una forma de pago.',
   }),
   paymentDueDate: z.date().optional(),
+  cashAmount: z.coerce.number().optional(),
+  paymentReference: z.string().optional(),
 })
 .refine(
   (data) => {
@@ -63,7 +65,20 @@ const checkoutFormSchema = z.object({
     message: 'La fecha de pago es obligatoria para pagos a crédito.',
     path: ['paymentDueDate'],
   }
+)
+.refine(
+  (data) => {
+    if (data.paymentMethod === 'efectivo' && data.cashAmount && data.total) {
+       return data.cashAmount >= data.total;
+    }
+    return true;
+  },
+  {
+    message: 'El efectivo recibido debe ser mayor o igual al total.',
+    path: ['cashAmount'],
+  }
 );
+
 
 function ProductGrid({ onProductSelect }: { onProductSelect: (product: Product) => void }) {
   const { products } = useProductsStore();
@@ -104,12 +119,28 @@ export default function PosPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
+  const total = React.useMemo(() => {
+    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  }, [cart]);
+
   const form = useForm<z.infer<typeof checkoutFormSchema>>({
     resolver: zodResolver(checkoutFormSchema),
-    defaultValues: { name: '', phone: '', paymentMethod: 'efectivo' },
+    defaultValues: { name: '', phone: '', paymentMethod: 'efectivo', total },
   });
+  
+  React.useEffect(() => {
+    form.setValue('total', total);
+  }, [total, form]);
 
-  const paymentMethod = form.watch('paymentMethod');
+
+  const { paymentMethod, cashAmount } = form.watch();
+
+  const change = React.useMemo(() => {
+    if (paymentMethod === 'efectivo' && cashAmount && cashAmount > total) {
+      return cashAmount - total;
+    }
+    return 0;
+  }, [paymentMethod, cashAmount, total]);
 
   const handleProductSelect = (product: Product) => {
     if(product.stock <= 0) {
@@ -171,13 +202,9 @@ export default function PosPage() {
     setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
   };
 
-  const total = React.useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  }, [cart]);
-
   const clearCartAndForm = () => {
     setCart([]);
-    form.reset({ name: '', phone: '', paymentMethod: 'efectivo', paymentDueDate: undefined });
+    form.reset({ name: '', phone: '', paymentMethod: 'efectivo', paymentDueDate: undefined, cashAmount: undefined, paymentReference: '' });
   }
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
@@ -198,6 +225,8 @@ export default function PosPage() {
         total: total,
         paymentMethod: values.paymentMethod,
         paymentDueDate: values.paymentDueDate ? values.paymentDueDate.toISOString() : undefined,
+        cashAmount: values.cashAmount,
+        paymentReference: values.paymentReference,
       });
 
       if (result.success) {
@@ -266,6 +295,12 @@ export default function PosPage() {
                 <p>Total</p>
                 <p>${total.toFixed(2)}</p>
               </div>
+               {paymentMethod === 'efectivo' && cashAmount && change > 0 && (
+                <div className="flex justify-between text-lg font-medium mt-2 text-muted-foreground">
+                    <p>Cambio</p>
+                    <p>${change.toFixed(2)}</p>
+                </div>
+              )}
           </CardContent>
         </Card>
         <Card className="flex-1 rounded-none border-0">
@@ -335,6 +370,36 @@ export default function PosPage() {
                     </FormItem>
                   )}
                 />
+                 {paymentMethod === 'efectivo' && (
+                  <FormField
+                    control={form.control}
+                    name="cashAmount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Efectivo Recibido</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="Ej: 50.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+                {(paymentMethod === 'tarjeta' || paymentMethod === 'transferencia') && (
+                  <FormField
+                    control={form.control}
+                    name="paymentReference"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Referencia de Pago</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ej: 123456" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 {paymentMethod === 'credito' && (
                   <FormField
                     control={form.control}

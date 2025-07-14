@@ -31,6 +31,8 @@ const CreateOrderInputSchema = z.object({
   total: z.number(),
   paymentMethod: z.enum(['efectivo', 'tarjeta', 'transferencia', 'credito']),
   paymentDueDate: z.string().optional(),
+  cashAmount: z.number().optional(),
+  paymentReference: z.string().optional(),
 });
 
 export type CreateOrderInput = z.infer<typeof CreateOrderInputSchema>;
@@ -64,6 +66,13 @@ const createOrderFlow = ai.defineFlow(
       console.log("Items:", input.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })));
       console.log("Total:", input.total);
       console.log("Payment Method:", input.paymentMethod);
+      if (input.paymentMethod === 'efectivo' && input.cashAmount) {
+        console.log("Cash Received:", input.cashAmount);
+        console.log("Change Given:", input.cashAmount - input.total);
+      }
+      if (input.paymentReference) {
+        console.log("Payment Reference:", input.paymentReference);
+      }
       if (input.paymentDueDate) {
         console.log("Payment Due Date:", new Date(input.paymentDueDate).toLocaleDateString());
       }
