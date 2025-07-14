@@ -49,6 +49,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { es } from 'date-fns/locale';
+import { ProductSearch } from '@/components/product-search';
 
 type PosCartItem = Product & { quantity: number };
 
@@ -556,9 +557,9 @@ export default function PosPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] lg:grid-cols-[240px_1fr_400px] h-full max-h-screen overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_400px] h-screen max-h-screen overflow-hidden">
         {/* Left Panel: Categories */}
-        <div className="hidden md:block border-r bg-muted/20 p-4">
+        <div className="hidden lg:block border-r bg-muted/20 p-4">
             <h2 className="text-lg font-semibold mb-4">Categorías</h2>
             <CategoryList
                 categories={categories}
@@ -568,17 +569,27 @@ export default function PosPage() {
         </div>
 
         {/* Middle Panel: Product Selection */}
-        <main className="flex flex-col">
-            <header className="p-4 border-b">
-                <h1 className="text-xl font-bold">Punto de Venta</h1>
+        <main className="flex flex-col h-screen">
+            <header className="p-4 border-b flex items-center gap-4">
+                <h1 className="text-xl font-bold flex-1">Punto de Venta</h1>
+                 <div className="w-full max-w-sm">
+                    <ProductSearch onProductSelect={handleProductSelect} />
+                 </div>
             </header>
             <ScrollArea className="flex-grow p-4">
+                <div className="block lg:hidden mb-4">
+                    <CategoryList
+                        categories={categories}
+                        selectedCategory={selectedCategory}
+                        onSelectCategory={setSelectedCategory}
+                    />
+                </div>
                 <ProductGrid products={filteredProducts} onProductSelect={handleProductSelect} />
             </ScrollArea>
         </main>
         
         {/* Right Panel: Ticket */}
-        <aside className="hidden lg:block border-l">
+        <aside className="hidden lg:flex flex-col border-l">
              <TicketView
                 cart={cart}
                 total={total}
@@ -589,6 +600,24 @@ export default function PosPage() {
             />
         </aside>
 
+        {/* Mobile Ticket / Checkout Trigger */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t p-4">
+             <div className="flex justify-between items-center text-lg font-bold mb-2">
+                <p>Total</p>
+                <p>${total.toFixed(2)}</p>
+            </div>
+             <Button
+                size="lg"
+                className="w-full"
+                onClick={() => setIsCheckoutOpen(true)}
+                disabled={cart.length === 0}
+            >
+                <CreditCard className="mr-2 h-5 w-5" />
+                Facturar
+            </Button>
+        </div>
+
+
         <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
@@ -596,6 +625,30 @@ export default function PosPage() {
                 </DialogHeader>
                 <ScrollArea className="max-h-[70vh] p-1">
                     <div className="p-4">
+                         {/* Mobile Cart View inside Dialog */}
+                        <div className="lg:hidden mb-6">
+                            <h3 className="text-lg font-semibold mb-2">Resumen del Pedido</h3>
+                            <ScrollArea className="max-h-48 border rounded-md">
+                                <div className="p-2 space-y-2">
+                                {cart.map((item) => (
+                                <div key={item.id} className="flex items-center gap-2 text-sm">
+                                    <Image src={item.image} alt={item.name} width={40} height={40} className="rounded" />
+                                    <div className="flex-1">
+                                        <p className="font-medium truncate">{item.name}</p>
+                                        <p className="text-muted-foreground">{item.quantity} x ${item.price.toFixed(2)}</p>
+                                    </div>
+                                    <p className="font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
+                                </div>
+                                ))}
+                                </div>
+                            </ScrollArea>
+                            <div className="flex justify-between text-lg font-bold mt-2">
+                                <p>Total</p>
+                                <p>${total.toFixed(2)}</p>
+                            </div>
+                             <Separator className="my-4" />
+                        </div>
+                       
                         <CheckoutForm 
                             form={form} 
                             onSubmit={onSubmit} 
