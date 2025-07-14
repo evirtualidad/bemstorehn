@@ -602,7 +602,7 @@ export default function PosPage() {
     }
 
     setCart((prevCart) => {
-      const existingItem = prevCart.find((item)id === product.id);
+      const existingItem = prevCart.find((item) => item.id === product.id);
       if (existingItem) {
         if(existingItem.quantity < product.stock) {
           return prevCart.map((item) =>
@@ -784,5 +784,3 @@ export default function PosPage() {
     </div>
   );
 }
-
-    
