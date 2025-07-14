@@ -562,6 +562,10 @@ export default function PosPage() {
     return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }, [cart]);
 
+  const totalItems = React.useMemo(() => {
+    return cart.reduce((sum, item) => sum + item.quantity, 0);
+  }, [cart]);
+
   const form = useForm<z.infer<typeof checkoutFormSchema>>({
     resolver: zodResolver(checkoutFormSchema),
     defaultValues: {
@@ -600,6 +604,11 @@ export default function PosPage() {
       });
       return;
     }
+
+    toast({
+        title: 'Producto añadido',
+        description: `${product.name} añadido al pedido.`,
+    });
 
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === product.id);
@@ -723,16 +732,21 @@ export default function PosPage() {
                 <ProductGrid products={filteredProducts} onProductSelect={handleProductSelect} />
             </ScrollArea>
 
-             <div className="lg:hidden fixed bottom-4 right-4 z-20">
-                <Button 
-                  size="lg" 
-                  className='h-14 w-14 rounded-full shadow-lg' 
-                  onClick={() => setIsTicketVisible(true)}
-                >
-                    <Receipt className="h-7 w-7" />
-                    <span className='sr-only'>Ver Pedido</span>
-                </Button>
-            </div>
+             {cart.length > 0 && (
+                <div className="lg:hidden fixed bottom-4 right-4 z-20">
+                    <Button 
+                        size="lg" 
+                        className="relative h-16 w-auto min-w-[64px] rounded-full shadow-lg flex flex-col px-4" 
+                        onClick={() => setIsTicketVisible(true)}
+                    >
+                        <Receipt className="h-6 w-6" />
+                        <span className="text-xs font-bold">${total.toFixed(2)}</span>
+                        <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                            {totalItems}
+                        </div>
+                    </Button>
+                </div>
+            )}
         </main>
         
         <TicketView
