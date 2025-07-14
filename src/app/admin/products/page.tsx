@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from 'react';
 import {
   File,
   ListFilter,
@@ -9,7 +10,6 @@ import {
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
-
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -28,7 +28,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
 import {
   Table,
   TableBody,
@@ -43,10 +42,37 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { products } from '@/lib/products';
+import { products as initialProducts, Product } from '@/lib/products';
 import Image from 'next/image';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { ProductForm, productFormSchema } from '@/components/product-form';
+import { z } from 'zod';
 
 export default function AdminProductsPage() {
+  const [products, setProducts] = React.useState<Product[]>(initialProducts);
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+
+  const handleAddProduct = (values: z.infer<typeof productFormSchema>) => {
+    const newProduct: Product = {
+      id: `prod_${Math.random().toString(36).substr(2, 9)}`,
+      featured: false,
+      aiHint: `${values.category.toLowerCase()} ${values.name.toLowerCase().split(' ').slice(0, 1).join('')}`,
+      ...values,
+      price: Number(values.price),
+      stock: Number(values.stock),
+    };
+    setProducts((prev) => [newProduct, ...prev]);
+    setIsDialogOpen(false);
+  };
+
   return (
     <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
       <Tabs defaultValue="all">
@@ -85,12 +111,28 @@ export default function AdminProductsPage() {
                 Exportar
               </span>
             </Button>
-            <Button size="sm" className="h-8 gap-1">
-              <PlusCircle className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Añadir Producto
-              </span>
-            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="h-8 gap-1">
+                  <PlusCircle className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    Añadir Producto
+                  </span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[525px]">
+                <DialogHeader>
+                  <DialogTitle>Añadir Nuevo Producto</DialogTitle>
+                  <DialogDescription>
+                    Rellena los detalles del nuevo producto. Haz clic en guardar cuando termines.
+                  </DialogDescription>
+                </DialogHeader>
+                <ProductForm
+                  onSubmit={handleAddProduct}
+                  onCancel={() => setIsDialogOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
         <TabsContent value="all">
@@ -130,7 +172,7 @@ export default function AdminProductsPage() {
                           alt={product.name}
                           className="aspect-square rounded-md object-cover"
                           height="64"
-                          src={product.image}
+                          src={product.image || 'https://placehold.co/64x64.png'}
                           width="64"
                         />
                       </TableCell>
@@ -138,8 +180,8 @@ export default function AdminProductsPage() {
                         {product.name}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={product.stock > 0 ? "default" : "destructive"}>
-                           {product.stock > 0 ? "En Stock" : "Agotado"}
+                        <Badge variant={product.stock > 0 ? 'default' : 'destructive'}>
+                          {product.stock > 0 ? 'En Stock' : 'Agotado'}
                         </Badge>
                       </TableCell>
                       <TableCell>${product.price.toFixed(2)}</TableCell>
@@ -175,7 +217,7 @@ export default function AdminProductsPage() {
             </CardContent>
             <CardFooter>
               <div className="text-xs text-muted-foreground">
-                Mostrando <strong>1-10</strong> de <strong>{products.length}</strong> productos
+                Mostrando <strong>1-{products.length}</strong> de <strong>{products.length}</strong> productos
               </div>
             </CardFooter>
           </Card>
