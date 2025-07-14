@@ -29,7 +29,7 @@ import { useProductsStore } from '@/hooks/use-products';
 import { createOrder } from '@/ai/flows/create-order-flow';
 import type { Product } from '@/lib/products';
 import Image from 'next/image';
-import { CalendarIcon, Loader2, Minus, Plus, Trash2 } from 'lucide-react';
+import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Calendar } from '@/components/ui/calendar';
@@ -45,114 +45,201 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
-  DialogFooter
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { es } from 'date-fns/locale';
-import { ProductSearch } from '@/components/product-search';
-
 
 type PosCartItem = Product & { quantity: number };
 
-const checkoutFormSchema = z.object({
-  name: z.string().min(2, { message: 'El nombre es obligatorio.' }),
-  phone: z.string().optional(),
-  paymentMethod: z.enum(['efectivo', 'tarjeta', 'transferencia', 'credito'], {
-    required_error: 'Debes seleccionar una forma de pago.',
-  }),
-  paymentDueDate: z.date().optional(),
-  cashAmount: z.coerce.number().optional(),
-  paymentReference: z.string().optional(),
-  total: z.number().optional(),
-})
-.refine(
-  (data) => {
-    if (data.paymentMethod === 'credito' && !data.paymentDueDate) {
-      return false;
+const checkoutFormSchema = z
+  .object({
+    name: z.string().min(2, { message: 'El nombre es obligatorio.' }),
+    phone: z.string().optional(),
+    paymentMethod: z.enum(['efectivo', 'tarjeta', 'transferencia', 'credito'], {
+      required_error: 'Debes seleccionar una forma de pago.',
+    }),
+    paymentDueDate: z.date().optional(),
+    cashAmount: z.coerce.number().optional(),
+    paymentReference: z.string().optional(),
+    total: z.number().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.paymentMethod === 'credito' && !data.paymentDueDate) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'La fecha de pago es obligatoria para pagos a crédito.',
+      path: ['paymentDueDate'],
     }
-    return true;
-  },
-  {
-    message: 'La fecha de pago es obligatoria para pagos a crédito.',
-    path: ['paymentDueDate'],
-  }
-)
-.refine(
-  (data) => {
-    if (data.paymentMethod === 'efectivo' && data.cashAmount && data.total) {
-       return data.cashAmount >= data.total;
+  )
+  .refine(
+    (data) => {
+      if (data.paymentMethod === 'efectivo' && data.cashAmount && data.total) {
+        return data.cashAmount >= data.total;
+      }
+      return true;
+    },
+    {
+      message: 'El efectivo recibido debe ser mayor o igual al total.',
+      path: ['cashAmount'],
     }
-    return true;
-  },
-  {
-    message: 'El efectivo recibido debe ser mayor o igual al total.',
-    path: ['cashAmount'],
-  }
-);
+  );
 
-
-function ProductGrid({ onProductSelect }: { onProductSelect: (product: Product) => void }) {
-  const { products } = useProductsStore();
-
+function CategoryList({
+  categories,
+  selectedCategory,
+  onSelectCategory,
+}: {
+  categories: string[];
+  selectedCategory: string | null;
+  onSelectCategory: (category: string | null) => void;
+}) {
   return (
-    <ScrollArea className="h-full">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-        {products.map((product) => (
-          <Card
-            key={product.id}
-            onClick={() => onProductSelect(product)}
-            className="cursor-pointer hover:shadow-lg transition-shadow"
-          >
-            <CardContent className="p-0">
-              <div className="relative aspect-square">
-                <Image
-                  src={product.image || 'https://placehold.co/200x200.png'}
-                  alt={product.name}
-                  fill
-                  className="object-cover rounded-t-lg"
-                />
-              </div>
-              <div className="p-3">
-                <h3 className="font-semibold text-sm truncate">{product.name}</h3>
-                <p className="text-sm text-muted-foreground">${product.price.toFixed(2)}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </ScrollArea>
+    <nav className="flex flex-col gap-2">
+      <Button
+        variant={selectedCategory === null ? 'secondary' : 'ghost'}
+        className="justify-start"
+        onClick={() => onSelectCategory(null)}
+      >
+        <Tag className="mr-2 h-4 w-4" />
+        Todas
+      </Button>
+      {categories.map((category) => (
+        <Button
+          key={category}
+          variant={selectedCategory === category ? 'secondary' : 'ghost'}
+          className="justify-start"
+          onClick={() => onSelectCategory(category)}
+        >
+          <Tag className="mr-2 h-4 w-4" />
+          {category}
+        </Button>
+      ))}
+    </nav>
   );
 }
 
-function CartView({ cart, onUpdateQuantity, onRemoveFromCart }: { cart: PosCartItem[], onUpdateQuantity: (productId: string, amount: number) => void, onRemoveFromCart: (productId: string) => void }) {
-    return (
-        <>
-            {cart.length === 0 ? (
-                <p className="text-center text-muted-foreground py-10">
-                    Busca o selecciona productos para empezar
-                </p>
-            ) : (
-                <div className="space-y-4">
-                    {cart.map((item) => (
-                        <div key={item.id} className="flex items-center gap-2">
-                            <div className="flex-1">
-                                <p className="font-semibold text-sm">{item.name}</p>
-                                <p className="text-xs text-muted-foreground">${item.price.toFixed(2)}</p>
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(item.id, -1)}><Minus className="h-3 w-3" /></Button>
-                                <span className='w-6 text-center'>{item.quantity}</span>
-                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(item.id, 1)}><Plus className="h-3 w-3" /></Button>
-                            </div>
-                            <p className="w-16 text-right font-medium">${(item.price * item.quantity).toFixed(2)}</p>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onRemoveFromCart(item.id)}><Trash2 className="h-4 w-4" /></Button>
-                        </div>
-                    ))}
-                </div>
-            )}
-        </>
-    )
+function ProductGrid({
+  products,
+  onProductSelect,
+}: {
+  products: Product[];
+  onProductSelect: (product: Product) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      {products.map((product) => (
+        <Card
+          key={product.id}
+          onClick={() => onProductSelect(product)}
+          className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden"
+        >
+          <CardContent className="p-0">
+            <div className="relative aspect-square">
+              <Image
+                src={product.image || 'https://placehold.co/200x200.png'}
+                alt={product.name}
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div className="p-3">
+              <h3 className="font-semibold text-sm truncate">{product.name}</h3>
+              <p className="text-sm text-muted-foreground">${product.price.toFixed(2)}</p>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
 }
+
+function TicketView({
+  cart,
+  total,
+  onUpdateQuantity,
+  onRemoveFromCart,
+  onClearCart,
+  onCheckout,
+}: {
+  cart: PosCartItem[];
+  total: number;
+  onUpdateQuantity: (productId: string, amount: number) => void;
+  onRemoveFromCart: (productId: string) => void;
+  onClearCart: () => void;
+  onCheckout: () => void;
+}) {
+  return (
+    <div className="bg-muted/30 h-full flex flex-col">
+      <div className="p-4 border-b">
+        <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Pedido Actual</h2>
+            <Button variant="ghost" size="sm" onClick={onClearCart} disabled={cart.length === 0}>
+                Borrar
+            </Button>
+        </div>
+      </div>
+      <ScrollArea className="flex-grow">
+        <div className="p-4 space-y-4">
+          {cart.length === 0 ? (
+            <p className="text-center text-muted-foreground py-10">
+              Selecciona productos para empezar
+            </p>
+          ) : (
+            cart.map((item) => (
+              <div key={item.id} className="flex items-start gap-3">
+                <Image
+                  src={item.image}
+                  alt={item.name}
+                  width={48}
+                  height={48}
+                  className="rounded-md object-cover aspect-square"
+                />
+                <div className="flex-1">
+                  <p className="font-semibold text-sm leading-tight">{item.name}</p>
+                  <p className="text-xs text-muted-foreground">${item.price.toFixed(2)}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(item.id, -1)}>
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
+                    <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(item.id, 1)}>
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                <p className="w-16 text-right font-medium text-sm">${(item.price * item.quantity).toFixed(2)}</p>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onRemoveFromCart(item.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))
+          )}
+        </div>
+      </ScrollArea>
+      <div className="p-4 border-t bg-background space-y-4">
+        <div className="flex justify-between text-xl font-bold">
+          <p>Total</p>
+          <p>${total.toFixed(2)}</p>
+        </div>
+        <Button
+          size="lg"
+          className="w-full"
+          onClick={onCheckout}
+          disabled={cart.length === 0}
+        >
+          <CreditCard className="mr-2 h-5 w-5" />
+          Facturar
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 
 function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, change, isInDialog }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, cart: PosCartItem[], total: number, change: number, isInDialog?: boolean }) {
     const paymentMethod = form.watch('paymentMethod');
@@ -237,6 +324,9 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                                     <Input type="number" placeholder="Ej: 50.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} />
                                 </FormControl>
                                 <FormMessage />
+                                {change > 0 && (
+                                    <p className="text-sm text-muted-foreground pt-1">Cambio a devolver: ${change.toFixed(2)}</p>
+                                )}
                             </FormItem>
                         )}
                     />
@@ -320,11 +410,18 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
 
 export default function PosPage() {
   const [cart, setCart] = React.useState<PosCartItem[]>([]);
-  const { decreaseStock } = useProductsStore();
+  const { products, decreaseStock } = useProductsStore();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
+  const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
 
+  const categories = [...new Set(products.map((p) => p.category))];
+
+  const filteredProducts = React.useMemo(() => {
+    if (!selectedCategory) return products;
+    return products.filter((p) => p.category === selectedCategory);
+  }, [selectedCategory, products]);
 
   const total = React.useMemo(() => {
     return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -338,7 +435,6 @@ export default function PosPage() {
   React.useEffect(() => {
     form.setValue('total', total);
   }, [total, form]);
-
 
   const { paymentMethod, cashAmount } = form.watch();
 
@@ -460,84 +556,61 @@ export default function PosPage() {
   }
 
   return (
-    <div className="md:grid md:grid-cols-[2fr_1fr] h-full">
-        {/* Left Panel: Product Selection */}
-        <div className="border-r bg-muted/20 flex flex-col h-full">
-            <div className="p-4 border-b">
-            <ProductSearch onProductSelect={handleProductSelect} />
-            </div>
-            <div className="flex-grow hidden md:block">
-                <ProductGrid onProductSelect={handleProductSelect} />
-            </div>
-            {/* Mobile Cart View */}
-            <div className="md:hidden p-4 flex-grow mb-24">
-                <CartView cart={cart} onUpdateQuantity={updateQuantity} onRemoveFromCart={removeFromCart} />
-            </div>
+    <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] lg:grid-cols-[240px_1fr_400px] h-full max-h-screen overflow-hidden">
+        {/* Left Panel: Categories */}
+        <div className="hidden md:block border-r bg-muted/20 p-4">
+            <h2 className="text-lg font-semibold mb-4">Categorías</h2>
+            <CategoryList
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onSelectCategory={setSelectedCategory}
+            />
         </div>
 
-        {/* Right Panel (Desktop): Cart & Checkout */}
-        <div className="hidden md:flex flex-col">
-            <ScrollArea className="h-full">
-                <Card className="flex-1 rounded-none border-0 border-b">
-                <CardHeader>
-                    <CardTitle>Ticket de Venta</CardTitle>
-                    <CardDescription>Productos añadidos al pedido actual.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="min-h-[200px]">
-                        <CartView cart={cart} onUpdateQuantity={updateQuantity} onRemoveFromCart={removeFromCart} />
-                    </div>
-                    <Separator className='my-4'/>
-                    <div className="flex justify-between text-xl font-bold">
-                        <p>Total</p>
-                        <p>${total.toFixed(2)}</p>
-                    </div>
-                    {paymentMethod === 'efectivo' && cashAmount && change > 0 && (
-                        <div className="flex justify-between text-lg font-medium mt-2 text-muted-foreground">
-                            <p>Cambio</p>
-                            <p>${change.toFixed(2)}</p>
-                        </div>
-                    )}
-                </CardContent>
-                </Card>
-                <Card className="flex-1 rounded-none border-0">
-                <CardHeader>
-                    <CardTitle>Cliente y Pago</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <CheckoutForm form={form} onSubmit={onSubmit} isSubmitting={isSubmitting} onCancel={clearCartAndForm} cart={cart} total={total} change={change}/>
-                </CardContent>
-                </Card>
+        {/* Middle Panel: Product Selection */}
+        <main className="flex flex-col">
+            <header className="p-4 border-b">
+                <h1 className="text-xl font-bold">Punto de Venta</h1>
+            </header>
+            <ScrollArea className="flex-grow p-4">
+                <ProductGrid products={filteredProducts} onProductSelect={handleProductSelect} />
             </ScrollArea>
-        </div>
+        </main>
         
-        {/* Mobile: Sticky Footer & Checkout Modal */}
-        <div className="md:hidden">
-            <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex items-center justify-between gap-4">
-                <div className='flex flex-col'>
-                    <span className='text-muted-foreground'>Total</span>
-                    <span className="text-2xl font-bold">${total.toFixed(2)}</span>
-                </div>
-                <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-                    <DialogTrigger asChild>
-                        <Button size="lg" disabled={cart.length === 0}>
-                            Proceder al Pago
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                            <DialogTitle>Cliente y Pago</DialogTitle>
-                        </DialogHeader>
-                        <ScrollArea className="max-h-[70vh] p-1">
-                            <div className="p-4">
-                                <CheckoutForm form={form} onSubmit={onSubmit} isSubmitting={isSubmitting} onCancel={() => setIsCheckoutOpen(false)} cart={cart} total={total} change={change} isInDialog={true} />
-                            </div>
-                        </ScrollArea>
-                    </DialogContent>
-                </Dialog>
-            </div>
-        </div>
+        {/* Right Panel: Ticket */}
+        <aside className="hidden lg:block border-l">
+             <TicketView
+                cart={cart}
+                total={total}
+                onUpdateQuantity={updateQuantity}
+                onRemoveFromCart={removeFromCart}
+                onClearCart={clearCartAndForm}
+                onCheckout={() => setIsCheckoutOpen(true)}
+            />
+        </aside>
 
+        <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Cliente y Pago</DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="max-h-[70vh] p-1">
+                    <div className="p-4">
+                        <CheckoutForm 
+                            form={form} 
+                            onSubmit={onSubmit} 
+                            isSubmitting={isSubmitting} 
+                            onCancel={() => setIsCheckoutOpen(false)} 
+                            cart={cart} 
+                            total={total} 
+                            change={change} 
+                            isInDialog={true} />
+                    </div>
+                </ScrollArea>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }
+
+    
