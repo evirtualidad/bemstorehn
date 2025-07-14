@@ -16,7 +16,7 @@ export default function Home() {
     return acc;
   }, {} as Record<string, Product[]>);
 
-  const featuredProducts = products.filter(p => p.featured);
+  const featuredProducts = products.filter(p => p.featured).slice(0, 4);
 
   return (
     <div className="bg-background min-h-screen">
