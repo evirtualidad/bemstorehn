@@ -1,13 +1,19 @@
+'use client';
+
 import { Leaf, ShoppingCart, User } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { products } from '@/lib/products';
+import { useCart } from '@/hooks/use-cart';
+import { Badge } from '@/components/ui/badge';
 
 export function Header() {
-  const categories = [...new Set(products.map(p => p.category))];
+  const categories = [...new Set(products.map((p) => p.category))];
+  const { items, toggleCart } = useCart();
+  const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
   return (
-    <header className="py-4 px-4 md:px-6 bg-background/80 backdrop-blur-sm sticky top-0 z-50 border-b border-border/40">
+    <header className="py-4 px-4 md:px-6 bg-background/80 backdrop-blur-sm sticky top-0 z-40 border-b border-border/40">
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-3">
@@ -17,19 +23,31 @@ export function Header() {
             </h1>
           </Link>
           <nav className="hidden md:flex items-center gap-6 font-body text-md">
-            {categories.map(category => (
-              <Link key={category} href={`#`} className="hover:text-primary transition-colors">
+            {categories.map((category) => (
+              <Link
+                key={category}
+                href={`#`}
+                className="hover:text-primary transition-colors"
+              >
                 {category}
               </Link>
             ))}
           </nav>
         </div>
         <div className="flex items-center gap-2">
-           <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon">
             <User className="w-6 h-6" />
             <span className="sr-only">Account</span>
           </Button>
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" className="relative" onClick={toggleCart}>
+            {itemCount > 0 && (
+              <Badge
+                variant="destructive"
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full flex items-center justify-center p-0"
+              >
+                {itemCount}
+              </Badge>
+            )}
             <ShoppingCart className="w-6 h-6" />
             <span className="sr-only">Shopping Cart</span>
           </Button>
