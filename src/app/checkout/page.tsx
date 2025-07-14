@@ -20,6 +20,9 @@ import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import { createOrder } from '@/ai/flows/create-order-flow';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(2, {
@@ -34,6 +37,7 @@ export default function CheckoutPage() {
   const { items, total, clearCart } = useCart();
   const { toast } = useToast();
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof checkoutFormSchema>>({
     resolver: zodResolver(checkoutFormSchema),
@@ -43,15 +47,31 @@ export default function CheckoutPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
-    console.log('Placing order with values:', values);
-    console.log('Order items:', items);
-    toast({
-      title: 'Order Placed!',
-      description: 'Thank you for your purchase.',
-    });
-    clearCart();
-    router.push('/');
+  async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
+    setIsSubmitting(true);
+    try {
+      await createOrder({
+        customer: values,
+        items: items,
+        total: total,
+      });
+
+      toast({
+        title: 'Order Placed!',
+        description: 'Thank you for your purchase.',
+      });
+      clearCart();
+      router.push('/');
+    } catch (error) {
+      console.error('Failed to create order:', error);
+      toast({
+        title: 'Uh oh! Something went wrong.',
+        description: 'There was a problem placing your order. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   if (items.length === 0) {
@@ -108,7 +128,8 @@ export default function CheckoutPage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" size="lg" className="w-full">
+                <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Place Order
                 </Button>
               </form>
