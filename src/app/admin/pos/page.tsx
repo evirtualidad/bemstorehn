@@ -58,6 +58,7 @@ const checkoutFormSchema = z
     paymentDueDate: z.date().optional(),
     cashAmount: z.string().optional(),
     total: z.number().optional(),
+    paymentReference: z.string().optional(),
   })
   .refine(
     (data) => {
@@ -364,8 +365,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                                 <FormControl>
                                     <Input type="number" placeholder="Ej: 50.00" {...field} className="h-11" onChange={(e) => {
                                         const value = e.target.value;
-                                        const parsed = value === '' ? '' : parseFloat(value)
-                                        field.onChange(parsed);
+                                        field.onChange(value === '' ? '' : parseFloat(value));
                                     }}/>
                                 </FormControl>
                                 <FormMessage />
