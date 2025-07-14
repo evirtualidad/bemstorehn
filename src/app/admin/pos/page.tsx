@@ -737,12 +737,12 @@ export default function PosPage() {
                     <Button 
                         variant="secondary"
                         size="lg" 
-                        className="relative h-20 w-20 rounded-lg shadow-lg flex flex-col items-center justify-center p-2 gap-1"
+                        className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1"
                         onClick={() => setIsTicketVisible(true)}
                     >
-                        <Receipt className="h-6 w-6" />
-                        <span className="text-sm font-bold">${total.toFixed(2)}</span>
-                        <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-bold rounded-full h-7 w-7 flex items-center justify-center border-2 border-background">
+                        <Receipt className="h-7 w-7" />
+                        <span className="text-md font-bold">${total.toFixed(2)}</span>
+                        <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-bold rounded-full h-8 w-8 flex items-center justify-center border-4 border-background">
                             {totalItems}
                         </div>
                     </Button>
