@@ -192,8 +192,8 @@ function TicketView({
   isMobile?: boolean;
 }) {
   const ticketContent = (
-    <>
-      <div className="p-4 border-b">
+    <div className="h-full flex flex-col">
+      <div className="p-4 border-b flex-shrink-0">
         <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Pedido Actual</h2>
             <Button variant="ghost" size="sm" onClick={onClearCart} disabled={cart.length === 0}>
@@ -201,43 +201,49 @@ function TicketView({
             </Button>
         </div>
       </div>
-      <div className="flex-grow p-4 space-y-4 overflow-y-auto">
-        {cart.length === 0 ? (
-          <p className="text-center text-muted-foreground py-10">
-            Selecciona productos para empezar
-          </p>
-        ) : (
-          cart.map((item) => (
-            <div key={item.id} className="flex items-start gap-3">
-              <Image
-                src={item.image}
-                alt={item.name}
-                width={48}
-                height={48}
-                className="rounded-md object-cover aspect-square"
-              />
-              <div className="flex-1">
-                <p className="font-semibold text-sm leading-tight">{item.name}</p>
-                <p className="text-xs text-muted-foreground">${item.price.toFixed(2)}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, -1)}>
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <span className="w-8 text-center text-md font-bold">{item.quantity}</span>
-                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, 1)}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <p className="w-16 text-right font-medium text-sm">${(item.price * item.quantity).toFixed(2)}</p>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onRemoveFromCart(item.id)}>
-                <Trash2 className="h-5 w-5" />
-              </Button>
+      <div className="flex-grow overflow-hidden">
+        <ScrollArea className="h-full">
+            {cart.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+                <p className="text-center text-muted-foreground p-10">
+                    Selecciona productos para empezar
+                </p>
             </div>
-          ))
-        )}
+            ) : (
+            <div className="p-4 space-y-4">
+            {cart.map((item) => (
+                <div key={item.id} className="flex items-start gap-3">
+                <Image
+                    src={item.image}
+                    alt={item.name}
+                    width={48}
+                    height={48}
+                    className="rounded-md object-cover aspect-square"
+                />
+                <div className="flex-1">
+                    <p className="font-semibold text-sm leading-tight">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">${item.price.toFixed(2)}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, -1)}>
+                        <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="w-8 text-center text-md font-bold">{item.quantity}</span>
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, 1)}>
+                        <Plus className="h-4 w-4" />
+                    </Button>
+                    </div>
+                </div>
+                <p className="w-16 text-right font-medium text-sm">${(item.price * item.quantity).toFixed(2)}</p>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onRemoveFromCart(item.id)}>
+                    <Trash2 className="h-5 w-5" />
+                </Button>
+                </div>
+            ))}
+            </div>
+            )}
+        </ScrollArea>
       </div>
-      <div className="p-4 border-t bg-background space-y-4">
+      <div className="p-4 border-t bg-background space-y-4 flex-shrink-0">
         <div className="flex justify-between text-xl font-bold">
           <p>Total</p>
           <p>${total.toFixed(2)}</p>
@@ -252,7 +258,7 @@ function TicketView({
           Facturar
         </Button>
       </div>
-    </>
+    </div>
   );
 
   if (isMobile) {
@@ -356,7 +362,11 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                             <FormItem>
                                 <FormLabel>Efectivo Recibido</FormLabel>
                                 <FormControl>
-                                    <Input type="number" placeholder="Ej: 50.00" {...field} className="h-11" />
+                                    <Input type="number" placeholder="Ej: 50.00" {...field} className="h-11" onChange={(e) => {
+                                        const value = e.target.value;
+                                        const parsed = value === '' ? '' : parseFloat(value)
+                                        field.onChange(parsed);
+                                    }}/>
                                 </FormControl>
                                 <FormMessage />
                                 {change > 0 && (
