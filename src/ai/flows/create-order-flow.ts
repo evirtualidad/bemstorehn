@@ -1,7 +1,7 @@
 
 'use server';
 /**
- * @fileOverview A flow for creating an order and saving it to Firestore.
+ * @fileOverview A flow for creating an order and saving it locally (simulated).
  *
  * - createOrder - A function that handles the order creation process.
  * - CreateOrderInput - The input type for the createOrder function.
@@ -10,8 +10,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { app } from '@/lib/firebase';
 
 const ProductSchema = z.object({
   id: z.string(),
@@ -54,36 +52,25 @@ const createOrderFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      const db = getFirestore(app);
-      const ordersCollection = collection(db, 'orders');
-
-      // Prepare items for Firestore, removing unnecessary fields if any
-      const itemsForDb = input.items.map(item => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-      }));
-
-      const docRef = await addDoc(ordersCollection, {
-        customer: input.customer,
-        items: itemsForDb,
-        total: input.total,
-        createdAt: serverTimestamp(),
-        status: 'pending', // Initial status
-      });
-
-      console.log(`Order ${docRef.id} created successfully in Firestore.`);
+      // Simulate creating an order by logging it to the console
+      const orderId = `MOCK-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      
+      console.log("--- MOCK ORDER CREATED ---");
+      console.log("Order ID:", orderId);
+      console.log("Customer:", input.customer);
+      console.log("Items:", input.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })));
+      console.log("Total:", input.total);
+      console.log("--------------------------");
 
       // In a real application, you would also decrease the stock for each product here.
       // We will tackle this in a future step.
 
       return {
-        orderId: docRef.id,
+        orderId: orderId,
         success: true,
       };
     } catch (error) {
-      console.error("Error creating order in Firestore:", error);
+      console.error("Error creating mock order:", error);
       return {
         orderId: '',
         success: false,
