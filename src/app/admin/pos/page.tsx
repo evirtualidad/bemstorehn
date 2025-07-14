@@ -84,6 +84,28 @@ const checkoutFormSchema = z
       message: 'El efectivo recibido debe ser mayor o igual al total.',
       path: ['cashAmount'],
     }
+  ).refine(
+    (data) => {
+      if (data.paymentMethod === 'credito' && (!data.name || data.name.trim() === '')) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'El nombre del cliente es obligatorio para pagos a crédito.',
+      path: ['name'],
+    }
+  ).refine(
+    (data) => {
+      if (data.paymentMethod === 'credito' && (!data.phone || data.phone.trim() === '')) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'El teléfono del cliente es obligatorio para pagos a crédito.',
+      path: ['phone'],
+    }
   );
 
 function CategoryList({
@@ -276,7 +298,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                     name="name"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Nombre del Cliente (Opcional)</FormLabel>
+                            <FormLabel>Nombre del Cliente {paymentMethod !== 'credito' && '(Opcional)'}</FormLabel>
                             <FormControl>
                                 <Input placeholder="Nombre completo" {...field} className="h-11"/>
                             </FormControl>
@@ -289,7 +311,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                     name="phone"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Teléfono (Opcional)</FormLabel>
+                            <FormLabel>Teléfono {paymentMethod !== 'credito' && '(Opcional)'}</FormLabel>
                             <FormControl>
                                 <Input placeholder="Número de teléfono" {...field} className="h-11"/>
                             </FormControl>
