@@ -52,6 +52,8 @@ import {
   CartesianGrid,
 } from 'recharts';
 import Link from 'next/link';
+import { products } from '@/lib/products';
+import React from 'react';
 
 const salesData = [
     { name: 'Ene', sales: 4000 },
@@ -64,6 +66,13 @@ const salesData = [
   ];
 
 export default function Dashboard() {
+
+  // Simulate dynamic data
+  const totalRevenue = 45231.89;
+  const totalSales = 12234;
+  const activeProducts = products.filter(p => p.stock > 0).length;
+  const totalOrders = 2350;
+
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
@@ -73,7 +82,7 @@ export default function Dashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$45,231.89</div>
+            <div className="text-2xl font-bold">${totalRevenue.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">
               +20.1% desde el mes pasado
             </p>
@@ -85,7 +94,7 @@ export default function Dashboard() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+12,234</div>
+            <div className="text-2xl font-bold">+{totalSales.toLocaleString('es-ES')}</div>
             <p className="text-xs text-muted-foreground">
               +19% desde el mes pasado
             </p>
@@ -97,9 +106,9 @@ export default function Dashboard() {
             <Package2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+573</div>
+            <div className="text-2xl font-bold">{activeProducts}</div>
             <p className="text-xs text-muted-foreground">
-              +201 desde la última hora
+              de {products.length} productos totales
             </p>
           </CardContent>
         </Card>
@@ -109,7 +118,7 @@ export default function Dashboard() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+2350</div>
+            <div className="text-2xl font-bold">+{totalOrders.toLocaleString('es-ES')}</div>
             <p className="text-xs text-muted-foreground">
               +180.1% desde el mes pasado
             </p>
@@ -147,7 +156,7 @@ export default function Dashboard() {
           <CardContent className="grid gap-8">
             <div className="flex items-center gap-4">
               <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="https://placehold.co/100x100.png" alt="Avatar" />
+                <AvatarImage src="https://placehold.co/100x100.png" alt="Avatar" data-ai-hint="woman portrait" />
                 <AvatarFallback>OM</AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
@@ -162,7 +171,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-4">
               <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="https://placehold.co/100x100.png" alt="Avatar" />
+                <AvatarImage src="https://placehold.co/100x100.png" alt="Avatar" data-ai-hint="man portrait" />
                 <AvatarFallback>JL</AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
@@ -175,7 +184,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-4">
               <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="https://placehold.co/100x100.png" alt="Avatar" />
+                <AvatarImage src="https://placehold.co/100x100.png" alt="Avatar" data-ai-hint="woman portrait" />
                 <AvatarFallback>IN</AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
@@ -190,7 +199,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-4">
               <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="https://placehold.co/100x100.png" alt="Avatar" />
+                <AvatarImage src="https://placehold.co/100x100.png" alt="Avatar" data-ai-hint="man portrait" />
                 <AvatarFallback>WK</AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
@@ -201,7 +210,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-4">
               <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="https://placehold.co/100x100.png" alt="Avatar" />
+                <AvatarImage src="https://placehold.co/100x100.png" alt="Avatar" data-ai-hint="woman portrait" />
                 <AvatarFallback>SD</AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
