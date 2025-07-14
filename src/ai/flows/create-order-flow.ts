@@ -62,16 +62,10 @@ const createOrderFlow = ai.defineFlow(
       console.log("Customer:", input.customer);
       console.log("Items:", input.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })));
       console.log("Total:", input.total);
-      
-      // Simulate updating stock
-      // This part is tricky because we can't directly call the Zustand hook on the server.
-      // In a real app, the stock update would happen in a database transaction.
-      // For this local simulation, we'll just log the intended action.
-      console.log("--- SIMULATING STOCK UPDATE (see notes in create-order-flow.ts) ---");
-      input.items.forEach(item => {
-        console.log(`Intend to decrease stock of ${item.name} (ID: ${item.id}) by ${item.quantity}.`);
-      });
       console.log("--------------------------");
+
+      // In a real app, stock update would happen here in a secure server-side transaction.
+      // For this local simulation, the client will handle the stock update after getting a success response.
 
       return {
         orderId: orderId,

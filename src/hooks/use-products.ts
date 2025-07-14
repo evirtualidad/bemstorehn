@@ -39,7 +39,7 @@ export const useProductsStore = create<ProductsState>()(
       decreaseStock: (productId: string, quantity: number) => {
         set((state) => ({
           products: state.products.map((p) =>
-            p.id === productId ? { ...p, stock: p.stock - quantity } : p
+            p.id === productId ? { ...p, stock: Math.max(0, p.stock - quantity) } : p
           ),
         }));
       }
