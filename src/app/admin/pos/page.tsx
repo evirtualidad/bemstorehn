@@ -187,14 +187,14 @@ function TicketView({
   cart: PosCartItem[];
   total: number;
   onUpdateQuantity: (productId: string, amount: number) => void;
-  onRemoveFromCart: (productId: string) => void;
+  onRemoveFromCart: (productId:string) => void;
   onClearCart: () => void;
   onCheckout: () => void;
   isMobile?: boolean;
 }) {
   const ticketContent = (
-    <div className="h-full flex flex-col">
-      <div className="p-4 border-b flex-shrink-0">
+    <div className="h-full flex flex-col bg-muted/40">
+      <div className="p-4 border-b flex-shrink-0 bg-background">
         <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Pedido Actual</h2>
             <Button variant="ghost" size="sm" onClick={onClearCart} disabled={cart.length === 0}>
@@ -202,7 +202,7 @@ function TicketView({
             </Button>
         </div>
       </div>
-      <div className="flex-grow overflow-hidden">
+      <div className="flex-grow overflow-hidden bg-background">
         <ScrollArea className="h-full">
             {cart.length === 0 ? (
             <div className="flex items-center justify-center h-full">
@@ -263,10 +263,14 @@ function TicketView({
   );
 
   if (isMobile) {
-    return <div className="bg-muted/30 h-full flex flex-col">{ticketContent}</div>;
+    return <div className="lg:hidden flex-shrink-0 h-[45vh] flex flex-col border-t">{ticketContent}</div>;
   }
 
-  return <aside className="hidden lg:flex flex-col border-l bg-muted/20">{ticketContent}</aside>;
+  return (
+    <aside className="fixed top-0 right-0 h-screen w-[420px] hidden lg:flex flex-col border-l z-10">
+        {ticketContent}
+    </aside>
+  );
 }
 
 const paymentMethods = [
@@ -365,7 +369,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                                 <FormControl>
                                     <Input type="number" placeholder="Ej: 50.00" {...field} className="h-11" onChange={(e) => {
                                         const value = e.target.value;
-                                        field.onChange(value === '' ? '' : parseFloat(value));
+                                        field.onChange(value);
                                     }}/>
                                 </FormControl>
                                 <FormMessage />
@@ -606,17 +610,15 @@ export default function PosPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] h-screen max-h-screen overflow-hidden bg-muted/40">
-        
-        {/* Main Content: Product Selection */}
-        <main className="flex flex-col h-screen lg:h-auto bg-background rounded-lg lg:m-2">
-            <header className="p-4 border-b flex flex-wrap items-center gap-4">
+    <div className="h-screen bg-muted/40">
+        <main className="h-full flex flex-col lg:pr-[420px]">
+            <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20">
                 <h1 className="text-xl font-bold flex-1">Punto de Venta</h1>
                  <div className="w-full sm:w-auto sm:flex-initial">
                     <ProductSearch onProductSelect={handleProductSelect} />
                  </div>
             </header>
-            <div className="p-4 space-y-4 flex-shrink-0">
+            <div className="p-4 space-y-4 flex-shrink-0 bg-background">
                  <CategoryList
                     categories={categories}
                     selectedCategory={selectedCategory}
@@ -624,24 +626,20 @@ export default function PosPage() {
                 />
                 <Separator />
             </div>
-             <ScrollArea className="flex-1 px-4">
+             <ScrollArea className="flex-1 px-4 bg-background">
                 <ProductGrid products={filteredProducts} onProductSelect={handleProductSelect} />
             </ScrollArea>
-             {/* Mobile-only Ticket View */}
-            <div className="lg:hidden flex-shrink-0 h-[45vh] flex flex-col border-t">
-                 <TicketView
-                    cart={cart}
-                    total={total}
-                    onUpdateQuantity={updateQuantity}
-                    onRemoveFromCart={removeFromCart}
-                    onClearCart={clearCartAndForm}
-                    onCheckout={() => setIsCheckoutOpen(true)}
-                    isMobile={true}
-                />
-            </div>
+            <TicketView
+                cart={cart}
+                total={total}
+                onUpdateQuantity={updateQuantity}
+                onRemoveFromCart={removeFromCart}
+                onClearCart={clearCartAndForm}
+                onCheckout={() => setIsCheckoutOpen(true)}
+                isMobile={true}
+            />
         </main>
         
-        {/* Desktop-only Right Panel: Ticket */}
         <TicketView
             cart={cart}
             total={total}
@@ -651,8 +649,6 @@ export default function PosPage() {
             onCheckout={() => setIsCheckoutOpen(true)}
         />
 
-
-        {/* Checkout Dialog */}
         <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
