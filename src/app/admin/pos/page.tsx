@@ -293,6 +293,13 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="space-y-3 p-4 rounded-lg border bg-muted/50">
+                    <div className="flex justify-between items-center text-lg">
+                        <span className="text-muted-foreground">Total a Pagar:</span>
+                        <span className="font-bold text-2xl">${total.toFixed(2)}</span>
+                    </div>
+                </div>
+
                 <FormField
                     control={form.control}
                     name="name"
