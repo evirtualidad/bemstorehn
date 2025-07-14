@@ -197,7 +197,7 @@ export default function PosPage() {
         items: cart,
         total: total,
         paymentMethod: values.paymentMethod,
-        paymentDueDate: values.paymentDueDate,
+        paymentDueDate: values.paymentDueDate ? values.paymentDueDate.toISOString() : undefined,
       });
 
       if (result.success) {
