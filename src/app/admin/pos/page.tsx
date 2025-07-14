@@ -51,7 +51,7 @@ type PosCartItem = Product & { quantity: number };
 
 const checkoutFormSchema = z
   .object({
-    name: z.string().min(2, { message: 'El nombre es obligatorio.' }),
+    name: z.string().optional(),
     phone: z.string().optional(),
     paymentMethod: z.enum(['efectivo', 'tarjeta', 'transferencia', 'credito'], {
       required_error: 'Debes seleccionar una forma de pago.',
@@ -276,7 +276,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                     name="name"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Nombre del Cliente</FormLabel>
+                            <FormLabel>Nombre del Cliente (Opcional)</FormLabel>
                             <FormControl>
                                 <Input placeholder="Nombre completo" {...field} className="h-11"/>
                             </FormControl>
@@ -527,7 +527,7 @@ export default function PosPage() {
     setIsSubmitting(true);
     try {
       const result = await createOrder({
-        customer: { name: values.name, phone: values.phone || 'N/A' },
+        customer: { name: values.name || 'Cliente Mostrador', phone: values.phone || 'N/A' },
         items: cart,
         total: total,
         paymentMethod: values.paymentMethod,

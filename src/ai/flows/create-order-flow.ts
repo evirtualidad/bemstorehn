@@ -24,8 +24,8 @@ const ProductSchema = z.object({
 
 const CreateOrderInputSchema = z.object({
   customer: z.object({
-    name: z.string(),
-    phone: z.string(),
+    name: z.string().optional(),
+    phone: z.string().optional(),
   }),
   items: z.array(ProductSchema),
   total: z.number(),
