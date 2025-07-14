@@ -462,7 +462,15 @@ export default function PosPage() {
 
   const form = useForm<z.infer<typeof checkoutFormSchema>>({
     resolver: zodResolver(checkoutFormSchema),
-    defaultValues: { name: '', phone: '', paymentMethod: 'efectivo', total },
+    defaultValues: {
+      name: '',
+      phone: '',
+      paymentMethod: 'efectivo',
+      total,
+      cashAmount: undefined,
+      paymentReference: '',
+      paymentDueDate: undefined,
+    },
   });
   
   React.useEffect(() => {
