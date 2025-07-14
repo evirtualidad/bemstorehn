@@ -19,6 +19,7 @@ import { getRecommendedProducts, type RecommendedProductsOutput } from '@/ai/flo
 import { useProductsStore } from '@/hooks/use-products';
 import { ProductCard } from './product-card';
 import { Skeleton } from './ui/skeleton';
+import { Product } from '@/lib/products';
 
 function RecommendedProducts() {
   const { items } = useCart();
@@ -73,8 +74,7 @@ function RecommendedProducts() {
         {recommendations.map(product => (
           <ProductCard 
             key={product.id}
-            // We need to cast here as ProductCard expects a full Product type
-            product={product as any}
+            product={product as Product}
             className="shadow-none border-none"
           />
         ))}

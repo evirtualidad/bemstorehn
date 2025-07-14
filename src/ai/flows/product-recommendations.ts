@@ -41,6 +41,9 @@ const RecommendedProductsOutputSchema = z.object({
         description: true,
         category: true,
         stock: true,
+      }).extend({
+        aiHint: z.string().optional(),
+        featured: z.boolean().optional(),
       })
     )
     .describe('An array of 3 recommended products.'),
@@ -68,11 +71,11 @@ const recommendationPrompt = ai.definePrompt({
     - If they have makeup, suggest complementary items (e.g., if they have foundation, recommend a primer or setting powder).
     - If they have shampoo, recommend the matching conditioner.
 
-    Provide your response in the requested JSON format.
+    Provide your response in the requested JSON format. Make sure to include the image URL for each recommended product.
 
     Here is the full list of available products:
     {{#each allProducts}}
-    - ID: {{id}}, Name: {{name}}, Category: {{category}}, Description: {{description}}, Stock: {{stock}}
+    - ID: {{id}}, Name: {{name}}, Category: {{category}}, Description: {{description}}, Stock: {{stock}}, Image: {{image}}
     {{/each}}
 
     Here are the items currently in the user's cart:
