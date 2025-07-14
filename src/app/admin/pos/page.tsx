@@ -100,7 +100,7 @@ function CategoryList({
   onSelectCategory: (category: string | null) => void;
 }) {
   return (
-    <nav className="flex flex-col gap-2">
+    <div className="flex items-center gap-2 flex-wrap">
       <Button
         variant={selectedCategory === null ? 'secondary' : 'ghost'}
         className="justify-start"
@@ -116,11 +116,10 @@ function CategoryList({
           className="justify-start"
           onClick={() => onSelectCategory(category)}
         >
-          <Tag className="mr-2 h-4 w-4" />
           {category}
         </Button>
       ))}
-    </nav>
+    </div>
   );
 }
 
@@ -392,13 +391,13 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                     />
                 )}
                 <DialogFooter className='pt-4 sm:justify-between'>
-                    {isInDialog ? (
-                        <DialogClose asChild>
-                           <CancelButton />
-                        </DialogClose>
-                    ) : (
-                        <CancelButton />
-                    )}
+                   {isInDialog ? (
+                     <DialogClose asChild>
+                       <CancelButton />
+                     </DialogClose>
+                   ) : (
+                     <CancelButton />
+                   )}
                     <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting || cart.length === 0}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Crear Pedido
@@ -557,35 +556,26 @@ export default function PosPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_400px] h-screen max-h-screen overflow-hidden">
-        {/* Left Panel: Categories */}
-        <div className="hidden lg:block border-r bg-muted/20 p-4">
-            <h2 className="text-lg font-semibold mb-4">Categorías</h2>
-            <CategoryList
-                categories={categories}
-                selectedCategory={selectedCategory}
-                onSelectCategory={setSelectedCategory}
-            />
-        </div>
-
-        {/* Middle Panel: Product Selection */}
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] h-screen max-h-screen overflow-hidden">
+        {/* Main Content: Product Selection */}
         <main className="flex flex-col h-screen">
-            <header className="p-4 border-b flex items-center gap-4">
+            <header className="p-4 border-b flex flex-wrap items-center gap-4">
                 <h1 className="text-xl font-bold flex-1">Punto de Venta</h1>
-                 <div className="w-full max-w-sm">
+                 <div className="w-full sm:w-auto sm:flex-initial">
                     <ProductSearch onProductSelect={handleProductSelect} />
                  </div>
             </header>
-            <ScrollArea className="flex-grow p-4">
-                <div className="block lg:hidden mb-4">
-                    <CategoryList
-                        categories={categories}
-                        selectedCategory={selectedCategory}
-                        onSelectCategory={setSelectedCategory}
-                    />
-                </div>
-                <ProductGrid products={filteredProducts} onProductSelect={handleProductSelect} />
-            </ScrollArea>
+            <div className="flex-grow p-4 space-y-4">
+                 <CategoryList
+                    categories={categories}
+                    selectedCategory={selectedCategory}
+                    onSelectCategory={setSelectedCategory}
+                />
+                <Separator />
+                <ScrollArea className="h-[calc(100vh-200px)]">
+                    <ProductGrid products={filteredProducts} onProductSelect={handleProductSelect} />
+                </ScrollArea>
+            </div>
         </main>
         
         {/* Right Panel: Ticket */}
@@ -665,5 +655,3 @@ export default function PosPage() {
     </div>
   );
 }
-
-    
