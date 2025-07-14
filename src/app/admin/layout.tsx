@@ -11,6 +11,7 @@ import {
   Package,
   Package2,
   ShoppingCart,
+  Tablet,
   Users,
 } from 'lucide-react';
 
@@ -45,6 +46,7 @@ export default function AdminLayout({
 
   const navItems = [
     { href: '/admin/dashboard', icon: Home, label: 'Panel' },
+    { href: '/admin/pos', icon: Tablet, label: 'Punto de Venta' },
     { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: '6' },
     { href: '/admin/products', icon: Package, label: 'Productos' },
     { href: '/admin/customers', icon: Users, label: 'Clientes' },
