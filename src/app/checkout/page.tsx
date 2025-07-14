@@ -26,10 +26,10 @@ import { createOrder } from '@/ai/flows/create-order-flow';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(2, {
-    message: 'Name must be at least 2 characters.',
+    message: 'El nombre debe tener al menos 2 caracteres.',
   }),
   phone: z.string().min(10, {
-    message: 'Phone number must be at least 10 digits.',
+    message: 'El número de teléfono debe tener al menos 10 dígitos.',
   }),
 });
 
@@ -58,19 +58,19 @@ export default function CheckoutPage() {
 
       if (result.success) {
         toast({
-          title: 'Order Placed!',
-          description: 'Thank you for your purchase.',
+          title: '¡Pedido Realizado!',
+          description: 'Gracias por tu compra.',
         });
         clearCart();
         router.push(`/order-confirmation/${result.orderId}`);
       } else {
-        throw new Error('Order creation failed');
+        throw new Error('La creación del pedido falló');
       }
     } catch (error) {
-      console.error('Failed to create order:', error);
+      console.error('Error al crear el pedido:', error);
       toast({
-        title: 'Uh oh! Something went wrong.',
-        description: 'There was a problem placing your order. Please try again.',
+        title: '¡Oh no! Algo salió mal.',
+        description: 'Hubo un problema al realizar tu pedido. Por favor, intenta de nuevo.',
         variant: 'destructive',
       });
     } finally {
@@ -83,12 +83,12 @@ export default function CheckoutPage() {
       <div className="flex flex-col min-h-screen">
         <Header />
         <div className="flex-grow container mx-auto px-4 py-8 text-center">
-          <h1 className="text-3xl font-bold mb-4">Your cart is empty</h1>
+          <h1 className="text-3xl font-bold mb-4">Tu carrito está vacío</h1>
           <p className="text-muted-foreground mb-8">
-            Looks like you haven't added anything to your cart yet.
+            Parece que aún no has añadido nada a tu carrito.
           </p>
           <Button asChild>
-            <a href="/">Continue Shopping</a>
+            <a href="/">Continuar Comprando</a>
           </Button>
         </div>
       </div>
@@ -99,11 +99,11 @@ export default function CheckoutPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-3xl md:text-4xl font-headline text-center mb-10">Checkout</h1>
+        <h1 className="text-3xl md:text-4xl font-headline text-center mb-10">Finalizar Compra</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Customer Info Form */}
           <div>
-            <h2 className="text-2xl font-headline mb-6">Customer Information</h2>
+            <h2 className="text-2xl font-headline mb-6">Información del Cliente</h2>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
@@ -111,7 +111,7 @@ export default function CheckoutPage() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Full Name</FormLabel>
+                      <FormLabel>Nombre Completo</FormLabel>
                       <FormControl>
                         <Input placeholder="Jane Doe" {...field} />
                       </FormControl>
@@ -124,7 +124,7 @@ export default function CheckoutPage() {
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
+                      <FormLabel>Número de Teléfono</FormLabel>
                       <FormControl>
                         <Input placeholder="(123) 456-7890" {...field} />
                       </FormControl>
@@ -134,7 +134,7 @@ export default function CheckoutPage() {
                 />
                 <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Place Order
+                  Realizar Pedido
                 </Button>
               </form>
             </Form>
@@ -142,7 +142,7 @@ export default function CheckoutPage() {
 
           {/* Order Summary */}
           <div>
-            <h2 className="text-2xl font-headline mb-6">Order Summary</h2>
+            <h2 className="text-2xl font-headline mb-6">Resumen del Pedido</h2>
             <div className="bg-muted/30 rounded-lg p-6">
               <div className="space-y-4">
                 {items.map((item) => (
@@ -177,12 +177,12 @@ export default function CheckoutPage() {
                   <p>${total.toFixed(2)}</p>
                 </div>
                 <div className="flex justify-between">
-                  <p>Shipping</p>
-                  <p>Free</p>
+                  <p>Envío</p>
+                  <p>Gratis</p>
                 </div>
                 <div className="flex justify-between">
-                  <p>Taxes</p>
-                  <p>Calculated at next step</p>
+                  <p>Impuestos</p>
+                  <p>Calculado en el siguiente paso</p>
                 </div>
               </div>
               <Separator className="my-6" />

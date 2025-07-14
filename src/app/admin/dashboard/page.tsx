@@ -54,10 +54,10 @@ import {
 import Link from 'next/link';
 
 const salesData = [
-    { name: 'Jan', sales: 4000 },
+    { name: 'Ene', sales: 4000 },
     { name: 'Feb', sales: 3000 },
     { name: 'Mar', sales: 5000 },
-    { name: 'Apr', sales: 4500 },
+    { name: 'Abr', sales: 4500 },
     { name: 'May', sales: 6000 },
     { name: 'Jun', sales: 5500 },
     { name: 'Jul', sales: 7000 },
@@ -69,49 +69,49 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">$45,231.89</div>
             <p className="text-xs text-muted-foreground">
-              +20.1% from last month
+              +20.1% desde el mes pasado
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sales</CardTitle>
+            <CardTitle className="text-sm font-medium">Ventas</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+12,234</div>
             <p className="text-xs text-muted-foreground">
-              +19% from last month
+              +19% desde el mes pasado
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Products</CardTitle>
+            <CardTitle className="text-sm font-medium">Productos Activos</CardTitle>
             <Package2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+573</div>
             <p className="text-xs text-muted-foreground">
-              +201 since last hour
+              +201 desde la última hora
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <CardTitle className="text-sm font-medium">Pedidos Totales</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+2350</div>
             <p className="text-xs text-muted-foreground">
-              +180.1% from last month
+              +180.1% desde el mes pasado
             </p>
           </CardContent>
         </Card>
@@ -119,9 +119,9 @@ export default function Dashboard() {
       <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
-            <CardTitle>Sales Overview</CardTitle>
+            <CardTitle>Resumen de Ventas</CardTitle>
             <CardDescription>
-              An overview of sales performance.
+              Un resumen del rendimiento de las ventas.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -139,9 +139,9 @@ export default function Dashboard() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Recent Sales</CardTitle>
+            <CardTitle>Ventas Recientes</CardTitle>
             <CardDescription>
-              You made 265 sales this month.
+              Hiciste 265 ventas este mes.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-8">

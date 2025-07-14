@@ -16,15 +16,15 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, className }: ProductCardProps) {
-  const stockStatus = product.stock <= 0 ? "Out of Stock" : product.stock < 10 ? "Low Stock" : "In Stock";
+  const stockStatus = product.stock <= 0 ? "Agotado" : product.stock < 10 ? "Poco Stock" : "En Stock";
   const { addToCart } = useCart();
   const { toast } = useToast();
 
   const handleAddToCart = () => {
     addToCart(product);
     toast({
-      title: "Added to cart",
-      description: `${product.name} has been added to your cart.`,
+      title: "Añadido al carrito",
+      description: `${product.name} ha sido añadido a tu carrito.`,
     });
   }
 
@@ -42,8 +42,8 @@ export function ProductCard({ product, className }: ProductCardProps) {
         <Badge 
           className={cn(
             "absolute top-3 right-3",
-            stockStatus === "Out of Stock" && "bg-destructive text-destructive-foreground",
-            stockStatus === "Low Stock" && "bg-amber-500 text-white"
+            stockStatus === "Agotado" && "bg-destructive text-destructive-foreground",
+            stockStatus === "Poco Stock" && "bg-amber-500 text-white"
           )}
         >
           {stockStatus}
@@ -63,7 +63,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
           onClick={handleAddToCart}
         >
           <ShoppingCart className="mr-2 h-4 w-4" />
-          Add to Cart
+          Añadir al Carrito
         </Button>
       </CardFooter>
     </Card>

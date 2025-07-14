@@ -52,11 +52,11 @@ export default function AdminProductsPage() {
       <Tabs defaultValue="all">
         <div className="flex items-center">
           <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="active">Active</TabsTrigger>
-            <TabsTrigger value="draft">Draft</TabsTrigger>
+            <TabsTrigger value="all">Todos</TabsTrigger>
+            <TabsTrigger value="active">Activos</TabsTrigger>
+            <TabsTrigger value="draft">Borrador</TabsTrigger>
             <TabsTrigger value="archived" className="hidden sm:flex">
-              Archived
+              Archivados
             </TabsTrigger>
           </TabsList>
           <div className="ml-auto flex items-center gap-2">
@@ -65,30 +65,30 @@ export default function AdminProductsPage() {
                 <Button variant="outline" size="sm" className="h-8 gap-1">
                   <ListFilter className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    Filter
+                    Filtrar
                   </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Filter by</DropdownMenuLabel>
+                <DropdownMenuLabel>Filtrar por</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuCheckboxItem checked>
-                  Active
+                  Activo
                 </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>Draft</DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>Archived</DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem>Borrador</DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem>Archivado</DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button size="sm" variant="outline" className="h-8 gap-1">
               <File className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Export
+                Exportar
               </span>
             </Button>
             <Button size="sm" className="h-8 gap-1">
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Add Product
+                Añadir Producto
               </span>
             </Button>
           </div>
@@ -96,9 +96,9 @@ export default function AdminProductsPage() {
         <TabsContent value="all">
           <Card>
             <CardHeader>
-              <CardTitle>Products</CardTitle>
+              <CardTitle>Productos</CardTitle>
               <CardDescription>
-                Manage your products and view their sales performance.
+                Gestiona tus productos y mira su rendimiento de ventas.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -106,19 +106,19 @@ export default function AdminProductsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="hidden w-[100px] sm:table-cell">
-                      <span className="sr-only">Image</span>
+                      <span className="sr-only">Imagen</span>
                     </TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Price</TableHead>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Precio</TableHead>
                     <TableHead className="hidden md:table-cell">
                       Stock
                     </TableHead>
                     <TableHead className="hidden md:table-cell">
-                      Category
+                      Categoría
                     </TableHead>
                     <TableHead>
-                      <span className="sr-only">Actions</span>
+                      <span className="sr-only">Acciones</span>
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -139,7 +139,7 @@ export default function AdminProductsPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={product.stock > 0 ? "default" : "destructive"}>
-                           {product.stock > 0 ? "In Stock" : "Out of Stock"}
+                           {product.stock > 0 ? "En Stock" : "Agotado"}
                         </Badge>
                       </TableCell>
                       <TableCell>${product.price.toFixed(2)}</TableCell>
@@ -158,13 +158,13 @@ export default function AdminProductsPage() {
                               variant="ghost"
                             >
                               <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
+                              <span className="sr-only">Alternar menú</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>Edit</DropdownMenuItem>
-                            <DropdownMenuItem>Delete</DropdownMenuItem>
+                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                            <DropdownMenuItem>Editar</DropdownMenuItem>
+                            <DropdownMenuItem>Eliminar</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -175,7 +175,7 @@ export default function AdminProductsPage() {
             </CardContent>
             <CardFooter>
               <div className="text-xs text-muted-foreground">
-                Showing <strong>1-10</strong> of <strong>{products.length}</strong> products
+                Mostrando <strong>1-10</strong> de <strong>{products.length}</strong> productos
               </div>
             </CardFooter>
           </Card>

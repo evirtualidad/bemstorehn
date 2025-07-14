@@ -4,8 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { CartSheet } from '@/components/cart-sheet';
 
 export const metadata: Metadata = {
-  title: 'Cosmetica - Beauty in its Purest Form',
-  description: 'High-quality, natural ingredient cosmetics store.',
+  title: 'Cosmetica - Belleza en su Forma más Pura',
+  description: 'Tienda de cosméticos de alta calidad con ingredientes naturales.',
 };
 
 export default function RootLayout({
@@ -14,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

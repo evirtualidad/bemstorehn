@@ -29,7 +29,7 @@ export function CartSheet() {
     <Sheet open={isOpen} onOpenChange={toggleCart}>
       <SheetContent className="flex w-full flex-col pr-0 sm:max-w-lg">
         <SheetHeader className="px-4">
-          <SheetTitle>Shopping Cart ({items.length})</SheetTitle>
+          <SheetTitle>Carrito de Compras ({items.length})</SheetTitle>
         </SheetHeader>
         <Separator />
 
@@ -91,15 +91,15 @@ export function CartSheet() {
                 <p>${total.toFixed(2)}</p>
               </div>
               <Button asChild className="mt-4 w-full" size="lg">
-                <Link href="/checkout" onClick={toggleCart}>Proceed to Checkout</Link>
+                <Link href="/checkout" onClick={toggleCart}>Finalizar Compra</Link>
               </Button>
             </div>
           </>
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-4">
-            <p className="text-lg text-muted-foreground">Your cart is empty.</p>
+            <p className="text-lg text-muted-foreground">Tu carrito está vacío.</p>
             <Button onClick={toggleCart} variant="outline">
-              Continue Shopping
+              Continuar Comprando
             </Button>
           </div>
         )}

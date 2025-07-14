@@ -44,11 +44,11 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   const navItems = [
-    { href: '/admin/dashboard', icon: Home, label: 'Dashboard' },
-    { href: '/admin/orders', icon: ShoppingCart, label: 'Orders', badge: '6' },
-    { href: '/admin/products', icon: Package, label: 'Products' },
-    { href: '/admin/customers', icon: Users, label: 'Customers' },
-    { href: '/admin/analytics', icon: LineChart, label: 'Analytics' },
+    { href: '/admin/dashboard', icon: Home, label: 'Panel' },
+    { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: '6' },
+    { href: '/admin/products', icon: Package, label: 'Productos' },
+    { href: '/admin/customers', icon: Users, label: 'Clientes' },
+    { href: '/admin/analytics', icon: LineChart, label: 'Analíticas' },
   ];
 
   return (
@@ -58,11 +58,11 @@ export default function AdminLayout({
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
               <Package2 className="h-6 w-6" />
-              <span className="">Cosmetica Admin</span>
+              <span className="">Admin Cosmetica</span>
             </Link>
             <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
               <Bell className="h-4 w-4" />
-              <span className="sr-only">Toggle notifications</span>
+              <span className="sr-only">Alternar notificaciones</span>
             </Button>
           </div>
           <div className="flex-1">
@@ -90,15 +90,14 @@ export default function AdminLayout({
           <div className="mt-auto p-4">
             <Card>
               <CardHeader className="p-2 pt-0 md:p-4">
-                <CardTitle>Upgrade to Pro</CardTitle>
+                <CardTitle>Actualizar a Pro</CardTitle>
                 <CardDescription>
-                  Unlock all features and get unlimited access to our support
-                  team.
+                  Desbloquea todas las funciones y obtén acceso ilimitado a nuestro equipo de soporte.
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
                 <Button size="sm" className="w-full">
-                  Upgrade
+                  Actualizar
                 </Button>
               </CardContent>
             </Card>
@@ -115,7 +114,7 @@ export default function AdminLayout({
                 className="shrink-0 md:hidden"
               >
                 <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle navigation menu</span>
+                <span className="sr-only">Alternar menú de navegación</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col">
@@ -125,7 +124,7 @@ export default function AdminLayout({
                   className="flex items-center gap-2 text-lg font-semibold"
                 >
                   <Package2 className="h-6 w-6" />
-                  <span className="sr-only">Cosmetica Admin</span>
+                  <span className="sr-only">Admin Cosmetica</span>
                 </Link>
                 {navItems.map((item) => (
                   <Link
@@ -149,15 +148,14 @@ export default function AdminLayout({
               <div className="mt-auto">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Upgrade to Pro</CardTitle>
+                    <CardTitle>Actualizar a Pro</CardTitle>
                     <CardDescription>
-                      Unlock all features and get unlimited access to our
-                      support team.
+                      Desbloquea todas las funciones y obtén acceso ilimitado a nuestro equipo de soporte.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Button size="sm" className="w-full">
-                      Upgrade
+                      Actualizar
                     </Button>
                   </CardContent>
                 </Card>
@@ -171,16 +169,16 @@ export default function AdminLayout({
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
                 <CircleUser className="h-5 w-5" />
-                <span className="sr-only">Toggle user menu</span>
+                <span className="sr-only">Alternar menú de usuario</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Support</DropdownMenuItem>
+              <DropdownMenuItem>Configuración</DropdownMenuItem>
+              <DropdownMenuItem>Soporte</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Logout</DropdownMenuItem>
+              <DropdownMenuItem>Cerrar Sesión</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
