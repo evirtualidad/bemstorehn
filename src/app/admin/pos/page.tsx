@@ -57,7 +57,7 @@ const checkoutFormSchema = z
       required_error: 'Debes seleccionar una forma de pago.',
     }),
     paymentDueDate: z.date().optional(),
-    cashAmount: z.coerce.number().optional(),
+    cashAmount: z.string().optional(),
     paymentReference: z.string().optional(),
     total: z.number().optional(),
   })
@@ -76,7 +76,7 @@ const checkoutFormSchema = z
   .refine(
     (data) => {
       if (data.paymentMethod === 'efectivo' && data.cashAmount && data.total) {
-        return data.cashAmount >= data.total;
+        return Number(data.cashAmount) >= data.total;
       }
       return true;
     },
@@ -360,7 +360,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                             <FormItem>
                                 <FormLabel>Efectivo Recibido</FormLabel>
                                 <FormControl>
-                                    <Input type="number" placeholder="Ej: 50.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} className="h-11" />
+                                    <Input type="number" placeholder="Ej: 50.00" {...field} className="h-11" />
                                 </FormControl>
                                 <FormMessage />
                                 {change > 0 && (
@@ -467,7 +467,7 @@ export default function PosPage() {
       phone: '',
       paymentMethod: 'efectivo',
       total,
-      cashAmount: undefined,
+      cashAmount: '',
       paymentReference: '',
       paymentDueDate: undefined,
     },
@@ -480,11 +480,15 @@ export default function PosPage() {
   const { paymentMethod, cashAmount } = form.watch();
 
   const change = React.useMemo(() => {
-    if (paymentMethod === 'efectivo' && cashAmount && cashAmount > total) {
-      return cashAmount - total;
+    if (paymentMethod === 'efectivo' && cashAmount) {
+      const cash = parseFloat(cashAmount);
+      if (!isNaN(cash) && cash > total) {
+        return cash - total;
+      }
     }
     return 0;
   }, [paymentMethod, cashAmount, total]);
+
 
   const handleProductSelect = (product: Product) => {
     if(product.stock <= 0) {
@@ -548,7 +552,7 @@ export default function PosPage() {
 
   const clearCartAndForm = () => {
     setCart([]);
-    form.reset({ name: '', phone: '', paymentMethod: 'efectivo', paymentDueDate: undefined, cashAmount: undefined, paymentReference: '' });
+    form.reset({ name: '', phone: '', paymentMethod: 'efectivo', paymentDueDate: undefined, cashAmount: '', paymentReference: '' });
   }
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
@@ -569,7 +573,7 @@ export default function PosPage() {
         total: total,
         paymentMethod: values.paymentMethod,
         paymentDueDate: values.paymentDueDate ? values.paymentDueDate.toISOString() : undefined,
-        cashAmount: values.cashAmount,
+        cashAmount: values.cashAmount ? parseFloat(values.cashAmount) : undefined,
         paymentReference: values.paymentReference,
       });
 
