@@ -50,23 +50,23 @@ export default function AdminLayout({
       <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
         <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
           <Link
-            href="#"
+            href="/admin/dashboard"
             className="flex items-center gap-2 text-lg font-semibold md:text-base"
           >
             <Package2 className="h-6 w-6" />
             <span className="sr-only">Admin Cosmetica</span>
           </Link>
           {navItems.map((item) => (
-             <Link
+             <Button 
                 key={item.label}
-                href={item.href}
-                className={cn(
-                  'transition-colors hover:text-foreground',
-                  pathname === item.href ? 'text-foreground' : 'text-muted-foreground'
-                )}
+                asChild
+                variant={pathname === item.href ? 'secondary' : 'ghost'}
+                className="w-full justify-start"
               >
-                {item.label}
-              </Link>
+                 <Link href={item.href}>
+                  {item.label}
+                </Link>
+              </Button>
           ))}
         </nav>
         <Sheet>
@@ -81,6 +81,9 @@ export default function AdminLayout({
             </Button>
           </SheetTrigger>
           <SheetContent side="left">
+            <SheetHeader>
+                <SheetTitle className="sr-only">Menú Principal</SheetTitle>
+            </SheetHeader>
             <nav className="grid gap-6 text-lg font-medium">
               <Link
                 href="#"
