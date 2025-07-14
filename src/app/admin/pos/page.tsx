@@ -736,7 +736,7 @@ export default function PosPage() {
                 <div className="lg:hidden fixed bottom-4 right-4 z-20">
                     <Button
                         size="lg"
-                        className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 text-primary bg-primary-light hover:bg-primary-light/90"
+                        className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 text-primary bg-primary-light hover:bg-primary-light/90 border-4 border-background"
                         onClick={() => setIsTicketVisible(true)}
                     >
                         <Receipt className="h-7 w-7" />
