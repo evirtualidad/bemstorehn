@@ -10,9 +10,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
   Form,
@@ -29,9 +26,8 @@ import { useProductsStore } from '@/hooks/use-products';
 import { createOrder } from '@/ai/flows/create-order-flow';
 import type { Product } from '@/lib/products';
 import Image from 'next/image';
-import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard } from 'lucide-react';
+import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard, Banknote, Landmark } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
@@ -103,7 +99,7 @@ function CategoryList({
     <div className="flex items-center gap-2 flex-wrap">
       <Button
         variant={selectedCategory === null ? 'secondary' : 'ghost'}
-        className="justify-start"
+        className="justify-start h-11 px-4"
         onClick={() => onSelectCategory(null)}
       >
         <Tag className="mr-2 h-4 w-4" />
@@ -113,7 +109,7 @@ function CategoryList({
         <Button
           key={category}
           variant={selectedCategory === category ? 'secondary' : 'ghost'}
-          className="justify-start"
+          className="justify-start h-11 px-4"
           onClick={() => onSelectCategory(category)}
         >
           {category}
@@ -136,7 +132,7 @@ function ProductGrid({
         <Card
           key={product.id}
           onClick={() => onProductSelect(product)}
-          className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden"
+          className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden group"
         >
           <CardContent className="p-0">
             <div className="relative aspect-square">
@@ -144,12 +140,12 @@ function ProductGrid({
                 src={product.image || 'https://placehold.co/200x200.png'}
                 alt={product.name}
                 fill
-                className="object-cover"
+                className="object-cover group-hover:scale-105 transition-transform"
               />
             </div>
             <div className="p-3">
               <h3 className="font-semibold text-sm truncate">{product.name}</h3>
-              <p className="text-sm text-muted-foreground">${product.price.toFixed(2)}</p>
+              <p className="text-lg font-bold text-muted-foreground">${product.price.toFixed(2)}</p>
             </div>
           </CardContent>
         </Card>
@@ -204,19 +200,19 @@ function TicketView({
                 <div className="flex-1">
                   <p className="font-semibold text-sm leading-tight">{item.name}</p>
                   <p className="text-xs text-muted-foreground">${item.price.toFixed(2)}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(item.id, -1)}>
-                      <Minus className="h-3 w-3" />
+                  <div className="flex items-center gap-2 mt-2">
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, -1)}>
+                      <Minus className="h-4 w-4" />
                     </Button>
-                    <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
-                    <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onUpdateQuantity(item.id, 1)}>
-                      <Plus className="h-3 w-3" />
+                    <span className="w-8 text-center text-md font-bold">{item.quantity}</span>
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, 1)}>
+                      <Plus className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
                 <p className="w-16 text-right font-medium text-sm">${(item.price * item.quantity).toFixed(2)}</p>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onRemoveFromCart(item.id)}>
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-5 w-5" />
                 </Button>
               </div>
             ))
@@ -230,7 +226,7 @@ function TicketView({
         </div>
         <Button
           size="lg"
-          className="w-full"
+          className="w-full h-12 text-lg"
           onClick={onCheckout}
           disabled={cart.length === 0}
         >
@@ -245,16 +241,22 @@ function TicketView({
     return <div className="bg-muted/30 h-full flex flex-col">{ticketContent}</div>;
   }
 
-  return <aside className="hidden lg:flex flex-col border-l">{ticketContent}</aside>;
+  return <aside className="hidden lg:flex flex-col border-l bg-muted/20">{ticketContent}</aside>;
 }
 
+const paymentMethods = [
+    { value: 'efectivo', label: 'Efectivo', icon: Banknote },
+    { value: 'tarjeta', label: 'Tarjeta', icon: CreditCard },
+    { value: 'transferencia', label: 'Transferencia', icon: Landmark },
+    { value: 'credito', label: 'Crédito', icon: Receipt },
+] as const;
 
 function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, change, isInDialog }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, cart: PosCartItem[], total: number, change: number, isInDialog?: boolean }) {
     const paymentMethod = form.watch('paymentMethod');
 
     const CancelButton = () => {
         const button = (
-            <Button type="button" variant="outline" className='w-full sm:w-auto' onClick={onCancel} disabled={isSubmitting}>
+            <Button type="button" variant="outline" size="lg" className='w-full sm:w-auto' onClick={onCancel} disabled={isSubmitting}>
                 Cancelar
             </Button>
         );
@@ -268,7 +270,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                     control={form.control}
                     name="name"
@@ -276,7 +278,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                         <FormItem>
                             <FormLabel>Nombre del Cliente</FormLabel>
                             <FormControl>
-                                <Input placeholder="Nombre completo" {...field} />
+                                <Input placeholder="Nombre completo" {...field} className="h-11"/>
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -289,7 +291,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                         <FormItem>
                             <FormLabel>Teléfono (Opcional)</FormLabel>
                             <FormControl>
-                                <Input placeholder="Número de teléfono" {...field} />
+                                <Input placeholder="Número de teléfono" {...field} className="h-11"/>
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -302,28 +304,20 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                         <FormItem className="space-y-3">
                             <FormLabel>Forma de Pago</FormLabel>
                             <FormControl>
-                                <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    className="flex flex-col space-y-1"
-                                >
-                                    <FormItem className="flex items-center space-x-3 space-y-0">
-                                        <FormControl><RadioGroupItem value="efectivo" /></FormControl>
-                                        <FormLabel className="font-normal">Efectivo</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-3 space-y-0">
-                                        <FormControl><RadioGroupItem value="tarjeta" /></FormControl>
-                                        <FormLabel className="font-normal">Tarjeta de Débito/Crédito</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-3 space-y-0">
-                                        <FormControl><RadioGroupItem value="transferencia" /></FormControl>
-                                        <FormLabel className="font-normal">Transferencia</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-3 space-y-0">
-                                        <FormControl><RadioGroupItem value="credito" /></FormControl>
-                                        <FormLabel className="font-normal">Al Crédito</FormLabel>
-                                    </FormItem>
-                                </RadioGroup>
+                                <div className='grid grid-cols-2 gap-3'>
+                                   {paymentMethods.map(method => (
+                                     <Button
+                                         key={method.value}
+                                         type="button"
+                                         variant={field.value === method.value ? 'secondary' : 'outline'}
+                                         className="h-16 text-md flex items-center justify-start gap-3"
+                                         onClick={() => field.onChange(method.value)}
+                                     >
+                                         <method.icon className="h-6 w-6"/>
+                                         {method.label}
+                                     </Button>
+                                   ))}
+                                </div>
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -337,7 +331,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                             <FormItem>
                                 <FormLabel>Efectivo Recibido</FormLabel>
                                 <FormControl>
-                                    <Input type="number" placeholder="Ej: 50.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} />
+                                    <Input type="number" placeholder="Ej: 50.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} className="h-11" />
                                 </FormControl>
                                 <FormMessage />
                                 {change > 0 && (
@@ -355,7 +349,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                             <FormItem>
                                 <FormLabel>Referencia de Pago</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Ej: 123456" {...field} />
+                                    <Input placeholder="Ej: 123456" {...field} className="h-11" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -375,7 +369,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                                             <Button
                                                 variant={'outline'}
                                                 className={cn(
-                                                    'w-full pl-3 text-left font-normal',
+                                                    'w-full pl-3 text-left font-normal h-11',
                                                     !field.value && 'text-muted-foreground'
                                                 )}
                                             >
@@ -408,7 +402,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                 )}
                 <DialogFooter className='pt-4 sm:justify-between'>
                     <CancelButton />
-                    <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting || cart.length === 0}>
+                    <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={isSubmitting || cart.length === 0}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Crear Pedido
                     </Button>
@@ -566,27 +560,27 @@ export default function PosPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] h-screen max-h-screen overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] h-screen max-h-screen overflow-hidden bg-muted/40">
         
         {/* Main Content: Product Selection */}
-        <main className="flex flex-col h-screen lg:h-auto">
+        <main className="flex flex-col h-screen lg:h-auto bg-background rounded-lg lg:m-2">
             <header className="p-4 border-b flex flex-wrap items-center gap-4">
                 <h1 className="text-xl font-bold flex-1">Punto de Venta</h1>
                  <div className="w-full sm:w-auto sm:flex-initial">
                     <ProductSearch onProductSelect={handleProductSelect} />
                  </div>
             </header>
-            <div className="flex-grow p-4 space-y-4">
+            <div className="p-4 space-y-4 flex-shrink-0">
                  <CategoryList
                     categories={categories}
                     selectedCategory={selectedCategory}
                     onSelectCategory={setSelectedCategory}
                 />
                 <Separator />
-                <ScrollArea className="h-[calc(100vh-200px)] lg:h-auto">
-                    <ProductGrid products={filteredProducts} onProductSelect={handleProductSelect} />
-                </ScrollArea>
             </div>
+             <ScrollArea className="flex-1 px-4">
+                <ProductGrid products={filteredProducts} onProductSelect={handleProductSelect} />
+            </ScrollArea>
              {/* Mobile-only Ticket View */}
             <div className="lg:hidden flex-shrink-0 h-[45vh] flex flex-col border-t">
                  <TicketView
@@ -614,9 +608,9 @@ export default function PosPage() {
 
         {/* Checkout Dialog */}
         <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Cliente y Pago</DialogTitle>
+                    <DialogTitle>Finalizar Pedido</DialogTitle>
                 </DialogHeader>
                 <ScrollArea className="max-h-[70vh] p-1">
                     <div className="p-4">
@@ -636,5 +630,3 @@ export default function PosPage() {
     </div>
   );
 }
-
-    
