@@ -6,6 +6,8 @@ export interface Product {
   price: number;
   description: string;
   category: 'Skincare' | 'Makeup' | 'Haircare';
+  stock: number;
+  featured?: boolean;
 }
 
 export const products: Product[] = [
@@ -17,6 +19,8 @@ export const products: Product[] = [
     price: 45.00,
     description: 'A vitamin C serum for a radiant and even skin tone. Fights free radicals and boosts collagen production.',
     category: 'Skincare',
+    stock: 25,
+    featured: true,
   },
   {
     id: 'prod_002',
@@ -26,6 +30,7 @@ export const products: Product[] = [
     price: 38.50,
     description: 'A lightweight, hyaluronic acid-based moisturizer for all-day hydration without a greasy feel.',
     category: 'Skincare',
+    stock: 50,
   },
   {
     id: 'prod_003',
@@ -35,6 +40,8 @@ export const products: Product[] = [
     price: 24.00,
     description: 'A long-lasting, highly pigmented matte lipstick in a classic red shade. Enriched with vitamin E.',
     category: 'Makeup',
+    stock: 8,
+    featured: true,
   },
   {
     id: 'prod_004',
@@ -44,6 +51,7 @@ export const products: Product[] = [
     price: 52.00,
     description: 'A medium-coverage foundation that provides a natural, luminous finish. Available in 20 shades.',
     category: 'Makeup',
+    stock: 30,
   },
   {
     id: 'prod_005',
@@ -53,6 +61,8 @@ export const products: Product[] = [
     price: 30.00,
     description: 'Nourishing argan oil treatment to tame frizz, add shine, and protect hair from heat damage.',
     category: 'Haircare',
+    stock: 0,
+    featured: true,
   },
   {
     id: 'prod_006',
@@ -62,6 +72,7 @@ export const products: Product[] = [
     price: 22.00,
     description: 'Absorbs oil and adds instant volume and texture, leaving hair feeling fresh and clean.',
     category: 'Haircare',
+    stock: 15,
   },
   {
     id: 'prod_007',
@@ -71,6 +82,7 @@ export const products: Product[] = [
     price: 28.00,
     description: 'A deep-cleansing clay mask with activated charcoal to detoxify pores and refine skin texture.',
     category: 'Skincare',
+    stock: 40,
   },
   {
     id: 'prod_008',
@@ -80,5 +92,6 @@ export const products: Product[] = [
     price: 26.00,
     description: 'A clump-free, waterproof mascara that lengthens and defines lashes for a dramatic look.',
     category: 'Makeup',
+    stock: 60,
   },
 ];

@@ -12,9 +12,11 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, className }: ProductCardProps) {
+  const stockStatus = product.stock <= 0 ? "Out of Stock" : product.stock < 10 ? "Low Stock" : "In Stock";
+
   return (
-    <Card className={cn("flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-in fade-in-0 slide-in-from-bottom-5 ease-in-out", className)}>
-      <CardHeader className="p-0 border-b">
+    <Card className={cn("flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-in fade-in-0 slide-in-from-bottom-5 ease-in-out group", className)}>
+      <CardHeader className="p-0 border-b relative">
         <Image
           src={product.image}
           alt={product.name}
@@ -23,17 +25,30 @@ export function ProductCard({ product, className }: ProductCardProps) {
           className="w-full h-auto object-cover aspect-square"
           data-ai-hint={product.aiHint}
         />
+        <Badge 
+          className={cn(
+            "absolute top-3 right-3",
+            stockStatus === "Out of Stock" && "bg-destructive text-destructive-foreground",
+            stockStatus === "Low Stock" && "bg-amber-500 text-white"
+          )}
+        >
+          {stockStatus}
+        </Badge>
       </CardHeader>
       <CardContent className="p-4 flex-grow flex flex-col">
         <Badge variant="outline" className="mb-2 w-fit font-body">{product.category}</Badge>
-        <h4 className="font-headline text-xl leading-tight flex-grow">{product.name}</h4>
-        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{product.description}</p>
+        <h4 className="font-headline text-xl leading-tight flex-grow group-hover:text-primary transition-colors">{product.name}</h4>
+        <p className="text-sm text-muted-foreground mt-2 line-clamp-2 font-body">{product.description}</p>
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex items-center justify-between">
-        <p className="text-2xl font-bold font-headline text-primary">${product.price.toFixed(2)}</p>
-        <Button variant="outline" size="icon">
-          <ShoppingCart />
-          <span className="sr-only">Add to cart</span>
+      <CardFooter className="p-4 pt-0 flex flex-col items-start gap-4">
+        <p className="text-2xl font-bold font-headline text-foreground">${product.price.toFixed(2)}</p>
+        <Button 
+          variant="outline" 
+          className="w-full font-body"
+          disabled={product.stock <= 0}
+        >
+          <ShoppingCart className="mr-2 h-4 w-4" />
+          Add to Cart
         </Button>
       </CardFooter>
     </Card>

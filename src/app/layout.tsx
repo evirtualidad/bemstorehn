@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'Cosmetica Catalog',
-  description: 'AI-powered cosmetics store',
+  title: 'Cosmetica - Beauty in its Purest Form',
+  description: 'High-quality, natural ingredient cosmetics store.',
 };
 
 export default function RootLayout({
