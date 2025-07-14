@@ -10,6 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { products as allProducts, Product } from '@/lib/products';
 
 const ProductSchema = z.object({
   id: z.string(),
@@ -44,6 +45,10 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderO
   return createOrderFlow(input);
 }
 
+// This is a local, in-memory representation of our product stock.
+// In a real application, this would be a database.
+let localProductStock: Product[] = JSON.parse(JSON.stringify(allProducts));
+
 const createOrderFlow = ai.defineFlow(
   {
     name: 'createOrderFlow',
@@ -60,10 +65,18 @@ const createOrderFlow = ai.defineFlow(
       console.log("Customer:", input.customer);
       console.log("Items:", input.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })));
       console.log("Total:", input.total);
+      
+      // Simulate updating stock
+      console.log("--- UPDATING STOCK ---");
+      input.items.forEach(item => {
+        const productInDb = localProductStock.find(p => p.id === item.id);
+        if (productInDb) {
+          const oldStock = productInDb.stock;
+          productInDb.stock -= item.quantity;
+          console.log(`Product: ${productInDb.name}, Old Stock: ${oldStock}, New Stock: ${productInDb.stock}`);
+        }
+      });
       console.log("--------------------------");
-
-      // In a real application, you would also decrease the stock for each product here.
-      // We will tackle this in a future step.
 
       return {
         orderId: orderId,
