@@ -16,6 +16,7 @@ import {
   Tag,
   Users,
   Archive,
+  Coins,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import * as React from 'react';
+import { useOrdersStore } from '@/hooks/use-orders';
 
 function CurrencySelector() {
     const { currency, currencies, setCurrency } = useCurrencyStore();
@@ -67,12 +69,16 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  // This is a simple trick to trigger hydration of the orders store
+  // so the mock data is loaded when any admin page is visited.
+  useOrdersStore();
 
   const navItems = [
     { href: '/admin/dashboard', icon: Home, label: 'Panel' },
     { href: '/admin/pos', icon: Tablet, label: 'Punto de Venta' },
     { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: '6' },
     { href: '/admin/inventory', icon: Archive, label: 'Inventario' },
+    { href: '/admin/finance', icon: Coins, label: 'Finanzas' },
     { href: '/admin/customers', icon: Users, label: 'Clientes' },
     { href: '/admin/analytics', icon: LineChart, label: 'Analíticas' },
     { href: '/admin/banners', icon: ImageIcon, label: 'Banners' },

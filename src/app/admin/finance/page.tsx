@@ -1,0 +1,391 @@
+
+'use client';
+
+import * as React from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useOrdersStore } from '@/hooks/use-orders';
+import { useCurrencyStore } from '@/hooks/use-currency';
+import { formatCurrency, cn } from '@/lib/utils';
+import {
+  Coins,
+  CreditCard,
+  DollarSign,
+  Landmark,
+  Banknote,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  ArrowUpRight,
+} from 'lucide-react';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from 'recharts';
+import { format, differenceInDays, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+
+
+const paymentMethodIcons = {
+  efectivo: <Banknote className="h-4 w-4 text-muted-foreground" />,
+  tarjeta: <CreditCard className="h-4 w-4 text-muted-foreground" />,
+  transferencia: <Landmark className="h-4 w-4 text-muted-foreground" />,
+  credito: <Coins className="h-4 w-4 text-muted-foreground" />,
+};
+
+const paymentMethodLabels = {
+  efectivo: 'Efectivo',
+  tarjeta: 'Tarjeta',
+  transferencia: 'Transferencia',
+  credito: 'Crédito',
+};
+
+
+function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCode: string }) {
+  const summary = React.useMemo(() => {
+    const totalRevenue = orders.reduce((acc, order) => acc + order.total, 0);
+    const accountsReceivable = orders
+      .filter((o) => o.paymentMethod === 'credito' && o.status === 'pending')
+      .reduce((acc, order) => acc + order.total, 0);
+    const paidRevenue = totalRevenue - accountsReceivable;
+    
+    const revenueByMethod = orders.reduce((acc, order) => {
+      const method = order.paymentMethod;
+      if (!acc[method]) {
+        acc[method] = { name: paymentMethodLabels[method], value: 0 };
+      }
+      acc[method].value += order.total;
+      return acc;
+    }, {} as Record<string, {name: string, value: number}>);
+    
+    const salesByMonth = orders.reduce((acc, order) => {
+        const month = format(parseISO(order.date), 'MMM', { locale: es });
+        if(!acc[month]){
+            acc[month] = { name: month, Ingresos: 0 };
+        }
+        acc[month].Ingresos += order.total;
+        return acc;
+    }, {} as Record<string, { name: string, Ingresos: number}>)
+
+    return {
+      totalRevenue,
+      accountsReceivable,
+      paidRevenue,
+      revenueByMethod: Object.values(revenueByMethod),
+      salesByMonth: Object.values(salesByMonth),
+    };
+  }, [orders]);
+
+  const PIE_COLORS = [
+    'hsl(var(--chart-1))',
+    'hsl(var(--chart-2))',
+    'hsl(var(--chart-3))',
+    'hsl(var(--chart-4))',
+  ];
+
+  return (
+    <div className="space-y-8">
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(summary.totalRevenue, currencyCode)}</div>
+            <p className="text-xs text-muted-foreground">
+              Total de ventas generadas
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ingresos Pagados</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(summary.paidRevenue, currencyCode)}</div>
+            <p className="text-xs text-muted-foreground">
+              Dinero que ya ha ingresado
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Cuentas por Cobrar</CardTitle>
+            <Clock className="h-4 w-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(summary.accountsReceivable, currencyCode)}</div>
+            <p className="text-xs text-muted-foreground">
+              Pagos a crédito pendientes
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+       <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Ingresos por Mes</CardTitle>
+            <CardDescription>Un resumen de las ventas mensuales.</CardDescription>
+          </CardHeader>
+          <CardContent>
+             <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={summary.salesByMonth}>
+                <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value, currencyCode, 0)} />
+                <Tooltip formatter={(value: number) => [formatCurrency(value, currencyCode), "Ingresos"]} />
+                <Bar dataKey="Ingresos" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Ingresos por Método de Pago</CardTitle>
+            <CardDescription>Distribución de ingresos por cada forma de pago.</CardDescription>
+          </CardHeader>
+          <CardContent>
+             <ResponsiveContainer width="100%" height={300}>
+               <PieChart>
+                 <Tooltip formatter={(value: number) => formatCurrency(value, currencyCode)} />
+                 <Pie
+                    data={summary.revenueByMethod}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                 >
+                    {summary.revenueByMethod.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                 </Pie>
+                 <Legend />
+               </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function AccountsReceivable({ orders, currencyCode, markAsPaid }: { orders: any[], currencyCode: string, markAsPaid: (orderId: string) => void }) {
+  const { toast } = useToast();
+  const creditOrders = orders.filter(o => o.paymentMethod === 'credito' && o.status === 'pending');
+
+  const handleMarkAsPaid = (orderId: string) => {
+    markAsPaid(orderId);
+    toast({
+        title: '¡Pago Registrado!',
+        description: 'La cuenta ha sido marcada como pagada.',
+    });
+  }
+
+  const getStatus = (dueDate: string) => {
+    const days = differenceInDays(new Date(), parseISO(dueDate));
+    if (days > 0) return { label: `${days} días vencido`, color: 'text-red-500', icon: <AlertCircle className="h-4 w-4 mr-2" /> };
+    if (days >= -7) return { label: `Vence en ${-days} días`, color: 'text-amber-500', icon: <Clock className="h-4 w-4 mr-2" /> };
+    return { label: 'Pendiente', color: 'text-muted-foreground', icon: <Clock className="h-4 w-4 mr-2" /> };
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Cuentas por Cobrar</CardTitle>
+        <CardDescription>
+          Gestiona y da seguimiento a todos los pagos pendientes de ventas a crédito.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Cliente</TableHead>
+              <TableHead>Fecha de Venta</TableHead>
+              <TableHead>Fecha de Vencimiento</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Monto Pendiente</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {creditOrders.length > 0 ? creditOrders.map(order => {
+                const status = getStatus(order.paymentDueDate);
+                return (
+                    <TableRow key={order.id}>
+                        <TableCell>
+                            <div className="font-medium">{order.customer.name}</div>
+                            <div className="text-sm text-muted-foreground">{order.customer.phone}</div>
+                        </TableCell>
+                        <TableCell>{format(parseISO(order.date), 'd MMM, yyyy', { locale: es })}</TableCell>
+                        <TableCell>{format(parseISO(order.paymentDueDate), 'd MMM, yyyy', { locale: es })}</TableCell>
+                        <TableCell>
+                            <div className={cn("flex items-center", status.color)}>
+                                {status.icon}
+                                {status.label}
+                            </div>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(order.total, currencyCode)}</TableCell>
+                        <TableCell className="text-right">
+                           <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="outline" size="sm">Registrar Pago</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Confirmar Pago</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        ¿Estás seguro de que deseas marcar esta cuenta de <span className='font-bold'>{order.customer.name}</span> por un monto de <span className='font-bold'>{formatCurrency(order.total, currencyCode)}</span> como pagada? Esta acción no se puede deshacer.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleMarkAsPaid(order.id)}>Sí, marcar como pagada</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </TableCell>
+                    </TableRow>
+                )
+            }) : (
+                <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                        No hay cuentas por cobrar pendientes.
+                    </TableCell>
+                </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  )
+}
+
+function Transactions({ orders, currencyCode }: { orders: any[], currencyCode: string }) {
+    return (
+        <Card>
+            <CardHeader className="px-7">
+                <CardTitle>Transacciones</CardTitle>
+                <CardDescription>Una lista de todos los pedidos realizados en tu tienda.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Método de Pago</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead className="text-right">Monto</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {orders.map(order => (
+                        <TableRow key={order.id}>
+                            <TableCell>
+                                <div className="font-medium">{order.customer.name}</div>
+                                <div className="hidden text-sm text-muted-foreground md:inline">
+                                    {order.id}
+                                </div>
+                            </TableCell>
+                             <TableCell>
+                                <div className="flex items-center gap-2">
+                                    {paymentMethodIcons[order.paymentMethod as keyof typeof paymentMethodIcons]}
+                                    {paymentMethodLabels[order.paymentMethod as keyof typeof paymentMethodLabels]}
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <Badge variant={order.status === 'paid' ? 'default' : 'secondary'} className={cn(order.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800')}>
+                                    {order.status === 'paid' ? 'Pagado' : 'Pendiente'}
+                                </Badge>
+                            </TableCell>
+                            <TableCell>{format(parseISO(order.date), 'd MMM, yyyy')}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(order.total, currencyCode)}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    )
+}
+
+export default function FinancePage() {
+  const { orders, markOrderAsPaid } = useOrdersStore();
+  const { currency } = useCurrencyStore();
+
+  return (
+    <div className="flex min-h-screen w-full flex-col">
+      <div className="flex flex-col sm:gap-4">
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 mb-4">
+          <h1 className="text-2xl font-bold">Finanzas</h1>
+        </header>
+
+        <main className="flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+            <Tabs defaultValue="summary">
+                <TabsList>
+                    <TabsTrigger value="summary">Resumen</TabsTrigger>
+                    <TabsTrigger value="accounts-receivable">Cuentas por Cobrar</TabsTrigger>
+                    <TabsTrigger value="transactions">Transacciones</TabsTrigger>
+                </TabsList>
+                <TabsContent value="summary" className="mt-6">
+                    <FinancialSummary orders={orders} currencyCode={currency.code} />
+                </TabsContent>
+                <TabsContent value="accounts-receivable" className="mt-6">
+                    <AccountsReceivable orders={orders} currencyCode={currency.code} markAsPaid={markOrderAsPaid} />
+                </TabsContent>
+                 <TabsContent value="transactions" className="mt-6">
+                    <Transactions orders={orders} currencyCode={currency.code} />
+                </TabsContent>
+            </Tabs>
+        </main>
+      </div>
+    </div>
+  );
+}
