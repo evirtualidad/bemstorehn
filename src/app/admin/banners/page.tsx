@@ -45,7 +45,7 @@ import { useBannersStore, type Banner } from '@/hooks/use-banners';
 import { BannerForm, bannerFormSchema } from '@/components/banner-form';
 import { z } from 'zod';
 
-export default function BannersPage() {
+export function BannersManager() {
   const { banners, addBanner, updateBanner, deleteBanner } = useBannersStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingBanner, setEditingBanner] = React.useState<Banner | null>(null);
@@ -96,8 +96,8 @@ export default function BannersPage() {
   const onSubmit = editingBanner ? handleEditBanner : handleAddBanner;
 
   return (
-    <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-      <div className="flex items-center">
+    <>
+      <div className="flex items-center mb-4">
         <div className="ml-auto flex items-center gap-2">
           <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
             <DialogTrigger asChild>
@@ -194,6 +194,10 @@ export default function BannersPage() {
           </div>
         </CardFooter>
       </Card>
-    </main>
+    </>
   );
+}
+
+export default function BannersPage() {
+    return <BannersManager />;
 }

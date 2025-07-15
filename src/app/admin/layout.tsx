@@ -85,7 +85,6 @@ export default function AdminLayout({
     { href: '/admin/finance', icon: Coins, label: 'Finanzas' },
     { href: '/admin/customers', icon: Users, label: 'Clientes' },
     { href: '/admin/analytics', icon: LineChart, label: 'Analíticas' },
-    { href: '/admin/banners', icon: ImageIcon, label: 'Banners' },
     { href: '/admin/settings', icon: Settings, label: 'Ajustes' },
   ];
 

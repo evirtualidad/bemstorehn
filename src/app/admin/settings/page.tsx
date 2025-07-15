@@ -13,6 +13,8 @@ import { useSettingsStore } from '@/hooks/use-settings-store';
 import { useToast } from '@/hooks/use-toast';
 import { Percent, DollarSign, Store } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BannersManager } from '../banners/page';
 
 const settingsFormSchema = z.object({
   taxRate: z.coerce.number().min(0, 'La tasa debe ser 0 o mayor.').max(100, 'La tasa no puede exceder 100.'),
@@ -21,7 +23,7 @@ const settingsFormSchema = z.object({
   pickupAddress: z.string().min(10, 'La dirección debe tener al menos 10 caracteres.'),
 });
 
-export default function SettingsPage() {
+function GeneralSettings() {
   const { taxRate, setTaxRate, shippingLocalCost, setShippingLocalCost, shippingNationalCost, setShippingNationalCost, pickupAddress, setPickupAddress } = useSettingsStore();
   const { toast } = useToast();
 
@@ -56,10 +58,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <main className="grid flex-1 items-start gap-8">
-      <h1 className="text-2xl font-bold">Ajustes Generales</h1>
-      
-      <Form {...form}>
+    <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <Card>
             <CardHeader>
@@ -161,6 +160,25 @@ export default function SettingsPage() {
           <Button type="submit">Guardar Cambios</Button>
         </form>
       </Form>
+  )
+}
+
+export default function SettingsPage() {
+  return (
+    <main className="grid flex-1 items-start gap-8">
+      <h1 className="text-2xl font-bold">Ajustes</h1>
+       <Tabs defaultValue="general">
+        <TabsList className='mb-4'>
+          <TabsTrigger value="general">Generales</TabsTrigger>
+          <TabsTrigger value="banners">Banners</TabsTrigger>
+        </TabsList>
+        <TabsContent value="general">
+            <GeneralSettings />
+        </TabsContent>
+        <TabsContent value="banners">
+            <BannersManager />
+        </TabsContent>
+      </Tabs>
     </main>
   );
 }
