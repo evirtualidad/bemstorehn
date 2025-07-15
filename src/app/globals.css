@@ -99,4 +99,15 @@
       width: 100%;
     }
   }
+
+  /* Fade Carousel Styles */
+  .fade-carousel-content {
+    @apply relative;
+  }
+  .fade-carousel-item {
+    @apply opacity-0 transition-opacity duration-1000 ease-in-out absolute inset-0;
+  }
+  .fade-carousel-item[data-active] {
+    @apply opacity-100 z-10;
+  }
 }

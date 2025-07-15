@@ -21,12 +21,12 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { ProductGrid } from '@/components/product-grid';
 import { ProductCard } from '@/components/product-card';
-import { Pause, Play, Instagram, Facebook, Share2 } from 'lucide-react';
+import { Pause, Play, Instagram, Facebook } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // A custom TikTok icon as lucide-react might not have it.
 const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
         <path d="M21 7.4c-1.3-1.4-3.1-2.2-5-2.4v12.2c0 2.3-1.9 4.2-4.2 4.2s-4.2-1.9-4.2-4.2V8.7c-2.3.7-4 2.6-4.6 4.9-.7 3.2 1.2 6.4 4.4 7.1 3.2.7 6.4-1.2 7.1-4.4.1-.5.2-1 .2-1.5V7.4z"></path>
     </svg>
 );
@@ -36,10 +36,6 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [api, setApi] = React.useState<CarouselApi | null>(null);
   const [current, setCurrent] = React.useState(0);
   const [isPlaying, setIsPlaying] = React.useState(true);
-  
-  const autoplayPlugin = React.useRef(
-    Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: true })
-  );
 
   React.useEffect(() => {
     if (!api) return;
@@ -47,31 +43,27 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
     const onSelect = () => {
       setCurrent(api.selectedScrollSnap());
     };
-    
-    const onPlay = () => setIsPlaying(true);
-    const onStop = () => setIsPlaying(false);
-
     api.on('select', onSelect);
-    api.on('play', onPlay);
-    api.on('stop', onStop);
+
+    const interval = setInterval(() => {
+        if (isPlaying && api) {
+            if (api.canScrollNext()) {
+                api.scrollNext();
+            } else {
+                api.scrollTo(0);
+            }
+        }
+    }, 5000);
 
     return () => {
       api.off('select', onSelect);
-      api.off('play', onPlay);
-      api.off('stop', onStop);
+      clearInterval(interval);
     };
-  }, [api]);
+  }, [api, isPlaying]);
 
   const togglePlay = React.useCallback(() => {
-    if (!api) return;
-    const autoplay = api.plugins().autoplay;
-    if (autoplay.isPlaying()) {
-      autoplay.stop();
-    } else {
-      autoplay.play();
-    }
-    setIsPlaying(!autoplay.isPlaying());
-  }, [api]);
+    setIsPlaying(prev => !prev);
+  }, []);
   
   if (banners.length === 0) return null;
 
@@ -79,13 +71,12 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
     <section className="relative w-full group/hero">
       <Carousel
         setApi={setApi}
-        plugins={[autoplayPlugin.current]}
         className="w-full"
-        opts={{ loop: true, duration: 1000 }}
+        opts={{ loop: true, duration: 1000 }} // Slower transition
       >
-        <CarouselContent>
+        <CarouselContent className='fade-carousel-content'>
           {banners.map((banner, index) => (
-            <CarouselItem key={banner.id || index}>
+            <CarouselItem key={banner.id || index} className='fade-carousel-item'>
               <div className="relative h-[50vh] w-full flex items-center justify-center text-center text-white">
                 <Image
                   src={banner.image || 'https://placehold.co/1200x600.png'}
@@ -124,7 +115,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
               >
                  {index === current && isPlaying && (
                   <div
-                    key={current} // Add key to force re-render/restart animation
+                    key={`${current}-${isPlaying}`} 
                     className="h-full rounded-full bg-primary/80 animate-fill-progress"
                     style={{ animationDuration: '5s' }}
                   />
