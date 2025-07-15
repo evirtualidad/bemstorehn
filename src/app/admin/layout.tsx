@@ -18,6 +18,7 @@ import {
   Archive,
   Coins,
   XCircle,
+  Settings,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -85,6 +86,7 @@ export default function AdminLayout({
     { href: '/admin/customers', icon: Users, label: 'Clientes' },
     { href: '/admin/analytics', icon: LineChart, label: 'Analíticas' },
     { href: '/admin/banners', icon: ImageIcon, label: 'Banners' },
+    { href: '/admin/settings', icon: Settings, label: 'Ajustes' },
   ];
 
   const DesktopNavItem = ({ item }: { item: any }) => {

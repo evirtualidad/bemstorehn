@@ -1,8 +1,10 @@
+
 'use client';
 
 import type { Product } from '@/lib/products';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { useSettingsStore } from './use-settings-store';
 
 export type CartItem = {
   quantity: number;
@@ -11,6 +13,8 @@ export type CartItem = {
 type CartState = {
   items: CartItem[];
   total: number;
+  subtotal: number;
+  taxAmount: number;
   isOpen: boolean;
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
@@ -20,14 +24,21 @@ type CartState = {
   clearCart: () => void;
 };
 
-const calculateTotal = (items: CartItem[]) =>
-  items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+const calculateCartTotals = (items: CartItem[]) => {
+  const taxRate = useSettingsStore.getState().taxRate;
+  const total = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const subtotal = total / (1 + taxRate);
+  const taxAmount = total - subtotal;
+  return { total, subtotal, taxAmount };
+};
 
 export const useCart = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
       total: 0,
+      subtotal: 0,
+      taxAmount: 0,
       isOpen: false,
       toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
       addToCart: (product) => {
@@ -45,17 +56,17 @@ export const useCart = create<CartState>()(
           updatedItems = [...items, { ...product, quantity: 1 }];
         }
         
-        set({ items: updatedItems, total: calculateTotal(updatedItems) });
+        set({ items: updatedItems, ...calculateCartTotals(updatedItems) });
       },
       removeFromCart: (productId) => {
         const updatedItems = get().items.filter((item) => item.id !== productId);
-        set({ items: updatedItems, total: calculateTotal(updatedItems) });
+        set({ items: updatedItems, ...calculateCartTotals(updatedItems) });
       },
       increaseQuantity: (productId) => {
         const updatedItems = get().items.map((item) =>
           item.id === productId ? { ...item, quantity: item.quantity + 1 } : item
         );
-        set({ items: updatedItems, total: calculateTotal(updatedItems) });
+        set({ items: updatedItems, ...calculateCartTotals(updatedItems) });
       },
       decreaseQuantity: (productId) => {
         const { items } = get();
@@ -63,21 +74,30 @@ export const useCart = create<CartState>()(
 
         if (existingItem?.quantity === 1) {
           const updatedItems = items.filter((item) => item.id !== productId);
-          set({ items: updatedItems, total: calculateTotal(updatedItems) });
+          set({ items: updatedItems, ...calculateCartTotals(updatedItems) });
         } else {
           const updatedItems = items.map((item) =>
             item.id === productId
               ? { ...item, quantity: item.quantity - 1 }
               : item
           );
-          set({ items: updatedItems, total: calculateTotal(updatedItems) });
+          set({ items: updatedItems, ...calculateCartTotals(updatedItems) });
         }
       },
-      clearCart: () => set({ items: [], total: 0 }),
+      clearCart: () => set({ items: [], total: 0, subtotal: 0, taxAmount: 0 }),
     }),
     {
       name: 'cart-storage', // name of the item in the storage (must be unique)
       storage: createJSONStorage(() => localStorage), // (optional) by default, 'localStorage' is used
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+            const { items } = state;
+            const { total, subtotal, taxAmount } = calculateCartTotals(items);
+            state.total = total;
+            state.subtotal = subtotal;
+            state.taxAmount = taxAmount;
+        }
+      }
     }
   )
 );

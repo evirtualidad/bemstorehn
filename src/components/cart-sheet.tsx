@@ -25,6 +25,7 @@ import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
 import { LoadingSpinner } from './ui/loading-spinner';
 import { cn } from '@/lib/utils';
+import { useSettingsStore } from '@/hooks/use-settings-store';
 
 function RecommendedProducts() {
   const { items } = useCart();
@@ -98,6 +99,8 @@ export function CartSheet() {
   const {
     items,
     total,
+    subtotal,
+    taxAmount,
     isOpen,
     toggleCart,
     removeFromCart,
@@ -105,6 +108,7 @@ export function CartSheet() {
     decreaseQuantity,
   } = useCart();
   const { currency } = useCurrencyStore();
+  const { taxRate } = useSettingsStore();
 
   return (
     <Sheet open={isOpen} onOpenChange={toggleCart}>
@@ -178,12 +182,23 @@ export function CartSheet() {
                 </div>
               </ScrollArea>
             </div>
-            <div className="border-t p-6">
+            <div className="border-t p-6 space-y-4">
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                    <p className="text-muted-foreground">Subtotal</p>
+                    <p>{formatCurrency(subtotal, currency.code)}</p>
+                </div>
+                <div className="flex justify-between">
+                    <p className="text-muted-foreground">ISV ({taxRate * 100}%)</p>
+                    <p>{formatCurrency(taxAmount, currency.code)}</p>
+                </div>
+              </div>
+              <Separator />
               <div className="flex justify-between text-lg font-semibold">
-                <p>Subtotal</p>
+                <p>Total</p>
                 <p>{formatCurrency(total, currency.code)}</p>
               </div>
-              <Button asChild className="mt-4 w-full" size="lg">
+              <Button asChild className="w-full" size="lg">
                 <Link href="/checkout" onClick={toggleCart}>Finalizar Compra</Link>
               </Button>
             </div>

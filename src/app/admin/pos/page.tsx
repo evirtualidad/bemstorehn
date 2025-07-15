@@ -50,6 +50,7 @@ import { useCurrencyStore } from '@/hooks/use-currency';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useOrdersStore } from '@/hooks/use-orders';
+import { useSettingsStore } from '@/hooks/use-settings-store';
 
 type PosCartItem = Product & { quantity: number };
 
@@ -241,6 +242,8 @@ function ProductGrid({
 
 function TicketView({
   cart,
+  subtotal,
+  taxAmount,
   total,
   onUpdateQuantity,
   onRemoveFromCart,
@@ -248,6 +251,8 @@ function TicketView({
   onCheckout,
 }: {
   cart: PosCartItem[];
+  subtotal: number;
+  taxAmount: number;
   total: number;
   onUpdateQuantity: (productId: string, amount: number) => void;
   onRemoveFromCart: (productId:string) => void;
@@ -255,6 +260,7 @@ function TicketView({
   onCheckout: () => void;
 }) {
   const { currency } = useCurrencyStore();
+  const { taxRate } = useSettingsStore();
 
   return (
     <aside className="fixed top-0 right-0 h-screen w-[420px] hidden lg:flex flex-col border-l z-10 bg-muted/40">
@@ -309,15 +315,26 @@ function TicketView({
             </ScrollArea>
         </div>
         <div className="p-4 border-t bg-background space-y-4 flex-shrink-0">
+            <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                    <p className="text-muted-foreground">Subtotal</p>
+                    <p>{formatCurrency(subtotal, currency.code)}</p>
+                </div>
+                <div className="flex justify-between">
+                    <p className="text-muted-foreground">ISV ({taxRate * 100}%)</p>
+                    <p>{formatCurrency(taxAmount, currency.code)}</p>
+                </div>
+            </div>
+            <Separator />
             <div className="flex justify-between text-xl font-bold">
-            <p>Total</p>
-            <p>{formatCurrency(total, currency.code)}</p>
+                <p>Total</p>
+                <p>{formatCurrency(total, currency.code)}</p>
             </div>
             <Button
-            size="lg"
-            className="w-full h-12 text-lg"
-            onClick={onCheckout}
-            disabled={cart.length === 0}
+                size="lg"
+                className="w-full h-12 text-lg"
+                onClick={onCheckout}
+                disabled={cart.length === 0}
             >
             <CreditCard className="mr-2 h-5 w-5" />
             Facturar
@@ -330,6 +347,8 @@ function TicketView({
 function MobileTicketView({
   cart,
   total,
+  subtotal,
+  taxAmount,
   isVisible,
   onUpdateQuantity,
   onRemoveFromCart,
@@ -339,6 +358,8 @@ function MobileTicketView({
 }: {
   cart: PosCartItem[];
   total: number;
+  subtotal: number;
+  taxAmount: number;
   isVisible: boolean;
   onUpdateQuantity: (productId: string, amount: number) => void;
   onRemoveFromCart: (productId:string) => void;
@@ -348,6 +369,7 @@ function MobileTicketView({
 }) {
   if (!isVisible) return null;
   const { currency } = useCurrencyStore();
+  const { taxRate } = useSettingsStore();
 
   return (
     <div className="lg:hidden fixed inset-0 bg-black/60 z-30" onClick={onClose}>
@@ -411,18 +433,29 @@ function MobileTicketView({
                 </ScrollArea>
             </div>
             <div className="p-4 border-t bg-background space-y-4 flex-shrink-0">
+                <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                        <p className="text-muted-foreground">Subtotal</p>
+                        <p>{formatCurrency(subtotal, currency.code)}</p>
+                    </div>
+                    <div className="flex justify-between">
+                        <p className="text-muted-foreground">ISV ({taxRate * 100}%)</p>
+                        <p>{formatCurrency(taxAmount, currency.code)}</p>
+                    </div>
+                </div>
+                <Separator />
                 <div className="flex justify-between text-xl font-bold">
-                <p>Total</p>
-                <p>{formatCurrency(total, currency.code)}</p>
+                    <p>Total</p>
+                    <p>{formatCurrency(total, currency.code)}</p>
                 </div>
                 <Button
-                size="lg"
-                className="w-full h-12 text-lg"
-                onClick={onCheckout}
-                disabled={cart.length === 0}
+                    size="lg"
+                    className="w-full h-12 text-lg"
+                    onClick={onCheckout}
+                    disabled={cart.length === 0}
                 >
-                <CreditCard className="mr-2 h-5 w-5" />
-                Facturar
+                    <CreditCard className="mr-2 h-5 w-5" />
+                    Facturar
                 </Button>
             </div>
         </div>
@@ -438,9 +471,10 @@ const paymentMethods = [
     { value: 'credito', label: 'Crédito', icon: Receipt },
 ] as const;
 
-function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, change, isInDialog }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, cart: PosCartItem[], total: number, change: number, isInDialog?: boolean }) {
+function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, subtotal, taxAmount, change, isInDialog }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, cart: PosCartItem[], total: number, subtotal: number, taxAmount: number, change: number, isInDialog?: boolean }) {
     const paymentMethod = form.watch('paymentMethod');
     const { currency } = useCurrencyStore();
+    const { taxRate } = useSettingsStore();
 
     const CancelButton = () => {
         const button = (
@@ -460,6 +494,15 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="space-y-3 p-4 rounded-lg border bg-muted/50">
+                    <div className="flex justify-between items-center text-md">
+                        <span className="text-muted-foreground">Subtotal:</span>
+                        <span className="font-medium">{formatCurrency(subtotal, currency.code)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-md">
+                        <span className="text-muted-foreground">ISV ({taxRate * 100}%):</span>
+                        <span className="font-medium">{formatCurrency(taxAmount, currency.code)}</span>
+                    </div>
+                     <Separator />
                     <div className="flex justify-between items-center text-lg">
                         <span className="text-muted-foreground">Total a Pagar:</span>
                         <span className="font-bold text-2xl">{formatCurrency(total, currency.code)}</span>
@@ -616,6 +659,7 @@ export default function PosPage() {
   const { addOrder } = useOrdersStore();
   const { categories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
+  const { taxRate } = useSettingsStore();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
@@ -638,9 +682,12 @@ export default function PosPage() {
     return products;
   }, [selectedFilter, products, isHydrated]);
 
-  const total = React.useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  }, [cart]);
+  const { subtotal, taxAmount, total } = React.useMemo(() => {
+    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const subtotal = total / (1 + taxRate);
+    const taxAmount = total - subtotal;
+    return { subtotal, taxAmount, total };
+  }, [cart, taxRate]);
 
   const totalItems = React.useMemo(() => {
     return cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -863,6 +910,8 @@ export default function PosPage() {
         
         <TicketView
             cart={cart}
+            subtotal={subtotal}
+            taxAmount={taxAmount}
             total={total}
             onUpdateQuantity={updateQuantity}
             onRemoveFromCart={removeFromCart}
@@ -876,6 +925,8 @@ export default function PosPage() {
         <MobileTicketView
             cart={cart}
             total={total}
+            subtotal={subtotal}
+            taxAmount={taxAmount}
             isVisible={isTicketVisible}
             onUpdateQuantity={updateQuantity}
             onRemoveFromCart={removeFromCart}
@@ -899,7 +950,9 @@ export default function PosPage() {
                             onSubmit={onSubmit} 
                             isSubmitting={isSubmitting} 
                             onCancel={() => setIsCheckoutOpen(false)} 
-                            cart={cart} 
+                            cart={cart}
+                            subtotal={subtotal}
+                            taxAmount={taxAmount}
                             total={total} 
                             change={change} 
                             isInDialog={true} />

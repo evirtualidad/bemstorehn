@@ -27,6 +27,7 @@ import { useProductsStore } from '@/hooks/use-products';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
 import { useOrdersStore } from '@/hooks/use-orders';
+import { useSettingsStore } from '@/hooks/use-settings-store';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(2, {
@@ -38,9 +39,10 @@ const checkoutFormSchema = z.object({
 });
 
 export default function CheckoutPage() {
-  const { items, total, clearCart } = useCart();
+  const { items, total, subtotal, taxAmount, clearCart } = useCart();
   const { decreaseStock } = useProductsStore();
   const { addOrder } = useOrdersStore();
+  const { taxRate } = useSettingsStore();
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -204,15 +206,15 @@ export default function CheckoutPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <p>Subtotal</p>
-                  <p>{formatCurrency(total, currency.code)}</p>
+                  <p>{formatCurrency(subtotal, currency.code)}</p>
+                </div>
+                <div className="flex justify-between">
+                  <p>ISV ({taxRate * 100}%)</p>
+                  <p>{formatCurrency(taxAmount, currency.code)}</p>
                 </div>
                 <div className="flex justify-between">
                   <p>Envío</p>
                   <p>Gratis</p>
-                </div>
-                <div className="flex justify-between">
-                  <p>Impuestos</p>
-                  <p>Calculado en la aprobación</p>
                 </div>
               </div>
               <Separator className="my-6" />
