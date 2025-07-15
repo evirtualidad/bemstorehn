@@ -809,7 +809,7 @@ export default function PosPage() {
 
   if (!isHydrated) {
     return (
-      <div className="h-screen bg-muted/40 flex flex-col">
+      <div className="flex h-screen flex-col bg-muted/40">
         <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20">
             <h1 className="text-xl font-bold flex-1 whitespace-nowrap">Punto de Venta</h1>
         </header>
@@ -821,43 +821,45 @@ export default function PosPage() {
   }
 
   return (
-    <div className="h-screen bg-muted/40">
-        <main className="h-full flex flex-col lg:pr-[420px]">
-            <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20">
+    <div className="relative h-screen bg-muted/40 flex flex-col lg:flex-row">
+        <div className='flex flex-col flex-1 lg:pr-[420px]'>
+            <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20 flex-shrink-0">
                 <h1 className="text-xl font-bold flex-1 whitespace-nowrap">Punto de Venta</h1>
                  <div className="w-full sm:w-auto sm:flex-initial">
                     <ProductSearch onProductSelect={handleProductSelect} />
                  </div>
             </header>
-            <div className="p-4 space-y-4 flex-shrink-0 bg-background">
-                 <CategoryList
-                    categories={productCategories}
-                    selectedFilter={selectedFilter}
-                    onSelectFilter={setSelectedFilter}
-                    hasOfferProducts={hasOfferProducts}
-                />
-                <Separator />
-            </div>
-             <ScrollArea className="flex-1 px-4 bg-background">
-                <ProductGrid products={filteredProducts} onProductSelect={handleProductSelect} />
-            </ScrollArea>
+            <main className="flex-1 flex flex-col">
+                <div className="p-4 space-y-4 flex-shrink-0 bg-background">
+                     <CategoryList
+                        categories={productCategories}
+                        selectedFilter={selectedFilter}
+                        onSelectFilter={setSelectedFilter}
+                        hasOfferProducts={hasOfferProducts}
+                    />
+                    <Separator />
+                </div>
+                 <ScrollArea className="flex-1 p-4 bg-background">
+                    <ProductGrid products={filteredProducts} onProductSelect={handleProductSelect} />
+                </ScrollArea>
+            </main>
+        </div>
 
-            <div className="lg:hidden fixed bottom-4 right-4 z-20">
-                <Button
-                    size="lg"
-                    className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 bg-primary text-primary-foreground hover:bg-primary/90 border-4 border-background"
-                    onClick={() => setIsTicketVisible(true)}
-                >
-                    <Receipt className="h-7 w-7" />
-                    <span className="text-md font-bold">{formatCurrency(total, currency.code)}</span>
-                    {totalItems > 0 && (
-                        <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-8 w-8 flex items-center justify-center border-4 border-background">
-                            {totalItems}
-                        </div>
-                    )}
-                </Button>
-            </div>
-        </main>
+        <div className="lg:hidden fixed bottom-4 right-4 z-20">
+            <Button
+                size="lg"
+                className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 bg-primary text-primary-foreground hover:bg-primary/90 border-4 border-background"
+                onClick={() => setIsTicketVisible(true)}
+            >
+                <Receipt className="h-7 w-7" />
+                <span className="text-md font-bold">{formatCurrency(total, currency.code)}</span>
+                {totalItems > 0 && (
+                    <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-8 w-8 flex items-center justify-center border-4 border-background">
+                        {totalItems}
+                    </div>
+                )}
+            </Button>
+        </div>
         
         <TicketView
             cart={cart}
