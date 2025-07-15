@@ -509,8 +509,11 @@ function ShippingDialog({
       form.clearErrors('department');
       form.clearErrors('municipality');
     } else {
-      form.setValue('department', (currentAddress as any)?.department || '');
-      form.setValue('municipality', (currentAddress as any)?.municipality || '');
+      // When switching to national, clear previous selection unless it was already a national one.
+      if ((currentAddress as any)?.type !== 'national') {
+        form.setValue('department', undefined);
+        form.setValue('municipality', undefined);
+      }
     }
   }, [selectedShippingOption, form, currentAddress]);
 
