@@ -48,11 +48,18 @@ export default function Home() {
   const featuredOfferProducts = React.useMemo(() => 
     isHydrated ? products.filter((p) => p.featured && p.originalPrice && p.originalPrice > p.price) : [], 
   [products, isHydrated]);
+  
+  const offerProducts = React.useMemo(() => 
+    isHydrated ? products.filter(p => p.originalPrice && p.originalPrice > p.price) : [],
+  [products, isHydrated]);
 
   const filteredProducts = React.useMemo(() => {
     if (!selectedCategory) return [];
+    if (selectedCategory === '__offers__') {
+        return offerProducts;
+    }
     return products.filter(p => p.category === selectedCategory);
-  }, [selectedCategory, products]);
+  }, [selectedCategory, products, offerProducts]);
   
   
   if (!isHydrated) {
@@ -61,6 +68,7 @@ export default function Home() {
         <Header 
             selectedCategory={selectedCategory}
             onSelectCategory={setSelectedCategory}
+            hasOfferProducts={false}
         />
         <div className="flex-1 flex items-center justify-center">
             <LoadingSpinner />
@@ -83,11 +91,19 @@ export default function Home() {
     );
   };
   
+  const getCategoryLabel = () => {
+    if (selectedCategory === '__offers__') {
+        return 'Ofertas';
+    }
+    return categories.find(c => c.name === selectedCategory)?.label;
+  }
+
   return (
     <div className="bg-background min-h-screen">
       <Header 
         selectedCategory={selectedCategory}
         onSelectCategory={setSelectedCategory}
+        hasOfferProducts={offerProducts.length > 0}
       />
       <main>
         {!selectedCategory ? (
@@ -175,7 +191,7 @@ export default function Home() {
             <div className="container mx-auto px-4">
                 <div className="flex flex-col sm:flex-row justify-between items-center mb-10 md:mb-14 gap-4">
                     <h2 className="text-3xl md:text-4xl font-bold text-center">
-                        {categories.find(c => c.name === selectedCategory)?.label}
+                        {getCategoryLabel()}
                     </h2>
                     <Button variant="outline" onClick={() => setSelectedCategory(null)}>Ver Todos los Productos</Button>
                 </div>

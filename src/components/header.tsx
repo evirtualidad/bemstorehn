@@ -1,19 +1,21 @@
 
 'use client';
 
-import { Leaf, ShoppingCart } from 'lucide-react';
+import { Leaf, ShoppingCart, Percent } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/use-cart';
 import { Badge } from '@/components/ui/badge';
 import { useCategoriesStore } from '@/hooks/use-categories';
+import { cn } from '@/lib/utils';
 
 interface HeaderProps {
     selectedCategory: string | null;
     onSelectCategory: (category: string | null) => void;
+    hasOfferProducts: boolean;
 }
 
-export function Header({ selectedCategory, onSelectCategory }: HeaderProps) {
+export function Header({ selectedCategory, onSelectCategory, hasOfferProducts }: HeaderProps) {
   const { categories } = useCategoriesStore();
   
   const { items, toggleCart } = useCart();
@@ -32,16 +34,27 @@ export function Header({ selectedCategory, onSelectCategory }: HeaderProps) {
           <nav className="hidden md:flex items-center gap-2 text-md">
             {categories.map((category) => (
               <Button 
-                asChild 
                 variant={selectedCategory === category.name ? 'secondary' : 'ghost'} 
                 key={category.id}
                 onClick={() => onSelectCategory(category.name)}
+                className="h-10 px-4"
                >
-                <Link href={`#`}>
                   {category.label}
-                </Link>
               </Button>
             ))}
+            {hasOfferProducts && (
+                <Button
+                    variant={selectedCategory === '__offers__' ? 'secondary' : 'ghost'}
+                    onClick={() => onSelectCategory('__offers__')}
+                    className={cn(
+                        "h-10 px-4",
+                        selectedCategory === '__offers__' ? "border-offer text-offer" : "text-offer"
+                    )}
+                >
+                    <Percent className="mr-2 h-4 w-4" />
+                    Ofertas
+                </Button>
+            )}
           </nav>
         </div>
         <div className="flex items-center gap-2">
