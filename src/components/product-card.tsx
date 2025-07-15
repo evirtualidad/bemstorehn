@@ -6,7 +6,7 @@ import type { Product } from '@/lib/products';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Star, Tag } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +25,9 @@ export function ProductCard({ product, className }: ProductCardProps) {
   const { addToCart } = useCart();
   const { toast } = useToast();
   const { currency } = useCurrencyStore();
+  
+  const isDiscounted = product.specialCategory === 'descuento' && product.originalPrice && product.originalPrice > product.price;
+  const isPromotion = product.specialCategory === 'promocion';
 
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.preventDefault(); // Prevent link navigation when clicking the button
@@ -39,7 +42,12 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
   return (
     <Link href={`/product/${product.id}`} className="group block h-full">
-      <Card className={cn("flex flex-col overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 animate-in fade-in-0 slide-in-from-bottom-5 ease-in-out h-full", className)}>
+      <Card className={cn(
+          "flex flex-col overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 animate-in fade-in-0 slide-in-from-bottom-5 ease-in-out h-full", 
+          isDiscounted && "border-2 border-primary",
+          isPromotion && "border-2 border-accent-foreground",
+          className
+      )}>
         <CardHeader className="p-0 border-b relative">
           <Image
             src={product.image || 'https://placehold.co/400x400.png'}
@@ -49,15 +57,23 @@ export function ProductCard({ product, className }: ProductCardProps) {
             className="w-full h-auto object-cover aspect-square"
             data-ai-hint={product.aiHint}
           />
-          <Badge 
-            className={cn(
-              "absolute top-3 right-3",
-              stockStatus === "Agotado" && "bg-destructive text-destructive-foreground",
-              stockStatus === "Poco Stock" && "bg-amber-500 text-white"
+          <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+            {isDiscounted && (
+                <Badge variant="destructive" className="text-md font-bold uppercase"><Tag className="mr-1 h-4 w-4" /> Descuento</Badge>
             )}
-          >
-            {stockStatus}
-          </Badge>
+            {isPromotion && (
+                <Badge className="bg-accent-foreground text-white text-md font-bold uppercase"><Star className="mr-1 h-4 w-4" /> Promoción</Badge>
+            )}
+            <Badge 
+              className={cn(
+                "w-fit",
+                stockStatus === "Agotado" && "bg-destructive text-destructive-foreground",
+                stockStatus === "Poco Stock" && "bg-amber-500 text-white"
+              )}
+            >
+              {stockStatus}
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent className="p-4 flex-grow flex flex-col">
           {category && <Badge variant="outline" className="mb-2 w-fit">{category.label}</Badge>}
@@ -65,7 +81,16 @@ export function ProductCard({ product, className }: ProductCardProps) {
           {product.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{product.description}</p>}
         </CardContent>
         <CardFooter className="p-4 pt-0 flex flex-col items-start gap-4 mt-auto">
-          <p className="text-2xl font-bold text-foreground">{formatCurrency(product.price, currency.code)}</p>
+          <div className="flex flex-col items-start w-full">
+             {isDiscounted ? (
+              <div className='flex items-baseline gap-2'>
+                <p className="text-3xl font-bold text-destructive">{formatCurrency(product.price, currency.code)}</p>
+                <p className="text-lg font-medium text-muted-foreground line-through">{formatCurrency(product.originalPrice!, currency.code)}</p>
+              </div>
+            ) : (
+              <p className="text-2xl font-bold text-foreground">{formatCurrency(product.price, currency.code)}</p>
+            )}
+          </div>
           <Button 
             variant="outline" 
             className="w-full"
