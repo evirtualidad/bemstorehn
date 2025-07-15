@@ -16,7 +16,6 @@ import {
   Tag,
   Users,
   Archive,
-  ChevronDown,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +33,6 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import * as React from 'react';
 
 function CurrencySelector() {
@@ -74,27 +72,18 @@ export default function AdminLayout({
     { href: '/admin/dashboard', icon: Home, label: 'Panel' },
     { href: '/admin/pos', icon: Tablet, label: 'Punto de Venta' },
     { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: '6' },
-    { 
-      label: 'Inventario', icon: Archive,
-      subItems: [
-        { href: '/admin/inventory/products', icon: Package, label: 'Productos' },
-        { href: '/admin/inventory/categories', icon: Tag, label: 'Categorías' },
-      ]
-    },
+    { href: '/admin/inventory', icon: Archive, label: 'Inventario' },
     { href: '/admin/customers', icon: Users, label: 'Clientes' },
     { href: '/admin/analytics', icon: LineChart, label: 'Analíticas' },
     { href: '/admin/banners', icon: ImageIcon, label: 'Banners' },
   ];
 
   const DesktopNavItem = ({ item }: { item: any }) => {
-    if (item.subItems) {
-      return <CollapsibleNavItem item={item} />;
-    }
-
+    const isActive = pathname.startsWith(item.href);
     return (
      <Button
       asChild
-      variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
+      variant={isActive ? 'secondary' : 'ghost'}
       className="justify-start whitespace-nowrap"
     >
       <Link href={item.href}>
@@ -109,76 +98,15 @@ export default function AdminLayout({
     </Button>
     )
   };
-
-  const CollapsibleNavItem = ({ item }: { item: any }) => {
-    const isParentActive = item.subItems.some((subItem: any) => pathname.startsWith(subItem.href));
-    return (
-      <Collapsible defaultOpen={isParentActive}>
-        <CollapsibleTrigger asChild>
-          <Button variant={isParentActive ? 'secondary' : 'ghost'} className="w-full justify-start whitespace-nowrap">
-            <item.icon className="mr-2 h-4 w-4" />
-            {item.label}
-            <ChevronDown className="ml-auto h-4 w-4 transition-transform ui-open:rotate-180" />
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="ml-4 mt-1 flex flex-col gap-1 border-l pl-4">
-          {item.subItems.map((subItem: any) => (
-            <Button
-              key={subItem.label}
-              asChild
-              variant={pathname.startsWith(subItem.href) ? 'secondary' : 'ghost'}
-              className="justify-start whitespace-nowrap"
-            >
-              <Link href={subItem.href}>
-                <subItem.icon className="mr-2 h-4 w-4" />
-                {subItem.label}
-              </Link>
-            </Button>
-          ))}
-        </CollapsibleContent>
-      </Collapsible>
-    );
-  };
   
-
   const MobileNavItem = ({ item }: { item: any }) => {
-     if (item.subItems) {
-      const isParentActive = item.subItems.some((subItem: any) => pathname.startsWith(subItem.href));
-       return (
-        <Collapsible defaultOpen={isParentActive}>
-          <CollapsibleTrigger className={cn(
-            'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground w-full',
-             isParentActive && 'bg-muted text-foreground'
-          )}>
-            <item.icon className="h-5 w-5" />
-            {item.label}
-            <ChevronDown className="ml-auto h-5 w-5 transition-transform ui-open:rotate-180" />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="ml-7 mt-1 flex flex-col gap-1 border-l pl-4">
-            {item.subItems.map((subItem: any) => (
-               <Link
-                key={subItem.label}
-                href={subItem.href}
-                className={cn(
-                  'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
-                  pathname.startsWith(subItem.href) && 'bg-muted text-foreground'
-                )}
-              >
-                <subItem.icon className="h-5 w-5" />
-                {subItem.label}
-              </Link>
-            ))}
-          </CollapsibleContent>
-        </Collapsible>
-       )
-    }
-
+    const isActive = pathname.startsWith(item.href);
     return (
     <Link
       href={item.href}
       className={cn(
         'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
-        pathname.startsWith(item.href) && 'bg-muted text-foreground'
+        isActive && 'bg-muted text-foreground'
       )}
     >
       <item.icon className="h-5 w-5" />
@@ -264,5 +192,3 @@ export default function AdminLayout({
     </div>
   );
 }
-
-    
