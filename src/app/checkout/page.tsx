@@ -39,7 +39,7 @@ const checkoutFormSchema = z.object({
 });
 
 export default function CheckoutPage() {
-  const { items, total, subtotal, taxAmount, clearCart } = useCart();
+  const { items, total, subtotal, taxAmount, clearCart, toggleCart } = useCart();
   const { decreaseStock } = useProductsStore();
   const { addOrder } = useOrdersStore();
   const { taxRate } = useSettingsStore();
@@ -161,10 +161,15 @@ export default function CheckoutPage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Enviar Pedido para Aprobación
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2">
+                    <Button variant="outline" size="lg" className="w-full" onClick={toggleCart}>
+                        Volver al carrito
+                    </Button>
+                    <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Enviar Pedido
+                    </Button>
+                </div>
                  <p className="text-xs text-center text-muted-foreground">
                     Tu pedido será confirmado por un administrador. No se te cobrará hasta que sea aprobado.
                 </p>
@@ -229,5 +234,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-
-    
