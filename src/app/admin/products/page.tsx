@@ -58,6 +58,7 @@ import { useProductsStore } from '@/hooks/use-products';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { cn } from '@/lib/utils';
 
 export default function AdminProductsPage() {
   const { products, addProduct, updateProduct, deleteProduct, isHydrated } = useProductsStore();
@@ -71,6 +72,7 @@ export default function AdminProductsPage() {
       ...values,
       image: values.image || `https://placehold.co/400x400.png?text=${values.name.replace(/\s/g, '+')}`,
       price: Number(values.price),
+      originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,
       stock: Number(values.stock),
       featured: values.featured,
     };
@@ -85,6 +87,7 @@ export default function AdminProductsPage() {
       ...editingProduct,
       ...values,
       price: Number(values.price),
+      originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,
       stock: Number(values.stock),
       featured: values.featured,
     });
@@ -214,55 +217,68 @@ export default function AdminProductsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {products.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell className="hidden sm:table-cell">
-                        <Image
-                          alt={product.name}
-                          className="aspect-square rounded-md object-cover"
-                          height="64"
-                          src={product.image || 'https://placehold.co/64x64.png'}
-                          width="64"
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {product.name}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={product.stock > 0 ? 'default' : 'destructive'}>
-                          {product.stock > 0 ? 'En Stock' : 'Agotado'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {formatCurrency(product.price, currency.code)}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {product.stock}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {product.category}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              aria-haspopup="true"
-                              size="icon"
-                              variant="ghost"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Alternar menú</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => openEditDialog(product)}>Editar</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDeleteProduct(product.id)}>Eliminar</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {products.map((product) => {
+                    const isDiscounted = product.originalPrice && product.originalPrice > product.price;
+                    return (
+                      <TableRow key={product.id}>
+                        <TableCell className="hidden sm:table-cell">
+                          <Image
+                            alt={product.name}
+                            className="aspect-square rounded-md object-cover"
+                            height="64"
+                            src={product.image || 'https://placehold.co/64x64.png'}
+                            width="64"
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {product.name}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={product.stock > 0 ? 'default' : 'destructive'}>
+                            {product.stock > 0 ? 'En Stock' : 'Agotado'}
+                          </Badge>
+                          {isDiscounted && <Badge variant="destructive" className="ml-2">Oferta</Badge>}
+                        </TableCell>
+                        <TableCell>
+                            <div className="flex flex-col">
+                                <span className={cn(isDiscounted && "text-destructive font-bold")}>
+                                  {formatCurrency(product.price, currency.code)}
+                                </span>
+                                {isDiscounted && (
+                                  <span className="text-xs text-muted-foreground line-through">
+                                    {formatCurrency(product.originalPrice!, currency.code)}
+                                  </span>
+                                )}
+                            </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {product.stock}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {product.category}
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                aria-haspopup="true"
+                                size="icon"
+                                variant="ghost"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Alternar menú</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => openEditDialog(product)}>Editar</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDeleteProduct(product.id)}>Eliminar</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </CardContent>

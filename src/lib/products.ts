@@ -5,6 +5,7 @@ export interface Product {
   image: string;
   aiHint?: string;
   price: number;
+  originalPrice?: number;
   description: string;
   category: string; 
   stock: number;
@@ -18,6 +19,7 @@ export const products: Product[] = [
     image: 'https://placehold.co/400x400.png',
     aiHint: 'skincare serum',
     price: 35.00,
+    originalPrice: 45.00,
     description: 'A vitamin C serum for a radiant and even skin tone. Fights free radicals and boosts collagen production.',
     category: 'Skincare',
     stock: 25,
@@ -51,6 +53,7 @@ export const products: Product[] = [
     image: 'https://placehold.co/400x400.png',
     aiHint: 'makeup foundation',
     price: 52.00,
+    originalPrice: 60.00,
     description: 'A medium-coverage foundation that provides a natural, luminous finish. Available in 20 shades.',
     category: 'Makeup',
     stock: 30,

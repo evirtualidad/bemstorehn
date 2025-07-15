@@ -171,12 +171,16 @@ function ProductGrid({
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
       {products.map((product) => {
         const stockStatus = product.stock <= 0 ? "Agotado" : product.stock < 10 ? "Poco Stock" : "En Stock";
+        const isDiscounted = product.originalPrice && product.originalPrice > product.price;
 
         return (
           <Card
             key={product.id}
             onClick={() => onProductSelect(product)}
-            className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden group flex flex-col"
+            className={cn(
+              "cursor-pointer hover:shadow-lg transition-shadow overflow-hidden group flex flex-col",
+              isDiscounted && "border-destructive"
+            )}
           >
             <CardContent className="p-0 flex-grow flex flex-col">
               <div className="relative aspect-square">
@@ -187,6 +191,7 @@ function ProductGrid({
                   className="object-cover group-hover:scale-105 transition-transform"
                 />
                 <div className="absolute top-2 right-2 flex flex-col gap-2 items-end">
+                   {isDiscounted && <Badge variant="destructive">Oferta</Badge>}
                   <Badge 
                     className={cn(
                       "w-fit",
@@ -201,8 +206,16 @@ function ProductGrid({
               <div className="p-3 flex-grow flex items-center justify-center">
                 <h3 className="font-semibold text-sm leading-tight text-center w-full">{product.name}</h3>
               </div>
-               <div className="mt-auto text-center p-2 rounded-b-md bg-primary text-primary-foreground">
-                    <span className="text-lg font-bold">{formatCurrency(product.price, currency.code)}</span>
+               <div className={cn(
+                    "mt-auto text-center p-2 rounded-b-md text-primary-foreground",
+                    isDiscounted ? "bg-destructive" : "bg-primary"
+                )}>
+                    <div className="flex items-baseline justify-center gap-2">
+                        <span className="text-lg font-bold">{formatCurrency(product.price, currency.code)}</span>
+                        {isDiscounted && (
+                            <span className="text-sm line-through opacity-80">{formatCurrency(product.originalPrice!, currency.code)}</span>
+                        )}
+                    </div>
               </div>
             </CardContent>
           </Card>

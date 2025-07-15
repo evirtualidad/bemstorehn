@@ -43,6 +43,7 @@ export default function ProductDetailPage({ params }: { params: { productId: str
   const category = getCategoryByName(product.category);
   
   const stockStatus = product.stock <= 0 ? "Agotado" : product.stock < 10 ? "Poco Stock" : "En Stock";
+  const isDiscounted = product.originalPrice && product.originalPrice > product.price;
 
   const handleAddToCart = () => {
     addToCart(product);
@@ -70,15 +71,18 @@ export default function ProductDetailPage({ params }: { params: { productId: str
               className="object-cover rounded-lg shadow-lg"
               data-ai-hint={product.aiHint}
             />
-             <Badge 
-              className={cn(
-                "absolute top-4 right-4 text-lg",
-                stockStatus === "Agotado" && "bg-destructive text-destructive-foreground",
-                stockStatus === "Poco Stock" && "bg-amber-500 text-white"
-              )}
-            >
-              {stockStatus}
-            </Badge>
+            <div className="absolute top-4 right-4 flex flex-col gap-2">
+              {isDiscounted && <Badge variant="destructive" className="text-lg">Oferta</Badge>}
+              <Badge 
+                className={cn(
+                  "text-lg",
+                  stockStatus === "Agotado" && "bg-destructive text-destructive-foreground",
+                  stockStatus === "Poco Stock" && "bg-amber-500 text-white"
+                )}
+              >
+                {stockStatus}
+              </Badge>
+            </div>
           </div>
 
           {/* Product Details */}
@@ -90,8 +94,15 @@ export default function ProductDetailPage({ params }: { params: { productId: str
             <p className="text-lg text-muted-foreground leading-relaxed">
               {product.description}
             </p>
-            <div className="flex items-center gap-4">
-                <p className="text-4xl font-bold text-foreground">{formatCurrency(product.price, currency.code)}</p>
+            <div className="flex items-baseline gap-4">
+                <p className={cn("font-bold", isDiscounted ? "text-4xl text-destructive" : "text-4xl text-foreground")}>
+                    {formatCurrency(product.price, currency.code)}
+                </p>
+                 {isDiscounted && (
+                    <p className="text-2xl text-muted-foreground line-through">
+                        {formatCurrency(product.originalPrice!, currency.code)}
+                    </p>
+                )}
             </div>
             <Button 
               size="lg"

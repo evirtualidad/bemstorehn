@@ -26,6 +26,8 @@ export function ProductCard({ product, className }: ProductCardProps) {
   const { toast } = useToast();
   const { currency } = useCurrencyStore();
   
+  const isDiscounted = product.originalPrice && product.originalPrice > product.price;
+
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.preventDefault(); // Prevent link navigation when clicking the button
     addToCart(product);
@@ -41,6 +43,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
     <Link href={`/product/${product.id}`} className="group block h-full">
       <Card className={cn(
           "flex flex-col overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 animate-in fade-in-0 slide-in-from-bottom-5 ease-in-out h-full", 
+          isDiscounted && "border-destructive",
           className
       )}>
         <CardHeader className="p-0 border-b relative">
@@ -53,6 +56,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
             data-ai-hint={product.aiHint}
           />
           <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+            {isDiscounted && <Badge variant="destructive">Oferta</Badge>}
             <Badge 
               className={cn(
                 "w-fit",
@@ -71,7 +75,16 @@ export function ProductCard({ product, className }: ProductCardProps) {
         </CardContent>
         <CardFooter className="p-4 pt-0 flex flex-col items-start gap-4 mt-auto">
           <div className="flex flex-col items-start w-full">
-            <p className="text-2xl font-bold text-foreground">{formatCurrency(product.price, currency.code)}</p>
+            <div className="flex items-baseline gap-2">
+                <p className={cn("font-bold text-foreground", isDiscounted ? "text-2xl text-destructive" : "text-2xl")}>
+                    {formatCurrency(product.price, currency.code)}
+                </p>
+                {isDiscounted && (
+                    <p className="text-lg text-muted-foreground line-through">
+                        {formatCurrency(product.originalPrice!, currency.code)}
+                    </p>
+                )}
+            </div>
           </div>
           <Button 
             variant="outline" 

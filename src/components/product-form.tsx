@@ -32,10 +32,19 @@ export const productFormSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
   description: z.string().min(10, 'La descripción debe tener al menos 10 caracteres.'),
   price: z.coerce.number().positive('El precio debe ser un número positivo.'),
+  originalPrice: z.coerce.number().positive('El precio debe ser un número positivo.').optional().or(z.literal('')),
   stock: z.coerce.number().int().min(0, 'El stock no puede ser negativo.'),
   category: z.string({ required_error: 'Debes seleccionar una categoría.' }),
   image: z.string().url('Debe ser una URL de imagen válida.').optional().or(z.literal('')),
   featured: z.boolean().default(false),
+}).refine(data => {
+    if (data.originalPrice && data.price >= data.originalPrice) {
+      return false;
+    }
+    return true;
+}, {
+    message: 'El precio de oferta debe ser menor que el precio original.',
+    path: ['price'],
 });
 
 interface ProductFormProps {
@@ -53,6 +62,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
       name: product?.name || '',
       description: product?.description || '',
       price: product?.price || 0,
+      originalPrice: product?.originalPrice || '',
       stock: product?.stock || 0,
       category: product?.category || '',
       image: product?.image || '',
@@ -99,7 +109,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
             name="price"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Precio</FormLabel>
+                <FormLabel>Precio (de Venta)</FormLabel>
                 <FormControl>
                   <Input type="number" placeholder="45.00" {...field} />
                 </FormControl>
@@ -107,7 +117,24 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
               </FormItem>
             )}
           />
-           <FormField
+          <FormField
+            control={form.control}
+            name="originalPrice"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Precio Original</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="55.00" {...field} />
+                </FormControl>
+                 <FormDescription>
+                  Opcional. Para mostrar oferta.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+         <FormField
             control={form.control}
             name="stock"
             render={({ field }) => (
@@ -120,7 +147,6 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
               </FormItem>
             )}
           />
-        </div>
         
         <FormField
           control={form.control}
