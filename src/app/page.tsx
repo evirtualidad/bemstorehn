@@ -29,6 +29,8 @@ export default function Home() {
   const { categories } = useCategoriesStore();
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
 
+  const autoplay = React.useRef(Autoplay({ delay: 5000, stopOnInteraction: true }));
+
   const productsByCategory = React.useMemo(() => {
     if (!isHydrated) return {};
     return products.reduce((acc, product) => {
@@ -108,17 +110,13 @@ export default function Home() {
             {banners.length > 0 && (
                 <section className="relative w-full">
                 <Carousel
-                    plugins={[
-                        Autoplay({
-                          delay: 5000,
-                          stopOnInteraction: true,
-                        }),
-                    ]}
+                    plugins={[autoplay.current]}
                     className="w-full"
                     opts={{
                         loop: true,
-                        duration: 40,
                     }}
+                    onMouseEnter={autoplay.current.stop}
+                    onMouseLeave={autoplay.current.reset}
                 >
                     <CarouselContent>
                     {banners.map((banner, index) => (
@@ -152,9 +150,9 @@ export default function Home() {
 
             {/* Featured Products Section */}
             {featuredOfferProducts.length > 0 && (
-              <section className="py-12 md:py-20">
+              <section className="py-16 md:py-24 bg-primary-light">
                 <div className="container mx-auto px-4">
-                  <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 md:mb-14">Nuestras Mejores Ofertas</h2>
+                  <h2 className="text-4xl md:text-5xl font-bold text-center mb-12 md:mb-16 text-primary">Nuestras Mejores Ofertas</h2>
                   <Carousel
                     opts={{
                       align: 'start',
