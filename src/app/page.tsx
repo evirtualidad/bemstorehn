@@ -22,19 +22,19 @@ const heroBanners = [
   {
     title: 'Belleza en su Forma más Pura',
     description: 'Descubre nuestra colección exclusiva de cosméticos, elaborados con los mejores ingredientes naturales.',
-    image: 'https://placehold.co/1920x1080.png',
+    image: 'https://placehold.co/1200x600.png',
     aiHint: 'cosmetics flatlay',
   },
   {
     title: 'Novedades de Skincare',
     description: 'Renueva tu piel con nuestros últimos lanzamientos. Fórmulas potentes para resultados visibles.',
-    image: 'https://placehold.co/1920x1080.png',
+    image: 'https://placehold.co/1200x600.png',
     aiHint: 'skincare products',
   },
   {
     title: 'Esenciales de Maquillaje',
     description: 'Colores vibrantes y texturas que te encantarán. Encuentra tus nuevos favoritos.',
-    image: 'https://placehold.co/1920x1080.png',
+    image: 'https://placehold.co/1200x600.png',
     aiHint: 'makeup collection',
   },
 ];
