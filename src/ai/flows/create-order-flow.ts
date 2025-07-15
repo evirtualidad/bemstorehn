@@ -25,6 +25,7 @@ const ProductSchema = z.object({
 const AddressSchema = z.object({
   department: z.string(),
   municipality: z.string(),
+  colony: z.string().optional(),
   exactAddress: z.string(),
 });
 
@@ -75,7 +76,7 @@ const createOrderFlow = ai.defineFlow(
       console.log("Customer:", customerName);
       if (input.deliveryMethod === 'delivery' && input.customer.address) {
         console.log("Delivery Method: Envío a Domicilio");
-        console.log("Address:", `${input.customer.address.exactAddress}, ${input.customer.address.municipality}, ${input.customer.address.department}`);
+        console.log("Address:", `${input.customer.address.exactAddress}, ${input.customer.address.colony}, ${input.customer.address.municipality}, ${input.customer.address.department}`);
       } else if (input.deliveryMethod === 'pickup') {
          console.log("Delivery Method: Recoger en Tienda");
       }

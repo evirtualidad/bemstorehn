@@ -15,6 +15,7 @@ export interface Payment {
 export interface Address {
   department: string;
   municipality: string;
+  colony?: string;
   exactAddress: string;
 }
 

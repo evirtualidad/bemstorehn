@@ -84,29 +84,52 @@ function ShippingDialog({
         shippingOption: z.enum(['local', 'national'], {
             required_error: 'Debes seleccionar una opción de envío.',
         }),
-        department: z.string({ required_error: 'Debes seleccionar un departamento.' }),
-        municipality: z.string({ required_error: 'Debes seleccionar un municipio.' }),
+        department: z.string().optional(),
+        municipality: z.string().optional(),
+        colony: z.string().min(3, { message: 'La colonia/residencial debe tener al menos 3 caracteres.'}),
         exactAddress: z.string().min(10, { message: 'La dirección debe tener al menos 10 caracteres.' }),
+    }).refine(data => {
+        if (data.shippingOption === 'national') {
+            return !!data.department && !!data.municipality;
+        }
+        return true;
+    }, {
+        message: 'Departamento y municipio son obligatorios para envíos nacionales.',
+        path: ['department'], // You can point to one of the fields
     });
 
     const form = useForm<z.infer<typeof shippingFormSchema>>({
         resolver: zodResolver(shippingFormSchema),
         defaultValues: {
-            shippingOption: (currentAddress as any)?.type || undefined,
+            shippingOption: (currentAddress as any)?.type || 'local',
             department: currentAddress?.department || undefined,
             municipality: currentAddress?.municipality || undefined,
+            colony: currentAddress?.colony || '',
             exactAddress: currentAddress?.exactAddress || '',
         }
     });
 
     const selectedDepartment = form.watch('department');
     const selectedShippingOption = form.watch('shippingOption');
+    
+    useEffect(() => {
+        if(selectedShippingOption === 'local') {
+            form.setValue('department', 'Francisco Morazán');
+            form.setValue('municipality', 'Distrito Central');
+            form.clearErrors('department');
+            form.clearErrors('municipality');
+        } else {
+             form.setValue('department', (currentAddress as any)?.department || '');
+             form.setValue('municipality', (currentAddress as any)?.municipality || '');
+        }
+    }, [selectedShippingOption, form, currentAddress]);
 
     const handleSave = (values: z.infer<typeof shippingFormSchema>) => {
         const cost = values.shippingOption === 'local' ? shippingLocalCost : shippingNationalCost;
         onSave({
-            department: values.department,
-            municipality: values.municipality,
+            department: values.department || 'Francisco Morazán',
+            municipality: values.municipality || 'Distrito Central',
+            colony: values.colony,
             exactAddress: values.exactAddress,
         }, cost, values.shippingOption);
         onOpenChange(false);
@@ -114,7 +137,7 @@ function ShippingDialog({
     
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Información de Envío</DialogTitle>
                     <DialogDescription>
@@ -163,46 +186,63 @@ function ShippingDialog({
                             </FormItem>
                             )}
                         />
+                        {selectedShippingOption === 'national' && (
+                            <>
+                                <FormField
+                                    control={form.control}
+                                    name="department"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Departamento</FormLabel>
+                                        <Select onValueChange={(value) => { field.onChange(value); form.setValue('municipality', ''); }} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                            <SelectValue placeholder="Selecciona un departamento" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {hondurasGeodata.map(depto => (
+                                            <SelectItem key={depto.id} value={depto.nombre}>{depto.nombre}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="municipality"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Municipio</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value} disabled={!selectedDepartment}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                            <SelectValue placeholder="Selecciona un municipio" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {selectedDepartment && hondurasGeodata.find(d => d.nombre === selectedDepartment)?.municipios.map(muni => (
+                                            <SelectItem key={muni.id} value={muni.nombre}>{muni.nombre}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                            </>
+                        )}
                         <FormField
                             control={form.control}
-                            name="department"
+                            name="colony"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Departamento</FormLabel>
-                                <Select onValueChange={(value) => { field.onChange(value); form.setValue('municipality', ''); }} defaultValue={field.value}>
+                                <FormLabel>Colonia / Residencial</FormLabel>
                                 <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Selecciona un departamento" />
-                                    </SelectTrigger>
+                                    <Input placeholder="Ej: Colonia Kennedy" {...field}/>
                                 </FormControl>
-                                <SelectContent>
-                                    {hondurasGeodata.map(depto => (
-                                    <SelectItem key={depto.id} value={depto.nombre}>{depto.nombre}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="municipality"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Municipio</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value} disabled={!selectedDepartment}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Selecciona un municipio" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {selectedDepartment && hondurasGeodata.find(d => d.nombre === selectedDepartment)?.municipios.map(muni => (
-                                    <SelectItem key={muni.id} value={muni.nombre}>{muni.nombre}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                                </Select>
                                 <FormMessage />
                             </FormItem>
                             )}
@@ -214,7 +254,7 @@ function ShippingDialog({
                             <FormItem>
                                 <FormLabel>Dirección Exacta</FormLabel>
                                 <FormControl>
-                                <Textarea placeholder="Colonia, calle, número de casa, referencias..." {...field}/>
+                                <Textarea placeholder="Bloque, número de casa, referencias, etc." {...field}/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -222,7 +262,7 @@ function ShippingDialog({
                         />
                     </form>
                 </Form>
-                <DialogFooter>
+                <DialogFooter className="pt-4">
                     <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
                     <Button type="submit" form="shipping-form">Guardar Dirección</Button>
                 </DialogFooter>
@@ -446,6 +486,7 @@ export default function CheckoutPage() {
                                                            <CheckCircle className="h-5 w-5"/> Dirección guardada
                                                         </div>
                                                         <p className='font-medium'>{address.exactAddress}</p>
+                                                        <p>{address.colony}</p>
                                                         <p>{address.municipality}, {address.department}</p>
                                                         <Button variant="link" className="p-0 h-auto" type="button" onClick={() => setIsShippingDialogOpen(true)}>Editar Dirección</Button>
                                                     </div>
