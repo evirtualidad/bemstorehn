@@ -1,14 +1,22 @@
+
 'use client';
 
 import { Leaf, ShoppingCart, User } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { products } from '@/lib/products';
 import { useCart } from '@/hooks/use-cart';
 import { Badge } from '@/components/ui/badge';
+import { useProductsStore } from '@/hooks/use-products';
 
 export function Header() {
-  const categories = [...new Set(products.map((p) => p.category))];
+  const { products } = useProductsStore();
+  const categories = [...new Set(products.map((p) => p.category))].map(category => {
+    if (category === 'Skincare') return { key: category, label: 'Cuidado de la Piel' };
+    if (category === 'Makeup') return { key: category, label: 'Maquillaje' };
+    if (category === 'Haircare') return { key: category, label: 'Cuidado del Cabello' };
+    return { key: category, label: category };
+  });
+  
   const { items, toggleCart } = useCart();
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
@@ -25,11 +33,11 @@ export function Header() {
           <nav className="hidden md:flex items-center gap-6 text-md">
             {categories.map((category) => (
               <Link
-                key={category}
+                key={category.key}
                 href={`#`}
                 className="hover:text-primary transition-colors"
               >
-                {category}
+                {category.label}
               </Link>
             ))}
           </nav>
@@ -37,7 +45,7 @@ export function Header() {
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon">
             <User className="w-6 h-6" />
-            <span className="sr-only">Account</span>
+            <span className="sr-only">Cuenta</span>
           </Button>
           <Button variant="ghost" size="icon" className="relative" onClick={toggleCart}>
             {itemCount > 0 && (
@@ -49,7 +57,7 @@ export function Header() {
               </Badge>
             )}
             <ShoppingCart className="w-6 h-6" />
-            <span className="sr-only">Shopping Cart</span>
+            <span className="sr-only">Carrito de Compras</span>
           </Button>
         </div>
       </div>
