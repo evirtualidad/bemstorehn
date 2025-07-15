@@ -484,7 +484,7 @@ export default function OrdersPage() {
                         <div className="text-sm text-muted-foreground">{order.customer.phone}</div>
                     </TableCell>
                     <TableCell>
-                        <Badge variant="outline">{order.source === 'pos' ? 'Punto de Venta' : 'Tienda Online'}</Badge>
+                        <Badge variant="outline">{order.source === 'pos' ? 'POS' : 'Tienda Online'}</Badge>
                     </TableCell>
                     <TableCell>{format(parseISO(order.date), 'd MMM, yyyy')}</TableCell>
                     <TableCell>

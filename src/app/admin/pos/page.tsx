@@ -1178,7 +1178,7 @@ export default function PosPage() {
     return (
       <div className="flex h-screen flex-col bg-muted/40">
         <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20">
-            <h1 className="text-xl font-bold flex-1 whitespace-nowrap">Punto de Venta</h1>
+            <h1 className="text-xl font-bold flex-1 whitespace-nowrap">POS</h1>
         </header>
         <div className="flex-1">
             <LoadingSpinner />
@@ -1191,7 +1191,7 @@ export default function PosPage() {
     <div className="relative h-screen bg-muted/40 flex flex-col lg:flex-row">
         <div className='flex flex-col flex-1 lg:pr-[420px]'>
             <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20 flex-shrink-0">
-                <h1 className="text-xl font-bold flex-1 whitespace-nowrap">Punto de Venta</h1>
+                <h1 className="text-xl font-bold flex-1 whitespace-nowrap">POS</h1>
                  <div className="w-full sm:w-auto sm:flex-initial">
                     <ProductSearch onProductSelect={handleProductSelect} />
                  </div>
