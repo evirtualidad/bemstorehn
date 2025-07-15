@@ -196,6 +196,7 @@ function ProductGrid({
       {products.map((product) => {
         const stockStatus = product.stock <= 0 ? "Agotado" : product.stock < 10 ? "Poco Stock" : "En Stock";
         const isDiscounted = product.specialCategory === 'descuento' && product.originalPrice && product.originalPrice > product.price;
+        const isPromotion = product.specialCategory === 'promocion';
 
         return (
           <Card
@@ -212,8 +213,11 @@ function ProductGrid({
                   className="object-cover group-hover:scale-105 transition-transform"
                 />
                 <div className="absolute top-2 right-2 flex flex-col gap-2 items-end">
-                  {isDiscounted && (
-                    <Badge variant="destructive" className="text-md font-bold uppercase"><Tag className="mr-1 h-4 w-4" /> Descuento</Badge>
+                   {isDiscounted && (
+                      <Badge variant="destructive" className="text-md font-bold uppercase"><Tag className="mr-1 h-4 w-4" /> Descuento</Badge>
+                  )}
+                  {isPromotion && (
+                      <Badge className="bg-accent-foreground text-white text-md font-bold uppercase"><Star className="mr-1 h-4 w-4" /> Promoción</Badge>
                   )}
                   <Badge 
                     className={cn(
@@ -904,3 +908,5 @@ export default function PosPage() {
     </div>
   );
 }
+
+    
