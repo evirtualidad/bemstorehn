@@ -35,6 +35,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { hondurasGeodata } from '@/lib/honduras-geodata';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCustomersStore, type Customer } from '@/hooks/use-customers';
+import { CustomerSearch } from '@/components/customer-search';
 
 type PosCartItem = Product & { quantity: number };
 
@@ -601,7 +603,7 @@ function ShippingDialog({
                       <Select
                         onValueChange={(value) => {
                           field.onChange(value);
-                          form.setValue('municipality', '');
+                          form.setValue('municipality', undefined);
                         }}
                         defaultValue={field.value}
                       >
@@ -692,7 +694,7 @@ function ShippingDialog({
   );
 }
 
-function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, subtotal, taxAmount, shippingCost, totalWithShipping, change, isInDialog, onOpenShipping }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, cart: PosCartItem[], total: number, subtotal: number, taxAmount: number, shippingCost: number, totalWithShipping: number, change: number, isInDialog?: boolean, onOpenShipping: () => void }) {
+function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, subtotal, taxAmount, shippingCost, totalWithShipping, change, isInDialog, onOpenShipping, onCustomerSelect }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, cart: PosCartItem[], total: number, subtotal: number, taxAmount: number, shippingCost: number, totalWithShipping: number, change: number, isInDialog?: boolean, onOpenShipping: () => void, onCustomerSelect: (customer: Customer) => void }) {
     const paymentMethod = form.watch('paymentMethod');
     const deliveryMethod = form.watch('deliveryMethod');
     const address = form.watch('address');
@@ -736,32 +738,22 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
                     </div>
                 </div>
 
-                <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Nombre del Cliente {(paymentMethod !== 'credito' && deliveryMethod !== 'delivery') && '(Opcional)'}</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Nombre completo" {...field} className="h-11"/>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Teléfono {(paymentMethod !== 'credito' && deliveryMethod !== 'delivery') && '(Opcional)'}</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Número de teléfono" {...field} className="h-11"/>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                <div className='space-y-6'>
+                    <CustomerSearch onCustomerSelect={onCustomerSelect} form={form}/>
+                    <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Teléfono {(paymentMethod !== 'credito' && deliveryMethod !== 'delivery') && '(Opcional)'}</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Número de teléfono" {...field} className="h-11"/>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
 
                 <Controller
                     control={form.control}
@@ -937,6 +929,7 @@ export default function PosPage() {
   const [cart, setCart] = React.useState<PosCartItem[]>([]);
   const { products, decreaseStock, isHydrated } = useProductsStore();
   const { addOrder } = useOrdersStore();
+  const { addOrUpdateCustomer } = useCustomersStore();
   const { categories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
@@ -1060,6 +1053,14 @@ export default function PosPage() {
       return [...prevCart, { ...product, quantity: 1 }];
     });
   };
+  
+  const handleCustomerSelect = (customer: Customer) => {
+    form.setValue('name', customer.name);
+    form.setValue('phone', customer.phone);
+    if(customer.address) {
+      form.setValue('address', customer.address);
+    }
+  };
 
   const updateQuantity = (productId: string, amount: number) => {
     setCart((prevCart) => {
@@ -1131,6 +1132,8 @@ export default function PosPage() {
 
       if (result.success) {
         cart.forEach((item) => decreaseStock(item.id, item.quantity));
+        
+        // Add order to store
         addOrder({
             id: result.orderId,
             customer: {
@@ -1148,6 +1151,19 @@ export default function PosPage() {
             source: 'pos',
             deliveryMethod: orderInput.deliveryMethod,
         });
+        
+        // Add or update customer
+        if (orderInput.customer.name && orderInput.customer.phone) {
+             addOrUpdateCustomer({
+                id: `cust_${orderInput.customer.phone}`,
+                name: orderInput.customer.name,
+                phone: orderInput.customer.phone,
+                address: orderInput.customer.address,
+                orderIds: [result.orderId],
+                totalSpent: orderInput.total,
+             });
+        }
+
 
         toast({
           title: '¡Pedido Creado!',
@@ -1283,6 +1299,7 @@ export default function PosPage() {
                             change={change} 
                             isInDialog={true}
                             onOpenShipping={() => setIsShippingDialogOpen(true)}
+                            onCustomerSelect={handleCustomerSelect}
                         />
                     </div>
                 </ScrollArea>

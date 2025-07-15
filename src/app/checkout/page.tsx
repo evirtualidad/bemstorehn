@@ -44,6 +44,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCustomersStore } from '@/hooks/use-customers';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(2, {
@@ -226,7 +227,7 @@ function ShippingDialog({
                                     render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Departamento</FormLabel>
-                                        <Select onValueChange={(value) => { field.onChange(value); form.setValue('municipality', ''); }} defaultValue={field.value}>
+                                        <Select onValueChange={(value) => { field.onChange(value); form.setValue('municipality', undefined); }} defaultValue={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
                                             <SelectValue placeholder="Selecciona un departamento" />
@@ -308,6 +309,7 @@ export default function CheckoutPage() {
   const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart, toggleCart } = useCart();
   const { decreaseStock } = useProductsStore();
   const { addOrder } = useOrdersStore();
+  const { addOrUpdateCustomer } = useCustomersStore();
   const { taxRate, pickupAddress } = useSettingsStore();
   const { toast } = useToast();
   const router = useRouter();
@@ -389,6 +391,17 @@ export default function CheckoutPage() {
           source: 'online-store',
           deliveryMethod: orderInput.deliveryMethod,
         });
+
+        if (orderInput.customer.name && orderInput.customer.phone) {
+             addOrUpdateCustomer({
+                id: `cust_${orderInput.customer.phone}`,
+                name: orderInput.customer.name,
+                phone: orderInput.customer.phone,
+                address: orderInput.customer.address,
+                orderIds: [result.orderId],
+                totalSpent: orderInput.total,
+             });
+        }
 
         toast({
           title: '¡Pedido Recibido!',
