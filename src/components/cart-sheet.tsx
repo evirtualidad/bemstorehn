@@ -65,8 +65,7 @@ function RecommendedProducts() {
     return (
       <div className="p-4 space-y-4">
         <h3 className="font-semibold text-lg">También te podría interesar...</h3>
-        <div className="grid grid-cols-3 gap-4">
-          <Skeleton className="h-48 w-full" />
+        <div className="grid grid-cols-2 gap-4">
           <Skeleton className="h-48 w-full" />
           <Skeleton className="h-48 w-full" />
         </div>
@@ -79,12 +78,13 @@ function RecommendedProducts() {
   return (
     <div className="p-4 space-y-4">
       <h3 className="font-semibold text-lg">También te podría interesar...</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-4">
         {recommendations.map(product => (
           <ProductCard 
             key={product.id}
             product={product as Product}
             className="shadow-none border-none"
+            showDescription={false}
           />
         ))}
       </div>
@@ -106,7 +106,7 @@ export function CartSheet() {
 
   return (
     <Sheet open={isOpen} onOpenChange={toggleCart}>
-      <SheetContent className="flex w-full flex-col pr-0 sm:max-w-xl">
+      <SheetContent className="flex w-full flex-col sm:max-w-xl">
         <SheetHeader className="px-4">
           <SheetTitle>Carrito de Compras ({items.length})</SheetTitle>
         </SheetHeader>
