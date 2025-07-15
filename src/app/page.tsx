@@ -150,7 +150,7 @@ export default function Home() {
 
             {/* Featured Products Section */}
             {featuredOfferProducts.length > 0 && (
-              <section className="py-16 md:py-24 bg-primary-light">
+              <section className="py-16 md:py-24 bg-gradient-to-b from-primary-light to-background">
                 <div className="container mx-auto px-4">
                   <h2 className="text-4xl md:text-5xl font-bold text-center mb-12 md:mb-16 text-primary">Nuestras Mejores Ofertas</h2>
                   <Carousel
