@@ -36,7 +36,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [api, setApi] = React.useState<CarouselApi | null>(null);
   const [current, setCurrent] = React.useState(0);
   const [isPlaying, setIsPlaying] = React.useState(true);
-
+  
   const autoplayPlugin = React.useRef(
     Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: true })
   );
@@ -44,39 +44,35 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   React.useEffect(() => {
     if (!api) return;
 
-    const onSelect = (api: CarouselApi) => {
+    const onSelect = () => {
       setCurrent(api.selectedScrollSnap());
     };
-
+    
     const onPlay = () => setIsPlaying(true);
     const onStop = () => setIsPlaying(false);
 
     api.on('select', onSelect);
-    api.on('autoplay:play', onPlay);
-    api.on('autoplay:stop', onStop);
-    
-    // Set initial state
-    setCurrent(api.selectedScrollSnap());
-    setIsPlaying(api.plugins().autoplay.isPlaying());
+    api.on('play', onPlay);
+    api.on('stop', onStop);
 
     return () => {
       api.off('select', onSelect);
-      api.off('autoplay:play', onPlay);
-      api.off('autoplay:stop', onStop);
+      api.off('play', onPlay);
+      api.off('stop', onStop);
     };
   }, [api]);
 
   const togglePlay = React.useCallback(() => {
-    const autoplay = api?.plugins()?.autoplay;
-    if (!autoplay) return;
-
+    if (!api) return;
+    const autoplay = api.plugins().autoplay;
     if (autoplay.isPlaying()) {
       autoplay.stop();
     } else {
       autoplay.play();
     }
+    setIsPlaying(!autoplay.isPlaying());
   }, [api]);
-
+  
   if (banners.length === 0) return null;
 
   return (
