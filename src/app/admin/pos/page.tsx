@@ -210,24 +210,32 @@ function ProductGrid({
                   fill
                   className="object-cover group-hover:scale-105 transition-transform"
                 />
-                 <Badge 
-                  className={cn(
-                    "absolute top-2 right-2",
-                    stockStatus === "Agotado" && "bg-destructive text-destructive-foreground",
-                    stockStatus === "Poco Stock" && "bg-amber-500 text-white"
+                <div className="absolute top-2 right-2 flex flex-col gap-2 items-end">
+                  {isDiscounted && (
+                    <Badge variant="destructive" className="text-md font-bold uppercase"><Tag className="mr-1 h-4 w-4" /> Descuento</Badge>
                   )}
-                >
-                  {stockStatus}
-                </Badge>
+                  <Badge 
+                    className={cn(
+                      "w-fit",
+                      stockStatus === "Agotado" && "bg-destructive text-destructive-foreground",
+                      stockStatus === "Poco Stock" && "bg-amber-500 text-white"
+                    )}
+                  >
+                    {stockStatus}
+                  </Badge>
+                 </div>
               </div>
-              <div className="p-3 flex items-center flex-grow">
-                <h3 className="font-semibold text-sm leading-tight h-10 flex items-center w-full">{product.name}</h3>
+              <div className="p-3 flex-grow flex items-center">
+                <h3 className="font-semibold text-sm leading-tight w-full">{product.name}</h3>
               </div>
-               <div className="mt-auto bg-primary text-primary-foreground text-center p-2 rounded-b-md">
+               <div className={cn(
+                  "mt-auto text-center p-2 rounded-b-md",
+                  isDiscounted ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"
+                )}>
                    {isDiscounted ? (
                       <div className='flex items-baseline justify-center gap-2'>
-                        <span className="text-xl font-bold text-destructive-foreground">{formatCurrency(product.price, currency.code)}</span>
-                        <span className="text-sm font-medium text-primary-foreground/80 line-through">{formatCurrency(product.originalPrice!, currency.code)}</span>
+                        <span className="text-xl font-bold">{formatCurrency(product.price, currency.code)}</span>
+                        <span className="text-sm font-medium text-destructive-foreground/80 line-through">{formatCurrency(product.originalPrice!, currency.code)}</span>
                       </div>
                     ) : (
                       <span className="text-lg font-bold">{formatCurrency(product.price, currency.code)}</span>
