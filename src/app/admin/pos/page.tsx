@@ -26,7 +26,7 @@ import { useProductsStore } from '@/hooks/use-products';
 import { createOrder } from '@/ai/flows/create-order-flow';
 import type { Product } from '@/lib/products';
 import Image from 'next/image';
-import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard, Banknote, Landmark, X } from 'lucide-react';
+import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard, Banknote, Landmark, X, Star } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -50,6 +50,9 @@ import { useCurrencyStore } from '@/hooks/use-currency';
 import { Badge } from '@/components/ui/badge';
 
 type PosCartItem = Product & { quantity: number };
+
+type SelectedFilter = { type: 'category'; value: string } | { type: 'special'; value: 'descuento' | 'promocion' } | null;
+
 
 const checkoutFormSchema = z
   .object({
@@ -112,33 +115,64 @@ const checkoutFormSchema = z
 
 function CategoryList({
   categories,
-  selectedCategory,
-  onSelectCategory,
+  hasDiscounts,
+  hasPromotions,
+  selectedFilter,
+  onSelectFilter,
 }: {
   categories: string[];
-  selectedCategory: string | null;
-  onSelectCategory: (category: string | null) => void;
+  hasDiscounts: boolean;
+  hasPromotions: boolean;
+  selectedFilter: SelectedFilter;
+  onSelectFilter: (filter: SelectedFilter) => void;
 }) {
   const { getCategoryByName } = useCategoriesStore();
+  
+  const isSelected = (type: 'category' | 'special' | null, value?: string) => {
+    if (!selectedFilter && !type) return true;
+    if (!selectedFilter) return false;
+    return selectedFilter.type === type && selectedFilter.value === value;
+  };
+
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <Button
-        variant={selectedCategory === null ? 'default' : 'outline'}
+        variant={isSelected(null) ? 'default' : 'outline'}
         className="justify-start h-11 px-4"
-        onClick={() => onSelectCategory(null)}
+        onClick={() => onSelectFilter(null)}
       >
         <Tag className="mr-2 h-4 w-4" />
         Todas
       </Button>
+       {hasDiscounts && (
+        <Button
+          variant={isSelected('special', 'descuento') ? 'default' : 'outline'}
+          className="justify-start h-11 px-4"
+          onClick={() => onSelectFilter({ type: 'special', value: 'descuento' })}
+        >
+          <Tag className="mr-2 h-4 w-4" />
+          Descuentos
+        </Button>
+      )}
+      {hasPromotions && (
+        <Button
+          variant={isSelected('special', 'promocion') ? 'default' : 'outline'}
+          className="justify-start h-11 px-4"
+          onClick={() => onSelectFilter({ type: 'special', value: 'promocion' })}
+        >
+          <Star className="mr-2 h-4 w-4" />
+          Promociones
+        </Button>
+      )}
       {categories.map((categoryName) => {
         const category = getCategoryByName(categoryName);
         if (!category) return null;
         return (
           <Button
             key={category.id}
-            variant={selectedCategory === category.name ? 'default' : 'outline'}
+            variant={isSelected('category', category.name) ? 'default' : 'outline'}
             className="justify-start h-11 px-4"
-            onClick={() => onSelectCategory(category.name)}
+            onClick={() => onSelectFilter({ type: 'category', value: category.name })}
           >
             {category.label}
           </Button>
@@ -160,6 +194,8 @@ function ProductGrid({
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
       {products.map((product) => {
         const stockStatus = product.stock <= 0 ? "Agotado" : product.stock < 10 ? "Poco Stock" : "En Stock";
+        const isDiscounted = product.specialCategory === 'descuento' && product.originalPrice && product.originalPrice > product.price;
+
         return (
           <Card
             key={product.id}
@@ -184,11 +220,18 @@ function ProductGrid({
                   {stockStatus}
                 </Badge>
               </div>
-              <div className="flex-grow p-3 flex items-center">
+              <div className="p-3 flex items-center flex-grow">
                 <h3 className="font-semibold text-sm leading-tight h-10 flex items-center w-full">{product.name}</h3>
               </div>
                <div className="mt-auto bg-primary text-primary-foreground text-center p-2 rounded-b-md">
-                  <span className="text-lg font-bold">{formatCurrency(product.price, currency.code)}</span>
+                   {isDiscounted ? (
+                      <div className='flex items-baseline justify-center gap-2'>
+                        <span className="text-xl font-bold text-destructive-foreground">{formatCurrency(product.price, currency.code)}</span>
+                        <span className="text-sm font-medium text-primary-foreground/80 line-through">{formatCurrency(product.originalPrice!, currency.code)}</span>
+                      </div>
+                    ) : (
+                      <span className="text-lg font-bold">{formatCurrency(product.price, currency.code)}</span>
+                    )}
               </div>
             </CardContent>
           </Card>
@@ -578,14 +621,23 @@ export default function PosPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
   const [isTicketVisible, setIsTicketVisible] = React.useState(false);
-  const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
+  const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
 
   const productCategories = [...new Set(products.map((p) => p.category))];
+  const hasDiscounts = products.some(p => p.specialCategory === 'descuento');
+  const hasPromotions = products.some(p => p.specialCategory === 'promocion');
+
 
   const filteredProducts = React.useMemo(() => {
-    if (!selectedCategory) return products;
-    return products.filter((p) => p.category === selectedCategory);
-  }, [selectedCategory, products]);
+    if (!selectedFilter) return products;
+    if (selectedFilter.type === 'category') {
+      return products.filter((p) => p.category === selectedFilter.value);
+    }
+    if (selectedFilter.type === 'special') {
+      return products.filter((p) => p.specialCategory === selectedFilter.value);
+    }
+    return products;
+  }, [selectedFilter, products]);
 
   const total = React.useMemo(() => {
     return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -752,8 +804,10 @@ export default function PosPage() {
             <div className="p-4 space-y-4 flex-shrink-0 bg-background">
                  <CategoryList
                     categories={productCategories}
-                    selectedCategory={selectedCategory}
-                    onSelectCategory={setSelectedCategory}
+                    hasDiscounts={hasDiscounts}
+                    hasPromotions={hasPromotions}
+                    selectedFilter={selectedFilter}
+                    onSelectFilter={setSelectedFilter}
                 />
                 <Separator />
             </div>
@@ -827,5 +881,3 @@ export default function PosPage() {
     </div>
   );
 }
-
-    
