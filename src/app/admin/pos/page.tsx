@@ -205,7 +205,7 @@ function ProductGrid({
             <CardContent className="p-0 flex-grow flex flex-col">
               <div className="relative aspect-square">
                 <Image
-                  src={product.image || 'https://placehold.co/200x200.png'}
+                  src={product.image || 'https://placehold.co/400x400.png'}
                   alt={product.name}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform"
@@ -225,8 +225,8 @@ function ProductGrid({
                   </Badge>
                  </div>
               </div>
-              <div className="p-3 flex-grow flex items-center">
-                <h3 className="font-semibold text-sm leading-tight w-full">{product.name}</h3>
+              <div className="p-3 flex-grow flex items-center justify-center">
+                <h3 className="font-semibold text-sm leading-tight text-center w-full">{product.name}</h3>
               </div>
                <div className={cn(
                   "mt-auto text-center p-2 rounded-b-md",
