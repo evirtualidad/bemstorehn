@@ -21,13 +21,15 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { ProductGrid } from '@/components/product-grid';
 import { ProductCard } from '@/components/product-card';
-import { Pause, Play, Instagram, Facebook } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Pause, Play, Instagram, Facebook, ShoppingCart } from 'lucide-react';
+import { cn, formatCurrency } from '@/lib/utils';
+import { useCart } from '@/hooks/use-cart';
+import { useCurrencyStore } from '@/hooks/use-currency';
 
 // A custom TikTok icon as lucide-react might not have it.
 const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="M21 7.4c-1.3-1.4-3.1-2.2-5-2.4v12.2c0 2.3-1.9 4.2-4.2 4.2s-4.2-1.9-4.2-4.2V8.7c-2.3.7-4 2.6-4.6 4.9-.7 3.2 1.2 6.4 4.4 7.1 3.2.7 6.4-1.2 7.1-4.4.1-.5.2-1 .2-1.5V7.4z"></path>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="currentColor" {...props}>
+        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-2.43.05-4.86-.95-6.69-2.8-1.95-1.98-2.65-4.81-1.76-7.12 1.16-2.95 4.09-4.96 7.08-5.34.07-1.54.03-3.08.02-4.61.11-1.2.6-2.39 1.31-3.42 1.31-1.92 3.58-3.17 5.91-3.21z"/>
     </svg>
 );
 
@@ -57,7 +59,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   if (banners.length === 0) return null;
 
   return (
-    <section className="relative w-full group/hero h-[50vh]">
+    <section className="relative w-full group/hero h-[50vh] sm:h-[60vh] lg:h-[70vh]">
       <div className="w-full h-full">
         <div className="fade-carousel-content h-full">
           {banners.map((banner, index) => (
@@ -76,10 +78,10 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
                   priority={index === 0}
                 />
                 <div className="relative z-10 container mx-auto px-4 animate-in fade-in-0 slide-in-from-bottom-10 duration-700">
-                  <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-shadow-lg">
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-shadow-lg">
                     {banner.title}
                   </h1>
-                  <p className="mt-4 text-md sm:text-lg max-w-2xl mx-auto text-shadow">
+                  <p className="mt-4 text-sm sm:text-base max-w-2xl mx-auto text-shadow">
                     {banner.description}
                   </p>
                 </div>
@@ -135,9 +137,9 @@ function FeaturedProductsCarousel({ products }: { products: Product[] }) {
     );
 
     return (
-        <section className="py-16 md:py-24 bg-gradient-to-b from-primary-light to-background">
+        <section className="py-12 md:py-20 bg-gradient-to-b from-primary-light to-background">
             <div className="container mx-auto px-4">
-                <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 md:mb-16 text-primary">Nuestras Mejores Ofertas</h2>
+                <h2 className="text-2xl md:text-3xl font-bold text-center mb-10 md:mb-12 text-primary">Nuestras Mejores Ofertas</h2>
                 <Carousel
                     opts={{
                         align: 'start',
@@ -148,7 +150,7 @@ function FeaturedProductsCarousel({ products }: { products: Product[] }) {
                 >
                     <CarouselContent>
                         {products.map((product) => (
-                            <CarouselItem key={product.id} className="md:basis-1/2 lg:basis-1/4">
+                            <CarouselItem key={product.id} className="basis-1/2 md:basis-1/3 lg:basis-1/4">
                                 <ProductCard product={product} />
                             </CarouselItem>
                         ))}
@@ -163,7 +165,13 @@ export default function Home() {
   const { products, isHydrated } = useProductsStore();
   const { banners } = useBannersStore();
   const { categories } = useCategoriesStore();
+  const { items, total, toggleCart } = useCart();
+  const { currency } = useCurrencyStore();
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
+
+  const itemCount = React.useMemo(() => {
+    return items.reduce((sum, item) => sum + item.quantity, 0);
+  }, [items]);
 
   const productsByCategory = React.useMemo(() => {
     if (!isHydrated) return {};
@@ -214,9 +222,9 @@ export default function Home() {
     if (!category || !productsByCategory[categoryName]) return null;
 
     return (
-      <div className="mb-16">
+      <div className="mb-12">
         <div className="container mx-auto px-4">
-          <h3 className="text-2xl md:text-3xl font-bold mb-8 text-primary">{category.label}</h3>
+          <h3 className="text-xl md:text-2xl font-bold mb-6 text-primary">{category.label}</h3>
           <ProductGrid products={productsByCategory[categoryName]} />
         </div>
       </div>
@@ -243,18 +251,18 @@ export default function Home() {
             <HeroCarousel banners={banners} />
             <FeaturedProductsCarousel products={featuredOfferProducts} />
             <Separator className="my-8 bg-border/40" />
-            <section className="py-12 md:py-20">
-              <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 md:mb-14">Nuestro Catálogo</h2>
+            <section className="py-10 md:py-16">
+              <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">Nuestro Catálogo</h2>
               {Object.keys(productsByCategory).map((categoryName) => (
                 <CategorySection key={categoryName} categoryName={categoryName} />
               ))}
             </section>
           </>
         ) : (
-          <section className="py-12 md:py-20">
+          <section className="py-10 md:py-16">
             <div className="container mx-auto px-4">
-                <div className="flex flex-col sm:flex-row justify-between items-center mb-10 md:mb-14 gap-4">
-                    <h2 className="text-3xl md:text-4xl font-bold text-center">
+                <div className="flex flex-col sm:flex-row justify-between items-center mb-8 md:mb-12 gap-4">
+                    <h2 className="text-2xl md:text-3xl font-bold text-center">
                         {getCategoryLabel()}
                     </h2>
                     <Button variant="outline" onClick={() => setSelectedCategory(null)}>Ver Todos los Productos</Button>
@@ -264,14 +272,31 @@ export default function Home() {
           </section>
         )}
       </main>
+
+      <div className="md:hidden fixed bottom-4 right-4 z-20">
+            <Button
+                size="lg"
+                className="relative h-20 w-20 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 bg-primary text-primary-foreground hover:bg-primary/90 border-4 border-background"
+                onClick={toggleCart}
+            >
+                <ShoppingCart className="h-6 w-6" />
+                <span className="text-sm font-bold">{formatCurrency(total, currency.code)}</span>
+                {itemCount > 0 && (
+                    <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-7 w-7 flex items-center justify-center border-4 border-background">
+                        {itemCount}
+                    </div>
+                )}
+            </Button>
+      </div>
+
       <footer className="py-10 border-t border-border/40 bg-muted/30">
         <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 text-muted-foreground px-4">
           <div>
-            <h3 className="font-bold text-lg md:text-xl text-foreground mb-3">BEM STORE HN</h3>
+            <h3 className="font-bold text-lg text-foreground mb-3">BEM STORE HN</h3>
             <p className="text-sm">Belleza en su Forma más Pura.</p>
           </div>
           <div>
-            <h4 className="font-bold text-md md:text-lg text-foreground mb-3">Tienda</h4>
+            <h4 className="font-bold text-md text-foreground mb-3">Tienda</h4>
             <ul className="space-y-2 text-sm">
               {categories.map(cat => (
                 <li key={cat.id}><Link href="#" className="hover:text-primary">{cat.label}</Link></li>
@@ -279,14 +304,14 @@ export default function Home() {
             </ul>
           </div>
           <div>
-            <h4 className="font-bold text-md md:text-lg text-foreground mb-3">Sobre Nosotros</h4>
+            <h4 className="font-bold text-md text-foreground mb-3">Sobre Nosotros</h4>
             <ul className="space-y-2 text-sm">
               <li><Link href="#" className="hover:text-primary">Nuestra Historia</Link></li>
               <li><Link href="#" className="hover:text-primary">Contacto</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="font-bold text-md md:text-lg text-foreground mb-3">Síguenos</h4>
+            <h4 className="font-bold text-md text-foreground mb-3">Síguenos</h4>
             <div className="flex items-center gap-4">
                 <a href="https://instagram.com/bemstorehn" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
                     <Instagram className="h-6 w-6" />
@@ -310,5 +335,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
