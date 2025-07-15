@@ -25,7 +25,7 @@ const currencies: Currency[] = [
   { code: 'PAB', name: 'Panamanian Balboa', symbol: 'B/.' },
 ];
 
-const initialCurrency = currencies[0]; // Default to USD
+const initialCurrency = currencies.find(c => c.code === 'HNL') || currencies[0];
 
 type CurrencyState = {
   currencies: Currency[];
