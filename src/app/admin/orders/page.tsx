@@ -112,6 +112,7 @@ const orderApprovalFormSchema = z
   .object({
     paymentMethod: z.enum(['efectivo', 'tarjeta', 'transferencia', 'credito']),
     paymentDueDate: z.date().optional(),
+    paymentReference: z.string().optional(),
   })
   .refine(data => data.paymentMethod !== 'credito' || !!data.paymentDueDate, {
     message: 'La fecha de pago es obligatoria para pagos a crédito.',
@@ -134,7 +135,8 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
     const form = useForm<z.infer<typeof orderApprovalFormSchema>>({
         resolver: zodResolver(orderApprovalFormSchema),
         defaultValues: {
-            paymentMethod: 'tarjeta',
+            paymentMethod: order.paymentMethod || 'tarjeta',
+            paymentReference: order.paymentReference || '',
         },
     });
 
@@ -142,7 +144,8 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
         approveOrder({
             orderId: order.id,
             paymentMethod: values.paymentMethod,
-            paymentDueDate: values.paymentDueDate
+            paymentDueDate: values.paymentDueDate,
+            paymentReference: values.paymentReference,
         });
         toast({ title: '¡Pedido Aprobado!', description: `El pedido ${order.id} ha sido facturado.` });
         setIsOpen(false);
@@ -350,6 +353,9 @@ export default function OrdersPage() {
                     <TableRow key={order.id}>
                     <TableCell>
                         <div className="font-medium text-primary hover:underline cursor-pointer">{order.id}</div>
+                         {order.paymentMethod === 'transferencia' && order.paymentReference && (
+                           <p className="text-xs text-muted-foreground">Ref: {order.paymentReference}</p>
+                         )}
                     </TableCell>
                     <TableCell>
                         <div className="font-medium">{order.customer.name}</div>
@@ -360,14 +366,10 @@ export default function OrdersPage() {
                     </TableCell>
                     <TableCell>{format(parseISO(order.date), 'd MMM, yyyy')}</TableCell>
                     <TableCell>
-                        {order.status !== 'pending-approval' ? (
-                            <div className="flex items-center gap-2">
-                                {paymentMethodIcons[order.paymentMethod as keyof typeof paymentMethodIcons]}
-                                {paymentMethodLabels[order.paymentMethod as keyof typeof paymentMethodLabels]}
-                            </div>
-                        ) : (
-                            <span className='text-sm text-muted-foreground'>N/A</span>
-                        )}
+                        <div className="flex items-center gap-2">
+                            {paymentMethodIcons[order.paymentMethod as keyof typeof paymentMethodIcons]}
+                            {paymentMethodLabels[order.paymentMethod as keyof typeof paymentMethodLabels]}
+                        </div>
                     </TableCell>
                     <TableCell>
                         <Badge variant={'secondary'} className={statusInfo.color}>

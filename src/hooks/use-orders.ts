@@ -38,6 +38,7 @@ export interface Order {
   balance: number; 
   payments: Payment[]; 
   paymentMethod: 'efectivo' | 'tarjeta' | 'transferencia' | 'credito';
+  paymentReference?: string;
   status: 'pending-approval' | 'pending-payment' | 'paid' | 'cancelled';
   source: 'pos' | 'online-store';
   deliveryMethod?: 'pickup' | 'delivery';
@@ -134,7 +135,7 @@ type OrdersState = {
   orders: Order[];
   addOrder: (order: Omit<Order, 'balance' | 'payments' | 'status'> & { status: Order['status'] }) => void;
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => void;
-  approveOrder: (data: { orderId: string, paymentMethod: Order['paymentMethod'], paymentDueDate?: Date }) => void;
+  approveOrder: (data: { orderId: string, paymentMethod: Order['paymentMethod'], paymentDueDate?: Date, paymentReference?: string }) => void;
   cancelOrder: (orderId: string) => void;
 };
 
@@ -181,22 +182,29 @@ export const useOrdersStore = create<OrdersState>()(
           }),
         }));
       },
-      approveOrder: ({ orderId, paymentMethod, paymentDueDate }) => {
+      approveOrder: ({ orderId, paymentMethod, paymentDueDate, paymentReference }) => {
         set((state) => ({
             orders: state.orders.map((o) => {
                 if (o.id === orderId && o.status === 'pending-approval') {
                     const isCredit = paymentMethod === 'credito';
+                    const isPaid = ['tarjeta', 'efectivo', 'transferencia'].includes(paymentMethod);
+                    
+                    let status: Order['status'] = 'pending-approval';
+                    if (isCredit) status = 'pending-payment';
+                    if (isPaid) status = 'paid';
+
                     return {
                         ...o,
                         paymentMethod: paymentMethod,
                         paymentDueDate: paymentDueDate ? paymentDueDate.toISOString() : o.paymentDueDate,
-                        status: isCredit ? 'pending-payment' : 'paid',
+                        paymentReference: paymentReference || o.paymentReference,
+                        status: status,
                         balance: isCredit ? o.total : 0,
-                        payments: isCredit ? [] : [{
+                        payments: isPaid ? [{
                             amount: o.total,
                             date: new Date().toISOString(),
-                            method: paymentMethod
-                        }]
+                            method: paymentMethod as 'efectivo' | 'tarjeta' | 'transferencia'
+                        }] : []
                     };
                 }
                 return o;

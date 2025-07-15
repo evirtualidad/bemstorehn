@@ -21,7 +21,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Loader2, Truck, MapPin, Store, CheckCircle } from 'lucide-react';
+import { Loader2, Truck, MapPin, Store, CheckCircle, Banknote, CreditCard, Landmark } from 'lucide-react';
 import { createOrder } from '@/ai/flows/create-order-flow';
 import { useProductsStore } from '@/hooks/use-products';
 import { useCurrencyStore } from '@/hooks/use-currency';
@@ -56,6 +56,10 @@ const checkoutFormSchema = z.object({
     required_error: 'Debes seleccionar un método de entrega.',
   }),
   address: z.custom<Address>().optional(),
+  paymentMethod: z.enum(['tarjeta', 'transferencia', 'efectivo'], {
+    required_error: "Debes seleccionar un método de pago."
+  }),
+  paymentReference: z.string().optional(),
 }).refine((data) => {
     if (data.deliveryMethod === 'delivery' && !data.address) {
         return false;
@@ -64,6 +68,14 @@ const checkoutFormSchema = z.object({
 }, {
     message: 'La dirección de envío es obligatoria.',
     path: ['address'],
+}).refine((data) => {
+    if (data.paymentMethod === 'transferencia' && !data.paymentReference) {
+        return false;
+    }
+    return true;
+}, {
+    message: "El número de referencia es obligatorio para pagos por transferencia.",
+    path: ['paymentReference'],
 });
 
 
@@ -186,7 +198,7 @@ function ShippingDialog({
                             </FormItem>
                             )}
                         />
-                        {selectedShippingOption === 'national' && (
+                        {selectedShippingOption === 'national' ? (
                             <>
                                 <FormField
                                     control={form.control}
@@ -233,7 +245,7 @@ function ShippingDialog({
                                     )}
                                 />
                             </>
-                        )}
+                        ) : null}
                         <FormField
                             control={form.control}
                             name="colony"
@@ -292,6 +304,7 @@ export default function CheckoutPage() {
   });
 
   const deliveryMethod = form.watch('deliveryMethod');
+  const paymentMethod = form.watch('paymentMethod');
   const address = form.watch('address');
 
   useEffect(() => {
@@ -331,7 +344,8 @@ export default function CheckoutPage() {
         items: items.map(item => ({ ...item, quantity: item.quantity, stock: item.stock, category: item.category, description: item.description })),
         total: total,
         shippingCost: shippingCost,
-        paymentMethod: 'tarjeta' as const, // Placeholder, actual payment would be next
+        paymentMethod: values.paymentMethod,
+        paymentReference: values.paymentReference,
         deliveryMethod: values.deliveryMethod,
       };
 
@@ -348,7 +362,8 @@ export default function CheckoutPage() {
           items: orderInput.items,
           total: orderInput.total,
           shippingCost: orderInput.shippingCost,
-          paymentMethod: 'tarjeta', 
+          paymentMethod: orderInput.paymentMethod,
+          paymentReference: orderInput.paymentReference, 
           date: new Date().toISOString(),
           status: 'pending-approval',
           source: 'online-store',
@@ -386,7 +401,7 @@ export default function CheckoutPage() {
             Parece que aún no has añadido nada a tu carrito.
           </p>
           <Button asChild>
-            <a href="/">Continuar Comprando</a>
+            <Link href="/">Continuar Comprando</Link>
           </Button>
         </div>
       </div>
@@ -495,6 +510,74 @@ export default function CheckoutPage() {
                                                 )}
                                             </div>
                                         )}
+                                    </label>
+                                </RadioGroup>
+                            )}
+                        />
+                     </CardContent>
+                  </Card>
+
+                   <Card>
+                    <CardHeader>
+                      <CardTitle>3. Método de Pago</CardTitle>
+                       <FormMessage>{form.formState.errors.paymentMethod?.message}</FormMessage>
+                    </CardHeader>
+                     <CardContent>
+                        <Controller
+                            control={form.control}
+                            name="paymentMethod"
+                            render={({ field }) => (
+                               <RadioGroup
+                                    onValueChange={field.onChange}
+                                    value={field.value}
+                                    className="grid grid-cols-1 gap-4"
+                                >
+                                    <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'tarjeta' && "bg-accent border-primary")}>
+                                        <div className="flex items-center gap-4">
+                                            <RadioGroupItem value="tarjeta" id="tarjeta"/>
+                                            <div className="flex-1 flex items-center gap-2">
+                                                <CreditCard className="h-5 w-5"/>
+                                                <p className="font-semibold">Pago con Tarjeta (Próximamente)</p>
+                                            </div>
+                                        </div>
+                                         <p className="pl-8 pt-2 text-sm text-muted-foreground">
+                                           Serás contactado para completar el pago de forma segura.
+                                        </p>
+                                    </label>
+                                     <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'transferencia' && "bg-accent border-primary")}>
+                                        <div className="flex items-center gap-4">
+                                            <RadioGroupItem value="transferencia" id="transferencia"/>
+                                            <div className="flex-1 flex items-center gap-2">
+                                                <Landmark className="h-5 w-5"/>
+                                                <p className="font-semibold">Transferencia Bancaria</p>
+                                            </div>
+                                        </div>
+                                        {field.value === 'transferencia' && (
+                                            <div className="pl-8 pt-2">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="paymentReference"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Número de Referencia</FormLabel>
+                                                            <FormControl>
+                                                            <Input placeholder="Ej: 987654321" {...field} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                        )}
+                                    </label>
+                                     <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'efectivo' && "bg-accent border-primary")}>
+                                        <div className="flex items-center gap-4">
+                                            <RadioGroupItem value="efectivo" id="efectivo"/>
+                                            <div className="flex-1 flex items-center gap-2">
+                                                <Banknote className="h-5 w-5"/>
+                                                <p className="font-semibold">Efectivo (Pago contra entrega)</p>
+                                            </div>
+                                        </div>
                                     </label>
                                 </RadioGroup>
                             )}
