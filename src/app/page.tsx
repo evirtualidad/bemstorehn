@@ -5,7 +5,6 @@ import { Header } from '@/components/header';
 import { ProductCard } from '@/components/product-card';
 import { type Product } from '@/lib/products';
 import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useProductsStore } from '@/hooks/use-products';
@@ -16,9 +15,35 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
+import Autoplay from 'embla-carousel-autoplay';
+import * as React from 'react';
+
+const heroBanners = [
+  {
+    title: 'Belleza en su Forma más Pura',
+    description: 'Descubre nuestra colección exclusiva de cosméticos, elaborados con los mejores ingredientes naturales.',
+    image: 'https://placehold.co/1920x1080.png',
+    aiHint: 'cosmetics flatlay',
+  },
+  {
+    title: 'Novedades de Skincare',
+    description: 'Renueva tu piel con nuestros últimos lanzamientos. Fórmulas potentes para resultados visibles.',
+    image: 'https://placehold.co/1920x1080.png',
+    aiHint: 'skincare products',
+  },
+  {
+    title: 'Esenciales de Maquillaje',
+    description: 'Colores vibrantes y texturas que te encantarán. Encuentra tus nuevos favoritos.',
+    image: 'https://placehold.co/1920x1080.png',
+    aiHint: 'makeup collection',
+  },
+];
 
 export default function Home() {
   const { products } = useProductsStore();
+  const plugin = React.useRef(
+    Autoplay({ delay: 5000, stopOnInteraction: true })
+  );
 
   const productsByCategory = products.reduce((acc, product) => {
     const { category } = product;
@@ -42,26 +67,44 @@ export default function Home() {
       <Header />
       <main>
         {/* Hero Section */}
-        <section className="relative h-[60vh] md:h-[70vh] flex items-center justify-center text-center text-white bg-gradient-to-t from-primary/30 to-transparent">
-          <Image
-            src="https://placehold.co/1920x1080.png"
-            alt="Cosméticos naturales sobre un fondo de mármol"
-            fill
-            objectFit="cover"
-            className="z-[-1] brightness-75"
-            data-ai-hint="cosmetics flatlay"
-          />
-          <div className="container mx-auto px-4 z-10 animate-in fade-in-0 slide-in-from-bottom-10 duration-700">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-shadow-lg">
-              Belleza en su Forma más Pura
-            </h1>
-            <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto text-shadow">
-              Descubre nuestra colección exclusiva de cosméticos, elaborados con los mejores ingredientes naturales.
-            </p>
-            <Button size="lg" className="mt-8 text-lg">
-              Comprar Todos los Productos
-            </Button>
-          </div>
+        <section className="relative h-[50vh] w-full">
+          <Carousel
+            plugins={[plugin.current]}
+            className="w-full h-full"
+            onMouseEnter={plugin.current.stop}
+            onMouseLeave={plugin.current.reset}
+            opts={{
+              loop: true,
+            }}
+          >
+            <CarouselContent className="h-full">
+              {heroBanners.map((banner, index) => (
+                <CarouselItem key={index} className="h-full">
+                  <div className="relative h-full w-full flex items-center justify-center text-center text-white">
+                    <Image
+                      src={banner.image}
+                      alt={banner.title}
+                      fill
+                      objectFit="cover"
+                      className="z-[-1] brightness-75"
+                      data-ai-hint={banner.aiHint}
+                      priority={index === 0}
+                    />
+                    <div className="container mx-auto px-4 z-10 animate-in fade-in-0 slide-in-from-bottom-10 duration-700">
+                      <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-shadow-lg">
+                        {banner.title}
+                      </h1>
+                      <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto text-shadow">
+                        {banner.description}
+                      </p>
+                    </div>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+             <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10 hidden sm:flex" />
+            <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10 hidden sm:flex" />
+          </Carousel>
         </section>
 
         {/* Featured Products Section */}
