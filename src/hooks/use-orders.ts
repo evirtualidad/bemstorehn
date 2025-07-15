@@ -26,10 +26,11 @@ export interface Order {
     image: string;
   }>;
   total: number;
-  balance: number; // Saldo pendiente
-  payments: Payment[]; // Historial de pagos
+  balance: number; 
+  payments: Payment[]; 
   paymentMethod: 'efectivo' | 'tarjeta' | 'transferencia' | 'credito';
-  status: 'paid' | 'pending';
+  status: 'pending-approval' | 'pending-payment' | 'paid' | 'cancelled';
+  source: 'pos' | 'online-store';
   date: string;
   paymentDueDate?: string;
 }
@@ -46,6 +47,7 @@ const mockOrders: Order[] = [
     payments: [{ date: subDays(now, 1).toISOString(), amount: 35.00, method: 'tarjeta' }],
     paymentMethod: 'tarjeta',
     status: 'paid',
+    source: 'pos',
     date: subDays(now, 1).toISOString(),
   },
   {
@@ -56,7 +58,8 @@ const mockOrders: Order[] = [
     balance: 104.00,
     payments: [],
     paymentMethod: 'credito',
-    status: 'pending',
+    status: 'pending-payment',
+    source: 'pos',
     date: subDays(now, 2).toISOString(),
     paymentDueDate: addDays(subDays(now, 2), 30).toISOString(),
   },
@@ -69,21 +72,20 @@ const mockOrders: Order[] = [
     payments: [{ date: subDays(now, 5).toISOString(), amount: 26.00, method: 'efectivo' }],
     paymentMethod: 'efectivo',
     status: 'paid',
+    source: 'pos',
     date: subDays(now, 5).toISOString(),
   },
-  {
-    id: 'ORD-004',
-    customer: { name: 'William Kim', phone: '555-0104' },
-    items: [
-        { id: 'prod_007', name: 'Purifying Clay Mask', price: 28.00, quantity: 1, image: 'https://placehold.co/400x400.png' },
-        { id: 'prod_010', name: 'Eyeshadow Palette', price: 39.00, quantity: 1, image: 'https://placehold.co/400x400.png' }
-    ],
-    total: 67.00,
-    balance: 0,
-    payments: [{ date: subDays(now, 8).toISOString(), amount: 67.00, method: 'transferencia' }],
-    paymentMethod: 'transferencia',
-    status: 'paid',
-    date: subDays(now, 8).toISOString(),
+   {
+    id: 'ORD-009-ONLINE',
+    customer: { name: 'Mason Garcia', phone: '555-0109' },
+    items: [{ id: 'prod_006', name: 'Volumizing Dry Shampoo', price: 18.00, quantity: 2, image: 'https://placehold.co/400x400.png' }],
+    total: 36.00,
+    balance: 36.00,
+    payments: [],
+    paymentMethod: 'tarjeta', // Placeholder
+    status: 'pending-approval',
+    source: 'online-store',
+    date: subDays(now, 1).toISOString(),
   },
   {
     id: 'ORD-005',
@@ -93,7 +95,8 @@ const mockOrders: Order[] = [
     balance: 22.00,
     payments: [{ date: subDays(now, 10).toISOString(), amount: 50.00, method: 'efectivo' }],
     paymentMethod: 'credito',
-    status: 'pending',
+    status: 'pending-payment',
+    source: 'pos',
     date: subDays(now, 10).toISOString(),
     paymentDueDate: addDays(now, 5).toISOString(),
   },
@@ -105,39 +108,19 @@ const mockOrders: Order[] = [
     balance: 28.00,
     payments: [],
     paymentMethod: 'credito',
-    status: 'pending',
+    status: 'pending-payment',
+    source: 'pos',
     date: subDays(now, 15).toISOString(),
     paymentDueDate: subDays(now, 2).toISOString(), // Vencida
-  },
-  {
-    id: 'ORD-007',
-    customer: { name: 'Noah Williams', phone: '555-0107' },
-    items: [{ id: 'prod_002', name: 'Hydra-Boost Moisturizer', price: 38.50, quantity: 1, image: 'https://placehold.co/400x400.png' }],
-    total: 38.50,
-    balance: 0,
-    payments: [{ date: subDays(now, 25).toISOString(), amount: 38.50, method: 'efectivo' }],
-    paymentMethod: 'efectivo',
-    status: 'paid',
-    date: subDays(now, 25).toISOString(),
-  },
-  {
-    id: 'ORD-008',
-    customer: { name: 'Emma Brown', phone: '555-0108' },
-    items: [{ id: 'prod_005', name: 'Argan Oil Hair Repair', price: 30.00, quantity: 1, image: 'https://placehold.co/400x400.png' }],
-    total: 30.00,
-    balance: 0,
-    payments: [{ date: subDays(now, 35).toISOString(), amount: 30.00, method: 'tarjeta' }],
-    paymentMethod: 'tarjeta',
-    status: 'paid',
-    date: subDays(now, 35).toISOString(),
   },
 ];
 
 
 type OrdersState = {
   orders: Order[];
-  addOrder: (order: Omit<Order, 'balance' | 'payments' | 'status'>) => void;
+  addOrder: (order: Omit<Order, 'balance' | 'payments' | 'status'> & { status: Order['status'] }) => void;
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => void;
+  approveOrder: (data: { orderId: string, paymentMethod: Order['paymentMethod'], paymentDueDate?: Date }) => void;
 };
 
 export const useOrdersStore = create<OrdersState>()(
@@ -151,9 +134,9 @@ export const useOrdersStore = create<OrdersState>()(
               name: order.customer.name || 'Consumidor Final',
               phone: order.customer.phone || 'N/A'
             },
-            balance: order.paymentMethod === 'credito' ? order.total : 0,
-            status: order.paymentMethod === 'credito' ? 'pending' : 'paid',
-            payments: order.paymentMethod !== 'credito' ? [{
+            balance: (order.status === 'pending-payment' || order.status === 'pending-approval') ? order.total : 0,
+            status: order.status,
+            payments: order.status === 'paid' ? [{
                 amount: order.total,
                 date: new Date().toISOString(),
                 method: order.paymentMethod as 'efectivo' | 'tarjeta' | 'transferencia',
@@ -175,13 +158,35 @@ export const useOrdersStore = create<OrdersState>()(
                 ...o, 
                 balance: newBalance,
                 payments: [...o.payments, newPayment],
-                status: newBalance <= 0 ? 'paid' : 'pending',
+                status: newBalance <= 0 ? 'paid' : 'pending-payment',
               };
             }
             return o;
           }),
         }));
       },
+      approveOrder: ({ orderId, paymentMethod, paymentDueDate }) => {
+        set((state) => ({
+            orders: state.orders.map((o) => {
+                if (o.id === orderId && o.status === 'pending-approval') {
+                    const isCredit = paymentMethod === 'credito';
+                    return {
+                        ...o,
+                        paymentMethod: paymentMethod,
+                        paymentDueDate: paymentDueDate ? paymentDueDate.toISOString() : o.paymentDueDate,
+                        status: isCredit ? 'pending-payment' : 'paid',
+                        balance: isCredit ? o.total : 0,
+                        payments: isCredit ? [] : [{
+                            amount: o.total,
+                            date: new Date().toISOString(),
+                            method: paymentMethod
+                        }]
+                    };
+                }
+                return o;
+            })
+        }))
+      }
     }),
     {
       name: 'orders-storage',
@@ -189,5 +194,3 @@ export const useOrdersStore = create<OrdersState>()(
     }
   )
 );
-
-    

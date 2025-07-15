@@ -61,28 +61,32 @@ export default function CheckoutPage() {
         customer: { name: values.name || 'Consumidor Final', phone: values.phone || 'N/A' },
         items: items.map(item => ({ ...item, quantity: item.quantity, stock: item.stock, category: item.category, description: item.description })),
         total: total,
-        paymentMethod: 'tarjeta' as const, // Default for online checkout
+        paymentMethod: 'tarjeta' as const, // Placeholder, admin will set the final one
       };
 
       const result = await createOrder(orderInput);
 
       if (result.success) {
+        // Decrease stock as soon as the order is placed
         items.forEach(item => {
           decreaseStock(item.id, item.quantity);
         });
-
+        
+        // Add order to the store with 'pending-approval' status
         addOrder({
           id: result.orderId,
           customer: orderInput.customer,
           items: orderInput.items,
           total: orderInput.total,
-          paymentMethod: orderInput.paymentMethod,
+          paymentMethod: 'tarjeta', // This is temporary
           date: new Date().toISOString(),
+          status: 'pending-approval',
+          source: 'online-store',
         });
 
         toast({
-          title: '¡Pedido Realizado!',
-          description: 'Gracias por tu compra.',
+          title: '¡Pedido Recibido!',
+          description: 'Gracias por tu compra. Tu pedido está siendo procesado.',
         });
         clearCart();
         router.push(`/order-confirmation/${result.orderId}`);
@@ -126,7 +130,7 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Customer Info Form */}
           <div>
-            <h2 className="text-2xl font-bold mb-6">Información del Cliente</h2>
+            <h2 className="text-2xl font-bold mb-6">Información de Contacto</h2>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
@@ -157,8 +161,11 @@ export default function CheckoutPage() {
                 />
                 <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Realizar Pedido
+                  Enviar Pedido para Aprobación
                 </Button>
+                 <p className="text-xs text-center text-muted-foreground">
+                    Tu pedido será confirmado por un administrador. No se te cobrará hasta que sea aprobado.
+                </p>
               </form>
             </Form>
           </div>
@@ -205,7 +212,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-between">
                   <p>Impuestos</p>
-                  <p>Calculado en el siguiente paso</p>
+                  <p>Calculado en la aprobación</p>
                 </div>
               </div>
               <Separator className="my-6" />

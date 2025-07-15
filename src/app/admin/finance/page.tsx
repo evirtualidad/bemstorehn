@@ -86,14 +86,16 @@ const paymentMethodLabels = {
 
 
 function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCode: string }) {
+  const financialOrders = orders.filter(o => o.status !== 'pending-approval' && o.status !== 'cancelled');
+  
   const summary = React.useMemo(() => {
-    const totalRevenue = orders.reduce((acc, order) => acc + order.total, 0);
-    const accountsReceivable = orders
-      .filter((o) => o.status === 'pending')
+    const totalRevenue = financialOrders.reduce((acc, order) => acc + order.total, 0);
+    const accountsReceivable = financialOrders
+      .filter((o) => o.status === 'pending-payment')
       .reduce((acc, order) => acc + order.balance, 0);
     const paidRevenue = totalRevenue - accountsReceivable;
     
-    const revenueByMethod = orders.reduce((acc, order) => {
+    const revenueByMethod = financialOrders.reduce((acc, order) => {
       // For credit, count payments, for others count total
       if (order.paymentMethod === 'credito') {
           order.payments.forEach(p => {
@@ -113,7 +115,7 @@ function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCod
       return acc;
     }, {} as Record<string, {name: string, value: number}>);
     
-    const salesByMonth = orders.reduce((acc, order) => {
+    const salesByMonth = financialOrders.reduce((acc, order) => {
         const month = format(parseISO(order.date), 'MMM', { locale: es });
         if(!acc[month]){
             acc[month] = { name: month, Ingresos: 0 };
@@ -129,7 +131,7 @@ function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCod
       revenueByMethod: Object.values(revenueByMethod),
       salesByMonth: Object.values(salesByMonth),
     };
-  }, [orders]);
+  }, [financialOrders]);
 
   const PIE_COLORS = [
     'hsl(var(--chart-1))',
@@ -143,13 +145,13 @@ function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCod
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
+            <CardTitle className="text-sm font-medium">Ingresos Totales (Facturados)</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(summary.totalRevenue, currencyCode)}</div>
             <p className="text-xs text-muted-foreground">
-              Total de ventas generadas
+              Total de ventas generadas y facturadas
             </p>
           </CardContent>
         </Card>
@@ -183,7 +185,7 @@ function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCod
         <Card>
           <CardHeader>
             <CardTitle>Ingresos por Mes</CardTitle>
-            <CardDescription>Un resumen de las ventas mensuales.</CardDescription>
+            <CardDescription>Un resumen de las ventas mensuales facturadas.</CardDescription>
           </CardHeader>
           <CardContent>
              <ResponsiveContainer width="100%" height={300}>
@@ -320,12 +322,12 @@ function RegisterPaymentDialog({ order, children }: { order: Order, children: Re
 }
 
 function AccountsReceivable({ orders, currencyCode }: { orders: any[], currencyCode: string }) {
-  const creditOrders = orders.filter(o => o.paymentMethod === 'credito' && o.status === 'pending');
+  const creditOrders = orders.filter(o => o.status === 'pending-payment');
 
   const getStatus = (dueDate: string) => {
     const days = differenceInDays(new Date(), parseISO(dueDate));
     if (days > 0) return { label: `${days} días vencido`, color: 'text-red-500', icon: <AlertCircle className="h-4 w-4 mr-2" /> };
-    if (days >= -7 && days <= 0) return { label: `Vence en ${-days} días`, color: 'text-amber-500', icon: <Clock className="h-4 w-4 mr-2" /> };
+    if (days >= -7 && days <= 0) return { label: `Vence en ${-days === 0 ? 'hoy' : `${-days} días`}`, color: 'text-amber-500', icon: <Clock className="h-4 w-4 mr-2" /> };
     return { label: 'Pendiente', color: 'text-muted-foreground', icon: <Clock className="h-4 w-4 mr-2" /> };
   }
 
@@ -389,11 +391,18 @@ function AccountsReceivable({ orders, currencyCode }: { orders: any[], currencyC
 }
 
 function Transactions({ orders, currencyCode }: { orders: any[], currencyCode: string }) {
+    const financialOrders = orders.filter(o => o.status !== 'pending-approval' && o.status !== 'cancelled');
+
+    const statusConfig = {
+        'pending-payment': { label: 'Pendiente', color: 'bg-amber-100 text-amber-800' },
+        'paid': { label: 'Pagado', color: 'bg-green-100 text-green-800' },
+    };
+
     return (
         <Card>
             <CardHeader className="px-7">
                 <CardTitle>Transacciones</CardTitle>
-                <CardDescription>Una lista de todos los pedidos realizados en tu tienda.</CardDescription>
+                <CardDescription>Una lista de todos los pedidos facturados en tu tienda.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -407,29 +416,32 @@ function Transactions({ orders, currencyCode }: { orders: any[], currencyCode: s
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {orders.map(order => (
-                        <TableRow key={order.id}>
-                            <TableCell>
-                                <div className="font-medium">{order.customer.name}</div>
-                                <div className="hidden text-sm text-muted-foreground md:inline">
-                                    {order.id}
-                                </div>
-                            </TableCell>
-                             <TableCell>
-                                <div className="flex items-center gap-2">
-                                    {paymentMethodIcons[order.paymentMethod as keyof typeof paymentMethodIcons]}
-                                    {paymentMethodLabels[order.paymentMethod as keyof typeof paymentMethodLabels]}
-                                </div>
-                            </TableCell>
-                            <TableCell>
-                                <Badge variant={order.status === 'paid' ? 'default' : 'secondary'} className={cn(order.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800')}>
-                                    {order.status === 'paid' ? 'Pagado' : 'Pendiente'}
-                                </Badge>
-                            </TableCell>
-                            <TableCell>{format(parseISO(order.date), 'd MMM, yyyy')}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(order.total, currencyCode)}</TableCell>
-                        </TableRow>
-                    ))}
+                    {financialOrders.map(order => {
+                         const statusInfo = statusConfig[order.status as keyof typeof statusConfig] || { label: 'Desconocido', color: 'bg-gray-100 text-gray-800'};
+                         return (
+                            <TableRow key={order.id}>
+                                <TableCell>
+                                    <div className="font-medium">{order.customer.name}</div>
+                                    <div className="hidden text-sm text-muted-foreground md:inline">
+                                        {order.id}
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex items-center gap-2">
+                                        {paymentMethodIcons[order.paymentMethod as keyof typeof paymentMethodIcons]}
+                                        {paymentMethodLabels[order.paymentMethod as keyof typeof paymentMethodLabels]}
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <Badge variant={'secondary'} className={statusInfo.color}>
+                                        {statusInfo.label}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell>{format(parseISO(order.date), 'd MMM, yyyy')}</TableCell>
+                                <TableCell className="text-right">{formatCurrency(order.total, currencyCode)}</TableCell>
+                            </TableRow>
+                        )
+                    })}
                 </TableBody>
                 </Table>
             </CardContent>
@@ -470,5 +482,3 @@ export default function FinancePage() {
     </div>
   );
 }
-
-    

@@ -12,10 +12,12 @@ import { es } from 'date-fns/locale/es';
 import {
   Banknote,
   CalendarIcon,
+  Check,
   CreditCard,
   Landmark,
   Loader2,
   Minus,
+  MoreHorizontal,
   Plus,
   PlusCircle,
   Receipt,
@@ -30,7 +32,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -44,6 +45,13 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Form,
   FormControl,
@@ -72,7 +80,7 @@ import {
 
 import { createOrder } from '@/ai/flows/create-order-flow';
 import { useCurrencyStore } from '@/hooks/use-currency';
-import { useOrdersStore } from '@/hooks/use-orders';
+import { useOrdersStore, type Order } from '@/hooks/use-orders';
 import { useProductsStore } from '@/hooks/use-products';
 import { useToast } from '@/hooks/use-toast';
 import { cn, formatCurrency } from '@/lib/utils';
@@ -101,7 +109,6 @@ const paymentMethodLabels = {
   transferencia: 'Transferencia',
   credito: 'Crédito',
 };
-
 
 const orderFormSchema = z
   .object({
@@ -210,7 +217,7 @@ function NewOrderDialog() {
   };
 
   const resetAndClose = () => {
-    form.reset();
+    form.reset({ name: '', phone: '', paymentMethod: 'efectivo' });
     setCart([]);
     setIsOpen(false);
   }
@@ -223,7 +230,10 @@ function NewOrderDialog() {
     setIsSubmitting(true);
     try {
         const orderInput = {
-            customer: { name: values.name, phone: values.phone },
+            customer: { 
+                name: values.name || 'Consumidor Final', 
+                phone: values.phone || 'N/A' 
+            },
             items: cart,
             total: total,
             paymentMethod: values.paymentMethod,
@@ -231,24 +241,28 @@ function NewOrderDialog() {
             cashAmount: values.cashAmount ? parseFloat(values.cashAmount) : undefined,
             paymentReference: values.paymentReference,
         };
-
-        // For local simulation, we directly add to the store.
-        // The `createOrder` flow could still be used for other purposes e.g. logging
-        const tempId = `ORD-${Date.now().toString().slice(-6)}`;
         
-        cart.forEach(item => decreaseStock(item.id, item.quantity));
-        addOrder({
-          id: tempId,
-          customer: orderInput.customer,
-          items: orderInput.items,
-          total: orderInput.total,
-          paymentMethod: orderInput.paymentMethod,
-          date: new Date().toISOString(),
-          paymentDueDate: orderInput.paymentDueDate,
-        });
+        const result = await createOrder(orderInput);
+        
+        if (result.success) {
+            cart.forEach(item => decreaseStock(item.id, item.quantity));
+            addOrder({
+                id: result.orderId,
+                customer: orderInput.customer,
+                items: orderInput.items,
+                total: orderInput.total,
+                paymentMethod: orderInput.paymentMethod,
+                date: new Date().toISOString(),
+                paymentDueDate: orderInput.paymentDueDate,
+                status: orderInput.paymentMethod === 'credito' ? 'pending-payment' : 'paid',
+                source: 'pos'
+            });
 
-        toast({ title: '¡Pedido Creado!', description: `Pedido ${tempId} creado con éxito.` });
-        resetAndClose();
+            toast({ title: '¡Pedido Creado!', description: `Pedido ${result.orderId} creado con éxito.` });
+            resetAndClose();
+        } else {
+            throw new Error("Order creation failed in the flow.");
+        }
         
     } catch (error) {
       console.error(error);
@@ -341,6 +355,118 @@ function NewOrderDialog() {
   );
 }
 
+const statusConfig = {
+    'pending-approval': { label: 'Pendiente Aprobación', color: 'bg-yellow-100 text-yellow-800' },
+    'pending-payment': { label: 'Pendiente Pago', color: 'bg-amber-100 text-amber-800' },
+    'paid': { label: 'Pagado', color: 'bg-green-100 text-green-800' },
+    'cancelled': { label: 'Cancelado', color: 'bg-red-100 text-red-800' },
+};
+
+function ApproveOrderDialog({ order, children }: { order: Order; children: React.ReactNode }) {
+    const { approveOrder } = useOrdersStore();
+    const { toast } = useToast();
+    const [isOpen, setIsOpen] = React.useState(false);
+
+    const form = useForm<z.infer<typeof orderFormSchema>>({
+        resolver: zodResolver(orderFormSchema),
+        defaultValues: {
+            name: order.customer.name,
+            phone: order.customer.phone,
+            paymentMethod: 'tarjeta',
+            total: order.total
+        },
+    });
+
+    async function onSubmit(values: z.infer<typeof orderFormSchema>) {
+        approveOrder({
+            orderId: order.id,
+            paymentMethod: values.paymentMethod,
+            paymentDueDate: values.paymentDueDate
+        });
+        toast({ title: '¡Pedido Aprobado!', description: `El pedido ${order.id} ha sido facturado.` });
+        setIsOpen(false);
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>{children}</DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Aprobar y Facturar Pedido {order.id}</DialogTitle>
+                    <DialogDescription>Selecciona el método de pago para finalizar la transacción.</DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form id="approve-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                        <FormField
+                            control={form.control}
+                            name="paymentMethod"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Forma de Pago</FormLabel>
+                                    <div className='grid grid-cols-2 gap-2'>
+                                        {paymentMethods.map(method => (
+                                            <Button
+                                                key={method.value}
+                                                type="button"
+                                                variant={field.value === method.value ? 'secondary' : 'outline'}
+                                                className="h-12"
+                                                onClick={() => field.onChange(method.value)}
+                                            >
+                                                <method.icon className="mr-2 h-4 w-4" /> {method.label}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         {form.watch('paymentMethod') === 'credito' && (
+                            <FormField
+                                control={form.control}
+                                name="paymentDueDate"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel>Fecha Límite de Pago</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button
+                                                        variant={'outline'}
+                                                        className={cn(!field.value && 'text-muted-foreground')}
+                                                    >
+                                                        {field.value ? format(field.value, 'PPP', { locale: es }) : <span>Selecciona fecha</span>}
+                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    locale={es}
+                                                    mode="single"
+                                                    selected={field.value}
+                                                    onSelect={field.onChange}
+                                                    disabled={(date) => date < new Date()}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
+                    </form>
+                </Form>
+                <DialogFooter>
+                    <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+                    <Button type="submit" form="approve-order-form">
+                        Aprobar Pedido
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 export default function OrdersPage() {
   const { orders } = useOrdersStore();
@@ -372,35 +498,71 @@ export default function OrdersPage() {
                 <TableHead>Método de Pago</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Monto</TableHead>
+                <TableHead className="text-center">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedOrders.length > 0 ? sortedOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell>
-                    <div className="font-medium text-primary hover:underline cursor-pointer">{order.id}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">{order.customer.name}</div>
-                    <div className="text-sm text-muted-foreground">{order.customer.phone}</div>
-                  </TableCell>
-                  <TableCell>{format(parseISO(order.date), 'd MMM, yyyy')}</TableCell>
-                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      {paymentMethodIcons[order.paymentMethod as keyof typeof paymentMethodIcons]}
-                      {paymentMethodLabels[order.paymentMethod as keyof typeof paymentMethodLabels]}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={order.status === 'paid' ? 'default' : 'secondary'} className={cn(order.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800')}>
-                      {order.status === 'paid' ? 'Pagado' : 'Pendiente'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-medium">{formatCurrency(order.total, currency.code)}</TableCell>
-                </TableRow>
-              )) : (
+              {sortedOrders.length > 0 ? sortedOrders.map((order) => {
+                const statusInfo = statusConfig[order.status as keyof typeof statusConfig] || { label: 'Desconocido', color: 'bg-gray-100 text-gray-800'};
+                return (
+                    <TableRow key={order.id}>
+                    <TableCell>
+                        <div className="font-medium text-primary hover:underline cursor-pointer">{order.id}</div>
+                    </TableCell>
+                    <TableCell>
+                        <div className="font-medium">{order.customer.name}</div>
+                        <div className="text-sm text-muted-foreground">{order.customer.phone}</div>
+                    </TableCell>
+                    <TableCell>{format(parseISO(order.date), 'd MMM, yyyy')}</TableCell>
+                    <TableCell>
+                        {order.status !== 'pending-approval' ? (
+                            <div className="flex items-center gap-2">
+                                {paymentMethodIcons[order.paymentMethod as keyof typeof paymentMethodIcons]}
+                                {paymentMethodLabels[order.paymentMethod as keyof typeof paymentMethodLabels]}
+                            </div>
+                        ) : (
+                            <span className='text-sm text-muted-foreground'>N/A</span>
+                        )}
+                    </TableCell>
+                    <TableCell>
+                        <Badge variant={'secondary'} className={statusInfo.color}>
+                            {statusInfo.label}
+                        </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">{formatCurrency(order.total, currency.code)}</TableCell>
+                    <TableCell className="text-center">
+                         {order.status === 'pending-approval' ? (
+                           <ApproveOrderDialog order={order}>
+                                <Button size="sm" variant="outline">
+                                    <Check className='mr-2 h-4 w-4' />
+                                    Aprobar
+                                </Button>
+                           </ApproveOrderDialog>
+                        ) : (
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                <Button
+                                    aria-haspopup="true"
+                                    size="icon"
+                                    variant="ghost"
+                                >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">Alternar menú</span>
+                                </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                <DropdownMenuItem>Ver Detalles</DropdownMenuItem>
+                                <DropdownMenuItem>Cancelar Pedido</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+                    </TableCell>
+                    </TableRow>
+                )
+              }) : (
                 <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                         No se han creado pedidos todavía.
                     </TableCell>
                 </TableRow>
@@ -417,5 +579,3 @@ export default function OrdersPage() {
     </main>
   );
 }
-
-    
