@@ -101,7 +101,7 @@ export function Header({ selectedCategory, onSelectCategory, hasOfferProducts }:
         )}
         
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" className="relative rounded-full h-10 w-10" onClick={toggleCart}>
+          <Button variant="outline" size="icon" className="relative rounded-full h-10 w-10 hidden md:inline-flex" onClick={toggleCart}>
             {itemCount > 0 && (
               <Badge
                 variant="destructive"
