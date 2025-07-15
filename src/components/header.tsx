@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Leaf, ShoppingCart, User } from 'lucide-react';
+import { Leaf, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/use-cart';
@@ -43,10 +43,6 @@ export function Header() {
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon">
-            <User className="w-6 h-6" />
-            <span className="sr-only">Cuenta</span>
-          </Button>
           <Button variant="ghost" size="icon" className="relative" onClick={toggleCart}>
             {itemCount > 0 && (
               <Badge
