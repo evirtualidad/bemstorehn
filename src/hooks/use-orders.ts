@@ -60,6 +60,7 @@ const mockOrders: Order[] = [
     status: 'paid',
     source: 'pos',
     date: subDays(now, 1).toISOString(),
+    deliveryMethod: 'pickup',
   },
   {
     id: 'ORD-002',
@@ -73,6 +74,7 @@ const mockOrders: Order[] = [
     source: 'pos',
     date: subDays(now, 2).toISOString(),
     paymentDueDate: addDays(subDays(now, 2), 30).toISOString(),
+    deliveryMethod: 'pickup',
   },
   {
     id: 'ORD-003',
@@ -85,6 +87,7 @@ const mockOrders: Order[] = [
     status: 'paid',
     source: 'pos',
     date: subDays(now, 5).toISOString(),
+     deliveryMethod: 'pickup',
   },
    {
     id: 'ORD-009-ONLINE',
@@ -114,6 +117,7 @@ const mockOrders: Order[] = [
     source: 'pos',
     date: subDays(now, 10).toISOString(),
     paymentDueDate: addDays(now, 5).toISOString(),
+     deliveryMethod: 'pickup',
   },
    {
     id: 'ORD-006',
@@ -127,6 +131,7 @@ const mockOrders: Order[] = [
     source: 'pos',
     date: subDays(now, 15).toISOString(),
     paymentDueDate: subDays(now, 2).toISOString(), // Vencida
+    deliveryMethod: 'pickup',
   },
 ];
 

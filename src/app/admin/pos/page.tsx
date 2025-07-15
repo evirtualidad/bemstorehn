@@ -3,22 +3,12 @@
 
 import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { format } from 'date-fns/format';
 import { Button, buttonVariants } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-} from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Card, CardContent } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
@@ -26,22 +16,11 @@ import { useProductsStore } from '@/hooks/use-products';
 import { createOrder } from '@/ai/flows/create-order-flow';
 import type { Product } from '@/lib/products';
 import Image from 'next/image';
-import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard, Banknote, Landmark, X, BadgePercent } from 'lucide-react';
+import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard, Banknote, Landmark, X, BadgePercent, Truck, Store, MapPin, CheckCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { cn, formatCurrency } from '@/lib/utils';
 import { es } from 'date-fns/locale/es';
 import { ProductSearch } from '@/components/product-search';
@@ -49,72 +28,57 @@ import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { useOrdersStore } from '@/hooks/use-orders';
+import { useOrdersStore, type Address } from '@/hooks/use-orders';
 import { useSettingsStore } from '@/hooks/use-settings-store';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
+import { hondurasGeodata } from '@/lib/honduras-geodata';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type PosCartItem = Product & { quantity: number };
 
 type SelectedFilter = { type: 'category' | 'offer'; value: string } | null;
 
-
 const checkoutFormSchema = z
   .object({
     name: z.string().optional(),
     phone: z.string().optional(),
+    deliveryMethod: z.enum(['pickup', 'delivery']),
+    address: z.custom<Address>().optional(),
     paymentMethod: z.enum(['efectivo', 'tarjeta', 'transferencia', 'credito'], {
       required_error: 'Debes seleccionar una forma de pago.',
     }),
     paymentDueDate: z.date().optional(),
     cashAmount: z.string().optional(),
-    total: z.number().optional(),
+    totalWithShipping: z.number().optional(),
     paymentReference: z.string().optional(),
   })
-  .refine(
-    (data) => {
-      if (data.paymentMethod === 'credito' && !data.paymentDueDate) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: 'La fecha de pago es obligatoria para pagos a crédito.',
-      path: ['paymentDueDate'],
+  .refine(data => data.deliveryMethod !== 'delivery' || !!data.address, {
+    message: 'La dirección de envío es obligatoria.',
+    path: ['address'],
+  })
+  .refine(data => data.paymentMethod !== 'credito' || !!data.paymentDueDate, {
+    message: 'La fecha de pago es obligatoria para pagos a crédito.',
+    path: ['paymentDueDate'],
+  })
+  .refine(data => {
+    if (data.paymentMethod === 'efectivo' && data.cashAmount && data.totalWithShipping) {
+      return Number(data.cashAmount) >= data.totalWithShipping;
     }
-  )
-  .refine(
-    (data) => {
-      if (data.paymentMethod === 'efectivo' && data.cashAmount && data.total) {
-        return Number(data.cashAmount) >= data.total;
-      }
-      return true;
-    },
-    {
-      message: 'El efectivo recibido debe ser mayor o igual al total.',
-      path: ['cashAmount'],
-    }
-  ).refine(
-    (data) => {
-      if (data.paymentMethod === 'credito' && (!data.name || data.name.trim() === '')) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: 'El nombre del cliente es obligatorio para pagos a crédito.',
-      path: ['name'],
-    }
-  ).refine(
-    (data) => {
-      if (data.paymentMethod === 'credito' && (!data.phone || data.phone.trim() === '')) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: 'El teléfono del cliente es obligatorio para pagos a crédito.',
-      path: ['phone'],
-    }
-  );
+    return true;
+  }, {
+    message: 'El efectivo recibido debe ser mayor o igual al total.',
+    path: ['cashAmount'],
+  })
+  .refine(data => data.paymentMethod !== 'credito' || (!!data.name && data.name.trim() !== ''), {
+    message: 'El nombre del cliente es obligatorio para pagos a crédito.',
+    path: ['name'],
+  })
+  .refine(data => data.paymentMethod !== 'credito' || (!!data.phone && data.phone.trim() !== ''), {
+    message: 'El teléfono del cliente es obligatorio para pagos a crédito.',
+    path: ['phone'],
+  });
+
 
 function CategoryList({
   categories,
@@ -245,6 +209,8 @@ function TicketView({
   subtotal,
   taxAmount,
   total,
+  shippingCost,
+  totalWithShipping,
   onUpdateQuantity,
   onRemoveFromCart,
   onClearCart,
@@ -254,6 +220,8 @@ function TicketView({
   subtotal: number;
   taxAmount: number;
   total: number;
+  shippingCost: number;
+  totalWithShipping: number;
   onUpdateQuantity: (productId: string, amount: number) => void;
   onRemoveFromCart: (productId:string) => void;
   onClearCart: () => void;
@@ -324,11 +292,15 @@ function TicketView({
                     <p className="text-muted-foreground">ISV ({taxRate * 100}%)</p>
                     <p>{formatCurrency(taxAmount, currency.code)}</p>
                 </div>
+                 <div className="flex justify-between">
+                    <p className="text-muted-foreground">Envío</p>
+                    <p>{shippingCost > 0 ? formatCurrency(shippingCost, currency.code) : 'N/A'}</p>
+                </div>
             </div>
             <Separator />
             <div className="flex justify-between text-xl font-bold">
                 <p>Total</p>
-                <p>{formatCurrency(total, currency.code)}</p>
+                <p>{formatCurrency(totalWithShipping, currency.code)}</p>
             </div>
             <Button
                 size="lg"
@@ -349,6 +321,8 @@ function MobileTicketView({
   total,
   subtotal,
   taxAmount,
+  shippingCost,
+  totalWithShipping,
   isVisible,
   onUpdateQuantity,
   onRemoveFromCart,
@@ -360,6 +334,8 @@ function MobileTicketView({
   total: number;
   subtotal: number;
   taxAmount: number;
+  shippingCost: number;
+  totalWithShipping: number;
   isVisible: boolean;
   onUpdateQuantity: (productId: string, amount: number) => void;
   onRemoveFromCart: (productId:string) => void;
@@ -442,11 +418,15 @@ function MobileTicketView({
                         <p className="text-muted-foreground">ISV ({taxRate * 100}%)</p>
                         <p>{formatCurrency(taxAmount, currency.code)}</p>
                     </div>
+                    <div className="flex justify-between">
+                        <p className="text-muted-foreground">Envío</p>
+                        <p>{shippingCost > 0 ? formatCurrency(shippingCost, currency.code) : 'N/A'}</p>
+                    </div>
                 </div>
                 <Separator />
                 <div className="flex justify-between text-xl font-bold">
                     <p>Total</p>
-                    <p>{formatCurrency(total, currency.code)}</p>
+                    <p>{formatCurrency(totalWithShipping, currency.code)}</p>
                 </div>
                 <Button
                     size="lg"
@@ -471,10 +451,240 @@ const paymentMethods = [
     { value: 'credito', label: 'Crédito', icon: Receipt },
 ] as const;
 
-function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, subtotal, taxAmount, change, isInDialog }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, cart: PosCartItem[], total: number, subtotal: number, taxAmount: number, change: number, isInDialog?: boolean }) {
+function ShippingDialog({
+  isOpen,
+  onOpenChange,
+  onSave,
+  currentAddress,
+}: {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (address: Address, cost: number, type: 'local' | 'national') => void;
+  currentAddress: Address | undefined;
+}) {
+  const { shippingLocalCost, shippingNationalCost } = useSettingsStore();
+
+  const shippingFormSchema = z
+    .object({
+      shippingOption: z.enum(['local', 'national'], {
+        required_error: 'Debes seleccionar una opción de envío.',
+      }),
+      department: z.string().optional(),
+      municipality: z.string().optional(),
+      colony: z.string().min(3, { message: 'La colonia/residencial debe tener al menos 3 caracteres.' }),
+      exactAddress: z.string().min(10, { message: 'La dirección debe tener al menos 10 caracteres.' }),
+    })
+    .refine(
+      (data) => {
+        if (data.shippingOption === 'national') {
+          return !!data.department && !!data.municipality;
+        }
+        return true;
+      },
+      {
+        message: 'Departamento y municipio son obligatorios para envíos nacionales.',
+        path: ['department'],
+      }
+    );
+
+  const form = useForm<z.infer<typeof shippingFormSchema>>({
+    resolver: zodResolver(shippingFormSchema),
+    defaultValues: {
+      shippingOption: (currentAddress as any)?.type || 'local',
+      department: currentAddress?.department || undefined,
+      municipality: currentAddress?.municipality || undefined,
+      colony: currentAddress?.colony || '',
+      exactAddress: currentAddress?.exactAddress || '',
+    },
+  });
+
+  const selectedDepartment = form.watch('department');
+  const selectedShippingOption = form.watch('shippingOption');
+
+  React.useEffect(() => {
+    if (selectedShippingOption === 'local') {
+      form.setValue('department', 'Francisco Morazán');
+      form.setValue('municipality', 'Distrito Central');
+      form.clearErrors('department');
+      form.clearErrors('municipality');
+    } else {
+      form.setValue('department', (currentAddress as any)?.department || '');
+      form.setValue('municipality', (currentAddress as any)?.municipality || '');
+    }
+  }, [selectedShippingOption, form, currentAddress]);
+
+  const handleSave = (values: z.infer<typeof shippingFormSchema>) => {
+    const cost = values.shippingOption === 'local' ? shippingLocalCost : shippingNationalCost;
+    onSave(
+      {
+        department: values.department || 'Francisco Morazán',
+        municipality: values.municipality || 'Distrito Central',
+        colony: values.colony,
+        exactAddress: values.exactAddress,
+      },
+      cost,
+      values.shippingOption
+    );
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Información de Envío</DialogTitle>
+          <DialogDescription>Completa los detalles para la entrega a domicilio.</DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSave)} id="shipping-form" className="space-y-4 pt-4">
+            <FormField
+              control={form.control}
+              name="shippingOption"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Tipo de Envío</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                    >
+                      <FormItem>
+                        <FormControl>
+                          <label className={cn('flex items-center gap-4 rounded-lg border p-4 cursor-pointer hover:bg-accent/50', field.value === 'local' && 'bg-accent border-primary')}>
+                            <RadioGroupItem value="local" />
+                            <MapPin className="h-6 w-6 text-primary" />
+                            <div className="flex-1">
+                              <p className="font-semibold">Local (TGU)</p>
+                            </div>
+                          </label>
+                        </FormControl>
+                      </FormItem>
+                      <FormItem>
+                        <FormControl>
+                          <label className={cn('flex items-center gap-4 rounded-lg border p-4 cursor-pointer hover:bg-accent/50', field.value === 'national' && 'bg-accent border-primary')}>
+                            <RadioGroupItem value="national" />
+                            <Truck className="h-6 w-6 text-primary" />
+                            <div className="flex-1">
+                              <p className="font-semibold">Nacional</p>
+                            </div>
+                          </label>
+                        </FormControl>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {selectedShippingOption === 'national' ? (
+              <>
+                <FormField
+                  control={form.control}
+                  name="department"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Departamento</FormLabel>
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          form.setValue('municipality', '');
+                        }}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona un departamento" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {hondurasGeodata.map((depto) => (
+                            <SelectItem key={depto.id} value={depto.nombre}>
+                              {depto.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="municipality"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Municipio</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={!selectedDepartment}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona un municipio" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {selectedDepartment &&
+                            hondurasGeodata
+                              .find((d) => d.nombre === selectedDepartment)
+                              ?.municipios.map((muni) => (
+                                <SelectItem key={muni.id} value={muni.nombre}>
+                                  {muni.nombre}
+                                </SelectItem>
+                              ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            ) : null}
+            <FormField
+              control={form.control}
+              name="colony"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Colonia / Residencial</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ej: Colonia Kennedy" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="exactAddress"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Dirección Exacta</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Bloque, número de casa, referencias, etc." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </form>
+        </Form>
+        <DialogFooter className="pt-4">
+          <DialogClose asChild>
+            <Button variant="outline">Cancelar</Button>
+          </DialogClose>
+          <Button type="submit" form="shipping-form">
+            Guardar Dirección
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, subtotal, taxAmount, shippingCost, totalWithShipping, change, isInDialog, onOpenShipping }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, cart: PosCartItem[], total: number, subtotal: number, taxAmount: number, shippingCost: number, totalWithShipping: number, change: number, isInDialog?: boolean, onOpenShipping: () => void }) {
     const paymentMethod = form.watch('paymentMethod');
+    const deliveryMethod = form.watch('deliveryMethod');
+    const address = form.watch('address');
     const { currency } = useCurrencyStore();
-    const { taxRate } = useSettingsStore();
+    const { taxRate, pickupAddress } = useSettingsStore();
 
     const CancelButton = () => {
         const button = (
@@ -502,10 +712,14 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
                         <span className="text-muted-foreground">ISV ({taxRate * 100}%):</span>
                         <span className="font-medium">{formatCurrency(taxAmount, currency.code)}</span>
                     </div>
+                    <div className="flex justify-between items-center text-md">
+                        <span className="text-muted-foreground">Envío:</span>
+                        <span className="font-medium">{shippingCost > 0 ? formatCurrency(shippingCost, currency.code) : (deliveryMethod === 'pickup' ? 'GRATIS' : 'N/A')}</span>
+                    </div>
                      <Separator />
                     <div className="flex justify-between items-center text-lg">
                         <span className="text-muted-foreground">Total a Pagar:</span>
-                        <span className="font-bold text-2xl">{formatCurrency(total, currency.code)}</span>
+                        <span className="font-bold text-2xl">{formatCurrency(totalWithShipping, currency.code)}</span>
                     </div>
                 </div>
 
@@ -535,6 +749,59 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
                         </FormItem>
                     )}
                 />
+
+                <Controller
+                    control={form.control}
+                    name="deliveryMethod"
+                    render={({ field }) => (
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 gap-4">
+                            <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'pickup' && "bg-accent border-primary")}>
+                                <div className="flex items-center gap-4">
+                                    <RadioGroupItem value="pickup" id="pickup"/>
+                                    <div className="flex-1 flex items-center gap-2">
+                                        <Store className="h-5 w-5"/>
+                                        <p className="font-semibold">Recoger en Tienda</p>
+                                    </div>
+                                </div>
+                                {field.value === 'pickup' && (
+                                    <div className="pl-8 pt-2 text-sm text-muted-foreground">
+                                        <p className='font-medium'>Dirección de Recogida:</p>
+                                        <p>{pickupAddress}</p>
+                                    </div>
+                                )}
+                            </label>
+
+                            <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'delivery' && "bg-accent border-primary")}>
+                                <div className="flex items-center gap-4">
+                                    <RadioGroupItem value="delivery" id="delivery"/>
+                                    <div className="flex-1 flex items-center gap-2">
+                                        <Truck className="h-5 w-5"/>
+                                        <p className="font-semibold">Envío a Domicilio</p>
+                                    </div>
+                                </div>
+                                {field.value === 'delivery' && (
+                                    <div className="pl-8 pt-2 text-sm">
+                                        {address ? (
+                                            <div className='text-muted-foreground space-y-2'>
+                                                <div className='flex items-center gap-2 text-green-600 font-semibold'>
+                                                    <CheckCircle className="h-5 w-5"/> Dirección guardada
+                                                </div>
+                                                <p className='font-medium'>{address.exactAddress}</p>
+                                                <p>{address.colony}</p>
+                                                <p>{address.municipality}, {address.department}</p>
+                                                <Button variant="link" className="p-0 h-auto" type="button" onClick={onOpenShipping}>Editar Dirección</Button>
+                                            </div>
+                                        ) : (
+                                            <Button type="button" onClick={onOpenShipping}>Añadir Dirección de Envío</Button>
+                                        )}
+                                         <FormMessage>{form.formState.errors.address?.message}</FormMessage>
+                                    </div>
+                                )}
+                            </label>
+                        </RadioGroup>
+                    )}
+                />
+
                 <FormField
                     control={form.control}
                     name="paymentMethod"
@@ -665,6 +932,8 @@ export default function PosPage() {
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
   const [isTicketVisible, setIsTicketVisible] = React.useState(false);
   const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
+  const [shippingCost, setShippingCost] = React.useState(0);
+  const [isShippingDialogOpen, setIsShippingDialogOpen] = React.useState(false);
 
   const productCategories = React.useMemo(() => isHydrated ? [...new Set(products.map((p) => p.category))] : [], [products, isHydrated]);
   const hasOfferProducts = React.useMemo(() => isHydrated ? products.some(p => p.originalPrice && p.originalPrice > p.price) : false, [products, isHydrated]);
@@ -689,6 +958,8 @@ export default function PosPage() {
     return { subtotal, taxAmount, total };
   }, [cart, taxRate]);
 
+  const totalWithShipping = React.useMemo(() => total + shippingCost, [total, shippingCost]);
+
   const totalItems = React.useMemo(() => {
     return cart.reduce((sum, item) => sum + item.quantity, 0);
   }, [cart]);
@@ -698,6 +969,8 @@ export default function PosPage() {
     defaultValues: {
       name: '',
       phone: '',
+      deliveryMethod: 'pickup',
+      address: undefined,
       paymentMethod: 'efectivo',
       cashAmount: '',
       paymentReference: '',
@@ -706,21 +979,36 @@ export default function PosPage() {
   });
   
   React.useEffect(() => {
-    form.setValue('total', total);
-  }, [total, form]);
+    form.setValue('totalWithShipping', totalWithShipping);
+  }, [totalWithShipping, form]);
 
-  const { paymentMethod, cashAmount } = form.watch();
+  const { paymentMethod, cashAmount, deliveryMethod } = form.watch();
 
   const change = React.useMemo(() => {
     if (paymentMethod === 'efectivo' && cashAmount) {
       const cash = parseFloat(cashAmount);
-      if (!isNaN(cash) && cash > total) {
-        return cash - total;
+      if (!isNaN(cash) && cash > totalWithShipping) {
+        return cash - totalWithShipping;
       }
     }
     return 0;
-  }, [paymentMethod, cashAmount, total]);
+  }, [paymentMethod, cashAmount, totalWithShipping]);
 
+  React.useEffect(() => {
+    if (deliveryMethod === 'pickup') {
+      setShippingCost(0);
+      form.setValue('address', undefined);
+      form.clearErrors('address');
+    } else if (deliveryMethod === 'delivery' && !form.getValues('address')) {
+      setShippingCost(0);
+    }
+  }, [deliveryMethod, form]);
+
+  const handleSaveShippingInfo = (address: Address, cost: number, type: 'local' | 'national') => {
+    const addressWithType = { ...address, type };
+    form.setValue('address', addressWithType as Address);
+    setShippingCost(cost);
+  };
 
   const handleProductSelect = (product: Product) => {
     if(product.stock <= 0) {
@@ -793,7 +1081,8 @@ export default function PosPage() {
 
   const clearCartAndForm = () => {
     setCart([]);
-    form.reset({ name: '', phone: '', paymentMethod: 'efectivo', paymentDueDate: undefined, cashAmount: '', paymentReference: '' });
+    setShippingCost(0);
+    form.reset({ name: '', phone: '', deliveryMethod: 'pickup', address: undefined, paymentMethod: 'efectivo', paymentDueDate: undefined, cashAmount: '', paymentReference: '' });
   }
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
@@ -810,35 +1099,46 @@ export default function PosPage() {
     setIsSubmitting(true);
     try {
         const orderInput = {
-            customer: { name: values.name, phone: values.phone },
+            customer: { 
+                name: values.name, 
+                phone: values.phone,
+                address: values.deliveryMethod === 'delivery' ? values.address : undefined,
+            },
             items: cart,
-            total: total,
+            total: totalWithShipping,
+            shippingCost: shippingCost,
             paymentMethod: values.paymentMethod,
             paymentDueDate: values.paymentDueDate ? values.paymentDueDate.toISOString() : undefined,
             cashAmount: values.cashAmount ? parseFloat(values.cashAmount) : undefined,
             paymentReference: values.paymentReference,
+            deliveryMethod: values.deliveryMethod,
         };
 
       const result = await createOrder(orderInput);
-      const tempId = result.success ? result.orderId : `ORD-${Date.now().toString().slice(-6)}`;
 
       if (result.success) {
         cart.forEach((item) => decreaseStock(item.id, item.quantity));
         addOrder({
-            id: tempId,
-            customer: orderInput.customer,
+            id: result.orderId,
+            customer: {
+              name: orderInput.customer.name || 'Consumidor Final',
+              phone: orderInput.customer.phone || 'N/A',
+              address: orderInput.customer.address,
+            },
             items: orderInput.items,
             total: orderInput.total,
+            shippingCost: orderInput.shippingCost,
             paymentMethod: orderInput.paymentMethod,
             date: new Date().toISOString(),
             paymentDueDate: orderInput.paymentDueDate,
             status: orderInput.paymentMethod === 'credito' ? 'pending-payment' : 'paid',
             source: 'pos',
+            deliveryMethod: orderInput.deliveryMethod,
         });
 
         toast({
           title: '¡Pedido Creado!',
-          description: `Pedido ${tempId} creado con éxito.`,
+          description: `Pedido ${result.orderId} creado con éxito.`,
           duration: 3000,
         });
 
@@ -906,7 +1206,7 @@ export default function PosPage() {
                 onClick={() => setIsTicketVisible(true)}
             >
                 <Receipt className="h-7 w-7" />
-                <span className="text-md font-bold">{formatCurrency(total, currency.code)}</span>
+                <span className="text-md font-bold">{formatCurrency(totalWithShipping, currency.code)}</span>
                 {totalItems > 0 && (
                     <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-8 w-8 flex items-center justify-center border-4 border-background">
                         {totalItems}
@@ -920,6 +1220,8 @@ export default function PosPage() {
             subtotal={subtotal}
             taxAmount={taxAmount}
             total={total}
+            shippingCost={shippingCost}
+            totalWithShipping={totalWithShipping}
             onUpdateQuantity={updateQuantity}
             onRemoveFromCart={removeFromCart}
             onClearCart={clearCartAndForm}
@@ -934,6 +1236,8 @@ export default function PosPage() {
             total={total}
             subtotal={subtotal}
             taxAmount={taxAmount}
+            shippingCost={shippingCost}
+            totalWithShipping={totalWithShipping}
             isVisible={isTicketVisible}
             onUpdateQuantity={updateQuantity}
             onRemoveFromCart={removeFromCart}
@@ -960,13 +1264,24 @@ export default function PosPage() {
                             cart={cart}
                             subtotal={subtotal}
                             taxAmount={taxAmount}
-                            total={total} 
+                            total={total}
+                            shippingCost={shippingCost}
+                            totalWithShipping={totalWithShipping}
                             change={change} 
-                            isInDialog={true} />
+                            isInDialog={true}
+                            onOpenShipping={() => setIsShippingDialogOpen(true)}
+                        />
                     </div>
                 </ScrollArea>
             </DialogContent>
         </Dialog>
+        
+        <ShippingDialog
+          isOpen={isShippingDialogOpen}
+          onOpenChange={setIsShippingDialogOpen}
+          onSave={handleSaveShippingInfo}
+          currentAddress={form.getValues('address')}
+        />
     </div>
   );
 }

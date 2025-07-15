@@ -1,7 +1,7 @@
 
 'use server';
 /**
- * @fileOverview A flow for creating an order and saving it locally (simulated).
+ * @fileOverview A flow for creating an order and saving it to the system.
  *
  * - createOrder - A function that handles the order creation process.
  * - CreateOrderInput - The input type for the createOrder function.
