@@ -13,6 +13,7 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
 import * as React from 'react';
@@ -25,18 +26,20 @@ import { ProductCard } from '@/components/product-card';
 
 // Sub-componente para el carrusel principal (Hero)
 function HeroCarousel({ banners }: { banners: Banner[] }) {
-  const autoplay = React.useRef(Autoplay({ delay: 5000, stopOnInteraction: true }));
-
   if (banners.length === 0) return null;
 
   return (
     <section className="relative w-full">
       <Carousel
-        plugins={[autoplay.current]}
+        plugins={[
+          Autoplay({
+            delay: 5000,
+            stopOnInteraction: true,
+            stopOnMouseEnter: true,
+          }),
+        ]}
         className="w-full"
         opts={{ loop: true }}
-        onMouseEnter={autoplay.current.stop}
-        onMouseLeave={autoplay.current.reset}
       >
         <CarouselContent>
           {banners.map((banner, index) => (
@@ -71,8 +74,6 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
 
 // Sub-componente para el carrusel de productos destacados
 function FeaturedProductsCarousel({ products }: { products: Product[] }) {
-    const autoplay = React.useRef(Autoplay({ delay: 4000, stopOnInteraction: true }));
-
     if (products.length === 0) return null;
 
     return (
@@ -82,11 +83,15 @@ function FeaturedProductsCarousel({ products }: { products: Product[] }) {
                 <Carousel
                     opts={{
                         align: 'start',
-                        loop: products.length > 3,
+                        loop: products.length > 4, // Loop only if there are more products than visible
                     }}
-                    plugins={[autoplay.current]}
-                    onMouseEnter={autoplay.current.stop}
-                    onMouseLeave={autoplay.current.reset}
+                    plugins={[
+                      Autoplay({
+                        delay: 4000,
+                        stopOnInteraction: true,
+                        stopOnMouseEnter: true,
+                      }),
+                    ]}
                     className="w-full"
                 >
                     <CarouselContent>
