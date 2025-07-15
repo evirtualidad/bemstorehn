@@ -5,8 +5,9 @@ import * as React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { format, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { format } from 'date-fns/format';
+import { parseISO } from 'date-fns/parseISO';
+import { es } from 'date-fns/locale/es';
 
 import {
   Banknote,
@@ -218,7 +219,7 @@ function NewOrderDialog() {
     setIsSubmitting(true);
     try {
         const orderInput = {
-            customer: { name: values.name || 'Consumidor Final', phone: values.phone || 'N/A' },
+            customer: { name: values.name, phone: values.phone },
             items: cart,
             total: total,
             paymentMethod: values.paymentMethod,

@@ -51,8 +51,10 @@ import {
   Cell,
   Legend,
 } from 'recharts';
-import { format, differenceInDays, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { format } from 'date-fns/format';
+import { differenceInDays } from 'date-fns/differenceInDays';
+import { parseISO } from 'date-fns/parseISO';
+import { es } from 'date-fns/locale/es';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,

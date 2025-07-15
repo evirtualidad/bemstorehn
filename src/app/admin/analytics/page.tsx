@@ -44,9 +44,11 @@ import {
 } from '@/components/ui/popover';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
-import { DateRange } from 'react-day-picker';
-import { addDays, format, subDays } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { type DateRange } from 'react-day-picker';
+import { addDays } from 'date-fns/addDays';
+import { format } from 'date-fns/format';
+import { subDays } from 'date-fns/subDays';
+import { es } from 'date-fns/locale/es';
 import React from 'react';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import Image from 'next/image';

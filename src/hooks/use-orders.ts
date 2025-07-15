@@ -3,7 +3,8 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { subDays, addDays } from 'date-fns';
+import { subDays } from 'date-fns/subDays';
+import { addDays } from 'date-fns/addDays';
 
 export interface Payment {
     date: string;

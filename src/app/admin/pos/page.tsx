@@ -5,7 +5,7 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { format } from 'date-fns';
+import { format } from 'date-fns/format';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -43,7 +43,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { cn, formatCurrency } from '@/lib/utils';
-import { es } from 'date-fns/locale';
+import { es } from 'date-fns/locale/es';
 import { ProductSearch } from '@/components/product-search';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
@@ -758,7 +758,7 @@ export default function PosPage() {
     setIsSubmitting(true);
     try {
         const orderInput = {
-            customer: { name: values.name || 'Consumidor Final', phone: values.phone || 'N/A' },
+            customer: { name: values.name, phone: values.phone },
             items: cart,
             total: total,
             paymentMethod: values.paymentMethod,
