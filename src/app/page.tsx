@@ -19,9 +19,10 @@ import Autoplay from 'embla-carousel-autoplay';
 import * as React from 'react';
 import { useBannersStore } from '@/hooks/use-banners';
 import { useCategoriesStore } from '@/hooks/use-categories';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function Home() {
-  const { products } = useProductsStore();
+  const { products, isHydrated } = useProductsStore();
   const { banners } = useBannersStore();
   const { categories } = useCategoriesStore();
 
@@ -45,6 +46,15 @@ export default function Home() {
   const discountProducts = products.filter(p => p.specialCategory === 'descuento' && p.originalPrice);
   const promotionProducts = products.filter(p => p.specialCategory === 'promocion');
   const featuredProducts = products.filter((p) => p.featured);
+  
+  if (!isHydrated) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-background min-h-screen">

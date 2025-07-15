@@ -16,15 +16,25 @@ import { ProductCard } from '@/components/product-card';
 import { Product } from '@/lib/products';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function ProductDetailPage({ params }: { params: { productId: string } }) {
-  const { getProductById, products } = useProductsStore();
+  const { getProductById, products, isHydrated } = useProductsStore();
   const { getCategoryByName } = useCategoriesStore();
   const { addToCart } = useCart();
   const { toast } = useToast();
   const { currency } = useCurrencyStore();
   
   const product = getProductById(params.productId);
+
+  if (!isHydrated) {
+    return (
+        <div className="bg-background min-h-screen">
+          <Header />
+          <LoadingSpinner />
+        </div>
+    );
+  }
 
   if (!product) {
     notFound();

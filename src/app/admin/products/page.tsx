@@ -57,9 +57,10 @@ import { z } from 'zod';
 import { useProductsStore } from '@/hooks/use-products';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function AdminProductsPage() {
-  const { products, addProduct, updateProduct, deleteProduct } = useProductsStore();
+  const { products, addProduct, updateProduct, deleteProduct, isHydrated } = useProductsStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
   const { currency } = useCurrencyStore();
@@ -119,6 +120,9 @@ export default function AdminProductsPage() {
 
   const onSubmit = editingProduct ? handleEditProduct : handleAddProduct;
 
+  if (!isHydrated) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">

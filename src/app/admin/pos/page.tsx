@@ -48,6 +48,7 @@ import { ProductSearch } from '@/components/product-search';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 type PosCartItem = Product & { quantity: number };
 
@@ -622,7 +623,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
 
 export default function PosPage() {
   const [cart, setCart] = React.useState<PosCartItem[]>([]);
-  const { products, decreaseStock } = useProductsStore();
+  const { products, decreaseStock, isHydrated } = useProductsStore();
   const { categories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
@@ -798,6 +799,10 @@ export default function PosPage() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (!isHydrated) {
+    return <LoadingSpinner />;
   }
 
   return (

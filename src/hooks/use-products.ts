@@ -4,6 +4,7 @@
 import { products as initialProducts, type Product } from '@/lib/products';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { useState, useEffect } from 'react';
 
 type ProductsState = {
   products: Product[];
@@ -12,12 +13,16 @@ type ProductsState = {
   deleteProduct: (productId: string) => void;
   getProductById: (productId: string) => Product | undefined;
   decreaseStock: (productId: string, quantity: number) => void;
+  _isHydrated: boolean;
+  setIsHydrated: (value: boolean) => void;
 };
 
-export const useProductsStore = create<ProductsState>()(
+const useProductsStoreBase = create<ProductsState>()(
   persist(
     (set, get) => ({
       products: initialProducts,
+      _isHydrated: false,
+      setIsHydrated: (value: boolean) => set({ _isHydrated: value }),
       addProduct: (product) => {
         set((state) => ({ products: [product, ...state.products] }));
       },
@@ -47,6 +52,22 @@ export const useProductsStore = create<ProductsState>()(
     {
       name: 'products-storage', // name of the item in the storage (must be unique)
       storage: createJSONStorage(() => localStorage), // (optional) by default, 'localStorage' is used
+       onRehydrateStorage: () => (state) => {
+        if (state) state.setIsHydrated(true)
+      },
     }
   )
 );
+
+// This is a wrapper to ensure we only use the store once it has been hydrated
+// on the client side. This prevents hydration mismatches.
+export const useProductsStore = () => {
+    const store = useProductsStoreBase();
+    const [isHydrated, setIsHydrated] = useState(false);
+
+    useEffect(() => {
+        setIsHydrated(store._isHydrated);
+    }, [store._isHydrated]);
+    
+    return { ...store, isHydrated };
+}

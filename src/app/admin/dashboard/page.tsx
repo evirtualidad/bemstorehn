@@ -47,6 +47,7 @@ import React from 'react';
 import { useProductsStore } from '@/hooks/use-products';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const salesData = [
     { name: 'Ene', sales: 4000 },
@@ -69,7 +70,7 @@ const newClientsData = [
 
 
 export default function Dashboard() {
-  const { products } = useProductsStore();
+  const { products, isHydrated } = useProductsStore();
   const { currency } = useCurrencyStore();
 
   // Simulate dynamic data
@@ -77,6 +78,10 @@ export default function Dashboard() {
   const totalSales = 12234;
   const activeProducts = products.filter(p => p.stock > 0).length;
   const totalOrders = 2350;
+
+  if (!isHydrated) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <main className="flex flex-1 flex-col gap-4 md:gap-8">

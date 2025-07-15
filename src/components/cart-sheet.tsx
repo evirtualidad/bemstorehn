@@ -22,15 +22,18 @@ import { Skeleton } from './ui/skeleton';
 import { Product } from '@/lib/products';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
+import { LoadingSpinner } from './ui/loading-spinner';
 
 function RecommendedProducts() {
   const { items } = useCart();
-  const { products } = useProductsStore();
+  const { products, isHydrated } = useProductsStore();
   const [recommendations, setRecommendations] = React.useState<RecommendedProductsOutput['recommendations']>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     async function fetchRecommendations() {
+      if (!isHydrated) return;
+
       if (items.length === 0) {
         setRecommendations([]);
         setLoading(false);
@@ -39,9 +42,13 @@ function RecommendedProducts() {
 
       setLoading(true);
       try {
+        // Ensure we don't recommend products already in the cart
+        const productIdsInCart = new Set(items.map(i => i.id));
+        const availableProductsForRecs = products.filter(p => !productIdsInCart.has(p.id));
+
         const result = await getRecommendedProducts({
           productsInCart: items,
-          allProducts: products,
+          allProducts: availableProductsForRecs,
         });
         setRecommendations(result.recommendations || []);
       } catch (error) {
@@ -52,7 +59,11 @@ function RecommendedProducts() {
       }
     }
     fetchRecommendations();
-  }, [items, products]);
+  }, [items, products, isHydrated]);
+
+  if (!isHydrated) {
+    return null; // Don't show anything until products are loaded
+  }
 
   if (loading) {
     return (
