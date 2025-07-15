@@ -117,7 +117,8 @@ export default function Home() {
                     onMouseEnter={plugin.current.stop}
                     onMouseLeave={plugin.current.reset}
                     opts={{
-                    loop: true,
+                        loop: true,
+                        duration: 40,
                     }}
                 >
                     <CarouselContent>
