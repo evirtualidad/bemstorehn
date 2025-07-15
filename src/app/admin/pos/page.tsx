@@ -26,7 +26,7 @@ import { useProductsStore } from '@/hooks/use-products';
 import { createOrder } from '@/ai/flows/create-order-flow';
 import type { Product } from '@/lib/products';
 import Image from 'next/image';
-import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard, Banknote, Landmark, X } from 'lucide-react';
+import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard, Banknote, Landmark, X, BadgePercent } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -52,7 +52,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 type PosCartItem = Product & { quantity: number };
 
-type SelectedFilter = { type: 'category'; value: string } | null;
+type SelectedFilter = { type: 'category' | 'offer'; value: string } | null;
 
 
 const checkoutFormSchema = z
@@ -116,16 +116,18 @@ const checkoutFormSchema = z
 
 function CategoryList({
   categories,
-  selectedFilter,
   onSelectFilter,
+  selectedFilter,
+  hasOfferProducts,
 }: {
   categories: string[];
-  selectedFilter: SelectedFilter;
   onSelectFilter: (filter: SelectedFilter) => void;
+  selectedFilter: SelectedFilter;
+  hasOfferProducts: boolean;
 }) {
   const { getCategoryByName } = useCategoriesStore();
   
-  const isSelected = (type: 'category' | null, value?: string) => {
+  const isSelected = (type: 'category' | 'offer' | null, value?: string) => {
     if (!selectedFilter && !type) return true;
     if (!selectedFilter) return false;
     return selectedFilter.type === type && selectedFilter.value === value;
@@ -141,6 +143,16 @@ function CategoryList({
         <Tag className="mr-2 h-4 w-4" />
         Todas
       </Button>
+      {hasOfferProducts && (
+        <Button
+          variant={isSelected('offer', 'all') ? 'default' : 'outline'}
+          className="justify-start h-11 px-4 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+          onClick={() => onSelectFilter({ type: 'offer', value: 'all' })}
+        >
+          <BadgePercent className="mr-2 h-4 w-4" />
+          Ofertas
+        </Button>
+      )}
       {categories.map((categoryName) => {
         const category = getCategoryByName(categoryName);
         if (!category) return null;
@@ -158,6 +170,7 @@ function CategoryList({
     </div>
   );
 }
+
 
 function ProductGrid({
   products,
@@ -608,12 +621,17 @@ export default function PosPage() {
   const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
 
   const productCategories = React.useMemo(() => isHydrated ? [...new Set(products.map((p) => p.category))] : [], [products, isHydrated]);
+  const hasOfferProducts = React.useMemo(() => isHydrated ? products.some(p => p.originalPrice && p.originalPrice > p.price) : false, [products, isHydrated]);
   
   const filteredProducts = React.useMemo(() => {
     if (!isHydrated) return [];
     if (!selectedFilter) return products;
+    
     if (selectedFilter.type === 'category') {
       return products.filter((p) => p.category === selectedFilter.value);
+    }
+    if (selectedFilter.type === 'offer') {
+      return products.filter(p => p.originalPrice && p.originalPrice > p.price);
     }
     return products;
   }, [selectedFilter, products, isHydrated]);
@@ -798,6 +816,7 @@ export default function PosPage() {
                     categories={productCategories}
                     selectedFilter={selectedFilter}
                     onSelectFilter={setSelectedFilter}
+                    hasOfferProducts={hasOfferProducts}
                 />
                 <Separator />
             </div>
@@ -871,3 +890,5 @@ export default function PosPage() {
     </div>
   );
 }
+
+    
