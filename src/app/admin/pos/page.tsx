@@ -121,7 +121,7 @@ function CategoryList({
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <Button
-        variant={selectedCategory === null ? 'secondary' : 'ghost'}
+        variant={selectedCategory === null ? 'default' : 'outline'}
         className="justify-start h-11 px-4"
         onClick={() => onSelectCategory(null)}
       >
@@ -134,7 +134,7 @@ function CategoryList({
         return (
           <Button
             key={category.id}
-            variant={selectedCategory === category.name ? 'secondary' : 'ghost'}
+            variant={selectedCategory === category.name ? 'default' : 'outline'}
             className="justify-start h-11 px-4"
             onClick={() => onSelectCategory(category.name)}
           >
@@ -742,7 +742,7 @@ export default function PosPage() {
             <div className="lg:hidden fixed bottom-4 right-4 z-20">
                 <Button
                     size="lg"
-                    className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 text-primary bg-primary-light hover:bg-primary-light/90 border-4 border-background"
+                    className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 bg-primary-light hover:bg-primary-light/90 text-primary border-4 border-background"
                     onClick={() => setIsTicketVisible(true)}
                 >
                     <Receipt className="h-7 w-7" />
