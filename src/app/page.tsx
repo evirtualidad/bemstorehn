@@ -29,10 +29,6 @@ export default function Home() {
   const { categories } = useCategoriesStore();
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
 
-  const plugin = React.useRef(
-    Autoplay({ delay: 5000, stopOnInteraction: true })
-  );
-
   const productsByCategory = React.useMemo(() => {
     if (!isHydrated) return {};
     return products.reduce((acc, product) => {
@@ -112,10 +108,13 @@ export default function Home() {
             {banners.length > 0 && (
                 <section className="relative w-full">
                 <Carousel
-                    plugins={[plugin.current]}
+                    plugins={[
+                        Autoplay({
+                          delay: 5000,
+                          stopOnInteraction: true,
+                        }),
+                    ]}
                     className="w-full"
-                    onMouseEnter={plugin.current.stop}
-                    onMouseLeave={plugin.current.reset}
                     opts={{
                         loop: true,
                         duration: 40,
