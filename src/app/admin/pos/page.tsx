@@ -26,7 +26,7 @@ import { useProductsStore } from '@/hooks/use-products';
 import { createOrder } from '@/ai/flows/create-order-flow';
 import type { Product } from '@/lib/products';
 import Image from 'next/image';
-import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard, Banknote, Landmark, X, Star } from 'lucide-react';
+import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard, Banknote, Landmark, X } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -52,7 +52,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 type PosCartItem = Product & { quantity: number };
 
-type SelectedFilter = { type: 'category'; value: string } | { type: 'special'; value: 'descuento' | 'promocion' } | null;
+type SelectedFilter = { type: 'category'; value: string } | null;
 
 
 const checkoutFormSchema = z
@@ -116,20 +116,16 @@ const checkoutFormSchema = z
 
 function CategoryList({
   categories,
-  hasDiscounts,
-  hasPromotions,
   selectedFilter,
   onSelectFilter,
 }: {
   categories: string[];
-  hasDiscounts: boolean;
-  hasPromotions: boolean;
   selectedFilter: SelectedFilter;
   onSelectFilter: (filter: SelectedFilter) => void;
 }) {
   const { getCategoryByName } = useCategoriesStore();
   
-  const isSelected = (type: 'category' | 'special' | null, value?: string) => {
+  const isSelected = (type: 'category' | null, value?: string) => {
     if (!selectedFilter && !type) return true;
     if (!selectedFilter) return false;
     return selectedFilter.type === type && selectedFilter.value === value;
@@ -145,26 +141,6 @@ function CategoryList({
         <Tag className="mr-2 h-4 w-4" />
         Todas
       </Button>
-       {hasDiscounts && (
-        <Button
-          variant={isSelected('special', 'descuento') ? 'default' : 'outline'}
-          className="justify-start h-11 px-4"
-          onClick={() => onSelectFilter({ type: 'special', value: 'descuento' })}
-        >
-          <Tag className="mr-2 h-4 w-4" />
-          Descuentos
-        </Button>
-      )}
-      {hasPromotions && (
-        <Button
-          variant={isSelected('special', 'promocion') ? 'default' : 'outline'}
-          className="justify-start h-11 px-4"
-          onClick={() => onSelectFilter({ type: 'special', value: 'promocion' })}
-        >
-          <Star className="mr-2 h-4 w-4" />
-          Promociones
-        </Button>
-      )}
       {categories.map((categoryName) => {
         const category = getCategoryByName(categoryName);
         if (!category) return null;
@@ -195,8 +171,6 @@ function ProductGrid({
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
       {products.map((product) => {
         const stockStatus = product.stock <= 0 ? "Agotado" : product.stock < 10 ? "Poco Stock" : "En Stock";
-        const isDiscounted = product.specialCategory === 'descuento' && product.originalPrice && product.originalPrice > product.price;
-        const isPromotion = product.specialCategory === 'promocion';
 
         return (
           <Card
@@ -213,12 +187,6 @@ function ProductGrid({
                   className="object-cover group-hover:scale-105 transition-transform"
                 />
                 <div className="absolute top-2 right-2 flex flex-col gap-2 items-end">
-                   {isDiscounted && (
-                      <Badge variant="destructive" className="text-md font-bold uppercase"><Tag className="mr-1 h-4 w-4" /> Descuento</Badge>
-                  )}
-                  {isPromotion && (
-                      <Badge className="bg-accent-foreground text-white text-md font-bold uppercase"><Star className="mr-1 h-4 w-4" /> Promoción</Badge>
-                  )}
                   <Badge 
                     className={cn(
                       "w-fit",
@@ -233,18 +201,8 @@ function ProductGrid({
               <div className="p-3 flex-grow flex items-center justify-center">
                 <h3 className="font-semibold text-sm leading-tight text-center w-full">{product.name}</h3>
               </div>
-               <div className={cn(
-                  "mt-auto text-center p-2 rounded-b-md",
-                  isDiscounted ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"
-                )}>
-                   {isDiscounted && product.originalPrice ? (
-                      <div className='flex items-baseline justify-center gap-2'>
-                        <span className="text-xl font-bold">{formatCurrency(product.price, currency.code)}</span>
-                        <span className="text-sm font-medium text-destructive-foreground/80 line-through">{formatCurrency(product.originalPrice, currency.code)}</span>
-                      </div>
-                    ) : (
-                      <span className="text-lg font-bold">{formatCurrency(product.price, currency.code)}</span>
-                    )}
+               <div className="mt-auto text-center p-2 rounded-b-md bg-primary text-primary-foreground">
+                    <span className="text-lg font-bold">{formatCurrency(product.price, currency.code)}</span>
               </div>
             </CardContent>
           </Card>
@@ -637,18 +595,12 @@ export default function PosPage() {
   const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
 
   const productCategories = React.useMemo(() => isHydrated ? [...new Set(products.map((p) => p.category))] : [], [products, isHydrated]);
-  const hasDiscounts = React.useMemo(() => isHydrated ? products.some(p => p.specialCategory === 'descuento') : false, [products, isHydrated]);
-  const hasPromotions = React.useMemo(() => isHydrated ? products.some(p => p.specialCategory === 'promocion') : false, [products, isHydrated]);
-
-
+  
   const filteredProducts = React.useMemo(() => {
     if (!isHydrated) return [];
     if (!selectedFilter) return products;
     if (selectedFilter.type === 'category') {
       return products.filter((p) => p.category === selectedFilter.value);
-    }
-    if (selectedFilter.type === 'special') {
-      return products.filter((p) => p.specialCategory === selectedFilter.value);
     }
     return products;
   }, [selectedFilter, products, isHydrated]);
@@ -831,8 +783,6 @@ export default function PosPage() {
             <div className="p-4 space-y-4 flex-shrink-0 bg-background">
                  <CategoryList
                     categories={productCategories}
-                    hasDiscounts={hasDiscounts}
-                    hasPromotions={hasPromotions}
                     selectedFilter={selectedFilter}
                     onSelectFilter={setSelectedFilter}
                 />
@@ -908,4 +858,3 @@ export default function PosPage() {
     </div>
   );
 }
-

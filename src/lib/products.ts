@@ -5,10 +5,8 @@ export interface Product {
   image: string;
   aiHint?: string;
   price: number;
-  originalPrice?: number; // Added for discounts
   description: string;
   category: string; 
-  specialCategory?: 'descuento' | 'promocion' | 'ninguna'; // Added for special sections
   stock: number;
   featured?: boolean;
 }
@@ -20,10 +18,8 @@ export const products: Product[] = [
     image: 'https://placehold.co/400x400.png',
     aiHint: 'skincare serum',
     price: 35.00,
-    originalPrice: 45.00,
     description: 'A vitamin C serum for a radiant and even skin tone. Fights free radicals and boosts collagen production.',
     category: 'Skincare',
-    specialCategory: 'descuento',
     stock: 25,
     featured: true,
   },
@@ -35,7 +31,6 @@ export const products: Product[] = [
     price: 38.50,
     description: 'A lightweight, hyaluronic acid-based moisturizer for all-day hydration without a greasy feel.',
     category: 'Skincare',
-    specialCategory: 'promocion',
     stock: 50,
     featured: false,
   },
@@ -78,10 +73,8 @@ export const products: Product[] = [
     image: 'https://placehold.co/400x400.png',
     aiHint: 'hair shampoo',
     price: 18.00,
-    originalPrice: 22.00,
     description: 'Absorbs oil and adds instant volume and texture, leaving hair feeling fresh and clean.',
     category: 'Haircare',
-    specialCategory: 'descuento',
     stock: 15,
     featured: false,
   },
@@ -93,7 +86,6 @@ export const products: Product[] = [
     price: 28.00,
     description: 'A deep-cleansing clay mask with activated charcoal to detoxify pores and refine skin texture.',
     category: 'Skincare',
-    specialCategory: 'promocion',
     stock: 40,
     featured: true,
   },
@@ -125,10 +117,8 @@ export const products: Product[] = [
     image: 'https://placehold.co/400x400.png',
     aiHint: 'eyeshadow makeup',
     price: 39.00,
-    originalPrice: 49.00,
     description: 'A versatile palette of 12 neutral and bold eyeshadows in matte and shimmer finishes.',
     category: 'Makeup',
-    specialCategory: 'descuento',
     stock: 20,
     featured: true,
   },

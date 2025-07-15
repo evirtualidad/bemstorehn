@@ -33,9 +33,6 @@ export default function Home() {
   const productsByCategory = React.useMemo(() => {
     if (!isHydrated) return {};
     return products.reduce((acc, product) => {
-      if (product.specialCategory === 'descuento' || product.specialCategory === 'promocion') {
-        return acc;
-      }
       const { category } = product;
       if (!acc[category]) {
         acc[category] = [];
@@ -45,8 +42,6 @@ export default function Home() {
     }, {} as Record<string, Product[]>);
   }, [products, isHydrated]);
   
-  const discountProducts = React.useMemo(() => isHydrated ? products.filter(p => p.specialCategory === 'descuento' && p.originalPrice) : [], [products, isHydrated]);
-  const promotionProducts = React.useMemo(() => isHydrated ? products.filter(p => p.specialCategory === 'promocion') : [], [products, isHydrated]);
   const featuredProducts = React.useMemo(() => isHydrated ? products.filter((p) => p.featured) : [], [products, isHydrated]);
   
   
@@ -131,40 +126,6 @@ export default function Home() {
               </Carousel>
             </div>
           </section>
-        )}
-        
-        {/* Discount Products Section */}
-        {discountProducts.length > 0 && (
-          <>
-            <Separator className="my-8 bg-border/40" />
-            <section className="py-12 md:py-20 bg-primary/5">
-              <div className="container mx-auto px-4">
-                <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 md:mb-14 text-primary">Grandes Descuentos</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-                  {discountProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-              </div>
-            </section>
-          </>
-        )}
-
-        {/* Promotion Products Section */}
-        {promotionProducts.length > 0 && (
-           <>
-            <Separator className="my-8 bg-border/40" />
-            <section className="py-12 md:py-20 bg-accent/30">
-              <div className="container mx-auto px-4">
-                <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 md:mb-14 text-accent-foreground">Promociones Especiales</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-                  {promotionProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-              </div>
-            </section>
-          </>
         )}
         
         <Separator className="my-8 bg-border/40" />

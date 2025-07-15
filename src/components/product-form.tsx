@@ -32,10 +32,8 @@ export const productFormSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
   description: z.string().min(10, 'La descripción debe tener al menos 10 caracteres.'),
   price: z.coerce.number().positive('El precio debe ser un número positivo.'),
-  originalPrice: z.coerce.number().optional(),
   stock: z.coerce.number().int().min(0, 'El stock no puede ser negativo.'),
   category: z.string({ required_error: 'Debes seleccionar una categoría.' }),
-  specialCategory: z.enum(['descuento', 'promocion', 'ninguna']).optional(),
   image: z.string().url('Debe ser una URL de imagen válida.').optional().or(z.literal('')),
   featured: z.boolean().default(false),
 });
@@ -55,10 +53,8 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
       name: product?.name || '',
       description: product?.description || '',
       price: product?.price || 0,
-      originalPrice: product?.originalPrice || undefined,
       stock: product?.stock || 0,
       category: product?.category || '',
-      specialCategory: product?.specialCategory || 'ninguna',
       image: product?.image || '',
       featured: product?.featured || false,
     },
@@ -103,7 +99,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
             name="price"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Precio (Actual)</FormLabel>
+                <FormLabel>Precio</FormLabel>
                 <FormControl>
                   <Input type="number" placeholder="45.00" {...field} />
                 </FormControl>
@@ -112,20 +108,6 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
             )}
           />
            <FormField
-            control={form.control}
-            name="originalPrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Precio Original (para descuento)</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="55.00" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-         <FormField
             control={form.control}
             name="stock"
             render={({ field }) => (
@@ -138,58 +120,34 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
               </FormItem>
             )}
           />
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Categoría Principal</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una categoría" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.name}>{cat.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="specialCategory"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Categoría Especial</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una opción" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="ninguna">Ninguna</SelectItem>
-                    <SelectItem value="descuento">Descuento</SelectItem>
-                    <SelectItem value="promocion">Promoción</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
+        
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Categoría</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona una categoría" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.name}>{cat.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
         <FormField
             control={form.control}
             name="image"

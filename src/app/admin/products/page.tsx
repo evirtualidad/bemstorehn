@@ -71,10 +71,8 @@ export default function AdminProductsPage() {
       ...values,
       image: values.image || `https://placehold.co/400x400.png?text=${values.name.replace(/\s/g, '+')}`,
       price: Number(values.price),
-      originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,
       stock: Number(values.stock),
       featured: values.featured,
-      specialCategory: values.specialCategory === 'ninguna' ? undefined : values.specialCategory,
     };
     addProduct(newProduct);
     setIsDialogOpen(false);
@@ -87,10 +85,8 @@ export default function AdminProductsPage() {
       ...editingProduct,
       ...values,
       price: Number(values.price),
-      originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,
       stock: Number(values.stock),
       featured: values.featured,
-      specialCategory: values.specialCategory === 'ninguna' ? undefined : values.specialCategory,
     });
 
     setEditingProduct(null);
@@ -207,9 +203,6 @@ export default function AdminProductsPage() {
                     <TableHead>Estado</TableHead>
                     <TableHead>Precio</TableHead>
                     <TableHead className="hidden md:table-cell">
-                      Oferta
-                    </TableHead>
-                    <TableHead className="hidden md:table-cell">
                       Stock
                     </TableHead>
                     <TableHead className="hidden md:table-cell">
@@ -241,23 +234,7 @@ export default function AdminProductsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col">
-                          <span className={product.originalPrice ? 'text-destructive font-bold' : ''}>
-                            {formatCurrency(product.price, currency.code)}
-                          </span>
-                          {product.originalPrice && (
-                             <span className="text-xs text-muted-foreground line-through">
-                              {formatCurrency(product.originalPrice, currency.code)}
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {product.specialCategory ? (
-                          <Badge variant="outline">{product.specialCategory}</Badge>
-                        ) : (
-                          'N/A'
-                        )}
+                        {formatCurrency(product.price, currency.code)}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         {product.stock}
