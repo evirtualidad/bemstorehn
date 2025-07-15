@@ -30,7 +30,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
 
   const plugin = React.useRef(
-    Autoplay({ delay: 5000, stopOnInteraction: true })
+    Autoplay({ delay: 3000, stopOnInteraction: true })
   );
 
   const productsByCategory = React.useMemo(() => {
