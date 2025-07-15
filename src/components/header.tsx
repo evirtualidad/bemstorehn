@@ -24,29 +24,27 @@ export function Header() {
               Cosmetica
             </h1>
           </Link>
-          <nav className="hidden md:flex items-center gap-6 text-md">
+          <nav className="hidden md:flex items-center gap-2 text-md">
             {categories.map((category) => (
-              <Link
-                key={category.id}
-                href={`#`}
-                className="hover:text-primary transition-colors"
-              >
-                {category.label}
-              </Link>
+              <Button asChild variant="ghost" key={category.id}>
+                <Link href={`#`}>
+                  {category.label}
+                </Link>
+              </Button>
             ))}
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="relative" onClick={toggleCart}>
+          <Button variant="outline" size="icon" className="relative rounded-full h-12 w-12" onClick={toggleCart}>
             {itemCount > 0 && (
               <Badge
                 variant="destructive"
-                className="absolute -top-2 -right-2 h-6 w-6 rounded-full flex items-center justify-center p-0"
+                className="absolute -top-1 -right-1 h-6 w-6 rounded-full flex items-center justify-center p-0"
               >
                 {itemCount}
               </Badge>
             )}
-            <ShoppingCart className="w-6 h-6" />
+            <ShoppingCart className="w-7 h-7" />
             <span className="sr-only">Carrito de Compras</span>
           </Button>
         </div>
