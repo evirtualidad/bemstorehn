@@ -12,11 +12,18 @@ export interface Payment {
     method: 'efectivo' | 'tarjeta' | 'transferencia';
 }
 
+export interface Address {
+  department: string;
+  municipality: string;
+  exactAddress: string;
+}
+
 export interface Order {
   id: string;
   customer: {
     name: string;
     phone: string;
+    address?: Address;
   };
   items: Array<{
     id: string;
@@ -26,6 +33,7 @@ export interface Order {
     image: string;
   }>;
   total: number;
+  shippingCost?: number;
   balance: number; 
   payments: Payment[]; 
   paymentMethod: 'efectivo' | 'tarjeta' | 'transferencia' | 'credito';
@@ -77,10 +85,19 @@ const mockOrders: Order[] = [
   },
    {
     id: 'ORD-009-ONLINE',
-    customer: { name: 'Mason Garcia', phone: '555-0109' },
+    customer: { 
+      name: 'Mason Garcia', 
+      phone: '555-0109',
+      address: {
+        department: 'Francisco Morazán',
+        municipality: 'Distrito Central',
+        exactAddress: 'Col. Palmira, Ave. Juan Lindo, #1234'
+      }
+    },
     items: [{ id: 'prod_006', name: 'Volumizing Dry Shampoo', price: 18.00, quantity: 2, image: 'https://placehold.co/400x400.png' }],
-    total: 36.00,
-    balance: 36.00,
+    total: 36.00 + 50, // total + shipping
+    shippingCost: 50,
+    balance: 36.00 + 50,
     payments: [],
     paymentMethod: 'tarjeta', // Placeholder
     status: 'pending-approval',
@@ -133,7 +150,8 @@ export const useOrdersStore = create<OrdersState>()(
             ...order,
             customer: {
               name: order.customer.name || 'Consumidor Final',
-              phone: order.customer.phone || 'N/A'
+              phone: order.customer.phone || 'N/A',
+              address: order.customer.address,
             },
             balance: (order.status === 'pending-payment' || order.status === 'pending-approval') ? order.total : 0,
             status: order.status,

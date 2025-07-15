@@ -22,13 +22,21 @@ const ProductSchema = z.object({
   stock: z.number(),
 });
 
+const AddressSchema = z.object({
+  department: z.string(),
+  municipality: z.string(),
+  exactAddress: z.string(),
+});
+
 const CreateOrderInputSchema = z.object({
   customer: z.object({
     name: z.string().optional(),
     phone: z.string().optional(),
+    address: AddressSchema.optional(),
   }),
   items: z.array(ProductSchema),
   total: z.number(),
+  shippingCost: z.number().optional(),
   paymentMethod: z.enum(['efectivo', 'tarjeta', 'transferencia', 'credito']),
   paymentDueDate: z.string().optional(),
   cashAmount: z.number().optional(),
@@ -64,7 +72,13 @@ const createOrderFlow = ai.defineFlow(
       console.log("--- MOCK ORDER CREATED ---");
       console.log("Order ID:", orderId);
       console.log("Customer:", customerName);
+      if (input.customer.address) {
+        console.log("Address:", `${input.customer.address.exactAddress}, ${input.customer.address.municipality}, ${input.customer.address.department}`);
+      }
       console.log("Items:", input.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })));
+      if (input.shippingCost) {
+        console.log("Shipping Cost:", input.shippingCost);
+      }
       console.log("Total:", input.total);
       console.log("Payment Method:", input.paymentMethod);
       if (input.paymentMethod === 'efectivo' && input.cashAmount) {
