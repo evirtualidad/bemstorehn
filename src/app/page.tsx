@@ -11,8 +11,6 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
   type CarouselApi,
 } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
@@ -23,23 +21,65 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { ProductGrid } from '@/components/product-grid';
 import { ProductCard } from '@/components/product-card';
+import { Pause, Play } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-// Sub-componente para el carrusel principal (Hero)
+
 function HeroCarousel({ banners }: { banners: Banner[] }) {
+  const [api, setApi] = React.useState<CarouselApi | null>(null);
+  const [current, setCurrent] = React.useState(0);
+  const [isPlaying, setIsPlaying] = React.useState(true);
+
+  const autoplayPlugin = React.useRef(
+    Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: false })
+  );
+
+  React.useEffect(() => {
+    if (!api) {
+      return;
+    }
+
+    setCurrent(api.selectedScrollSnap());
+
+    const onSelect = () => {
+      setCurrent(api.selectedScrollSnap());
+    };
+
+    const onAutoplayPlay = () => setIsPlaying(true);
+    const onAutoplayStop = () => setIsPlaying(false);
+
+    api.on('select', onSelect);
+    api.on('autoplay:play', onAutoplayPlay);
+    api.on('autoplay:stop', onAutoplayStop);
+
+    return () => {
+      api.off('select', onSelect);
+      api.off('autoplay:play', onAutoplayPlay);
+      api.off('autoplay:stop', onAutoplayStop);
+    };
+  }, [api]);
+
+  const togglePlay = React.useCallback(() => {
+    if (!api) return;
+    const autoplay = api.plugins().autoplay;
+    if (!autoplay) return;
+
+    if (isPlaying) {
+      autoplay.stop();
+    } else {
+      autoplay.play();
+    }
+  }, [api, isPlaying]);
+  
   if (banners.length === 0) return null;
 
   return (
-    <section className="relative w-full">
+    <section className="relative w-full group/hero">
       <Carousel
-        plugins={[
-          Autoplay({
-            delay: 5000,
-            stopOnInteraction: true,
-            stopOnMouseEnter: true,
-          }),
-        ]}
+        setApi={setApi}
+        plugins={[autoplayPlugin.current]}
         className="w-full"
-        opts={{ loop: true }}
+        opts={{ loop: true, duration: 50 /* Slower animation duration */ }}
       >
         <CarouselContent>
           {banners.map((banner, index) => (
@@ -65,16 +105,57 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10 hidden sm:flex" />
-        <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10 hidden sm:flex" />
       </Carousel>
+
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 w-full max-w-xs mx-auto">
+        <div className='relative flex items-center justify-center gap-2 p-2'>
+          {banners.map((_, index) => {
+            const isActive = index === current;
+            return (
+              <div
+                key={index}
+                className={cn(
+                  'h-2.5 w-2.5 rounded-full bg-white/50 transition-all duration-300',
+                  isActive ? 'w-4 bg-white' : 'hover:bg-white/75'
+                )}
+                role="button"
+                aria-label={`Go to slide ${index + 1}`}
+                onClick={() => api?.scrollTo(index)}
+              >
+                 {isActive && (
+                  <div
+                    className={cn(
+                      'h-full rounded-full bg-primary/80',
+                      isPlaying ? 'animate-fill-progress' : ''
+                    )}
+                    style={{ animationDuration: '5s' }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+       <Button
+        size="icon"
+        variant="ghost"
+        className="absolute bottom-4 right-4 z-20 rounded-full bg-black/30 text-white hover:bg-black/50 hover:text-white transition-opacity opacity-0 group-hover/hero:opacity-100"
+        onClick={togglePlay}
+      >
+        {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+        <span className="sr-only">{isPlaying ? 'Pause carousel' : 'Play carousel'}</span>
+      </Button>
     </section>
   );
 }
 
-// Sub-componente para el carrusel de productos destacados
+
 function FeaturedProductsCarousel({ products }: { products: Product[] }) {
     if (products.length === 0) return null;
+
+    const autoplayPlugin = React.useRef(
+        Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })
+    );
 
     return (
         <section className="py-16 md:py-24 bg-gradient-to-b from-primary-light to-background">
@@ -83,15 +164,9 @@ function FeaturedProductsCarousel({ products }: { products: Product[] }) {
                 <Carousel
                     opts={{
                         align: 'start',
-                        loop: products.length > 4, // Loop only if there are more products than visible
+                        loop: products.length > 4,
                     }}
-                    plugins={[
-                      Autoplay({
-                        delay: 4000,
-                        stopOnInteraction: true,
-                        stopOnMouseEnter: true,
-                      }),
-                    ]}
+                    plugins={[autoplayPlugin.current]}
                     className="w-full"
                 >
                     <CarouselContent>
@@ -101,8 +176,6 @@ function FeaturedProductsCarousel({ products }: { products: Product[] }) {
                             </CarouselItem>
                         ))}
                     </CarouselContent>
-                    <CarouselPrevious className="hidden sm:flex" />
-                    <CarouselNext className="hidden sm:flex" />
                 </Carousel>
             </div>
         </section>

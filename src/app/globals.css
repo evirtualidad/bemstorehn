@@ -83,3 +83,20 @@
     text-shadow: 0 2px 10px rgb(0 0 0 / 50%);
   }
 }
+
+@layer utilities {
+  .animate-fill-progress {
+    animation-name: fill-progress;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+  }
+
+  @keyframes fill-progress {
+    from {
+      width: 0%;
+    }
+    to {
+      width: 100%;
+    }
+  }
+}
