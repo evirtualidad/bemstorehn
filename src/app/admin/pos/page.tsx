@@ -728,6 +728,7 @@ export default function PosPage() {
         title: 'Producto Agotado',
         description: `${product.name} no tiene stock disponible.`,
         variant: 'destructive',
+        duration: 3000,
       });
       return;
     }
@@ -735,6 +736,7 @@ export default function PosPage() {
     toast({
         title: 'Producto añadido',
         description: `${product.name} añadido al pedido.`,
+        duration: 3000,
     });
 
     setCart((prevCart) => {
@@ -749,6 +751,7 @@ export default function PosPage() {
             title: 'Stock Máximo Alcanzado',
             description: `No puedes añadir más ${product.name}.`,
             variant: 'destructive',
+            duration: 3000,
           });
           return prevCart;
         }
@@ -769,6 +772,7 @@ export default function PosPage() {
           title: 'Stock Insuficiente',
           description: `Solo hay ${itemToUpdate.stock} unidades de ${itemToUpdate.name}.`,
           variant: 'destructive',
+          duration: 3000,
         });
         return prevCart;
       }
@@ -798,6 +802,7 @@ export default function PosPage() {
         title: 'Carrito Vacío',
         description: 'Añade productos antes de crear un pedido.',
         variant: 'destructive',
+        duration: 3000,
       });
       return;
     }
@@ -834,6 +839,7 @@ export default function PosPage() {
         toast({
           title: '¡Pedido Creado!',
           description: `Pedido ${tempId} creado con éxito.`,
+          duration: 3000,
         });
 
         clearCartAndForm();
@@ -848,6 +854,7 @@ export default function PosPage() {
         title: 'Error al crear pedido',
         description: 'Hubo un problema al crear el pedido. Intenta de nuevo.',
         variant: 'destructive',
+        duration: 3000,
       });
     } finally {
       setIsSubmitting(false);
