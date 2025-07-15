@@ -59,10 +59,11 @@ const createOrderFlow = ai.defineFlow(
     try {
       // Simulate creating an order by logging it to the console
       const orderId = `ORD-${Date.now().toString().slice(-6)}`;
+      const customerName = input.customer.name || 'Consumidor Final';
       
       console.log("--- MOCK ORDER CREATED ---");
       console.log("Order ID:", orderId);
-      console.log("Customer:", input.customer);
+      console.log("Customer:", customerName);
       console.log("Items:", input.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })));
       console.log("Total:", input.total);
       console.log("Payment Method:", input.paymentMethod);

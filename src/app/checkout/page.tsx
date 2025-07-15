@@ -26,19 +26,21 @@ import { createOrder } from '@/ai/flows/create-order-flow';
 import { useProductsStore } from '@/hooks/use-products';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
+import { useOrdersStore } from '@/hooks/use-orders';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(2, {
     message: 'El nombre debe tener al menos 2 caracteres.',
   }),
-  phone: z.string().min(10, {
-    message: 'El número de teléfono debe tener al menos 10 dígitos.',
+  phone: z.string().min(8, {
+    message: 'El número de teléfono debe tener al menos 8 dígitos.',
   }),
 });
 
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCart();
   const { decreaseStock } = useProductsStore();
+  const { addOrder } = useOrdersStore();
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,17 +57,27 @@ export default function CheckoutPage() {
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
     setIsSubmitting(true);
     try {
-      const result = await createOrder({
-        customer: {name: values.name, phone: values.phone},
-        items: items,
+      const orderInput = {
+        customer: { name: values.name || 'Consumidor Final', phone: values.phone || 'N/A' },
+        items: items.map(item => ({ ...item, quantity: item.quantity, stock: item.stock, category: item.category, description: item.description })),
         total: total,
-        paymentMethod: 'tarjeta', // Default for online checkout
-      });
+        paymentMethod: 'tarjeta' as const, // Default for online checkout
+      };
+
+      const result = await createOrder(orderInput);
 
       if (result.success) {
-        // Decrease stock locally after successful order creation
         items.forEach(item => {
           decreaseStock(item.id, item.quantity);
+        });
+
+        addOrder({
+          id: result.orderId,
+          customer: orderInput.customer,
+          items: orderInput.items,
+          total: orderInput.total,
+          paymentMethod: orderInput.paymentMethod,
+          date: new Date().toISOString(),
         });
 
         toast({

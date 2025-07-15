@@ -218,7 +218,7 @@ function NewOrderDialog() {
     setIsSubmitting(true);
     try {
         const orderInput = {
-            customer: { name: values.name || 'Cliente Mostrador', phone: values.phone || 'N/A' },
+            customer: { name: values.name || 'Consumidor Final', phone: values.phone || 'N/A' },
             items: cart,
             total: total,
             paymentMethod: values.paymentMethod,

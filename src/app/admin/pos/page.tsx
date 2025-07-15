@@ -49,6 +49,7 @@ import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useOrdersStore } from '@/hooks/use-orders';
 
 type PosCartItem = Product & { quantity: number };
 
@@ -612,6 +613,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
 export default function PosPage() {
   const [cart, setCart] = React.useState<PosCartItem[]>([]);
   const { products, decreaseStock, isHydrated } = useProductsStore();
+  const { addOrder } = useOrdersStore();
   const { categories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
@@ -755,27 +757,41 @@ export default function PosPage() {
 
     setIsSubmitting(true);
     try {
-      const result = await createOrder({
-        customer: { name: values.name || 'Cliente Mostrador', phone: values.phone || 'N/A' },
-        items: cart,
-        total: total,
-        paymentMethod: values.paymentMethod,
-        paymentDueDate: values.paymentDueDate ? values.paymentDueDate.toISOString() : undefined,
-        cashAmount: values.cashAmount ? parseFloat(values.cashAmount) : undefined,
-        paymentReference: values.paymentReference,
-      });
+        const orderInput = {
+            customer: { name: values.name || 'Consumidor Final', phone: values.phone || 'N/A' },
+            items: cart,
+            total: total,
+            paymentMethod: values.paymentMethod,
+            paymentDueDate: values.paymentDueDate ? values.paymentDueDate.toISOString() : undefined,
+            cashAmount: values.cashAmount ? parseFloat(values.cashAmount) : undefined,
+            paymentReference: values.paymentReference,
+        };
+
+      const result = await createOrder(orderInput);
+      const tempId = result.success ? result.orderId : `ORD-${Date.now().toString().slice(-6)}`;
 
       if (result.success) {
         cart.forEach((item) => decreaseStock(item.id, item.quantity));
+        addOrder({
+            id: tempId,
+            customer: orderInput.customer,
+            items: orderInput.items,
+            total: orderInput.total,
+            paymentMethod: orderInput.paymentMethod,
+            date: new Date().toISOString(),
+            paymentDueDate: orderInput.paymentDueDate,
+        });
+
         toast({
           title: '¡Pedido Creado!',
-          description: `Pedido ${result.orderId} creado con éxito.`,
+          description: `Pedido ${tempId} creado con éxito.`,
         });
+
         clearCartAndForm();
         setIsCheckoutOpen(false);
         setIsTicketVisible(false);
       } else {
-        throw new Error('La creación del pedido falló');
+        throw new Error('La creación del pedido falló en el flujo.');
       }
     } catch (error) {
       console.error('Error al crear el pedido:', error);

@@ -146,6 +146,10 @@ export const useOrdersStore = create<OrdersState>()(
       addOrder: (order) => {
         const newOrder: Order = {
             ...order,
+            customer: {
+              name: order.customer.name || 'Consumidor Final',
+              phone: order.customer.phone || 'N/A'
+            },
             balance: order.paymentMethod === 'credito' ? order.total : 0,
             status: order.paymentMethod === 'credito' ? 'pending' : 'paid',
             payments: order.paymentMethod !== 'credito' ? [{
