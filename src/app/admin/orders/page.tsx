@@ -23,8 +23,20 @@ import {
   Receipt,
   Trash2,
   Coins,
+  XCircle,
 } from 'lucide-react';
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -469,6 +481,45 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
     );
 }
 
+
+function RejectOrderDialog({ order, children }: { order: Order; children: React.ReactNode }) {
+    const { cancelOrder } = useOrdersStore();
+    const { increaseStock } = useProductsStore();
+    const { toast } = useToast();
+
+    const handleReject = () => {
+        cancelOrder(order.id);
+        order.items.forEach(item => {
+            increaseStock(item.id, item.quantity);
+        });
+        toast({
+            title: 'Pedido Rechazado',
+            description: `El pedido ${order.id} ha sido cancelado y el stock ha sido devuelto.`,
+            variant: 'destructive',
+        });
+    };
+
+    return (
+        <AlertDialog>
+            <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>¿Estás seguro de que quieres rechazar este pedido?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Esta acción es irreversible. El pedido <span className='font-bold'>{order.id}</span> será cancelado y el stock de los productos será devuelto al inventario.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>No, mantener pedido</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleReject} className={cn(buttonVariants({ variant: "destructive" }))}>
+                        Sí, rechazar pedido
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+}
+
 export default function OrdersPage() {
   const { orders } = useOrdersStore();
   const { currency } = useCurrencyStore();
@@ -495,6 +546,7 @@ export default function OrdersPage() {
               <TableRow>
                 <TableHead>Pedido</TableHead>
                 <TableHead>Cliente</TableHead>
+                <TableHead>Canal</TableHead>
                 <TableHead>Fecha</TableHead>
                 <TableHead>Método de Pago</TableHead>
                 <TableHead>Estado</TableHead>
@@ -513,6 +565,9 @@ export default function OrdersPage() {
                     <TableCell>
                         <div className="font-medium">{order.customer.name}</div>
                         <div className="text-sm text-muted-foreground">{order.customer.phone}</div>
+                    </TableCell>
+                    <TableCell>
+                        <Badge variant="outline">{order.source === 'pos' ? 'Punto de Venta' : 'Tienda Online'}</Badge>
                     </TableCell>
                     <TableCell>{format(parseISO(order.date), 'd MMM, yyyy')}</TableCell>
                     <TableCell>
@@ -533,12 +588,20 @@ export default function OrdersPage() {
                     <TableCell className="text-right font-medium">{formatCurrency(order.total, currency.code)}</TableCell>
                     <TableCell className="text-center">
                          {order.status === 'pending-approval' ? (
-                           <ApproveOrderDialog order={order}>
-                                <Button size="sm" variant="outline">
-                                    <Check className='mr-2 h-4 w-4' />
-                                    Aprobar
-                                </Button>
-                           </ApproveOrderDialog>
+                            <div className="flex items-center justify-center gap-2">
+                                <ApproveOrderDialog order={order}>
+                                    <Button size="sm" variant="outline">
+                                        <Check className='mr-2 h-4 w-4' />
+                                        Aprobar
+                                    </Button>
+                                </ApproveOrderDialog>
+                                <RejectOrderDialog order={order}>
+                                     <Button size="sm" variant="destructive">
+                                        <XCircle className='mr-2 h-4 w-4' />
+                                        Rechazar
+                                    </Button>
+                                </RejectOrderDialog>
+                            </div>
                         ) : (
                              <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -554,7 +617,7 @@ export default function OrdersPage() {
                                 <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                                 <DropdownMenuItem>Ver Detalles</DropdownMenuItem>
-                                <DropdownMenuItem>Cancelar Pedido</DropdownMenuItem>
+                                {order.status !== 'cancelled' && <DropdownMenuItem>Cancelar Pedido</DropdownMenuItem>}
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         )}
@@ -563,7 +626,7 @@ export default function OrdersPage() {
                 )
               }) : (
                 <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
+                    <TableCell colSpan={8} className="h-24 text-center">
                         No se han creado pedidos todavía.
                     </TableCell>
                 </TableRow>

@@ -17,6 +17,7 @@ import {
   Users,
   Archive,
   Coins,
+  XCircle,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -69,14 +70,16 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  // This is a simple trick to trigger hydration of the orders store
-  // so the mock data is loaded when any admin page is visited.
-  useOrdersStore();
+  const { orders } = useOrdersStore();
+
+  const pendingApprovalCount = React.useMemo(() => {
+    return orders.filter(o => o.status === 'pending-approval').length;
+  }, [orders]);
 
   const navItems = [
     { href: '/admin/dashboard', icon: Home, label: 'Panel' },
     { href: '/admin/pos', icon: Tablet, label: 'Punto de Venta' },
-    { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos' },
+    { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: pendingApprovalCount > 0 ? pendingApprovalCount : null },
     { href: '/admin/inventory', icon: Archive, label: 'Inventario' },
     { href: '/admin/finance', icon: Coins, label: 'Finanzas' },
     { href: '/admin/customers', icon: Users, label: 'Clientes' },
@@ -90,7 +93,7 @@ export default function AdminLayout({
      <Button
       asChild
       variant={isActive ? 'secondary' : 'ghost'}
-      className="justify-start whitespace-nowrap"
+      className="justify-start whitespace-nowrap relative"
     >
       <Link href={item.href}>
         <item.icon className="mr-2 h-4 w-4" />

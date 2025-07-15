@@ -13,6 +13,7 @@ type ProductsState = {
   deleteProduct: (productId: string) => void;
   getProductById: (productId: string) => Product | undefined;
   decreaseStock: (productId: string, quantity: number) => void;
+  increaseStock: (productId: string, quantity: number) => void;
 };
 
 const useProductsStoreBase = create<ProductsState>()(
@@ -41,6 +42,13 @@ const useProductsStoreBase = create<ProductsState>()(
         set((state) => ({
           products: state.products.map((p) =>
             p.id === productId ? { ...p, stock: Math.max(0, p.stock - quantity) } : p
+          ),
+        }));
+      },
+      increaseStock: (productId: string, quantity: number) => {
+        set((state) => ({
+          products: state.products.map((p) =>
+            p.id === productId ? { ...p, stock: p.stock + quantity } : p
           ),
         }));
       }

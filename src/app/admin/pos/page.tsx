@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { format } from 'date-fns/format';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -780,6 +780,8 @@ export default function PosPage() {
             paymentMethod: orderInput.paymentMethod,
             date: new Date().toISOString(),
             paymentDueDate: orderInput.paymentDueDate,
+            status: orderInput.paymentMethod === 'credito' ? 'pending-payment' : 'paid',
+            source: 'pos',
         });
 
         toast({

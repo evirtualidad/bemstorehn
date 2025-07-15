@@ -121,6 +121,7 @@ type OrdersState = {
   addOrder: (order: Omit<Order, 'balance' | 'payments' | 'status'> & { status: Order['status'] }) => void;
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => void;
   approveOrder: (data: { orderId: string, paymentMethod: Order['paymentMethod'], paymentDueDate?: Date }) => void;
+  cancelOrder: (orderId: string) => void;
 };
 
 export const useOrdersStore = create<OrdersState>()(
@@ -186,7 +187,17 @@ export const useOrdersStore = create<OrdersState>()(
                 return o;
             })
         }))
-      }
+      },
+      cancelOrder: (orderId) => {
+        set((state) => ({
+          orders: state.orders.map((o) => {
+            if (o.id === orderId) {
+              return { ...o, status: 'cancelled' };
+            }
+            return o;
+          })
+        }));
+      },
     }),
     {
       name: 'orders-storage',
