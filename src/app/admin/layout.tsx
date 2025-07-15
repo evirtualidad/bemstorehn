@@ -50,21 +50,21 @@ export default function AdminLayout({
   ];
 
   const DesktopNavItem = ({ item }: { item: typeof navItems[0] }) => (
-    <Link
-        href={item.href}
-        className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-foreground',
-            pathname.startsWith(item.href) ? 'bg-muted text-foreground' : 'text-muted-foreground'
-        )}
+     <Button
+      asChild
+      variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
+      className="justify-start whitespace-nowrap"
     >
-        <item.icon className="h-4 w-4" />
+      <Link href={item.href}>
+        <item.icon className="mr-2 h-4 w-4" />
         {item.label}
         {item.badge && (
-            <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                {item.badge}
-            </Badge>
+          <Badge className="ml-auto">
+            {item.badge}
+          </Badge>
         )}
-    </Link>
+      </Link>
+    </Button>
   );
 
   const MobileNavItem = ({ item }: { item: typeof navItems[0] }) => (
