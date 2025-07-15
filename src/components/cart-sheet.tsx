@@ -7,12 +7,13 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetClose,
 } from '@/components/ui/sheet';
 import { useCart } from '@/hooks/use-cart';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import Image from 'next/image';
-import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
+import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { Separator } from './ui/separator';
 import Link from 'next/link';
 import { getRecommendedProducts, type RecommendedProductsOutput } from '@/ai/flows/product-recommendations';
@@ -106,9 +107,17 @@ export function CartSheet() {
 
   return (
     <Sheet open={isOpen} onOpenChange={toggleCart}>
-      <SheetContent className="flex w-full flex-col sm:max-w-xl">
-        <SheetHeader className="px-4">
-          <SheetTitle>Carrito de Compras ({items.length})</SheetTitle>
+      <SheetContent className="flex w-full flex-col sm:max-w-xl p-0">
+        <SheetHeader className="p-6">
+          <div className="flex items-center justify-between">
+            <SheetTitle>Carrito de Compras ({items.length})</SheetTitle>
+            <SheetClose asChild>
+                <Button variant="ghost" size="icon" className="h-10 w-10">
+                    <X className="h-6 w-6" />
+                    <span className="sr-only">Cerrar</span>
+                </Button>
+            </SheetClose>
+          </div>
         </SheetHeader>
         <Separator />
 
@@ -116,7 +125,7 @@ export function CartSheet() {
           <>
             <div className="flex-1 overflow-y-auto">
               <ScrollArea className="h-full">
-                <div className="flex flex-col gap-4 p-4">
+                <div className="flex flex-col gap-4 p-6">
                   {items.map((item) => (
                     <div key={item.id} className="flex items-center gap-4">
                       <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md">
@@ -163,10 +172,12 @@ export function CartSheet() {
                   ))}
                 </div>
                 <Separator />
-                <RecommendedProducts />
+                <div className="p-2">
+                    <RecommendedProducts />
+                </div>
               </ScrollArea>
             </div>
-            <div className="border-t p-4">
+            <div className="border-t p-6">
               <div className="flex justify-between text-lg font-semibold">
                 <p>Subtotal</p>
                 <p>{formatCurrency(total, currency.code)}</p>
@@ -177,10 +188,10 @@ export function CartSheet() {
             </div>
           </>
         ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-4">
+          <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
             <ShoppingCart className="w-16 h-16 text-muted-foreground" />
             <h2 className="text-xl font-semibold">Tu carrito está vacío.</h2>
-            <p className="text-center text-muted-foreground">
+            <p className="text-muted-foreground">
               Parece que no has añadido nada todavía. <br />
               ¡Explora nuestros productos!
             </p>
