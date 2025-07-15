@@ -36,31 +36,32 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [api, setApi] = React.useState<CarouselApi | null>(null);
   const [current, setCurrent] = React.useState(0);
   const [isPlaying, setIsPlaying] = React.useState(true);
-  const autoplayPlugin = React.useRef(Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: true }));
+  const autoplayPlugin = React.useRef(Autoplay({ delay: 5000, stopOnInteraction: false }));
 
   React.useEffect(() => {
     if (!api) {
       return;
     }
 
-    setCurrent(api.selectedScrollSnap());
-    if (isPlaying) {
-      api.plugins().autoplay?.play();
-    }
-
-    const onSelect = () => {
+    const onSettle = () => {
       setCurrent(api.selectedScrollSnap());
     };
     
     const onAutoplayPlay = () => setIsPlaying(true);
     const onAutoplayStop = () => setIsPlaying(false);
 
-    api.on('select', onSelect);
+    api.on('settle', onSettle);
     api.on('autoplay:play', onAutoplayPlay);
     api.on('autoplay:stop', onAutoplayStop);
 
+    // Initial state
+    setCurrent(api.selectedScrollSnap());
+    if (isPlaying) {
+      api.plugins().autoplay?.play();
+    }
+
     return () => {
-      api.off('select', onSelect);
+      api.off('settle', onSettle);
       api.off('autoplay:play', onAutoplayPlay);
       api.off('autoplay:stop', onAutoplayStop);
     };
@@ -116,38 +117,27 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
 
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 w-full max-w-xs mx-auto">
         <div className='relative flex items-center justify-center gap-2 p-2'>
-          {banners.map((_, index) => {
-            const isActive = index === current;
-            return (
+          {banners.map((_, index) => (
               <div
                 key={index}
                 className={cn(
-                  'h-2.5 rounded-full bg-white/50 transition-all duration-300',
-                  isActive ? 'w-4 bg-white' : 'w-2.5 hover:bg-white/75'
+                  'h-2.5 rounded-full bg-white/50 transition-all duration-300 cursor-pointer',
+                  index === current ? 'w-4 bg-white' : 'w-2.5 hover:bg-white/75'
                 )}
                 role="button"
                 aria-label={`Go to slide ${index + 1}`}
                 onClick={() => api?.scrollTo(index)}
               >
-                 {isActive && (
+                 {index === current && isPlaying && (
                   <div
-                    className={cn(
-                      'h-full rounded-full bg-primary/80',
-                       isPlaying ? 'animate-fill-progress' : ''
-                    )}
+                    key={current} // Add key to force re-render
+                    className="h-full rounded-full bg-primary/80 animate-fill-progress"
                     style={{ animationDuration: '5s' }}
-                    onAnimationEnd={() => {
-                        if (api?.canScrollNext()) {
-                            api.scrollNext();
-                        } else {
-                            api?.scrollTo(0);
-                        }
-                    }}
                   />
                 )}
               </div>
-            );
-          })}
+            )
+          )}
         </div>
       </div>
        <Button
