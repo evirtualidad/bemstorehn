@@ -131,12 +131,11 @@ function ShippingDialog({
           form.clearErrors('department');
           form.clearErrors('municipality');
         } else {
-           if ((currentAddress as any)?.type !== 'national') {
-            form.setValue('department', undefined);
-            form.setValue('municipality', undefined);
-          }
+           // When switching to national, clear previous selection.
+           form.setValue('department', undefined);
+           form.setValue('municipality', undefined);
         }
-      }, [selectedShippingOption, form, currentAddress]);
+      }, [selectedShippingOption, form]);
 
     const handleSave = (values: z.infer<typeof shippingFormSchema>) => {
         const cost = values.shippingOption === 'local' ? shippingLocalCost : shippingNationalCost;
