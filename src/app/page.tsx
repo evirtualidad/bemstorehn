@@ -30,6 +30,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
 
   const heroAutoplay = React.useRef(Autoplay({ delay: 5000, stopOnInteraction: true }));
+  const featuredAutoplay = React.useRef(Autoplay({ delay: 4000, stopOnInteraction: true }));
 
   const productsByCategory = React.useMemo(() => {
     if (!isHydrated) return {};
@@ -158,12 +159,9 @@ export default function Home() {
                       align: 'start',
                       loop: featuredOfferProducts.length > 3,
                     }}
-                    plugins={[
-                        Autoplay({
-                          delay: 4000,
-                          stopOnInteraction: true,
-                        }),
-                    ]}
+                    plugins={[featuredAutoplay.current]}
+                    onMouseEnter={featuredAutoplay.current.stop}
+                    onMouseLeave={featuredAutoplay.current.reset}
                     className="w-full"
                   >
                     <CarouselContent>
