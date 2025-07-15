@@ -6,6 +6,7 @@ import {
   Bell,
   CircleUser,
   Home,
+  ImageIcon,
   LineChart,
   Menu,
   Package,
@@ -43,6 +44,7 @@ export default function AdminLayout({
     { href: '/admin/products', icon: Package, label: 'Productos' },
     { href: '/admin/customers', icon: Users, label: 'Clientes' },
     { href: '/admin/analytics', icon: LineChart, label: 'Analíticas' },
+    { href: '/admin/banners', icon: ImageIcon, label: 'Banners' },
   ];
 
   return (

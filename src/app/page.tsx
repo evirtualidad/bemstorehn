@@ -17,30 +17,11 @@ import {
 } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
 import * as React from 'react';
-
-const heroBanners = [
-  {
-    title: 'Belleza en su Forma más Pura',
-    description: 'Descubre nuestra colección exclusiva de cosméticos, elaborados con los mejores ingredientes naturales.',
-    image: 'https://placehold.co/1200x600.png',
-    aiHint: 'cosmetics flatlay',
-  },
-  {
-    title: 'Novedades de Skincare',
-    description: 'Renueva tu piel con nuestros últimos lanzamientos. Fórmulas potentes para resultados visibles.',
-    image: 'https://placehold.co/1200x600.png',
-    aiHint: 'skincare products',
-  },
-  {
-    title: 'Esenciales de Maquillaje',
-    description: 'Colores vibrantes y texturas que te encantarán. Encuentra tus nuevos favoritos.',
-    image: 'https://placehold.co/1200x600.png',
-    aiHint: 'makeup collection',
-  },
-];
+import { useBannersStore } from '@/hooks/use-banners';
 
 export default function Home() {
   const { products } = useProductsStore();
+  const { banners } = useBannersStore();
   const plugin = React.useRef(
     Autoplay({ delay: 5000, stopOnInteraction: true })
   );
@@ -67,44 +48,46 @@ export default function Home() {
       <Header />
       <main>
         {/* Hero Section */}
-        <section className="relative w-full">
-          <Carousel
-            plugins={[plugin.current]}
-            className="w-full"
-            onMouseEnter={plugin.current.stop}
-            onMouseLeave={plugin.current.reset}
-            opts={{
-              loop: true,
-            }}
-          >
-            <CarouselContent>
-              {heroBanners.map((banner, index) => (
-                <CarouselItem key={index}>
-                  <div className="relative h-[50vh] w-full flex items-center justify-center text-center text-white">
-                    <Image
-                      src={banner.image}
-                      alt={banner.title}
-                      fill
-                      className="object-cover brightness-75"
-                      data-ai-hint={banner.aiHint}
-                      priority={index === 0}
-                    />
-                    <div className="relative z-10 container mx-auto px-4 animate-in fade-in-0 slide-in-from-bottom-10 duration-700">
-                      <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-shadow-lg">
-                        {banner.title}
-                      </h1>
-                      <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto text-shadow">
-                        {banner.description}
-                      </p>
+        {banners.length > 0 && (
+            <section className="relative w-full">
+            <Carousel
+                plugins={[plugin.current]}
+                className="w-full"
+                onMouseEnter={plugin.current.stop}
+                onMouseLeave={plugin.current.reset}
+                opts={{
+                loop: true,
+                }}
+            >
+                <CarouselContent>
+                {banners.map((banner, index) => (
+                    <CarouselItem key={banner.id || index}>
+                    <div className="relative h-[50vh] w-full flex items-center justify-center text-center text-white">
+                        <Image
+                        src={banner.image || 'https://placehold.co/1200x600.png'}
+                        alt={banner.title}
+                        fill
+                        className="object-cover brightness-75"
+                        data-ai-hint={banner.aiHint}
+                        priority={index === 0}
+                        />
+                        <div className="relative z-10 container mx-auto px-4 animate-in fade-in-0 slide-in-from-bottom-10 duration-700">
+                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-shadow-lg">
+                            {banner.title}
+                        </h1>
+                        <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto text-shadow">
+                            {banner.description}
+                        </p>
+                        </div>
                     </div>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-             <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10 hidden sm:flex" />
-            <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10 hidden sm:flex" />
-          </Carousel>
-        </section>
+                    </CarouselItem>
+                ))}
+                </CarouselContent>
+                <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10 hidden sm:flex" />
+                <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10 hidden sm:flex" />
+            </Carousel>
+            </section>
+        )}
 
         {/* Featured Products Section */}
         {featuredProducts.length > 0 && (
