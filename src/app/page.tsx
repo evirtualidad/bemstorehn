@@ -33,51 +33,40 @@ const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 function HeroCarousel({ banners }: { banners: Banner[] }) {
-  const [api, setApi] = React.useState<CarouselApi | null>(null);
   const [current, setCurrent] = React.useState(0);
   const [isPlaying, setIsPlaying] = React.useState(true);
 
   React.useEffect(() => {
-    if (!api) return;
+    if (!isPlaying) return;
 
-    const onSelect = () => {
-      setCurrent(api.selectedScrollSnap());
-    };
-    api.on('select', onSelect);
-
-    const interval = setInterval(() => {
-        if (isPlaying && api) {
-            if (api.canScrollNext()) {
-                api.scrollNext();
-            } else {
-                api.scrollTo(0);
-            }
-        }
+    const timer = setTimeout(() => {
+      setCurrent((prev) => (prev === banners.length - 1 ? 0 : prev + 1));
     }, 5000);
 
-    return () => {
-      api.off('select', onSelect);
-      clearInterval(interval);
-    };
-  }, [api, isPlaying]);
+    return () => clearTimeout(timer);
+  }, [current, isPlaying, banners.length]);
 
-  const togglePlay = React.useCallback(() => {
+  const togglePlay = () => {
     setIsPlaying(prev => !prev);
-  }, []);
+  };
+
+  const goToSlide = (slideIndex: number) => {
+    setCurrent(slideIndex);
+  };
   
   if (banners.length === 0) return null;
 
   return (
-    <section className="relative w-full group/hero">
-      <Carousel
-        setApi={setApi}
-        className="w-full"
-        opts={{ loop: true, duration: 1000 }} // Slower transition
-      >
-        <CarouselContent className='fade-carousel-content'>
+    <section className="relative w-full group/hero h-[50vh]">
+      <div className="w-full h-full">
+        <div className="fade-carousel-content h-full">
           {banners.map((banner, index) => (
-            <CarouselItem key={banner.id || index} className='fade-carousel-item'>
-              <div className="relative h-[50vh] w-full flex items-center justify-center text-center text-white">
+            <div
+              key={banner.id || index}
+              className="fade-carousel-item w-full h-full"
+              data-active={index === current}
+            >
+              <div className="relative h-full w-full flex items-center justify-center text-center text-white">
                 <Image
                   src={banner.image || 'https://placehold.co/1200x600.png'}
                   alt={banner.title}
@@ -95,10 +84,10 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
                   </p>
                 </div>
               </div>
-            </CarouselItem>
+            </div>
           ))}
-        </CarouselContent>
-      </Carousel>
+        </div>
+      </div>
 
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 w-full max-w-xs mx-auto">
         <div className='relative flex items-center justify-center gap-2 p-2'>
@@ -111,11 +100,11 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
                 )}
                 role="button"
                 aria-label={`Go to slide ${index + 1}`}
-                onClick={() => api?.scrollTo(index)}
+                onClick={() => goToSlide(index)}
               >
                  {index === current && isPlaying && (
                   <div
-                    key={`${current}-${isPlaying}`} 
+                    key={`${current}-${isPlaying}`}
                     className="h-full rounded-full bg-primary/80 animate-fill-progress"
                     style={{ animationDuration: '5s' }}
                   />
