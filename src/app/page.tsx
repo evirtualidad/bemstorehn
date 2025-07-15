@@ -36,10 +36,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [api, setApi] = React.useState<CarouselApi | null>(null);
   const [current, setCurrent] = React.useState(0);
   const [isPlaying, setIsPlaying] = React.useState(true);
-
-  const autoplayPlugin = React.useRef(
-    Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: false })
-  );
+  const autoplayPlugin = React.useRef(Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: true }));
 
   React.useEffect(() => {
     if (!api) {
@@ -47,11 +44,14 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
     }
 
     setCurrent(api.selectedScrollSnap());
+    if (isPlaying) {
+      api.plugins().autoplay?.play();
+    }
 
     const onSelect = () => {
       setCurrent(api.selectedScrollSnap());
     };
-
+    
     const onAutoplayPlay = () => setIsPlaying(true);
     const onAutoplayStop = () => setIsPlaying(false);
 
@@ -64,11 +64,10 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
       api.off('autoplay:play', onAutoplayPlay);
       api.off('autoplay:stop', onAutoplayStop);
     };
-  }, [api]);
+  }, [api, isPlaying]);
 
   const togglePlay = React.useCallback(() => {
-    if (!api) return;
-    const autoplay = api.plugins().autoplay;
+    const autoplay = api?.plugins().autoplay;
     if (!autoplay) return;
 
     if (isPlaying) {
@@ -76,6 +75,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
     } else {
       autoplay.play();
     }
+    setIsPlaying(!isPlaying);
   }, [api, isPlaying]);
   
   if (banners.length === 0) return null;
@@ -86,7 +86,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
         setApi={setApi}
         plugins={[autoplayPlugin.current]}
         className="w-full"
-        opts={{ loop: true, duration: 50 /* Slower animation duration */ }}
+        opts={{ loop: true, duration: 500 }}
       >
         <CarouselContent>
           {banners.map((banner, index) => (
@@ -122,8 +122,8 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
               <div
                 key={index}
                 className={cn(
-                  'h-2.5 w-2.5 rounded-full bg-white/50 transition-all duration-300',
-                  isActive ? 'w-4 bg-white' : 'hover:bg-white/75'
+                  'h-2.5 rounded-full bg-white/50 transition-all duration-300',
+                  isActive ? 'w-4 bg-white' : 'w-2.5 hover:bg-white/75'
                 )}
                 role="button"
                 aria-label={`Go to slide ${index + 1}`}
@@ -133,9 +133,16 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
                   <div
                     className={cn(
                       'h-full rounded-full bg-primary/80',
-                      isPlaying ? 'animate-fill-progress' : ''
+                       isPlaying ? 'animate-fill-progress' : ''
                     )}
                     style={{ animationDuration: '5s' }}
+                    onAnimationEnd={() => {
+                        if (api?.canScrollNext()) {
+                            api.scrollNext();
+                        } else {
+                            api?.scrollTo(0);
+                        }
+                    }}
                   />
                 )}
               </div>
@@ -160,9 +167,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
 function FeaturedProductsCarousel({ products }: { products: Product[] }) {
     if (products.length === 0) return null;
 
-    const autoplayPlugin = React.useRef(
-        Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })
-    );
+    const autoplayPlugin = React.useRef(Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true }));
 
     return (
         <section className="py-16 md:py-24 bg-gradient-to-b from-primary-light to-background">
@@ -297,7 +302,7 @@ export default function Home() {
       <footer className="py-10 border-t border-border/40 bg-muted/30">
         <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 text-muted-foreground px-4">
           <div>
-            <h3 className="font-bold text-xl text-foreground mb-3">BEN STORE HN</h3>
+            <h3 className="font-bold text-xl text-foreground mb-3">BEM STORE HN</h3>
             <p className="text-sm">Belleza en su Forma más Pura.</p>
           </div>
           <div>
@@ -318,15 +323,15 @@ export default function Home() {
           <div>
             <h4 className="font-bold text-lg text-foreground mb-3">Síguenos</h4>
             <div className="flex items-center gap-4">
-                <a href="https://instagram.com/benstorehn" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                <a href="https://instagram.com/bemstorehn" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
                     <Instagram className="h-6 w-6" />
                     <span className="sr-only">Instagram</span>
                 </a>
-                 <a href="https://facebook.com/benstorehn" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                 <a href="https://facebook.com/bemstorehn" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
                     <Facebook className="h-6 w-6" />
                     <span className="sr-only">Facebook</span>
                 </a>
-                 <a href="https://tiktok.com/@benstorehn" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                 <a href="https://tiktok.com/@bemstorehn" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
                     <TikTokIcon className="h-6 w-6" />
                     <span className="sr-only">TikTok</span>
                 </a>
@@ -334,7 +339,7 @@ export default function Home() {
           </div>
         </div>
         <div className="container mx-auto text-center text-muted-foreground mt-8 pt-6 border-t border-border/40">
-          <p className="text-sm">&copy; 2024 BEN STORE HN. Todos los derechos reservados.</p>
+          <p className="text-sm">&copy; 2024 BEM STORE HN. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>

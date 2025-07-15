@@ -7,8 +7,8 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'BEN STORE HN - Belleza en su Forma más Pura',
-  description: 'BEN STORE HN - Tienda de cosméticos de alta calidad con ingredientes naturales.',
+  title: 'BEM STORE HN - Belleza en su Forma más Pura',
+  description: 'BEM STORE HN - Tienda de cosméticos de alta calidad con ingredientes naturales.',
 };
 
 export default function RootLayout({

@@ -122,7 +122,7 @@ export default function AdminLayout({
             className="flex items-center gap-2 font-semibold text-lg md:text-base text-foreground"
           >
             <Package2 className="h-6 w-6" />
-            <span className="">Admin BEN STORE HN</span>
+            <span className="">Admin BEM STORE HN</span>
           </Link>
           {navItems.map((item) => (
              <DesktopNavItem key={item.label} item={item} />
@@ -149,7 +149,7 @@ export default function AdminLayout({
                 className="flex items-center gap-2 text-lg font-semibold mb-4"
               >
                 <Package2 className="h-6 w-6" />
-                <span>Admin BEN STORE HN</span>
+                <span>Admin BEM STORE HN</span>
               </Link>
               {navItems.map((item) => (
                 <MobileNavItem key={item.label} item={item} />

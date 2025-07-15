@@ -28,7 +28,7 @@ export function Header({ selectedCategory, onSelectCategory, hasOfferProducts }:
           <Link href="/" className="flex items-center gap-3" onClick={() => onSelectCategory(null)}>
             <Leaf className="w-8 h-8 text-primary" />
             <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-wide">
-              BEN STORE HN
+              BEM STORE HN
             </h1>
           </Link>
           <nav className="hidden md:flex items-center gap-2 text-md">
