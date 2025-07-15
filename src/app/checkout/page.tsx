@@ -69,6 +69,22 @@ const checkoutFormSchema = z.object({
     message: 'La dirección de envío es obligatoria.',
     path: ['address'],
 }).refine((data) => {
+    if (data.deliveryMethod === 'delivery' && (!data.name || data.name.trim() === '')) {
+        return false;
+    }
+    return true;
+}, {
+    message: 'El nombre es obligatorio para envíos a domicilio.',
+    path: ['name'],
+}).refine((data) => {
+    if (data.deliveryMethod === 'delivery' && (!data.phone || data.phone.trim() === '')) {
+        return false;
+    }
+    return true;
+}, {
+    message: 'El teléfono es obligatorio para envíos a domicilio.',
+    path: ['phone'],
+}).refine((data) => {
     if (data.paymentMethod === 'transferencia' && !data.paymentReference) {
         return false;
     }
@@ -127,7 +143,7 @@ function ShippingDialog({
     useEffect(() => {
     const isNational = selectedShippingOption === 'national';
     if (isNational) {
-        if (form.getValues('department') === 'Francisco Morazán') {
+        if (form.getValues('department') === 'Francisco Morazán' || form.getValues('department') === undefined) {
             form.setValue('department', undefined);
             form.setValue('municipality', undefined);
         }

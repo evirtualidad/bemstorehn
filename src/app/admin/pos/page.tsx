@@ -58,6 +58,14 @@ const checkoutFormSchema = z
     message: 'La dirección de envío es obligatoria.',
     path: ['address'],
   })
+  .refine(data => data.deliveryMethod !== 'delivery' || (!!data.name && data.name.trim() !== ''), {
+    message: 'El nombre del cliente es obligatorio para envíos a domicilio.',
+    path: ['name'],
+  })
+  .refine(data => data.deliveryMethod !== 'delivery' || (!!data.phone && data.phone.trim() !== ''), {
+    message: 'El teléfono del cliente es obligatorio para envíos a domicilio.',
+    path: ['phone'],
+  })
   .refine(data => data.paymentMethod !== 'credito' || !!data.paymentDueDate, {
     message: 'La fecha de pago es obligatoria para pagos a crédito.',
     path: ['paymentDueDate'],
@@ -505,7 +513,7 @@ function ShippingDialog({
   React.useEffect(() => {
     const isNational = selectedShippingOption === 'national';
     if (isNational) {
-        if (form.getValues('department') === 'Francisco Morazán') {
+        if (form.getValues('department') === 'Francisco Morazán' || form.getValues('department') === undefined) {
             form.setValue('department', undefined);
             form.setValue('municipality', undefined);
         }
@@ -733,7 +741,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
                     name="name"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Nombre del Cliente {paymentMethod !== 'credito' && '(Opcional)'}</FormLabel>
+                            <FormLabel>Nombre del Cliente {(paymentMethod !== 'credito' && deliveryMethod !== 'delivery') && '(Opcional)'}</FormLabel>
                             <FormControl>
                                 <Input placeholder="Nombre completo" {...field} className="h-11"/>
                             </FormControl>
@@ -746,7 +754,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
                     name="phone"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Teléfono {paymentMethod !== 'credito' && '(Opcional)'}</FormLabel>
+                            <FormLabel>Teléfono {(paymentMethod !== 'credito' && deliveryMethod !== 'delivery') && '(Opcional)'}</FormLabel>
                             <FormControl>
                                 <Input placeholder="Número de teléfono" {...field} className="h-11"/>
                             </FormControl>
