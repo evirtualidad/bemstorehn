@@ -13,16 +13,12 @@ type ProductsState = {
   deleteProduct: (productId: string) => void;
   getProductById: (productId: string) => Product | undefined;
   decreaseStock: (productId: string, quantity: number) => void;
-  _isHydrated: boolean;
-  setIsHydrated: (value: boolean) => void;
 };
 
 const useProductsStoreBase = create<ProductsState>()(
   persist(
     (set, get) => ({
       products: initialProducts,
-      _isHydrated: false,
-      setIsHydrated: (value: boolean) => set({ _isHydrated: value }),
       addProduct: (product) => {
         set((state) => ({ products: [product, ...state.products] }));
       },
@@ -50,24 +46,22 @@ const useProductsStoreBase = create<ProductsState>()(
       }
     }),
     {
-      name: 'products-storage', // name of the item in the storage (must be unique)
-      storage: createJSONStorage(() => localStorage), // (optional) by default, 'localStorage' is used
-       onRehydrateStorage: () => (state) => {
-        if (state) state.setIsHydrated(true)
-      },
+      name: 'products-storage',
+      storage: createJSONStorage(() => localStorage),
     }
   )
 );
 
-// This is a wrapper to ensure we only use the store once it has been hydrated
-// on the client side. This prevents hydration mismatches.
+// Custom hook to ensure hydration is complete before using the store
 export const useProductsStore = () => {
-    const store = useProductsStoreBase();
-    const [isHydrated, setIsHydrated] = useState(false);
+  const store = useProductsStoreBase();
+  const [isHydrated, setIsHydrated] = useState(false);
 
-    useEffect(() => {
-        setIsHydrated(store._isHydrated);
-    }, [store._isHydrated]);
-    
-    return { ...store, isHydrated };
-}
+  useEffect(() => {
+    // This effect runs only on the client side
+    // We can mark the store as hydrated here
+    setIsHydrated(true);
+  }, []);
+
+  return { ...store, isHydrated };
+};

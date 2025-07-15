@@ -632,12 +632,13 @@ export default function PosPage() {
   const [isTicketVisible, setIsTicketVisible] = React.useState(false);
   const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
 
-  const productCategories = [...new Set(products.map((p) => p.category))];
-  const hasDiscounts = products.some(p => p.specialCategory === 'descuento');
-  const hasPromotions = products.some(p => p.specialCategory === 'promocion');
+  const productCategories = React.useMemo(() => isHydrated ? [...new Set(products.map((p) => p.category))] : [], [products, isHydrated]);
+  const hasDiscounts = React.useMemo(() => isHydrated ? products.some(p => p.specialCategory === 'descuento') : false, [products, isHydrated]);
+  const hasPromotions = React.useMemo(() => isHydrated ? products.some(p => p.specialCategory === 'promocion') : false, [products, isHydrated]);
 
 
   const filteredProducts = React.useMemo(() => {
+    if (!isHydrated) return [];
     if (!selectedFilter) return products;
     if (selectedFilter.type === 'category') {
       return products.filter((p) => p.category === selectedFilter.value);
@@ -646,7 +647,7 @@ export default function PosPage() {
       return products.filter((p) => p.specialCategory === selectedFilter.value);
     }
     return products;
-  }, [selectedFilter, products]);
+  }, [selectedFilter, products, isHydrated]);
 
   const total = React.useMemo(() => {
     return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -802,7 +803,16 @@ export default function PosPage() {
   }
 
   if (!isHydrated) {
-    return <LoadingSpinner />;
+    return (
+      <div className="h-screen bg-muted/40 flex flex-col">
+        <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20">
+            <h1 className="text-xl font-bold flex-1 whitespace-nowrap">Punto de Venta</h1>
+        </header>
+        <div className="flex-1">
+            <LoadingSpinner />
+        </div>
+      </div>
+    );
   }
 
   return (

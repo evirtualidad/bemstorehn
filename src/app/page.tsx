@@ -30,28 +30,33 @@ export default function Home() {
     Autoplay({ delay: 5000, stopOnInteraction: true })
   );
 
-  const productsByCategory = products.reduce((acc, product) => {
-    // Exclude special categories from the main catalog view
-    if (product.specialCategory === 'descuento' || product.specialCategory === 'promocion') {
+  const productsByCategory = React.useMemo(() => {
+    if (!isHydrated) return {};
+    return products.reduce((acc, product) => {
+      if (product.specialCategory === 'descuento' || product.specialCategory === 'promocion') {
+        return acc;
+      }
+      const { category } = product;
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(product);
       return acc;
-    }
-    const { category } = product;
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(product);
-    return acc;
-  }, {} as Record<string, Product[]>);
-
-  const discountProducts = products.filter(p => p.specialCategory === 'descuento' && p.originalPrice);
-  const promotionProducts = products.filter(p => p.specialCategory === 'promocion');
-  const featuredProducts = products.filter((p) => p.featured);
+    }, {} as Record<string, Product[]>);
+  }, [products, isHydrated]);
+  
+  const discountProducts = React.useMemo(() => isHydrated ? products.filter(p => p.specialCategory === 'descuento' && p.originalPrice) : [], [products, isHydrated]);
+  const promotionProducts = React.useMemo(() => isHydrated ? products.filter(p => p.specialCategory === 'promocion') : [], [products, isHydrated]);
+  const featuredProducts = React.useMemo(() => isHydrated ? products.filter((p) => p.featured) : [], [products, isHydrated]);
+  
   
   if (!isHydrated) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
-        <LoadingSpinner />
+        <div className="flex-1 flex items-center justify-center">
+            <LoadingSpinner />
+        </div>
       </div>
     );
   }
