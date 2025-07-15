@@ -32,16 +32,6 @@ export function Header({ selectedCategory, onSelectCategory, hasOfferProducts }:
             </h1>
           </Link>
           <nav className="hidden md:flex items-center gap-2 text-md">
-            {categories.map((category) => (
-              <Button 
-                variant={selectedCategory === category.name ? 'secondary' : 'ghost'} 
-                key={category.id}
-                onClick={() => onSelectCategory(category.name)}
-                className="h-10 px-4"
-               >
-                  {category.label}
-              </Button>
-            ))}
             {hasOfferProducts && (
                 <Button
                     variant={selectedCategory === '__offers__' ? 'secondary' : 'ghost'}
@@ -55,6 +45,16 @@ export function Header({ selectedCategory, onSelectCategory, hasOfferProducts }:
                     Ofertas
                 </Button>
             )}
+            {categories.map((category) => (
+              <Button 
+                variant={selectedCategory === category.name ? 'secondary' : 'ghost'} 
+                key={category.id}
+                onClick={() => onSelectCategory(category.name)}
+                className="h-10 px-4"
+               >
+                  {category.label}
+              </Button>
+            ))}
           </nav>
         </div>
         <div className="flex items-center gap-2">
