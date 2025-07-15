@@ -154,14 +154,14 @@ function ProductGrid({
   onProductSelect: (product: Product) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
       {products.map((product) => (
         <Card
           key={product.id}
           onClick={() => onProductSelect(product)}
-          className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden group"
+          className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden group flex flex-col"
         >
-          <CardContent className="p-0">
+          <CardContent className="p-0 flex-grow flex flex-col">
             <div className="relative aspect-square">
               <Image
                 src={product.image || 'https://placehold.co/200x200.png'}
@@ -170,9 +170,11 @@ function ProductGrid({
                 className="object-cover group-hover:scale-105 transition-transform"
               />
             </div>
-            <div className="p-3">
-              <h3 className="font-semibold text-sm truncate">{product.name}</h3>
-              <p className="text-lg font-bold text-muted-foreground">${product.price.toFixed(2)}</p>
+            <div className="p-3 flex-grow">
+              <h3 className="font-semibold text-sm leading-tight h-10">{product.name}</h3>
+            </div>
+             <div className="mt-auto bg-primary text-primary-foreground text-center p-2 rounded-b-md">
+                <span className="text-lg font-bold">${product.price.toFixed(2)}</span>
             </div>
           </CardContent>
         </Card>
