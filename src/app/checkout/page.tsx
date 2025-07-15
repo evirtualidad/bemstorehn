@@ -132,39 +132,98 @@ export default function CheckoutPage() {
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
         <h1 className="text-3xl md:text-4xl font-bold text-center mb-10">Finalizar Compra</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          {/* Customer Info Form */}
-          <div>
-            <h2 className="text-2xl font-bold mb-6">Información de Contacto</h2>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nombre Completo</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Jane Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Teléfono</FormLabel>
-                      <FormControl>
-                        <Input placeholder="(123) 456-7890" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="flex flex-col sm:flex-row gap-2">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              {/* Customer Info Form */}
+              <div>
+                <h2 className="text-2xl font-bold mb-6">Información de Contacto</h2>
+                <div className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nombre Completo</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Jane Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Teléfono</FormLabel>
+                        <FormControl>
+                          <Input placeholder="(123) 456-7890" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Order Summary */}
+              <div>
+                <h2 className="text-2xl font-bold mb-6">Resumen del Pedido</h2>
+                <div className="bg-muted/30 rounded-lg p-6">
+                  <div className="space-y-4">
+                    {items.map((item) => (
+                      <div key={item.id} className="flex items-center gap-4">
+                        <div className="relative h-16 w-16 rounded-md overflow-hidden">
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                          />
+                          <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                            {item.quantity}
+                          </div>
+                        </div>
+                        <div className="flex-grow">
+                          <p className="font-semibold text-sm">{item.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatCurrency(item.price, currency.code)}
+                          </p>
+                        </div>
+                        <p className="font-semibold text-sm">
+                          {formatCurrency(item.price * item.quantity, currency.code)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <Separator className="my-6" />
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <p>Subtotal</p>
+                      <p>{formatCurrency(subtotal, currency.code)}</p>
+                    </div>
+                    <div className="flex justify-between">
+                      <p>ISV ({taxRate * 100}%)</p>
+                      <p>{formatCurrency(taxAmount, currency.code)}</p>
+                    </div>
+                    <div className="flex justify-between">
+                      <p>Envío</p>
+                      <p>Gratis</p>
+                    </div>
+                  </div>
+                  <Separator className="my-6" />
+                  <div className="flex justify-between text-lg font-bold">
+                    <p>Total</p>
+                    <p>{formatCurrency(total, currency.code)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-12 flex flex-col items-center gap-4">
+               <div className="flex flex-col sm:flex-row gap-4 w-full max-w-lg">
                     <Link href="/" className={cn(buttonVariants({ variant: 'outline', size: 'lg'}), 'w-full')}>
                         Continuar Comprando
                     </Link>
@@ -173,66 +232,13 @@ export default function CheckoutPage() {
                       Enviar Pedido
                     </Button>
                 </div>
-                 <p className="text-xs text-center text-muted-foreground">
+                 <p className="text-xs text-center text-muted-foreground max-w-lg">
                     Tu pedido será confirmado por un administrador. No se te cobrará hasta que sea aprobado.
                 </p>
-              </form>
-            </Form>
-          </div>
-
-          {/* Order Summary */}
-          <div>
-            <h2 className="text-2xl font-bold mb-6">Resumen del Pedido</h2>
-            <div className="bg-muted/30 rounded-lg p-6">
-              <div className="space-y-4">
-                {items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-4">
-                    <div className="relative h-16 w-16 rounded-md overflow-hidden">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                      />
-                      <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-                        {item.quantity}
-                      </div>
-                    </div>
-                    <div className="flex-grow">
-                      <p className="font-semibold text-sm">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatCurrency(item.price, currency.code)}
-                      </p>
-                    </div>
-                    <p className="font-semibold text-sm">
-                      {formatCurrency(item.price * item.quantity, currency.code)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-              <Separator className="my-6" />
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <p>Subtotal</p>
-                  <p>{formatCurrency(subtotal, currency.code)}</p>
-                </div>
-                <div className="flex justify-between">
-                  <p>ISV ({taxRate * 100}%)</p>
-                  <p>{formatCurrency(taxAmount, currency.code)}</p>
-                </div>
-                <div className="flex justify-between">
-                  <p>Envío</p>
-                  <p>Gratis</p>
-                </div>
-              </div>
-              <Separator className="my-6" />
-              <div className="flex justify-between text-lg font-bold">
-                <p>Total</p>
-                <p>{formatCurrency(total, currency.code)}</p>
-              </div>
             </div>
-          </div>
-        </div>
+            
+          </form>
+        </Form>
       </main>
     </div>
   );
