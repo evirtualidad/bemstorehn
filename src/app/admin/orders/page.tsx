@@ -18,6 +18,9 @@ import {
   MoreHorizontal,
   Coins,
   XCircle,
+  Package,
+  Store,
+  Truck
 } from 'lucide-react';
 
 import {
@@ -86,6 +89,10 @@ import { useOrdersStore, type Order } from '@/hooks/use-orders';
 import { useProductsStore } from '@/hooks/use-products';
 import { useToast } from '@/hooks/use-toast';
 import { cn, formatCurrency } from '@/lib/utils';
+import { useSettingsStore } from '@/hooks/use-settings-store';
+import { Separator } from '@/components/ui/separator';
+import Image from 'next/image';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const paymentMethods = [
     { value: 'efectivo', label: 'Efectivo', icon: Banknote },
@@ -126,6 +133,113 @@ const statusConfig = {
     'paid': { label: 'Pagado', color: 'bg-green-100 text-green-800' },
     'cancelled': { label: 'Cancelado', color: 'bg-red-100 text-red-800' },
 };
+
+function OrderDetailsDialog({ order, isOpen, onOpenChange }: { order: Order | null; isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+    const { currency } = useCurrencyStore();
+    const { taxRate } = useSettingsStore();
+    
+    if (!order) return null;
+
+    const subtotal = order.total / (1 + taxRate);
+    const tax = order.total - subtotal;
+    
+    const deliveryMethodIcon = order.deliveryMethod === 'pickup' ? <Store className="mr-2 h-4 w-4"/> : <Truck className="mr-2 h-4 w-4"/>;
+    const deliveryMethodLabel = order.deliveryMethod === 'pickup' ? 'Recoger en Tienda' : 'Envío a Domicilio';
+    
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Detalles del Pedido: {order.id}</DialogTitle>
+                    <DialogDescription>
+                        {format(parseISO(order.date), "d 'de' MMMM, yyyy 'a las' HH:mm", { locale: es })}
+                    </DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="max-h-[70vh] -mx-6">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 py-4">
+                    <div>
+                        <h3 className='font-semibold mb-2'>Cliente</h3>
+                        <p>{order.customer.name}</p>
+                        <p className='text-sm text-muted-foreground'>{order.customer.phone}</p>
+                    </div>
+                    
+                    {order.deliveryMethod === 'delivery' && order.customer.address && (
+                        <div>
+                            <h3 className='font-semibold mb-2'>Dirección de Envío</h3>
+                            <p>{order.customer.address.exactAddress}, {order.customer.address.colony}</p>
+                            <p className='text-sm text-muted-foreground'>{order.customer.address.municipality}, {order.customer.address.department}</p>
+                        </div>
+                    )}
+                    
+                    <div>
+                        <h3 className='font-semibold mb-2'>Método de Entrega</h3>
+                        <div className="flex items-center">
+                            {deliveryMethodIcon}
+                            <span>{deliveryMethodLabel}</span>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 className='font-semibold mb-2'>Método de Pago</h3>
+                        <div className="flex items-center">
+                            {paymentMethodIcons[order.paymentMethod]}
+                            <span>{paymentMethodLabels[order.paymentMethod]}</span>
+                        </div>
+                    </div>
+                 </div>
+
+                <Separator className="my-2" />
+                
+                <div className="px-6">
+                    <h3 className='font-semibold mb-4'>Artículos</h3>
+                    <div className="space-y-4">
+                        {order.items.map(item => (
+                            <div key={item.id} className="flex items-center gap-4">
+                                <Image src={item.image} alt={item.name} width={56} height={56} className="rounded-md aspect-square object-cover" />
+                                <div className="flex-1">
+                                    <p className="font-medium">{item.name}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        {item.quantity} x {formatCurrency(item.price, currency.code)}
+                                    </p>
+                                </div>
+                                <p className="font-semibold">{formatCurrency(item.price * item.quantity, currency.code)}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <Separator className="my-4" />
+
+                <div className="space-y-2 px-6">
+                     <div className="flex justify-between text-sm">
+                        <p className="text-muted-foreground">Subtotal</p>
+                        <p>{formatCurrency(subtotal, currency.code)}</p>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                        <p className="text-muted-foreground">ISV ({taxRate * 100}%)</p>
+                        <p>{formatCurrency(tax, currency.code)}</p>
+                    </div>
+                    {order.shippingCost && order.shippingCost > 0 && (
+                        <div className="flex justify-between text-sm">
+                            <p className="text-muted-foreground">Envío</p>
+                            <p>{formatCurrency(order.shippingCost, currency.code)}</p>
+                        </div>
+                    )}
+                    <div className="flex justify-between font-bold text-lg">
+                        <p>Total</p>
+                        <p>{formatCurrency(order.total, currency.code)}</p>
+                    </div>
+                </div>
+
+                </ScrollArea>
+                <DialogFooter className='px-6 pt-4'>
+                    <DialogClose asChild>
+                        <Button variant="outline">Cerrar</Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 function ApproveOrderDialog({ order, children }: { order: Order; children: React.ReactNode }) {
     const { approveOrder } = useOrdersStore();
@@ -296,6 +410,9 @@ export default function OrdersPage() {
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
   const [orderToCancel, setOrderToCancel] = React.useState<Order | null>(null);
+  const [detailsOrder, setDetailsOrder] = React.useState<Order | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
+
 
   const sortedOrders = [...orders].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   
@@ -317,6 +434,11 @@ export default function OrdersPage() {
         variant: 'destructive',
     });
     setOrderToCancel(null);
+  };
+  
+  const handleViewDetails = (order: Order) => {
+    setDetailsOrder(order);
+    setIsDetailsOpen(true);
   };
 
 
@@ -352,7 +474,7 @@ export default function OrdersPage() {
                 return (
                     <TableRow key={order.id}>
                     <TableCell>
-                        <div className="font-medium text-primary hover:underline cursor-pointer">{order.id}</div>
+                        <div className="font-medium text-primary hover:underline cursor-pointer" onClick={() => handleViewDetails(order)}>{order.id}</div>
                          {order.paymentMethod === 'transferencia' && order.paymentReference && (
                            <p className="text-xs text-muted-foreground">Ref: {order.paymentReference}</p>
                          )}
@@ -408,7 +530,7 @@ export default function OrdersPage() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                        <DropdownMenuItem>Ver Detalles</DropdownMenuItem>
+                                        <DropdownMenuItem onSelect={() => handleViewDetails(order)}>Ver Detalles</DropdownMenuItem>
                                         {order.status !== 'cancelled' && (
                                             <AlertDialogTrigger asChild>
                                                 <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setOrderToCancel(order); }}>
@@ -442,6 +564,8 @@ export default function OrdersPage() {
             </div>
         </CardFooter>
       </Card>
+      
+      <OrderDetailsDialog order={detailsOrder} isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} />
     </main>
   );
 }
