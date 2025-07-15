@@ -47,6 +47,7 @@ import { es } from 'date-fns/locale';
 import { ProductSearch } from '@/components/product-search';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
+import { Badge } from '@/components/ui/badge';
 
 type PosCartItem = Product & { quantity: number };
 
@@ -157,30 +158,42 @@ function ProductGrid({
   const { currency } = useCurrencyStore();
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
-      {products.map((product) => (
-        <Card
-          key={product.id}
-          onClick={() => onProductSelect(product)}
-          className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden group flex flex-col"
-        >
-          <CardContent className="p-0 flex-grow flex flex-col">
-            <div className="relative aspect-square">
-              <Image
-                src={product.image || 'https://placehold.co/200x200.png'}
-                alt={product.name}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform"
-              />
-            </div>
-            <div className="flex-grow p-3 flex items-center">
-              <h3 className="font-semibold text-sm leading-tight h-10 flex items-center w-full">{product.name}</h3>
-            </div>
-             <div className="mt-auto bg-primary text-primary-foreground text-center p-2 rounded-b-md">
-                <span className="text-lg font-bold">{formatCurrency(product.price, currency.code)}</span>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+      {products.map((product) => {
+        const stockStatus = product.stock <= 0 ? "Agotado" : product.stock < 10 ? "Poco Stock" : "En Stock";
+        return (
+          <Card
+            key={product.id}
+            onClick={() => onProductSelect(product)}
+            className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden group flex flex-col"
+          >
+            <CardContent className="p-0 flex-grow flex flex-col">
+              <div className="relative aspect-square">
+                <Image
+                  src={product.image || 'https://placehold.co/200x200.png'}
+                  alt={product.name}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform"
+                />
+                 <Badge 
+                  className={cn(
+                    "absolute top-2 right-2",
+                    stockStatus === "Agotado" && "bg-destructive text-destructive-foreground",
+                    stockStatus === "Poco Stock" && "bg-amber-500 text-white"
+                  )}
+                >
+                  {stockStatus}
+                </Badge>
+              </div>
+              <div className="flex-grow p-3 flex items-center">
+                <h3 className="font-semibold text-sm leading-tight h-10 flex items-center w-full">{product.name}</h3>
+              </div>
+               <div className="mt-auto bg-primary text-primary-foreground text-center p-2 rounded-b-md">
+                  <span className="text-lg font-bold">{formatCurrency(product.price, currency.code)}</span>
+              </div>
+            </CardContent>
+          </Card>
+        )
+      })}
     </div>
   );
 }
