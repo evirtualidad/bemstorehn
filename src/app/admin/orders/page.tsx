@@ -121,6 +121,10 @@ const orderFormSchema = z
     message: 'El nombre del cliente es obligatorio para pagos a crédito.',
     path: ['name'],
   })
+  .refine(data => data.paymentMethod !== 'credito' || (!!data.phone && data.phone.trim() !== ''), {
+    message: 'El teléfono del cliente es obligatorio para pagos a crédito.',
+    path: ['phone'],
+  })
   .refine(data => {
       if (data.paymentMethod === 'efectivo' && data.cashAmount && data.total) {
         return Number(data.cashAmount) >= data.total;
