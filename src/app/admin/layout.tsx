@@ -49,6 +49,43 @@ export default function AdminLayout({
     { href: '/admin/banners', icon: ImageIcon, label: 'Banners' },
   ];
 
+  const DesktopNavItem = ({ item }: { item: typeof navItems[0] }) => (
+    <Button
+      asChild
+      variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
+      className="w-full justify-start gap-2"
+      size="sm"
+    >
+      <Link href={item.href}>
+        <item.icon className="h-4 w-4" />
+        {item.label}
+        {item.badge && (
+          <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+            {item.badge}
+          </Badge>
+        )}
+      </Link>
+    </Button>
+  );
+
+  const MobileNavItem = ({ item }: { item: typeof navItems[0] }) => (
+    <Link
+      href={item.href}
+      className={cn(
+        'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
+        pathname.startsWith(item.href) && 'bg-muted text-foreground'
+      )}
+    >
+      <item.icon className="h-5 w-5" />
+      {item.label}
+      {item.badge && (
+        <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+          {item.badge}
+        </Badge>
+      )}
+    </Link>
+  );
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
@@ -61,23 +98,7 @@ export default function AdminLayout({
             <span className="sr-only">Admin Cosmetica</span>
           </Link>
           {navItems.map((item) => (
-             <Button 
-                key={item.label}
-                asChild
-                variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
-                className="w-full justify-start text-base"
-                size="sm"
-              >
-                 <Link href={item.href} className="flex items-center gap-2">
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                  {item.badge && (
-                    <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                      {item.badge}
-                    </Badge>
-                  )}
-                </Link>
-              </Button>
+             <DesktopNavItem key={item.label} item={item} />
           ))}
         </nav>
         <Sheet>
@@ -104,22 +125,7 @@ export default function AdminLayout({
                 <span>Admin Cosmetica</span>
               </Link>
               {navItems.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={cn(
-                    'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
-                     pathname.startsWith(item.href) && 'bg-muted text-foreground'
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.label}
-                  {item.badge && (
-                    <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                      {item.badge}
-                    </Badge>
-                  )}
-                </Link>
+                <MobileNavItem key={item.label} item={item} />
               ))}
             </nav>
           </SheetContent>
