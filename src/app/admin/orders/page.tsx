@@ -32,6 +32,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -231,8 +232,8 @@ function NewOrderDialog() {
     try {
         const orderInput = {
             customer: { 
-                name: values.name || 'Consumidor Final', 
-                phone: values.phone || 'N/A' 
+                name: values.name,
+                phone: values.phone
             },
             items: cart,
             total: total,
