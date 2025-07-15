@@ -43,7 +43,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
     <Link href={`/product/${product.id}`} className="group block h-full">
       <Card className={cn(
           "flex flex-col overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 animate-in fade-in-0 slide-in-from-bottom-5 ease-in-out h-full", 
-          isDiscounted && "border-destructive",
+          isDiscounted && "border-offer",
           className
       )}>
         <CardHeader className="p-0 border-b relative">
@@ -56,7 +56,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
             data-ai-hint={product.aiHint}
           />
           <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
-            {isDiscounted && <Badge variant="destructive">Oferta</Badge>}
+            {isDiscounted && <Badge variant="offer">Oferta</Badge>}
             <Badge 
               className={cn(
                 "w-fit",
@@ -76,7 +76,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         <CardFooter className="p-4 pt-0 flex flex-col items-start gap-4 mt-auto">
           <div className="flex flex-col items-start w-full">
             <div className="flex items-baseline gap-2">
-                <p className={cn("font-bold text-foreground", isDiscounted ? "text-2xl text-destructive" : "text-2xl")}>
+                <p className={cn("font-bold text-foreground", isDiscounted ? "text-2xl text-offer" : "text-2xl")}>
                     {formatCurrency(product.price, currency.code)}
                 </p>
                 {isDiscounted && (

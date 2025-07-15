@@ -146,7 +146,7 @@ function CategoryList({
       {hasOfferProducts && (
         <Button
           variant={isSelected('offer', 'all') ? 'default' : 'outline'}
-          className="justify-start h-11 px-4 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+          className="justify-start h-11 px-4 border-offer text-offer hover:bg-offer hover:text-offer-foreground"
           onClick={() => onSelectFilter({ type: 'offer', value: 'all' })}
         >
           <BadgePercent className="mr-2 h-4 w-4" />
@@ -192,7 +192,7 @@ function ProductGrid({
             onClick={() => onProductSelect(product)}
             className={cn(
               "cursor-pointer hover:shadow-lg transition-shadow overflow-hidden group flex flex-col",
-              isDiscounted && "border-destructive"
+              isDiscounted && "border-offer"
             )}
           >
             <CardContent className="p-0 flex-grow flex flex-col">
@@ -204,7 +204,7 @@ function ProductGrid({
                   className="object-cover group-hover:scale-105 transition-transform"
                 />
                 <div className="absolute top-2 right-2 flex flex-col gap-2 items-end">
-                   {isDiscounted && <Badge variant="destructive">Oferta</Badge>}
+                   {isDiscounted && <Badge variant="offer">Oferta</Badge>}
                   <Badge 
                     className={cn(
                       "w-fit",
@@ -221,7 +221,7 @@ function ProductGrid({
               </div>
                <div className={cn(
                     "mt-auto text-center p-2 rounded-b-md text-primary-foreground",
-                    isDiscounted ? "bg-destructive" : "bg-primary"
+                    isDiscounted ? "bg-offer text-offer-foreground" : "bg-primary"
                 )}>
                     <div className="flex items-baseline justify-center gap-2">
                         <span className="text-lg font-bold">{formatCurrency(product.price, currency.code)}</span>
@@ -890,5 +890,3 @@ export default function PosPage() {
     </div>
   );
 }
-
-    

@@ -237,11 +237,11 @@ export default function AdminProductsPage() {
                           <Badge variant={product.stock > 0 ? 'default' : 'destructive'}>
                             {product.stock > 0 ? 'En Stock' : 'Agotado'}
                           </Badge>
-                          {isDiscounted && <Badge variant="destructive" className="ml-2">Oferta</Badge>}
+                          {isDiscounted && <Badge variant="offer" className="ml-2">Oferta</Badge>}
                         </TableCell>
                         <TableCell>
                             <div className="flex flex-col">
-                                <span className={cn(isDiscounted && "text-destructive font-bold")}>
+                                <span className={cn(isDiscounted && "text-offer font-bold")}>
                                   {formatCurrency(product.price, currency.code)}
                                 </span>
                                 {isDiscounted && (

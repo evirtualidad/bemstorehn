@@ -72,7 +72,7 @@ export default function ProductDetailPage({ params }: { params: { productId: str
               data-ai-hint={product.aiHint}
             />
             <div className="absolute top-4 right-4 flex flex-col gap-2">
-              {isDiscounted && <Badge variant="destructive" className="text-lg">Oferta</Badge>}
+              {isDiscounted && <Badge variant="offer" className="text-lg">Oferta</Badge>}
               <Badge 
                 className={cn(
                   "text-lg",
@@ -95,7 +95,7 @@ export default function ProductDetailPage({ params }: { params: { productId: str
               {product.description}
             </p>
             <div className="flex items-baseline gap-4">
-                <p className={cn("font-bold", isDiscounted ? "text-4xl text-destructive" : "text-4xl text-foreground")}>
+                <p className={cn("font-bold", isDiscounted ? "text-4xl text-offer" : "text-4xl text-foreground")}>
                     {formatCurrency(product.price, currency.code)}
                 </p>
                  {isDiscounted && (

@@ -21,6 +21,8 @@
     --accent-foreground: 160 70% 32%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
+    --offer: 35 92% 60%; /* Orange-amber color for offers */
+    --offer-foreground: 240 6% 10%;
     --border: 240 6% 90%;
     --input: 240 6% 90%;
     --ring: 173 58% 39%;
@@ -50,6 +52,8 @@
     --accent-foreground: 160 60% 85%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
+    --offer: 35 92% 60%;
+    --offer-foreground: 240 6% 10%;
     --border: 240 4% 16%;
     --input: 240 4% 16%;
     --ring: 173 50% 55%;
