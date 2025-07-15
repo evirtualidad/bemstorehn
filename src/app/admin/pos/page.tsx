@@ -237,10 +237,10 @@ function ProductGrid({
                   "mt-auto text-center p-2 rounded-b-md",
                   isDiscounted ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"
                 )}>
-                   {isDiscounted ? (
+                   {isDiscounted && product.originalPrice ? (
                       <div className='flex items-baseline justify-center gap-2'>
                         <span className="text-xl font-bold">{formatCurrency(product.price, currency.code)}</span>
-                        <span className="text-sm font-medium text-destructive-foreground/80 line-through">{formatCurrency(product.originalPrice!, currency.code)}</span>
+                        <span className="text-sm font-medium text-destructive-foreground/80 line-through">{formatCurrency(product.originalPrice, currency.code)}</span>
                       </div>
                     ) : (
                       <span className="text-lg font-bold">{formatCurrency(product.price, currency.code)}</span>
