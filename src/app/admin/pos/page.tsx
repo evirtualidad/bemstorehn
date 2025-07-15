@@ -45,6 +45,7 @@ import {
 import { cn } from '@/lib/utils';
 import { es } from 'date-fns/locale';
 import { ProductSearch } from '@/components/product-search';
+import { useCategoriesStore } from '@/hooks/use-categories';
 
 type PosCartItem = Product & { quantity: number };
 
@@ -116,6 +117,7 @@ function CategoryList({
   selectedCategory: string | null;
   onSelectCategory: (category: string | null) => void;
 }) {
+  const { getCategoryByName } = useCategoriesStore();
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <Button
@@ -126,16 +128,20 @@ function CategoryList({
         <Tag className="mr-2 h-4 w-4" />
         Todas
       </Button>
-      {categories.map((category) => (
-        <Button
-          key={category}
-          variant={selectedCategory === category ? 'secondary' : 'ghost'}
-          className="justify-start h-11 px-4"
-          onClick={() => onSelectCategory(category)}
-        >
-          {category}
-        </Button>
-      ))}
+      {categories.map((categoryName) => {
+        const category = getCategoryByName(categoryName);
+        if (!category) return null;
+        return (
+          <Button
+            key={category.id}
+            variant={selectedCategory === category.name ? 'secondary' : 'ghost'}
+            className="justify-start h-11 px-4"
+            onClick={() => onSelectCategory(category.name)}
+          >
+            {category.label}
+          </Button>
+        )
+      })}
     </div>
   );
 }
@@ -545,13 +551,14 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
 export default function PosPage() {
   const [cart, setCart] = React.useState<PosCartItem[]>([]);
   const { products, decreaseStock } = useProductsStore();
+  const { categories } = useCategoriesStore();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
   const [isTicketVisible, setIsTicketVisible] = React.useState(false);
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
 
-  const categories = [...new Set(products.map((p) => p.category))];
+  const productCategories = [...new Set(products.map((p) => p.category))];
 
   const filteredProducts = React.useMemo(() => {
     if (!selectedCategory) return products;
@@ -722,7 +729,7 @@ export default function PosPage() {
             </header>
             <div className="p-4 space-y-4 flex-shrink-0 bg-background">
                  <CategoryList
-                    categories={categories}
+                    categories={productCategories}
                     selectedCategory={selectedCategory}
                     onSelectCategory={setSelectedCategory}
                 />

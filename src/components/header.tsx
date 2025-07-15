@@ -6,16 +6,10 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/use-cart';
 import { Badge } from '@/components/ui/badge';
-import { useProductsStore } from '@/hooks/use-products';
+import { useCategoriesStore } from '@/hooks/use-categories';
 
 export function Header() {
-  const { products } = useProductsStore();
-  const categories = [...new Set(products.map((p) => p.category))].map(category => {
-    if (category === 'Skincare') return { key: category, label: 'Cuidado de la Piel' };
-    if (category === 'Makeup') return { key: category, label: 'Maquillaje' };
-    if (category === 'Haircare') return { key: category, label: 'Cuidado del Cabello' };
-    return { key: category, label: category };
-  });
+  const { categories } = useCategoriesStore();
   
   const { items, toggleCart } = useCart();
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
@@ -33,7 +27,7 @@ export function Header() {
           <nav className="hidden md:flex items-center gap-6 text-md">
             {categories.map((category) => (
               <Link
-                key={category.key}
+                key={category.id}
                 href={`#`}
                 className="hover:text-primary transition-colors"
               >

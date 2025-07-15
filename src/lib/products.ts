@@ -6,7 +6,7 @@ export interface Product {
   aiHint?: string;
   price: number;
   description: string;
-  category: 'Skincare' | 'Makeup' | 'Haircare';
+  category: string; // Now a string to match category name
   stock: number;
   featured?: boolean;
 }

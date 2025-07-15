@@ -13,6 +13,7 @@ import {
   Package2,
   ShoppingCart,
   Tablet,
+  Tag,
   Users,
 } from 'lucide-react';
 
@@ -42,6 +43,7 @@ export default function AdminLayout({
     { href: '/admin/pos', icon: Tablet, label: 'Punto de Venta' },
     { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: '6' },
     { href: '/admin/products', icon: Package, label: 'Productos' },
+    { href: '/admin/categories', icon: Tag, label: 'Categorías' },
     { href: '/admin/customers', icon: Users, label: 'Clientes' },
     { href: '/admin/analytics', icon: LineChart, label: 'Analíticas' },
     { href: '/admin/banners', icon: ImageIcon, label: 'Banners' },
@@ -63,7 +65,8 @@ export default function AdminLayout({
                 key={item.label}
                 asChild
                 variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
-                className="w-full justify-start"
+                className="w-full justify-start text-base"
+                size="sm"
               >
                  <Link href={item.href} className="flex items-center gap-2">
                   <item.icon className="h-4 w-4" />

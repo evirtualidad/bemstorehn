@@ -26,13 +26,14 @@ import { Textarea } from '@/components/ui/textarea';
 import type { Product } from '@/lib/products';
 import { DialogFooter } from './ui/dialog';
 import { Checkbox } from './ui/checkbox';
+import { useCategoriesStore } from '@/hooks/use-categories';
 
 export const productFormSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
   description: z.string().min(10, 'La descripción debe tener al menos 10 caracteres.'),
   price: z.coerce.number().positive('El precio debe ser un número positivo.'),
   stock: z.coerce.number().int().min(0, 'El stock no puede ser negativo.'),
-  category: z.enum(['Skincare', 'Makeup', 'Haircare']),
+  category: z.string({ required_error: 'Debes seleccionar una categoría.' }),
   image: z.string().url('Debe ser una URL de imagen válida.').optional().or(z.literal('')),
   featured: z.boolean().default(false),
 });
@@ -44,6 +45,8 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
+  const { categories } = useCategoriesStore();
+
   const form = useForm<z.infer<typeof productFormSchema>>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
@@ -51,7 +54,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
       description: product?.description || '',
       price: product?.price || 0,
       stock: product?.stock || 0,
-      category: product?.category || 'Skincare',
+      category: product?.category || '',
       image: product?.image || '',
       featured: product?.featured || false,
     },
@@ -135,9 +138,9 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Skincare">Skincare</SelectItem>
-                    <SelectItem value="Makeup">Maquillaje</SelectItem>
-                    <SelectItem value="Haircare">Cuidado del Cabello</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.name}>{cat.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />

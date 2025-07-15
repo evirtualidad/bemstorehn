@@ -14,9 +14,11 @@ import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { ProductCard } from '@/components/product-card';
 import { Product } from '@/lib/products';
+import { useCategoriesStore } from '@/hooks/use-categories';
 
 export default function ProductDetailPage({ params }: { params: { productId: string } }) {
   const { getProductById, products } = useProductsStore();
+  const { getCategoryByName } = useCategoriesStore();
   const { addToCart } = useCart();
   const { toast } = useToast();
   
@@ -25,6 +27,8 @@ export default function ProductDetailPage({ params }: { params: { productId: str
   if (!product) {
     notFound();
   }
+
+  const category = getCategoryByName(product.category);
   
   const stockStatus = product.stock <= 0 ? "Agotado" : product.stock < 10 ? "Poco Stock" : "En Stock";
 
@@ -68,7 +72,7 @@ export default function ProductDetailPage({ params }: { params: { productId: str
           {/* Product Details */}
           <div className="flex flex-col gap-6">
             <div>
-                <Badge variant="outline" className="mb-2 w-fit text-md">{product.category}</Badge>
+                {category && <Badge variant="outline" className="mb-2 w-fit text-md">{category.label}</Badge>}
                 <h1 className="text-4xl md:text-5xl font-bold text-primary">{product.name}</h1>
             </div>
             <p className="text-lg text-muted-foreground leading-relaxed">

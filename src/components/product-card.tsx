@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { useCategoriesStore } from '@/hooks/use-categories';
 
 interface ProductCardProps {
   product: Product;
@@ -18,6 +19,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, className }: ProductCardProps) {
+  const { getCategoryByName } = useCategoriesStore();
   const stockStatus = product.stock <= 0 ? "Agotado" : product.stock < 10 ? "Poco Stock" : "En Stock";
   const { addToCart } = useCart();
   const { toast } = useToast();
@@ -30,6 +32,8 @@ export function ProductCard({ product, className }: ProductCardProps) {
       description: `${product.name} ha sido añadido a tu carrito.`,
     });
   }
+
+  const category = getCategoryByName(product.category);
 
   return (
     <Link href={`/product/${product.id}`} className="group block h-full">
@@ -54,7 +58,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
           </Badge>
         </CardHeader>
         <CardContent className="p-4 flex-grow flex flex-col">
-          {product.category && <Badge variant="outline" className="mb-2 w-fit">{product.category}</Badge>}
+          {category && <Badge variant="outline" className="mb-2 w-fit">{category.label}</Badge>}
           <h4 className="font-bold text-xl leading-tight flex-grow group-hover:text-primary transition-colors">{product.name}</h4>
           {product.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{product.description}</p>}
         </CardContent>
