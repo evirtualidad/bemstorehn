@@ -203,7 +203,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
                   Producto Destacado
                 </FormLabel>
                 <FormDescription>
-                  Los productos destacados se mostrarán en la página principal.
+                  Los productos destacados se mostrarán en una sección especial en la página principal.
                 </FormDescription>
               </div>
             </FormItem>

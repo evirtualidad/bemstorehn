@@ -42,7 +42,9 @@ export default function Home() {
     }, {} as Record<string, Product[]>);
   }, [products, isHydrated]);
   
-  const featuredProducts = React.useMemo(() => isHydrated ? products.filter((p) => p.featured) : [], [products, isHydrated]);
+  const featuredOfferProducts = React.useMemo(() => 
+    isHydrated ? products.filter((p) => p.featured && p.originalPrice && p.originalPrice > p.price) : [], 
+  [products, isHydrated]);
   
   
   if (!isHydrated) {
@@ -103,19 +105,19 @@ export default function Home() {
         )}
 
         {/* Featured Products Section */}
-        {featuredProducts.length > 0 && (
+        {featuredOfferProducts.length > 0 && (
           <section className="py-12 md:py-20">
             <div className="container mx-auto px-4">
-              <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 md:mb-14">Productos Destacados</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 md:mb-14">Nuestras Mejores Ofertas</h2>
               <Carousel
                 opts={{
                   align: 'start',
-                  loop: true,
+                  loop: featuredOfferProducts.length > 3,
                 }}
                 className="w-full"
               >
                 <CarouselContent>
-                  {featuredProducts.map((product) => (
+                  {featuredOfferProducts.map((product) => (
                     <CarouselItem key={product.id} className="md:basis-1/2 lg:basis-1/4">
                         <ProductCard product={product} />
                     </CarouselItem>
