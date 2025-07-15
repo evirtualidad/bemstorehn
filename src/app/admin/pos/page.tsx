@@ -170,7 +170,7 @@ function ProductGrid({
                 className="object-cover group-hover:scale-105 transition-transform"
               />
             </div>
-            <div className="p-3 flex-grow">
+            <div className="p-3">
               <h3 className="font-semibold text-sm leading-tight h-10">{product.name}</h3>
             </div>
              <div className="mt-auto bg-primary text-primary-foreground text-center p-2 rounded-b-md">
@@ -724,7 +724,7 @@ export default function PosPage() {
     <div className="h-screen bg-muted/40">
         <main className="h-full flex flex-col lg:pr-[420px]">
             <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20">
-                <h1 className="text-xl font-bold flex-1">Punto de Venta</h1>
+                <h1 className="text-xl font-bold flex-1 whitespace-nowrap">Punto de Venta</h1>
                  <div className="w-full sm:w-auto sm:flex-initial">
                     <ProductSearch onProductSelect={handleProductSelect} />
                  </div>
@@ -807,3 +807,5 @@ export default function PosPage() {
     </div>
   );
 }
+
+    
