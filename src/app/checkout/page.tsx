@@ -20,8 +20,8 @@ import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Loader2, Truck, MapPin } from 'lucide-react';
 import { createOrder } from '@/ai/flows/create-order-flow';
 import { useProductsStore } from '@/hooks/use-products';
 import { useCurrencyStore } from '@/hooks/use-currency';
@@ -31,6 +31,7 @@ import { useSettingsStore } from '@/hooks/use-settings-store';
 import Link from 'next/link';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(2, {
@@ -39,13 +40,16 @@ const checkoutFormSchema = z.object({
   phone: z.string().min(8, {
     message: 'El número de teléfono debe tener al menos 8 dígitos.',
   }),
+  shippingOption: z.enum(['local', 'national'], {
+    required_error: 'Debes seleccionar una opción de envío.',
+  }),
 });
 
 export default function CheckoutPage() {
-  const { items, total, subtotal, taxAmount, clearCart, toggleCart } = useCart();
+  const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart, toggleCart } = useCart();
   const { decreaseStock } = useProductsStore();
   const { addOrder } = useOrdersStore();
-  const { taxRate } = useSettingsStore();
+  const { taxRate, shippingLocalCost, shippingNationalCost } = useSettingsStore();
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,6 +62,25 @@ export default function CheckoutPage() {
       phone: '',
     },
   });
+
+  const selectedShippingOption = form.watch('shippingOption');
+
+  useEffect(() => {
+    if (selectedShippingOption === 'local') {
+      setShippingCost(shippingLocalCost);
+    } else if (selectedShippingOption === 'national') {
+      setShippingCost(shippingNationalCost);
+    } else {
+      setShippingCost(0);
+    }
+  }, [selectedShippingOption, setShippingCost, shippingLocalCost, shippingNationalCost]);
+  
+  // Clear shipping cost on unmount
+  useEffect(() => {
+    return () => {
+        setShippingCost(0);
+    }
+  }, [setShippingCost]);
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
     setIsSubmitting(true);
@@ -137,36 +160,84 @@ export default function CheckoutPage() {
             
             <div className="flex-grow flex items-center justify-center">
               <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-12">
-                {/* Customer Info Form */}
-                <div>
-                  <h2 className="text-2xl font-bold mb-6">Información de Contacto</h2>
-                  <div className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nombre Completo</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Jane Doe" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Teléfono</FormLabel>
-                          <FormControl>
-                            <Input placeholder="(123) 456-7890" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                {/* Customer & Shipping Info Form */}
+                <div className="space-y-8">
+                  <div>
+                    <h2 className="text-2xl font-bold mb-6">Información de Contacto</h2>
+                    <div className="space-y-6">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nombre Completo</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Jane Doe" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Teléfono</FormLabel>
+                            <FormControl>
+                              <Input placeholder="(123) 456-7890" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold mb-6">Opción de Envío</h2>
+                      <FormField
+                        control={form.control}
+                        name="shippingOption"
+                        render={({ field }) => (
+                          <FormItem className="space-y-3">
+                            <FormControl>
+                              <RadioGroup
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                className="grid grid-cols-1 gap-4"
+                              >
+                                <FormItem>
+                                  <FormControl>
+                                    <label className={cn("flex items-center gap-4 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'local' && "bg-accent border-primary")}>
+                                      <RadioGroupItem value="local" />
+                                      <MapPin className="h-6 w-6 text-primary"/>
+                                      <div className="flex-1">
+                                        <p className="font-semibold">Envío Local (Tegucigalpa)</p>
+                                        <p className="text-sm text-muted-foreground">Recibe tu pedido en el área urbana.</p>
+                                      </div>
+                                      <p className="font-bold">{formatCurrency(shippingLocalCost, currency.code)}</p>
+                                    </label>
+                                  </FormControl>
+                                </FormItem>
+                                <FormItem>
+                                  <FormControl>
+                                      <label className={cn("flex items-center gap-4 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'national' && "bg-accent border-primary")}>
+                                      <RadioGroupItem value="national" />
+                                      <Truck className="h-6 w-6 text-primary"/>
+                                      <div className="flex-1">
+                                        <p className="font-semibold">Envío Nacional</p>
+                                        <p className="text-sm text-muted-foreground">Envío al resto de Honduras.</p>
+                                      </div>
+                                      <p className="font-bold">{formatCurrency(shippingNationalCost, currency.code)}</p>
+                                    </label>
+                                  </FormControl>
+                                </FormItem>
+                              </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                   </div>
                 </div>
 
@@ -212,7 +283,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex justify-between">
                         <p>Envío</p>
-                        <p>Gratis</p>
+                        <p>{shippingCost > 0 ? formatCurrency(shippingCost, currency.code) : 'Selecciona una opción'}</p>
                       </div>
                     </div>
                     <Separator className="my-6" />

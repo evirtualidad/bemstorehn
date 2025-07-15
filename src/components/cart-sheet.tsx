@@ -101,6 +101,7 @@ export function CartSheet() {
     total,
     subtotal,
     taxAmount,
+    shippingCost,
     isOpen,
     toggleCart,
     removeFromCart,
@@ -191,6 +192,10 @@ export function CartSheet() {
                 <div className="flex justify-between">
                     <p className="text-muted-foreground">ISV ({taxRate * 100}%)</p>
                     <p>{formatCurrency(taxAmount, currency.code)}</p>
+                </div>
+                 <div className="flex justify-between">
+                    <p className="text-muted-foreground">Envío</p>
+                    <p>{shippingCost > 0 ? formatCurrency(shippingCost, currency.code) : "Calculado en el checkout"}</p>
                 </div>
               </div>
               <Separator />
