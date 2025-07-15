@@ -21,8 +21,15 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { ProductGrid } from '@/components/product-grid';
 import { ProductCard } from '@/components/product-card';
-import { Pause, Play } from 'lucide-react';
+import { Pause, Play, Instagram, Facebook, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// A custom TikTok icon as lucide-react might not have it.
+const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M21 7.4c-1.3-1.4-3.1-2.2-5-2.4v12.2c0 2.3-1.9 4.2-4.2 4.2s-4.2-1.9-4.2-4.2V8.7c-2.3.7-4 2.6-4.6 4.9-.7 3.2 1.2 6.4 4.4 7.1 3.2.7 6.4-1.2 7.1-4.4.1-.5.2-1 .2-1.5V7.4z"></path>
+    </svg>
+);
 
 
 function HeroCarousel({ banners }: { banners: Banner[] }) {
@@ -290,7 +297,7 @@ export default function Home() {
       <footer className="py-10 border-t border-border/40 bg-muted/30">
         <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 text-muted-foreground px-4">
           <div>
-            <h3 className="font-bold text-xl text-foreground mb-3">Cosmetica</h3>
+            <h3 className="font-bold text-xl text-foreground mb-3">BEN STORE HN</h3>
             <p className="text-sm">Belleza en su Forma más Pura.</p>
           </div>
           <div>
@@ -310,11 +317,24 @@ export default function Home() {
           </div>
           <div>
             <h4 className="font-bold text-lg text-foreground mb-3">Síguenos</h4>
-            {/* Social media icons would go here */}
+            <div className="flex items-center gap-4">
+                <a href="https://instagram.com/benstorehn" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                    <Instagram className="h-6 w-6" />
+                    <span className="sr-only">Instagram</span>
+                </a>
+                 <a href="https://facebook.com/benstorehn" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                    <Facebook className="h-6 w-6" />
+                    <span className="sr-only">Facebook</span>
+                </a>
+                 <a href="https://tiktok.com/@benstorehn" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                    <TikTokIcon className="h-6 w-6" />
+                    <span className="sr-only">TikTok</span>
+                </a>
+            </div>
           </div>
         </div>
         <div className="container mx-auto text-center text-muted-foreground mt-8 pt-6 border-t border-border/40">
-          <p className="text-sm">&copy; 2024 Cosmetica. Todos los derechos reservados.</p>
+          <p className="text-sm">&copy; 2024 BEN STORE HN. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>
