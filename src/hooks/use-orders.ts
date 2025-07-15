@@ -39,6 +39,7 @@ export interface Order {
   paymentMethod: 'efectivo' | 'tarjeta' | 'transferencia' | 'credito';
   status: 'pending-approval' | 'pending-payment' | 'paid' | 'cancelled';
   source: 'pos' | 'online-store';
+  deliveryMethod?: 'pickup' | 'delivery';
   date: string;
   paymentDueDate?: string;
 }
@@ -88,20 +89,15 @@ const mockOrders: Order[] = [
     customer: { 
       name: 'Mason Garcia', 
       phone: '555-0109',
-      address: {
-        department: 'Francisco Morazán',
-        municipality: 'Distrito Central',
-        exactAddress: 'Col. Palmira, Ave. Juan Lindo, #1234'
-      }
     },
     items: [{ id: 'prod_006', name: 'Volumizing Dry Shampoo', price: 18.00, quantity: 2, image: 'https://placehold.co/400x400.png' }],
-    total: 36.00 + 50, // total + shipping
-    shippingCost: 50,
-    balance: 36.00 + 50,
+    total: 36.00,
+    balance: 36.00,
     payments: [],
     paymentMethod: 'tarjeta', // Placeholder
     status: 'pending-approval',
     source: 'online-store',
+    deliveryMethod: 'pickup',
     date: subDays(now, 1).toISOString(),
   },
   {

@@ -11,16 +11,18 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useSettingsStore } from '@/hooks/use-settings-store';
 import { useToast } from '@/hooks/use-toast';
-import { Percent, DollarSign } from 'lucide-react';
+import { Percent, DollarSign, Store } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 
 const settingsFormSchema = z.object({
   taxRate: z.coerce.number().min(0, 'La tasa debe ser 0 o mayor.').max(100, 'La tasa no puede exceder 100.'),
   shippingLocalCost: z.coerce.number().min(0, 'El costo de envío no puede ser negativo.'),
   shippingNationalCost: z.coerce.number().min(0, 'El costo de envío no puede ser negativo.'),
+  pickupAddress: z.string().min(10, 'La dirección debe tener al menos 10 caracteres.'),
 });
 
 export default function SettingsPage() {
-  const { taxRate, setTaxRate, shippingLocalCost, setShippingLocalCost, shippingNationalCost, setShippingNationalCost } = useSettingsStore();
+  const { taxRate, setTaxRate, shippingLocalCost, setShippingLocalCost, shippingNationalCost, setShippingNationalCost, pickupAddress, setPickupAddress } = useSettingsStore();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof settingsFormSchema>>({
@@ -29,6 +31,7 @@ export default function SettingsPage() {
       taxRate: taxRate * 100, // Display as percentage
       shippingLocalCost: shippingLocalCost,
       shippingNationalCost: shippingNationalCost,
+      pickupAddress: pickupAddress,
     },
   });
   
@@ -37,16 +40,18 @@ export default function SettingsPage() {
       taxRate: taxRate * 100,
       shippingLocalCost: shippingLocalCost,
       shippingNationalCost: shippingNationalCost,
+      pickupAddress: pickupAddress,
     });
-  }, [taxRate, shippingLocalCost, shippingNationalCost, form]);
+  }, [taxRate, shippingLocalCost, shippingNationalCost, pickupAddress, form]);
 
   const onSubmit = (values: z.infer<typeof settingsFormSchema>) => {
     setTaxRate(values.taxRate / 100); // Store as decimal
     setShippingLocalCost(values.shippingLocalCost);
     setShippingNationalCost(values.shippingNationalCost);
+    setPickupAddress(values.pickupAddress);
     toast({
       title: 'Ajustes Guardados',
-      description: 'La configuración de impuestos y envío ha sido actualizada.',
+      description: 'La configuración ha sido actualizada.',
     });
   };
 
@@ -118,6 +123,33 @@ export default function SettingsPage() {
                         <Input type="number" placeholder="150.00" {...field} className="pl-8" />
                       </FormControl>
                        <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Dirección de la Tienda</CardTitle>
+              <CardDescription>
+                Define la dirección física de tu tienda para la opción de "Recoger en Tienda".
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+               <FormField
+                control={form.control}
+                name="pickupAddress"
+                render={({ field }) => (
+                  <FormItem className="max-w-sm">
+                    <FormLabel>Dirección para Recogida</FormLabel>
+                    <div className="relative">
+                      <FormControl>
+                        <Textarea placeholder="Col. Las Hadas, Blv. Morazán, local #5..." {...field} />
+                      </FormControl>
+                       <Store className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                     </div>
                     <FormMessage />
                   </FormItem>

@@ -2,9 +2,9 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -21,20 +21,29 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Loader2, Truck, MapPin } from 'lucide-react';
+import { Loader2, Truck, MapPin, Store, CheckCircle } from 'lucide-react';
 import { createOrder } from '@/ai/flows/create-order-flow';
 import { useProductsStore } from '@/hooks/use-products';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
-import { useOrdersStore } from '@/hooks/use-orders';
+import { useOrdersStore, type Address } from '@/hooks/use-orders';
 import { useSettingsStore } from '@/hooks/use-settings-store';
 import Link from 'next/link';
-import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { hondurasGeodata } from '@/lib/honduras-geodata';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(2, {
@@ -43,22 +52,195 @@ const checkoutFormSchema = z.object({
   phone: z.string().min(8, {
     message: 'El número de teléfono debe tener al menos 8 dígitos.',
   }),
-  shippingOption: z.enum(['local', 'national'], {
-    required_error: 'Debes seleccionar una opción de envío.',
+  deliveryMethod: z.enum(['pickup', 'delivery'], {
+    required_error: 'Debes seleccionar un método de entrega.',
   }),
-  department: z.string({ required_error: 'Debes seleccionar un departamento.' }),
-  municipality: z.string({ required_error: 'Debes seleccionar un municipio.' }),
-  exactAddress: z.string().min(10, { message: 'La dirección debe tener al menos 10 caracteres.' }),
+  address: z.custom<Address>().optional(),
+}).refine((data) => {
+    if (data.deliveryMethod === 'delivery' && !data.address) {
+        return false;
+    }
+    return true;
+}, {
+    message: 'La dirección de envío es obligatoria.',
+    path: ['address'],
 });
+
+
+function ShippingDialog({ 
+    isOpen, 
+    onOpenChange, 
+    onSave,
+    currentAddress 
+}: { 
+    isOpen: boolean; 
+    onOpenChange: (open: boolean) => void;
+    onSave: (address: Address, cost: number, type: 'local' | 'national') => void;
+    currentAddress: Address | undefined;
+}) {
+    const { shippingLocalCost, shippingNationalCost } = useSettingsStore();
+
+    const shippingFormSchema = z.object({
+        shippingOption: z.enum(['local', 'national'], {
+            required_error: 'Debes seleccionar una opción de envío.',
+        }),
+        department: z.string({ required_error: 'Debes seleccionar un departamento.' }),
+        municipality: z.string({ required_error: 'Debes seleccionar un municipio.' }),
+        exactAddress: z.string().min(10, { message: 'La dirección debe tener al menos 10 caracteres.' }),
+    });
+
+    const form = useForm<z.infer<typeof shippingFormSchema>>({
+        resolver: zodResolver(shippingFormSchema),
+        defaultValues: {
+            shippingOption: (currentAddress as any)?.type || undefined,
+            department: currentAddress?.department || undefined,
+            municipality: currentAddress?.municipality || undefined,
+            exactAddress: currentAddress?.exactAddress || '',
+        }
+    });
+
+    const selectedDepartment = form.watch('department');
+    const selectedShippingOption = form.watch('shippingOption');
+
+    const handleSave = (values: z.infer<typeof shippingFormSchema>) => {
+        const cost = values.shippingOption === 'local' ? shippingLocalCost : shippingNationalCost;
+        onSave({
+            department: values.department,
+            municipality: values.municipality,
+            exactAddress: values.exactAddress,
+        }, cost, values.shippingOption);
+        onOpenChange(false);
+    };
+    
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Información de Envío</DialogTitle>
+                    <DialogDescription>
+                        Completa los detalles para la entrega a domicilio.
+                    </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleSave)} id="shipping-form" className="space-y-4 pt-4">
+                        <FormField
+                            control={form.control}
+                            name="shippingOption"
+                            render={({ field }) => (
+                            <FormItem className="space-y-3">
+                                <FormLabel>Tipo de Envío</FormLabel>
+                                <FormControl>
+                                <RadioGroup
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                    className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                                >
+                                    <FormItem>
+                                    <FormControl>
+                                        <label className={cn("flex items-center gap-4 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'local' && "bg-accent border-primary")}>
+                                        <RadioGroupItem value="local" />
+                                        <MapPin className="h-6 w-6 text-primary"/>
+                                        <div className="flex-1">
+                                            <p className="font-semibold">Local (TGU)</p>
+                                        </div>
+                                        </label>
+                                    </FormControl>
+                                    </FormItem>
+                                    <FormItem>
+                                    <FormControl>
+                                        <label className={cn("flex items-center gap-4 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'national' && "bg-accent border-primary")}>
+                                        <RadioGroupItem value="national" />
+                                        <Truck className="h-6 w-6 text-primary"/>
+                                        <div className="flex-1">
+                                            <p className="font-semibold">Nacional</p>
+                                        </div>
+                                        </label>
+                                    </FormControl>
+                                    </FormItem>
+                                </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="department"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Departamento</FormLabel>
+                                <Select onValueChange={(value) => { field.onChange(value); form.setValue('municipality', ''); }} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Selecciona un departamento" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {hondurasGeodata.map(depto => (
+                                    <SelectItem key={depto.id} value={depto.nombre}>{depto.nombre}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="municipality"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Municipio</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value} disabled={!selectedDepartment}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Selecciona un municipio" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {selectedDepartment && hondurasGeodata.find(d => d.nombre === selectedDepartment)?.municipios.map(muni => (
+                                    <SelectItem key={muni.id} value={muni.nombre}>{muni.nombre}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="exactAddress"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Dirección Exacta</FormLabel>
+                                <FormControl>
+                                <Textarea placeholder="Colonia, calle, número de casa, referencias..." {...field}/>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                    </form>
+                </Form>
+                <DialogFooter>
+                    <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+                    <Button type="submit" form="shipping-form">Guardar Dirección</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 
 export default function CheckoutPage() {
   const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart, toggleCart } = useCart();
   const { decreaseStock } = useProductsStore();
   const { addOrder } = useOrdersStore();
-  const { taxRate, shippingLocalCost, shippingNationalCost } = useSettingsStore();
+  const { taxRate, pickupAddress } = useSettingsStore();
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isShippingDialogOpen, setIsShippingDialogOpen] = useState(false);
   const { currency } = useCurrencyStore();
 
   const form = useForm<z.infer<typeof checkoutFormSchema>>({
@@ -66,28 +248,36 @@ export default function CheckoutPage() {
     defaultValues: {
       name: '',
       phone: '',
-      exactAddress: '',
     },
   });
 
-  const selectedShippingOption = form.watch('shippingOption');
-  const selectedDepartment = form.watch('department');
+  const deliveryMethod = form.watch('deliveryMethod');
+  const address = form.watch('address');
 
   useEffect(() => {
-    if (selectedShippingOption === 'local') {
-      setShippingCost(shippingLocalCost);
-    } else if (selectedShippingOption === 'national') {
-      setShippingCost(shippingNationalCost);
-    } else {
+    // Reset shipping cost when delivery method changes
+    if (deliveryMethod === 'pickup') {
       setShippingCost(0);
+      form.setValue('address', undefined);
+      form.clearErrors('address');
+    } else if (deliveryMethod === 'delivery' && !address) {
+       setShippingCost(0);
     }
-  }, [selectedShippingOption, setShippingCost, shippingLocalCost, shippingNationalCost]);
+  }, [deliveryMethod, setShippingCost, form, address]);
   
+  // Clean up shipping cost on unmount
   useEffect(() => {
     return () => {
         setShippingCost(0);
     }
   }, [setShippingCost]);
+
+  const handleSaveShippingInfo = (address: Address, cost: number, type: 'local' | 'national') => {
+    // Add a 'type' property to address to remember the choice for re-editing
+    const addressWithTye = { ...address, type };
+    form.setValue('address', addressWithTye as Address);
+    setShippingCost(cost);
+  };
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
     setIsSubmitting(true);
@@ -96,16 +286,13 @@ export default function CheckoutPage() {
         customer: { 
           name: values.name || 'Consumidor Final', 
           phone: values.phone || 'N/A',
-          address: {
-            department: values.department,
-            municipality: values.municipality,
-            exactAddress: values.exactAddress,
-          }
+          address: values.deliveryMethod === 'delivery' ? values.address : undefined,
         },
         items: items.map(item => ({ ...item, quantity: item.quantity, stock: item.stock, category: item.category, description: item.description })),
         total: total,
         shippingCost: shippingCost,
-        paymentMethod: 'tarjeta' as const, 
+        paymentMethod: 'tarjeta' as const, // Placeholder, actual payment would be next
+        deliveryMethod: values.deliveryMethod,
       };
 
       const result = await createOrder(orderInput);
@@ -125,6 +312,7 @@ export default function CheckoutPage() {
           date: new Date().toISOString(),
           status: 'pending-approval',
           source: 'online-store',
+          deliveryMethod: orderInput.deliveryMethod,
         });
 
         toast({
@@ -176,9 +364,11 @@ export default function CheckoutPage() {
             <div className="flex-grow flex items-center justify-center">
               <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-12">
                 <div className="space-y-8">
-                  <div>
-                    <h2 className="text-2xl font-bold mb-6">Información de Contacto</h2>
-                    <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>1. Información de Contacto</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
                       <FormField
                         control={form.control}
                         name="name"
@@ -205,113 +395,71 @@ export default function CheckoutPage() {
                           </FormItem>
                         )}
                       />
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                   
-                  <div>
-                    <h2 className="text-2xl font-bold mb-6">Información de Envío</h2>
-                    <div className="space-y-6">
-                      <FormField
-                        control={form.control}
-                        name="shippingOption"
-                        render={({ field }) => (
-                          <FormItem className="space-y-3">
-                            <FormLabel>Opción de Envío</FormLabel>
-                            <FormControl>
-                              <RadioGroup
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                              >
-                                <FormItem>
-                                  <FormControl>
-                                    <label className={cn("flex items-center gap-4 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'local' && "bg-accent border-primary")}>
-                                      <RadioGroupItem value="local" />
-                                      <MapPin className="h-6 w-6 text-primary"/>
-                                      <div className="flex-1">
-                                        <p className="font-semibold">Local (TGU)</p>
-                                      </div>
-                                      <p className="font-bold">{formatCurrency(shippingLocalCost, currency.code)}</p>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>2. Método de Entrega</CardTitle>
+                       <FormMessage>{form.formState.errors.address?.message}</FormMessage>
+                    </CardHeader>
+                     <CardContent>
+                        <Controller
+                            control={form.control}
+                            name="deliveryMethod"
+                            render={({ field }) => (
+                               <RadioGroup
+                                    onValueChange={field.onChange}
+                                    value={field.value}
+                                    className="grid grid-cols-1 gap-4"
+                                >
+                                    <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'pickup' && "bg-accent border-primary")}>
+                                        <div className="flex items-center gap-4">
+                                            <RadioGroupItem value="pickup" id="pickup"/>
+                                            <div className="flex-1 flex items-center gap-2">
+                                                <Store className="h-5 w-5"/>
+                                                <p className="font-semibold">Recoger en Tienda</p>
+                                            </div>
+                                            <p className="font-bold">GRATIS</p>
+                                        </div>
+                                        {field.value === 'pickup' && (
+                                            <div className="pl-8 pt-2 text-sm text-muted-foreground">
+                                                <p className='font-medium'>Dirección de Recogida:</p>
+                                                <p>{pickupAddress}</p>
+                                            </div>
+                                        )}
                                     </label>
-                                  </FormControl>
-                                </FormItem>
-                                <FormItem>
-                                  <FormControl>
-                                      <label className={cn("flex items-center gap-4 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'national' && "bg-accent border-primary")}>
-                                      <RadioGroupItem value="national" />
-                                      <Truck className="h-6 w-6 text-primary"/>
-                                      <div className="flex-1">
-                                        <p className="font-semibold">Nacional</p>
-                                      </div>
-                                      <p className="font-bold">{formatCurrency(shippingNationalCost, currency.code)}</p>
+
+                                     <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'delivery' && "bg-accent border-primary")}>
+                                        <div className="flex items-center gap-4">
+                                            <RadioGroupItem value="delivery" id="delivery"/>
+                                            <div className="flex-1 flex items-center gap-2">
+                                                <Truck className="h-5 w-5"/>
+                                                <p className="font-semibold">Envío a Domicilio</p>
+                                            </div>
+                                        </div>
+                                         {field.value === 'delivery' && (
+                                            <div className="pl-8 pt-2 text-sm">
+                                                {address ? (
+                                                    <div className='text-muted-foreground space-y-2'>
+                                                        <div className='flex items-center gap-2 text-green-600 font-semibold'>
+                                                           <CheckCircle className="h-5 w-5"/> Dirección guardada
+                                                        </div>
+                                                        <p className='font-medium'>{address.exactAddress}</p>
+                                                        <p>{address.municipality}, {address.department}</p>
+                                                        <Button variant="link" className="p-0 h-auto" type="button" onClick={() => setIsShippingDialogOpen(true)}>Editar Dirección</Button>
+                                                    </div>
+                                                ) : (
+                                                    <Button type="button" onClick={() => setIsShippingDialogOpen(true)}>Añadir Dirección de Envío</Button>
+                                                )}
+                                            </div>
+                                        )}
                                     </label>
-                                  </FormControl>
-                                </FormItem>
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="department"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Departamento</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecciona un departamento" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {hondurasGeodata.map(depto => (
-                                  <SelectItem key={depto.id} value={depto.nombre}>{depto.nombre}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="municipality"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Municipio</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedDepartment}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecciona un municipio" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {selectedDepartment && hondurasGeodata.find(d => d.nombre === selectedDepartment)?.municipios.map(muni => (
-                                   <SelectItem key={muni.id} value={muni.nombre}>{muni.nombre}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                       <FormField
-                        control={form.control}
-                        name="exactAddress"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Dirección Exacta</FormLabel>
-                            <FormControl>
-                              <Textarea placeholder="Colonia, calle, número de casa, referencias..." {...field}/>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
+                                </RadioGroup>
+                            )}
+                        />
+                     </CardContent>
+                  </Card>
                 </div>
 
                 {/* Order Summary */}
@@ -356,7 +504,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex justify-between">
                         <p>Envío</p>
-                        <p>{shippingCost > 0 ? formatCurrency(shippingCost, currency.code) : 'Selecciona una opción'}</p>
+                        <p>{shippingCost > 0 ? formatCurrency(shippingCost, currency.code) : (deliveryMethod === 'pickup' ? 'GRATIS' : 'Selecciona una opción')}</p>
                       </div>
                     </div>
                     <Separator className="my-6" />
@@ -385,6 +533,13 @@ export default function CheckoutPage() {
             </footer>
           </form>
         </Form>
+        
+        <ShippingDialog 
+            isOpen={isShippingDialogOpen}
+            onOpenChange={setIsShippingDialogOpen}
+            onSave={handleSaveShippingInfo}
+            currentAddress={address}
+        />
       </main>
     </div>
   );

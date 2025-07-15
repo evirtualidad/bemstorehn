@@ -38,6 +38,7 @@ const CreateOrderInputSchema = z.object({
   total: z.number(),
   shippingCost: z.number().optional(),
   paymentMethod: z.enum(['efectivo', 'tarjeta', 'transferencia', 'credito']),
+  deliveryMethod: z.enum(['pickup', 'delivery']).optional(),
   paymentDueDate: z.string().optional(),
   cashAmount: z.number().optional(),
   paymentReference: z.string().optional(),
@@ -72,8 +73,11 @@ const createOrderFlow = ai.defineFlow(
       console.log("--- MOCK ORDER CREATED ---");
       console.log("Order ID:", orderId);
       console.log("Customer:", customerName);
-      if (input.customer.address) {
+      if (input.deliveryMethod === 'delivery' && input.customer.address) {
+        console.log("Delivery Method: Envío a Domicilio");
         console.log("Address:", `${input.customer.address.exactAddress}, ${input.customer.address.municipality}, ${input.customer.address.department}`);
+      } else if (input.deliveryMethod === 'pickup') {
+         console.log("Delivery Method: Recoger en Tienda");
       }
       console.log("Items:", input.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })));
       if (input.shippingCost) {
