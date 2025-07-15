@@ -296,7 +296,7 @@ export default function OrdersPage() {
 
   const sortedOrders = [...orders].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   
-  const handleCancelOrder = () => {
+  const handleConfirmCancel = () => {
     if (!orderToCancel) return;
 
     // We only restock if the order wasn't already cancelled.
@@ -405,19 +405,19 @@ export default function OrdersPage() {
                                     </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                    <DropdownMenuItem>Ver Detalles</DropdownMenuItem>
-                                    {order.status !== 'cancelled' && (
-                                        <AlertDialogTrigger asChild>
-                                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setOrderToCancel(order); }}>
-                                                Cancelar Pedido
-                                            </DropdownMenuItem>
-                                        </AlertDialogTrigger>
-                                    )}
+                                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                        <DropdownMenuItem>Ver Detalles</DropdownMenuItem>
+                                        {order.status !== 'cancelled' && (
+                                            <AlertDialogTrigger asChild>
+                                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setOrderToCancel(order); }}>
+                                                    Cancelar Pedido
+                                                </DropdownMenuItem>
+                                            </AlertDialogTrigger>
+                                        )}
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                                 {orderToCancel && orderToCancel.id === order.id && (
-                                     <CancelOrderDialog order={orderToCancel} onCancel={handleCancelOrder} />
+                                     <CancelOrderDialog order={orderToCancel} onCancel={handleConfirmCancel} />
                                 )}
                              </AlertDialog>
                         )}
