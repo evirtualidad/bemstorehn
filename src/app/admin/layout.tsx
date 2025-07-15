@@ -50,22 +50,21 @@ export default function AdminLayout({
   ];
 
   const DesktopNavItem = ({ item }: { item: typeof navItems[0] }) => (
-    <Button
-      asChild
-      variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
-      className="w-full justify-start gap-2"
-      size="sm"
+    <Link
+        href={item.href}
+        className={cn(
+            'flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-foreground',
+            pathname.startsWith(item.href) ? 'bg-muted text-foreground' : 'text-muted-foreground'
+        )}
     >
-      <Link href={item.href}>
         <item.icon className="h-4 w-4" />
         {item.label}
         {item.badge && (
-          <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-            {item.badge}
-          </Badge>
+            <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+                {item.badge}
+            </Badge>
         )}
-      </Link>
-    </Button>
+    </Link>
   );
 
   const MobileNavItem = ({ item }: { item: typeof navItems[0] }) => (
@@ -89,10 +88,10 @@ export default function AdminLayout({
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
-        <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
+        <nav className="hidden font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
           <Link
             href="/admin/dashboard"
-            className="flex items-center gap-2 text-lg font-semibold md:text-base"
+            className="flex items-center gap-2 font-semibold text-lg md:text-base text-foreground"
           >
             <Package2 className="h-6 w-6" />
             <span className="sr-only">Admin Cosmetica</span>
