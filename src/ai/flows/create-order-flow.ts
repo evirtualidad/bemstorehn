@@ -58,7 +58,7 @@ const createOrderFlow = ai.defineFlow(
   async (input) => {
     try {
       // Simulate creating an order by logging it to the console
-      const orderId = `MOCK-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const orderId = `ORD-${Date.now().toString().slice(-6)}`;
       
       console.log("--- MOCK ORDER CREATED ---");
       console.log("Order ID:", orderId);

@@ -76,7 +76,7 @@ export default function AdminLayout({
   const navItems = [
     { href: '/admin/dashboard', icon: Home, label: 'Panel' },
     { href: '/admin/pos', icon: Tablet, label: 'Punto de Venta' },
-    { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: '6' },
+    { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos' },
     { href: '/admin/inventory', icon: Archive, label: 'Inventario' },
     { href: '/admin/finance', icon: Coins, label: 'Finanzas' },
     { href: '/admin/customers', icon: Users, label: 'Clientes' },
