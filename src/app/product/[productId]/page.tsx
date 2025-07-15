@@ -10,17 +10,19 @@ import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { ProductCard } from '@/components/product-card';
 import { Product } from '@/lib/products';
 import { useCategoriesStore } from '@/hooks/use-categories';
+import { useCurrencyStore } from '@/hooks/use-currency';
 
 export default function ProductDetailPage({ params }: { params: { productId: string } }) {
   const { getProductById, products } = useProductsStore();
   const { getCategoryByName } = useCategoriesStore();
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { currency } = useCurrencyStore();
   
   const product = getProductById(params.productId);
 
@@ -79,7 +81,7 @@ export default function ProductDetailPage({ params }: { params: { productId: str
               {product.description}
             </p>
             <div className="flex items-center gap-4">
-                <p className="text-4xl font-bold text-foreground">${product.price.toFixed(2)}</p>
+                <p className="text-4xl font-bold text-foreground">{formatCurrency(product.price, currency.code)}</p>
             </div>
             <Button 
               size="lg"

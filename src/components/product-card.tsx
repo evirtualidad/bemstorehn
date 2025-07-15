@@ -7,11 +7,12 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { useCategoriesStore } from '@/hooks/use-categories';
+import { useCurrencyStore } from '@/hooks/use-currency';
 
 interface ProductCardProps {
   product: Product;
@@ -23,6 +24,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
   const stockStatus = product.stock <= 0 ? "Agotado" : product.stock < 10 ? "Poco Stock" : "En Stock";
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { currency } = useCurrencyStore();
 
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.preventDefault(); // Prevent link navigation when clicking the button
@@ -63,7 +65,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
           {product.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{product.description}</p>}
         </CardContent>
         <CardFooter className="p-4 pt-0 flex flex-col items-start gap-4 mt-auto">
-          <p className="text-2xl font-bold text-foreground">${product.price.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-foreground">{formatCurrency(product.price, currency.code)}</p>
           <Button 
             variant="outline" 
             className="w-full"

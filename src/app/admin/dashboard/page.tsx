@@ -45,6 +45,8 @@ import {
 } from 'recharts';
 import React from 'react';
 import { useProductsStore } from '@/hooks/use-products';
+import { useCurrencyStore } from '@/hooks/use-currency';
+import { formatCurrency } from '@/lib/utils';
 
 const salesData = [
     { name: 'Ene', sales: 4000 },
@@ -68,6 +70,7 @@ const newClientsData = [
 
 export default function Dashboard() {
   const { products } = useProductsStore();
+  const { currency } = useCurrencyStore();
 
   // Simulate dynamic data
   const totalRevenue = 45231.89;
@@ -84,7 +87,7 @@ export default function Dashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalRevenue.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold">{formatCurrency(totalRevenue, currency.code)}</div>
             <p className="text-xs text-muted-foreground">
               +20.1% desde el mes pasado
             </p>
@@ -140,7 +143,7 @@ export default function Dashboard() {
               <BarChart data={salesData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => formatCurrency(value, currency.code, 0)}/>
                 <Tooltip 
                     cursor={{fill: 'hsl(var(--accent))', radius: '0.25rem' }}
                     contentStyle={{
@@ -148,6 +151,7 @@ export default function Dashboard() {
                         borderRadius: '0.5rem',
                         border: '1px solid hsl(var(--border))',
                     }}
+                    formatter={(value: number) => [formatCurrency(value, currency.code), 'Ventas']}
                 />
                 <Bar dataKey="sales" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -209,7 +213,7 @@ export default function Dashboard() {
                   olivia.martin@email.com
                 </p>
               </div>
-              <div className="ml-auto font-medium">+$1,999.00</div>
+              <div className="ml-auto font-medium">+{formatCurrency(1999, currency.code)}</div>
             </div>
             <div className="flex items-center gap-4">
               <Avatar className="hidden h-9 w-9 sm:flex">
@@ -222,7 +226,7 @@ export default function Dashboard() {
                   jackson.lee@email.com
                 </p>
               </div>
-              <div className="ml-auto font-medium">+$39.00</div>
+              <div className="ml-auto font-medium">+{formatCurrency(39, currency.code)}</div>
             </div>
             <div className="flex items-center gap-4">
               <Avatar className="hidden h-9 w-9 sm:flex">
@@ -237,7 +241,7 @@ export default function Dashboard() {
                   isabella.nguyen@email.com
                 </p>
               </div>
-              <div className="ml-auto font-medium">+$299.00</div>
+              <div className="ml-auto font-medium">+{formatCurrency(299, currency.code)}</div>
             </div>
             <div className="flex items-center gap-4">
               <Avatar className="hidden h-9 w-9 sm:flex">
@@ -248,7 +252,7 @@ export default function Dashboard() {
                 <p className="text-sm font-medium leading-none">William Kim</p>
                 <p className="text-sm text-muted-foreground">will@email.com</p>
               </div>
-              <div className="ml-auto font-medium">+$99.00</div>
+              <div className="ml-auto font-medium">+{formatCurrency(99, currency.code)}</div>
             </div>
           </CardContent>
         </Card>
@@ -303,7 +307,7 @@ export default function Dashboard() {
                   <TableCell className="hidden md:table-cell lg:hidden xl:table-cell">
                     2023-06-23
                   </TableCell>
-                  <TableCell className="text-right">$250.00</TableCell>
+                  <TableCell className="text-right">{formatCurrency(250, currency.code)}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>
@@ -323,7 +327,7 @@ export default function Dashboard() {
                   <TableCell className="hidden md:table-cell lg:hidden xl:table-cell">
                     2023-06-24
                   </TableCell>
-                  <TableCell className="text-right">$150.00</TableCell>
+                  <TableCell className="text-right">{formatCurrency(150, currency.code)}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell>
@@ -343,7 +347,7 @@ export default function Dashboard() {
                   <TableCell className="hidden md:table-cell lg:hidden xl:table-cell">
                     2023-06-25
                   </TableCell>
-                  <TableCell className="text-right">$350.00</TableCell>
+                  <TableCell className="text-right">{formatCurrency(350, currency.code)}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>

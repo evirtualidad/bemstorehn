@@ -24,6 +24,8 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { createOrder } from '@/ai/flows/create-order-flow';
 import { useProductsStore } from '@/hooks/use-products';
+import { useCurrencyStore } from '@/hooks/use-currency';
+import { formatCurrency } from '@/lib/utils';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(2, {
@@ -40,6 +42,7 @@ export default function CheckoutPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { currency } = useCurrencyStore();
 
   const form = useForm<z.infer<typeof checkoutFormSchema>>({
     resolver: zodResolver(checkoutFormSchema),
@@ -169,11 +172,11 @@ export default function CheckoutPage() {
                     <div className="flex-grow">
                       <p className="font-semibold">{item.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        ${item.price.toFixed(2)}
+                        {formatCurrency(item.price, currency.code)}
                       </p>
                     </div>
                     <p className="font-semibold">
-                      ${(item.price * item.quantity).toFixed(2)}
+                      {formatCurrency(item.price * item.quantity, currency.code)}
                     </p>
                   </div>
                 ))}
@@ -182,7 +185,7 @@ export default function CheckoutPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <p>Subtotal</p>
-                  <p>${total.toFixed(2)}</p>
+                  <p>{formatCurrency(total, currency.code)}</p>
                 </div>
                 <div className="flex justify-between">
                   <p>Envío</p>
@@ -196,7 +199,7 @@ export default function CheckoutPage() {
               <Separator className="my-6" />
               <div className="flex justify-between text-xl font-bold">
                 <p>Total</p>
-                <p>${total.toFixed(2)}</p>
+                <p>{formatCurrency(total, currency.code)}</p>
               </div>
             </div>
           </div>

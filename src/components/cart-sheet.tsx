@@ -20,6 +20,8 @@ import { useProductsStore } from '@/hooks/use-products';
 import { ProductCard } from './product-card';
 import { Skeleton } from './ui/skeleton';
 import { Product } from '@/lib/products';
+import { useCurrencyStore } from '@/hooks/use-currency';
+import { formatCurrency } from '@/lib/utils';
 
 function RecommendedProducts() {
   const { items } = useCart();
@@ -93,6 +95,7 @@ export function CartSheet() {
     increaseQuantity,
     decreaseQuantity,
   } = useCart();
+  const { currency } = useCurrencyStore();
 
   return (
     <Sheet open={isOpen} onOpenChange={toggleCart}>
@@ -120,7 +123,7 @@ export function CartSheet() {
                       <div className="flex-1">
                         <p className="font-semibold">{item.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          ${item.price.toFixed(2)}
+                          {formatCurrency(item.price, currency.code)}
                         </p>
                         <div className="mt-2 flex items-center gap-2">
                           <Button
@@ -159,7 +162,7 @@ export function CartSheet() {
             <div className="border-t p-4">
               <div className="flex justify-between text-lg font-semibold">
                 <p>Subtotal</p>
-                <p>${total.toFixed(2)}</p>
+                <p>{formatCurrency(total, currency.code)}</p>
               </div>
               <Button asChild className="mt-4 w-full" size="lg">
                 <Link href="/checkout" onClick={toggleCart}>Finalizar Compra</Link>

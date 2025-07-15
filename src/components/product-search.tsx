@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { type Product } from '@/lib/products';
 import Image from 'next/image';
 import { Search } from 'lucide-react';
+import { useCurrencyStore } from '@/hooks/use-currency';
+import { formatCurrency } from '@/lib/utils';
 
 interface ProductSearchProps {
   onProductSelect: (product: Product) => void;
@@ -17,6 +19,7 @@ export function ProductSearch({ onProductSelect }: ProductSearchProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [results, setResults] = React.useState<Product[]>([]);
   const [isOpen, setIsOpen] = React.useState(false);
+  const { currency } = useCurrencyStore();
 
   const searchContainerRef = React.useRef<HTMLDivElement>(null);
 
@@ -86,7 +89,7 @@ export function ProductSearch({ onProductSelect }: ProductSearchProps) {
                 <div className="flex-grow">
                   <p className="font-medium text-sm">{product.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    ${product.price.toFixed(2)} - Stock: {product.stock}
+                    {formatCurrency(product.price, currency.code)} - Stock: {product.stock}
                   </p>
                 </div>
               </li>
@@ -97,5 +100,3 @@ export function ProductSearch({ onProductSelect }: ProductSearchProps) {
     </div>
   );
 }
-
-    

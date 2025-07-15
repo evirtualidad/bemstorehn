@@ -42,10 +42,11 @@ import {
   DialogClose,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { es } from 'date-fns/locale';
 import { ProductSearch } from '@/components/product-search';
 import { useCategoriesStore } from '@/hooks/use-categories';
+import { useCurrencyStore } from '@/hooks/use-currency';
 
 type PosCartItem = Product & { quantity: number };
 
@@ -153,6 +154,7 @@ function ProductGrid({
   products: Product[];
   onProductSelect: (product: Product) => void;
 }) {
+  const { currency } = useCurrencyStore();
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
       {products.map((product) => (
@@ -174,7 +176,7 @@ function ProductGrid({
               <h3 className="font-semibold text-sm leading-tight h-10 flex items-center w-full">{product.name}</h3>
             </div>
              <div className="mt-auto bg-primary text-primary-foreground text-center p-2 rounded-b-md">
-                <span className="text-lg font-bold">${product.price.toFixed(2)}</span>
+                <span className="text-lg font-bold">{formatCurrency(product.price, currency.code)}</span>
             </div>
           </CardContent>
         </Card>
@@ -198,6 +200,8 @@ function TicketView({
   onClearCart: () => void;
   onCheckout: () => void;
 }) {
+  const { currency } = useCurrencyStore();
+
   return (
     <aside className="fixed top-0 right-0 h-screen w-[420px] hidden lg:flex flex-col border-l z-10 bg-muted/40">
         <div className="p-4 border-b flex-shrink-0 bg-background">
@@ -229,7 +233,7 @@ function TicketView({
                     />
                     <div className="flex-1">
                         <p className="font-semibold text-sm leading-tight">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">${item.price.toFixed(2)}</p>
+                        <p className="text-xs text-muted-foreground">{formatCurrency(item.price, currency.code)}</p>
                         <div className="flex items-center gap-2 mt-2">
                         <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, -1)}>
                             <Minus className="h-4 w-4" />
@@ -240,7 +244,7 @@ function TicketView({
                         </Button>
                         </div>
                     </div>
-                    <p className="w-16 text-right font-medium text-sm">${(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="w-24 text-right font-medium text-sm">{formatCurrency(item.price * item.quantity, currency.code)}</p>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onRemoveFromCart(item.id)}>
                         <Trash2 className="h-5 w-5" />
                     </Button>
@@ -253,7 +257,7 @@ function TicketView({
         <div className="p-4 border-t bg-background space-y-4 flex-shrink-0">
             <div className="flex justify-between text-xl font-bold">
             <p>Total</p>
-            <p>${total.toFixed(2)}</p>
+            <p>{formatCurrency(total, currency.code)}</p>
             </div>
             <Button
             size="lg"
@@ -289,6 +293,7 @@ function MobileTicketView({
   onClose: () => void;
 }) {
   if (!isVisible) return null;
+  const { currency } = useCurrencyStore();
 
   return (
     <div className="lg:hidden fixed inset-0 bg-black/60 z-30" onClick={onClose}>
@@ -330,7 +335,7 @@ function MobileTicketView({
                         />
                         <div className="flex-1">
                             <p className="font-semibold text-sm leading-tight">{item.name}</p>
-                            <p className="text-xs text-muted-foreground">${item.price.toFixed(2)}</p>
+                            <p className="text-xs text-muted-foreground">{formatCurrency(item.price, currency.code)}</p>
                             <div className="flex items-center gap-2 mt-2">
                             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, -1)}>
                                 <Minus className="h-4 w-4" />
@@ -341,7 +346,7 @@ function MobileTicketView({
                             </Button>
                             </div>
                         </div>
-                        <p className="w-16 text-right font-medium text-sm">${(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="w-24 text-right font-medium text-sm">{formatCurrency(item.price * item.quantity, currency.code)}</p>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onRemoveFromCart(item.id)}>
                             <Trash2 className="h-5 w-5" />
                         </Button>
@@ -354,7 +359,7 @@ function MobileTicketView({
             <div className="p-4 border-t bg-background space-y-4 flex-shrink-0">
                 <div className="flex justify-between text-xl font-bold">
                 <p>Total</p>
-                <p>${total.toFixed(2)}</p>
+                <p>{formatCurrency(total, currency.code)}</p>
                 </div>
                 <Button
                 size="lg"
@@ -381,6 +386,7 @@ const paymentMethods = [
 
 function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, change, isInDialog }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, cart: PosCartItem[], total: number, change: number, isInDialog?: boolean }) {
     const paymentMethod = form.watch('paymentMethod');
+    const { currency } = useCurrencyStore();
 
     const CancelButton = () => {
         const button = (
@@ -402,7 +408,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                 <div className="space-y-3 p-4 rounded-lg border bg-muted/50">
                     <div className="flex justify-between items-center text-lg">
                         <span className="text-muted-foreground">Total a Pagar:</span>
-                        <span className="font-bold text-2xl">${total.toFixed(2)}</span>
+                        <span className="font-bold text-2xl">{formatCurrency(total, currency.code)}</span>
                     </div>
                 </div>
 
@@ -473,7 +479,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, cha
                                 </FormControl>
                                 <FormMessage />
                                 {change > 0 && (
-                                    <p className="text-sm text-muted-foreground pt-1">Cambio a devolver: ${change.toFixed(2)}</p>
+                                    <p className="text-sm text-muted-foreground pt-1">Cambio a devolver: {formatCurrency(change, currency.code)}</p>
                                 )}
                             </FormItem>
                         )}
@@ -554,6 +560,7 @@ export default function PosPage() {
   const [cart, setCart] = React.useState<PosCartItem[]>([]);
   const { products, decreaseStock } = useProductsStore();
   const { categories } = useCategoriesStore();
+  const { currency } = useCurrencyStore();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
@@ -748,7 +755,7 @@ export default function PosPage() {
                     onClick={() => setIsTicketVisible(true)}
                 >
                     <Receipt className="h-7 w-7" />
-                    <span className="text-md font-bold">${total.toFixed(2)}</span>
+                    <span className="text-md font-bold">{formatCurrency(total, currency.code)}</span>
                     {totalItems > 0 && (
                         <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-8 w-8 flex items-center justify-center border-4 border-background">
                             {totalItems}

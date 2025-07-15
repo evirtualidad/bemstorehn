@@ -55,11 +55,14 @@ import {
 import { ProductForm, productFormSchema } from '@/components/product-form';
 import { z } from 'zod';
 import { useProductsStore } from '@/hooks/use-products';
+import { useCurrencyStore } from '@/hooks/use-currency';
+import { formatCurrency } from '@/lib/utils';
 
 export default function AdminProductsPage() {
   const { products, addProduct, updateProduct, deleteProduct } = useProductsStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
+  const { currency } = useCurrencyStore();
 
   const handleAddProduct = (values: z.infer<typeof productFormSchema>) => {
     const newProduct: Product = {
@@ -230,7 +233,7 @@ export default function AdminProductsPage() {
                        <TableCell className="hidden md:table-cell">
                         {product.featured ? 'Sí' : 'No'}
                       </TableCell>
-                      <TableCell>${product.price.toFixed(2)}</TableCell>
+                      <TableCell>{formatCurrency(product.price, currency.code)}</TableCell>
                       <TableCell className="hidden md:table-cell">
                         {product.stock}
                       </TableCell>

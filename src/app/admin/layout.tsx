@@ -30,6 +30,34 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useCurrencyStore } from '@/hooks/use-currency';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+function CurrencySelector() {
+    const { currency, currencies, setCurrency } = useCurrencyStore();
+
+    const handleCurrencyChange = (currencyCode: string) => {
+        const newCurrency = currencies.find(c => c.code === currencyCode);
+        if (newCurrency) {
+            setCurrency(newCurrency);
+        }
+    };
+
+    return (
+        <Select value={currency.code} onValueChange={handleCurrencyChange}>
+            <SelectTrigger className="w-auto h-9 text-xs">
+                <SelectValue placeholder="Moneda" />
+            </SelectTrigger>
+            <SelectContent>
+                {currencies.map(c => (
+                    <SelectItem key={c.code} value={c.code}>
+                        {c.code} ({c.symbol})
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    );
+}
 
 export default function AdminLayout({
   children,
@@ -130,8 +158,8 @@ export default function AdminLayout({
           </SheetContent>
         </Sheet>
         <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-          <div className="ml-auto flex-1 sm:flex-initial">
-             {/* You can add a search bar here if needed */}
+          <div className="ml-auto flex items-center gap-4">
+             <CurrencySelector />
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
