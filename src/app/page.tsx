@@ -76,10 +76,10 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
                   priority={index === 0}
                 />
                 <div className="relative z-10 container mx-auto px-4 animate-in fade-in-0 slide-in-from-bottom-10 duration-700">
-                  <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-shadow-lg">
+                  <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-shadow-lg">
                     {banner.title}
                   </h1>
-                  <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto text-shadow">
+                  <p className="mt-4 text-md sm:text-lg max-w-2xl mx-auto text-shadow">
                     {banner.description}
                   </p>
                 </div>
@@ -137,7 +137,7 @@ function FeaturedProductsCarousel({ products }: { products: Product[] }) {
     return (
         <section className="py-16 md:py-24 bg-gradient-to-b from-primary-light to-background">
             <div className="container mx-auto px-4">
-                <h2 className="text-4xl md:text-5xl font-bold text-center mb-12 md:mb-16 text-primary">Nuestras Mejores Ofertas</h2>
+                <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 md:mb-16 text-primary">Nuestras Mejores Ofertas</h2>
                 <Carousel
                     opts={{
                         align: 'start',
@@ -267,11 +267,11 @@ export default function Home() {
       <footer className="py-10 border-t border-border/40 bg-muted/30">
         <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 text-muted-foreground px-4">
           <div>
-            <h3 className="font-bold text-xl text-foreground mb-3">BEM STORE HN</h3>
+            <h3 className="font-bold text-lg md:text-xl text-foreground mb-3">BEM STORE HN</h3>
             <p className="text-sm">Belleza en su Forma más Pura.</p>
           </div>
           <div>
-            <h4 className="font-bold text-lg text-foreground mb-3">Tienda</h4>
+            <h4 className="font-bold text-md md:text-lg text-foreground mb-3">Tienda</h4>
             <ul className="space-y-2 text-sm">
               {categories.map(cat => (
                 <li key={cat.id}><Link href="#" className="hover:text-primary">{cat.label}</Link></li>
@@ -279,14 +279,14 @@ export default function Home() {
             </ul>
           </div>
           <div>
-            <h4 className="font-bold text-lg text-foreground mb-3">Sobre Nosotros</h4>
+            <h4 className="font-bold text-md md:text-lg text-foreground mb-3">Sobre Nosotros</h4>
             <ul className="space-y-2 text-sm">
               <li><Link href="#" className="hover:text-primary">Nuestra Historia</Link></li>
               <li><Link href="#" className="hover:text-primary">Contacto</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="font-bold text-lg text-foreground mb-3">Síguenos</h4>
+            <h4 className="font-bold text-md md:text-lg text-foreground mb-3">Síguenos</h4>
             <div className="flex items-center gap-4">
                 <a href="https://instagram.com/bemstorehn" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
                     <Instagram className="h-6 w-6" />
@@ -310,3 +310,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

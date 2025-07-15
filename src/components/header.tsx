@@ -33,10 +33,10 @@ export function Header({ selectedCategory, onSelectCategory, hasOfferProducts }:
   return (
     <header className="py-4 px-4 md:px-6 bg-background/80 backdrop-blur-sm sticky top-0 z-40 border-b border-border/40">
       <div className="container mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-3" onClick={() => handleCategoryClick(null)}>
-            <Leaf className="w-8 h-8 text-primary" />
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-wide">
+        <div className="flex items-center gap-4 md:gap-8">
+          <Link href="/" className="flex items-center gap-2" onClick={() => handleCategoryClick(null)}>
+            <Leaf className="w-6 h-6 md:w-8 md:h-8 text-primary" />
+            <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-wide">
               BEM STORE HN
             </h1>
           </Link>
@@ -69,16 +69,16 @@ export function Header({ selectedCategory, onSelectCategory, hasOfferProducts }:
            )}
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" className="relative rounded-full h-12 w-12" onClick={toggleCart}>
+          <Button variant="outline" size="icon" className="relative rounded-full h-10 w-10 md:h-12 md:w-12" onClick={toggleCart}>
             {itemCount > 0 && (
               <Badge
                 variant="destructive"
-                className="absolute -top-1 -right-1 h-6 w-6 rounded-full flex items-center justify-center p-0"
+                className="absolute -top-1 -right-1 h-5 w-5 md:h-6 md:w-6 rounded-full flex items-center justify-center p-0 text-xs"
               >
                 {itemCount}
               </Badge>
             )}
-            <ShoppingCart className="w-7 h-7" />
+            <ShoppingCart className="w-5 h-5 md:w-6 md:h-6" />
             <span className="sr-only">Carrito de Compras</span>
           </Button>
         </div>
@@ -86,3 +86,5 @@ export function Header({ selectedCategory, onSelectCategory, hasOfferProducts }:
     </header>
   );
 }
+
+    

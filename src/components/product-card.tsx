@@ -69,18 +69,18 @@ export function ProductCard({ product, className }: ProductCardProps) {
           </div>
         </CardHeader>
         <CardContent className="p-4 flex-grow flex flex-col">
-          {category && <Badge variant="outline" className="mb-2 w-fit">{category.label}</Badge>}
-          <h4 className="font-bold text-xl leading-tight flex-grow group-hover:text-primary transition-colors">{product.name}</h4>
+          {category && <Badge variant="outline" className="mb-2 w-fit text-xs">{category.label}</Badge>}
+          <h4 className="font-bold text-md md:text-lg leading-tight flex-grow group-hover:text-primary transition-colors">{product.name}</h4>
           {product.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{product.description}</p>}
         </CardContent>
-        <CardFooter className="p-4 pt-0 flex flex-col items-start gap-4 mt-auto">
+        <CardFooter className="p-4 pt-0 flex flex-col items-start gap-3 mt-auto">
           <div className="flex flex-col items-start w-full">
             <div className="flex items-baseline gap-2">
-                <p className={cn("font-bold text-foreground", isDiscounted ? "text-2xl text-offer" : "text-2xl")}>
+                <p className={cn("font-bold text-foreground", isDiscounted ? "text-xl md:text-2xl text-offer" : "text-xl md:text-2xl")}>
                     {formatCurrency(product.price, currency.code)}
                 </p>
                 {isDiscounted && (
-                    <p className="text-lg text-muted-foreground line-through">
+                    <p className="text-md md:text-lg text-muted-foreground line-through">
                         {formatCurrency(product.originalPrice!, currency.code)}
                     </p>
                 )}
@@ -100,3 +100,5 @@ export function ProductCard({ product, className }: ProductCardProps) {
     </Link>
   );
 }
+
+    

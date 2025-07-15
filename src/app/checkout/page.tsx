@@ -151,7 +151,7 @@ export default function CheckoutPage() {
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Número de Teléfono</FormLabel>
+                      <FormLabel>Teléfono</FormLabel>
                       <FormControl>
                         <Input placeholder="(123) 456-7890" {...field} />
                       </FormControl>
@@ -189,19 +189,19 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                     <div className="flex-grow">
-                      <p className="font-semibold">{item.name}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-semibold text-sm">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">
                         {formatCurrency(item.price, currency.code)}
                       </p>
                     </div>
-                    <p className="font-semibold">
+                    <p className="font-semibold text-sm">
                       {formatCurrency(item.price * item.quantity, currency.code)}
                     </p>
                   </div>
                 ))}
               </div>
               <Separator className="my-6" />
-              <div className="space-y-2">
+              <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <p>Subtotal</p>
                   <p>{formatCurrency(total, currency.code)}</p>
@@ -216,7 +216,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
               <Separator className="my-6" />
-              <div className="flex justify-between text-xl font-bold">
+              <div className="flex justify-between text-lg font-bold">
                 <p>Total</p>
                 <p>{formatCurrency(total, currency.code)}</p>
               </div>
@@ -227,3 +227,5 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
+    

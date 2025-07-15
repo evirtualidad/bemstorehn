@@ -60,8 +60,8 @@ export default function ProductDetailPage({ params }: { params: { productId: str
   return (
     <div className="bg-background min-h-screen">
       <Header />
-      <main className="container mx-auto px-4 py-12">
-        <div className="grid md:grid-cols-2 gap-12 items-start">
+      <main className="container mx-auto px-4 py-8 md:py-12">
+        <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-start">
           {/* Product Image */}
           <div className="relative aspect-square">
             <Image
@@ -72,10 +72,10 @@ export default function ProductDetailPage({ params }: { params: { productId: str
               data-ai-hint={product.aiHint}
             />
             <div className="absolute top-4 right-4 flex flex-col gap-2">
-              {isDiscounted && <Badge variant="offer" className="text-lg">Oferta</Badge>}
+              {isDiscounted && <Badge variant="offer" className="text-md md:text-lg">Oferta</Badge>}
               <Badge 
                 className={cn(
-                  "text-lg",
+                  "text-md md:text-lg",
                   stockStatus === "Agotado" && "bg-destructive text-destructive-foreground",
                   stockStatus === "Poco Stock" && "bg-amber-500 text-white"
                 )}
@@ -88,29 +88,29 @@ export default function ProductDetailPage({ params }: { params: { productId: str
           {/* Product Details */}
           <div className="flex flex-col gap-6">
             <div>
-                {category && <Badge variant="outline" className="mb-2 w-fit text-md">{category.label}</Badge>}
-                <h1 className="text-4xl md:text-5xl font-bold text-primary">{product.name}</h1>
+                {category && <Badge variant="outline" className="mb-2 w-fit text-sm md:text-md">{category.label}</Badge>}
+                <h1 className="text-3xl md:text-4xl font-bold text-primary">{product.name}</h1>
             </div>
-            <p className="text-lg text-muted-foreground leading-relaxed">
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
               {product.description}
             </p>
             <div className="flex items-baseline gap-4">
-                <p className={cn("font-bold", isDiscounted ? "text-4xl text-offer" : "text-4xl text-foreground")}>
+                <p className={cn("font-bold", isDiscounted ? "text-3xl md:text-4xl text-offer" : "text-3xl md:text-4xl text-foreground")}>
                     {formatCurrency(product.price, currency.code)}
                 </p>
                  {isDiscounted && (
-                    <p className="text-2xl text-muted-foreground line-through">
+                    <p className="text-xl md:text-2xl text-muted-foreground line-through">
                         {formatCurrency(product.originalPrice!, currency.code)}
                     </p>
                 )}
             </div>
             <Button 
               size="lg"
-              className="w-full md:w-auto text-lg"
+              className="w-full md:w-auto text-md md:text-lg py-6"
               disabled={product.stock <= 0}
               onClick={handleAddToCart}
             >
-              <ShoppingCart className="mr-3 h-6 w-6" />
+              <ShoppingCart className="mr-3 h-5 w-5" />
               Añadir al Carrito
             </Button>
           </div>
@@ -118,7 +118,7 @@ export default function ProductDetailPage({ params }: { params: { productId: str
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (
-          <div className="mt-20">
+          <div className="mt-16 md:mt-20">
             <Separator className="my-12" />
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 md:mb-14">También te podría interesar</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
@@ -132,3 +132,5 @@ export default function ProductDetailPage({ params }: { params: { productId: str
     </div>
   );
 }
+
+    
