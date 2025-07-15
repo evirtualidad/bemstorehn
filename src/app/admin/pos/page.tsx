@@ -503,15 +503,17 @@ function ShippingDialog({
   const selectedShippingOption = form.watch('shippingOption');
 
   React.useEffect(() => {
-    if (selectedShippingOption === 'local') {
-      form.setValue('department', 'Francisco Morazán');
-      form.setValue('municipality', 'Distrito Central');
-      form.clearErrors('department');
-      form.clearErrors('municipality');
+    const isNational = selectedShippingOption === 'national';
+    if (isNational) {
+        if (form.getValues('department') === 'Francisco Morazán') {
+            form.setValue('department', undefined);
+            form.setValue('municipality', undefined);
+        }
     } else {
-      // When switching to national, clear previous selection.
-      form.setValue('department', undefined);
-      form.setValue('municipality', undefined);
+        form.setValue('department', 'Francisco Morazán');
+        form.setValue('municipality', 'Distrito Central');
+        form.clearErrors('department');
+        form.clearErrors('municipality');
     }
   }, [selectedShippingOption, form]);
 

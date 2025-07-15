@@ -125,17 +125,19 @@ function ShippingDialog({
     const selectedShippingOption = form.watch('shippingOption');
     
     useEffect(() => {
-        if (selectedShippingOption === 'local') {
+      const isNational = selectedShippingOption === 'national';
+      if (isNational) {
+          if (form.getValues('department') === 'Francisco Morazán') {
+              form.setValue('department', undefined);
+              form.setValue('municipality', undefined);
+          }
+      } else {
           form.setValue('department', 'Francisco Morazán');
           form.setValue('municipality', 'Distrito Central');
           form.clearErrors('department');
           form.clearErrors('municipality');
-        } else {
-           // When switching to national, clear previous selection.
-           form.setValue('department', undefined);
-           form.setValue('municipality', undefined);
-        }
-      }, [selectedShippingOption, form]);
+      }
+    }, [selectedShippingOption, form]);
 
     const handleSave = (values: z.infer<typeof shippingFormSchema>) => {
         const cost = values.shippingOption === 'local' ? shippingLocalCost : shippingNationalCost;
