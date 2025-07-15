@@ -28,6 +28,9 @@ import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
 import { useOrdersStore } from '@/hooks/use-orders';
 import { useSettingsStore } from '@/hooks/use-settings-store';
+import Link from 'next/link';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(2, {
@@ -162,9 +165,9 @@ export default function CheckoutPage() {
                   )}
                 />
                 <div className="flex flex-col sm:flex-row gap-2">
-                    <Button variant="outline" size="lg" className="w-full" onClick={toggleCart}>
-                        Volver al carrito
-                    </Button>
+                    <Link href="/" className={cn(buttonVariants({ variant: 'outline', size: 'lg'}), 'w-full')}>
+                        Continuar Comprando
+                    </Link>
                     <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
                       {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Enviar Pedido
