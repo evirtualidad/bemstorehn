@@ -67,30 +67,29 @@ export default function Home() {
       <Header />
       <main>
         {/* Hero Section */}
-        <section className="relative h-[50vh] w-full">
+        <section className="relative w-full">
           <Carousel
             plugins={[plugin.current]}
-            className="w-full h-full"
+            className="w-full"
             onMouseEnter={plugin.current.stop}
             onMouseLeave={plugin.current.reset}
             opts={{
               loop: true,
             }}
           >
-            <CarouselContent className="h-full">
+            <CarouselContent>
               {heroBanners.map((banner, index) => (
-                <CarouselItem key={index} className="h-full">
-                  <div className="relative h-full w-full flex items-center justify-center text-center text-white">
+                <CarouselItem key={index}>
+                  <div className="relative h-[50vh] w-full flex items-center justify-center text-center text-white">
                     <Image
                       src={banner.image}
                       alt={banner.title}
                       fill
-                      objectFit="cover"
-                      className="z-[-1] brightness-75"
+                      className="object-cover brightness-75"
                       data-ai-hint={banner.aiHint}
                       priority={index === 0}
                     />
-                    <div className="container mx-auto px-4 z-10 animate-in fade-in-0 slide-in-from-bottom-10 duration-700">
+                    <div className="relative z-10 container mx-auto px-4 animate-in fade-in-0 slide-in-from-bottom-10 duration-700">
                       <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-shadow-lg">
                         {banner.title}
                       </h1>
