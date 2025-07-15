@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -551,21 +552,22 @@ function ShippingDialog({
                     >
                       <FormItem>
                         <FormControl>
-                          <label className={cn('flex items-center gap-4 rounded-lg border p-4 cursor-pointer hover:bg-accent/50', field.value === 'local' && 'bg-accent border-primary')}>
-                            <RadioGroupItem value="local" />
+                          <label className={cn('flex flex-col justify-center items-center gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50 min-h-[100px]', field.value === 'local' && 'bg-accent border-primary')}>
+                            <RadioGroupItem value="local" className="sr-only" />
                             <MapPin className="h-6 w-6 text-primary" />
-                            <div className="flex-1">
-                              <p className="font-semibold">Local (TGU)</p>
+                            <div className="text-center">
+                              <p className="font-semibold">Local</p>
+                              <p className="text-xs text-muted-foreground">(TGU)</p>
                             </div>
                           </label>
                         </FormControl>
                       </FormItem>
                       <FormItem>
                         <FormControl>
-                          <label className={cn('flex items-center gap-4 rounded-lg border p-4 cursor-pointer hover:bg-accent/50', field.value === 'national' && 'bg-accent border-primary')}>
-                            <RadioGroupItem value="national" />
+                           <label className={cn('flex flex-col justify-center items-center gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50 min-h-[100px]', field.value === 'national' && 'bg-accent border-primary')}>
+                            <RadioGroupItem value="national" className="sr-only"/>
                             <Truck className="h-6 w-6 text-primary" />
-                            <div className="flex-1">
+                             <div className="text-center">
                               <p className="font-semibold">Nacional</p>
                             </div>
                           </label>

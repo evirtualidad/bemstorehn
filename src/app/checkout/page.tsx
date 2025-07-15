@@ -159,44 +159,45 @@ function ShippingDialog({
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleSave)} id="shipping-form" className="space-y-4 pt-4">
                         <FormField
-                            control={form.control}
-                            name="shippingOption"
-                            render={({ field }) => (
+                          control={form.control}
+                          name="shippingOption"
+                          render={({ field }) => (
                             <FormItem className="space-y-3">
-                                <FormLabel>Tipo de Envío</FormLabel>
-                                <FormControl>
+                              <FormLabel>Tipo de Envío</FormLabel>
+                              <FormControl>
                                 <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                                 >
-                                    <FormItem>
+                                  <FormItem>
                                     <FormControl>
-                                        <label className={cn("flex items-center gap-4 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'local' && "bg-accent border-primary")}>
-                                        <RadioGroupItem value="local" />
-                                        <MapPin className="h-6 w-6 text-primary"/>
-                                        <div className="flex-1">
-                                            <p className="font-semibold">Local (TGU)</p>
+                                      <label className={cn('flex flex-col justify-center items-center gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50 min-h-[100px]', field.value === 'local' && 'bg-accent border-primary')}>
+                                        <RadioGroupItem value="local" className="sr-only" />
+                                        <MapPin className="h-6 w-6 text-primary" />
+                                        <div className="text-center">
+                                          <p className="font-semibold">Local</p>
+                                          <p className="text-xs text-muted-foreground">(TGU)</p>
                                         </div>
-                                        </label>
+                                      </label>
                                     </FormControl>
-                                    </FormItem>
-                                    <FormItem>
+                                  </FormItem>
+                                  <FormItem>
                                     <FormControl>
-                                        <label className={cn("flex items-center gap-4 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'national' && "bg-accent border-primary")}>
-                                        <RadioGroupItem value="national" />
-                                        <Truck className="h-6 w-6 text-primary"/>
-                                        <div className="flex-1">
-                                            <p className="font-semibold">Nacional</p>
+                                      <label className={cn('flex flex-col justify-center items-center gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50 min-h-[100px]', field.value === 'national' && 'bg-accent border-primary')}>
+                                        <RadioGroupItem value="national" className="sr-only"/>
+                                        <Truck className="h-6 w-6 text-primary" />
+                                        <div className="text-center">
+                                          <p className="font-semibold">Nacional</p>
                                         </div>
-                                        </label>
+                                      </label>
                                     </FormControl>
-                                    </FormItem>
+                                  </FormItem>
                                 </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
+                              </FormControl>
+                              <FormMessage />
                             </FormItem>
-                            )}
+                          )}
                         />
                         {selectedShippingOption === 'national' ? (
                             <>
