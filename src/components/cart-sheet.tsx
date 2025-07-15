@@ -113,7 +113,7 @@ export function CartSheet() {
           <div className="flex items-center justify-between">
             <SheetTitle>Carrito de Compras ({items.length})</SheetTitle>
             <SheetClose asChild>
-                <Button variant="ghost" size="icon" className={cn('h-12 w-12 p-2 text-destructive/70 hover:bg-muted')}>
+                <Button variant="ghost" size="icon" className={cn('h-12 w-12 p-2 bg-destructive/20 text-destructive hover:bg-muted hover:text-muted-foreground')}>
                     <X className="h-8 w-8" />
                     <span className="sr-only">Cerrar</span>
                 </Button>
