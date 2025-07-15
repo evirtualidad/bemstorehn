@@ -19,6 +19,7 @@ import {
   PlusCircle,
   Receipt,
   Trash2,
+  Coins,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -226,25 +227,24 @@ function NewOrderDialog() {
             paymentReference: values.paymentReference,
         };
 
-        const result = await createOrder(orderInput);
+        // For local simulation, we directly add to the store.
+        // The `createOrder` flow could still be used for other purposes e.g. logging
+        const tempId = `ORD-${Date.now().toString().slice(-6)}`;
         
-        if (result.success) {
-            cart.forEach(item => decreaseStock(item.id, item.quantity));
-            addOrder({
-              id: result.orderId,
-              customer: orderInput.customer,
-              items: orderInput.items,
-              total: orderInput.total,
-              paymentMethod: orderInput.paymentMethod,
-              status: orderInput.paymentMethod === 'credito' ? 'pending' : 'paid',
-              date: new Date().toISOString(),
-              paymentDueDate: orderInput.paymentDueDate,
-            });
-            toast({ title: '¡Pedido Creado!', description: `Pedido ${result.orderId} creado con éxito.` });
-            resetAndClose();
-        } else {
-            throw new Error('La creación del pedido falló');
-        }
+        cart.forEach(item => decreaseStock(item.id, item.quantity));
+        addOrder({
+          id: tempId,
+          customer: orderInput.customer,
+          items: orderInput.items,
+          total: orderInput.total,
+          paymentMethod: orderInput.paymentMethod,
+          date: new Date().toISOString(),
+          paymentDueDate: orderInput.paymentDueDate,
+        });
+
+        toast({ title: '¡Pedido Creado!', description: `Pedido ${tempId} creado con éxito.` });
+        resetAndClose();
+        
     } catch (error) {
       console.error(error);
       toast({ title: 'Error al crear pedido', variant: 'destructive' });
@@ -412,3 +412,5 @@ export default function OrdersPage() {
     </main>
   );
 }
+
+    

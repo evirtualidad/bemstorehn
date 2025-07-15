@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useOrdersStore } from '@/hooks/use-orders';
+import { useOrdersStore, type Order } from '@/hooks/use-orders';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency, cn } from '@/lib/utils';
 import {
@@ -55,16 +55,17 @@ import { format, differenceInDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 
 const paymentMethodIcons = {
@@ -86,16 +87,27 @@ function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCod
   const summary = React.useMemo(() => {
     const totalRevenue = orders.reduce((acc, order) => acc + order.total, 0);
     const accountsReceivable = orders
-      .filter((o) => o.paymentMethod === 'credito' && o.status === 'pending')
-      .reduce((acc, order) => acc + order.total, 0);
+      .filter((o) => o.status === 'pending')
+      .reduce((acc, order) => acc + order.balance, 0);
     const paidRevenue = totalRevenue - accountsReceivable;
     
     const revenueByMethod = orders.reduce((acc, order) => {
-      const method = order.paymentMethod;
-      if (!acc[method]) {
-        acc[method] = { name: paymentMethodLabels[method], value: 0 };
+      // For credit, count payments, for others count total
+      if (order.paymentMethod === 'credito') {
+          order.payments.forEach(p => {
+              const method = p.method;
+               if (!acc[method]) {
+                  acc[method] = { name: paymentMethodLabels[method], value: 0 };
+              }
+              acc[method].value += p.amount;
+          });
+      } else {
+        const method = order.paymentMethod;
+        if (!acc[method]) {
+            acc[method] = { name: paymentMethodLabels[method], value: 0 };
+        }
+        acc[method].value += order.total;
       }
-      acc[method].value += order.total;
       return acc;
     }, {} as Record<string, {name: string, value: number}>);
     
@@ -215,22 +227,103 @@ function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCod
   );
 }
 
-function AccountsReceivable({ orders, currencyCode, markAsPaid }: { orders: any[], currencyCode: string, markAsPaid: (orderId: string) => void }) {
-  const { toast } = useToast();
-  const creditOrders = orders.filter(o => o.paymentMethod === 'credito' && o.status === 'pending');
+function RegisterPaymentDialog({ order, children }: { order: Order, children: React.ReactNode }) {
+    const [isOpen, setIsOpen] = React.useState(false);
+    const [amount, setAmount] = React.useState('');
+    const [paymentMethod, setPaymentMethod] = React.useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo');
+    const [error, setError] = React.useState('');
+    const { addPayment } = useOrdersStore();
+    const { toast } = useToast();
+    const { currency } = useCurrencyStore();
 
-  const handleMarkAsPaid = (orderId: string) => {
-    markAsPaid(orderId);
-    toast({
-        title: '¡Pago Registrado!',
-        description: 'La cuenta ha sido marcada como pagada.',
-    });
-  }
+    const handleRegisterPayment = () => {
+        const paymentAmount = parseFloat(amount);
+        if (isNaN(paymentAmount) || paymentAmount <= 0) {
+            setError('Por favor, ingresa un monto válido.');
+            return;
+        }
+        if (paymentAmount > order.balance) {
+            setError('El monto no puede ser mayor que el saldo pendiente.');
+            return;
+        }
+        setError('');
+        addPayment(order.id, paymentAmount, paymentMethod);
+        toast({
+            title: '¡Pago Registrado!',
+            description: `Se registró un pago de ${formatCurrency(paymentAmount, currency.code)} para el pedido ${order.id}.`,
+        });
+        setIsOpen(false);
+        setAmount('');
+    }
+
+    const paymentOptions = [
+        { value: 'efectivo', label: 'Efectivo', icon: Banknote },
+        { value: 'tarjeta', label: 'Tarjeta', icon: CreditCard },
+        { value: 'transferencia', label: 'Transferencia', icon: Landmark },
+    ] as const;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                {children}
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Registrar Pago para {order.customer.name}</DialogTitle>
+                    <DialogDescription>
+                        Pedido: {order.id} <br/>
+                        Saldo pendiente: <span className='font-bold'>{formatCurrency(order.balance, currency.code)}</span>
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="amount">Monto a Pagar</Label>
+                        <div className="flex gap-2">
+                            <Input
+                                id="amount"
+                                type="number"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                                placeholder='0.00'
+                            />
+                            <Button variant="secondary" onClick={() => setAmount(order.balance.toString())}>
+                                Pagar Total
+                            </Button>
+                        </div>
+                        {error && <p className="text-sm text-destructive">{error}</p>}
+                    </div>
+                     <div className="space-y-2">
+                        <Label>Forma de Pago</Label>
+                        <div className='grid grid-cols-3 gap-2'>
+                           {paymentOptions.map(method => (
+                             <Button
+                                key={method.value}
+                                type="button"
+                                variant={paymentMethod === method.value ? 'secondary' : 'outline'}
+                                onClick={() => setPaymentMethod(method.value)}
+                              >
+                                 <method.icon className="mr-2 h-4 w-4"/> {method.label}
+                             </Button>
+                           ))}
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
+                    <Button onClick={handleRegisterPayment}>Registrar Pago</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function AccountsReceivable({ orders, currencyCode }: { orders: any[], currencyCode: string }) {
+  const creditOrders = orders.filter(o => o.paymentMethod === 'credito' && o.status === 'pending');
 
   const getStatus = (dueDate: string) => {
     const days = differenceInDays(new Date(), parseISO(dueDate));
     if (days > 0) return { label: `${days} días vencido`, color: 'text-red-500', icon: <AlertCircle className="h-4 w-4 mr-2" /> };
-    if (days >= -7) return { label: `Vence en ${-days} días`, color: 'text-amber-500', icon: <Clock className="h-4 w-4 mr-2" /> };
+    if (days >= -7 && days <= 0) return { label: `Vence en ${-days} días`, color: 'text-amber-500', icon: <Clock className="h-4 w-4 mr-2" /> };
     return { label: 'Pendiente', color: 'text-muted-foreground', icon: <Clock className="h-4 w-4 mr-2" /> };
   }
 
@@ -250,13 +343,13 @@ function AccountsReceivable({ orders, currencyCode, markAsPaid }: { orders: any[
               <TableHead>Fecha de Venta</TableHead>
               <TableHead>Fecha de Vencimiento</TableHead>
               <TableHead>Estado</TableHead>
-              <TableHead className="text-right">Monto Pendiente</TableHead>
+              <TableHead className="text-right">Saldo Pendiente</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {creditOrders.length > 0 ? creditOrders.map(order => {
-                const status = getStatus(order.paymentDueDate);
+                const status = getStatus(order.paymentDueDate!);
                 return (
                     <TableRow key={order.id}>
                         <TableCell>
@@ -264,32 +357,18 @@ function AccountsReceivable({ orders, currencyCode, markAsPaid }: { orders: any[
                             <div className="text-sm text-muted-foreground">{order.customer.phone}</div>
                         </TableCell>
                         <TableCell>{format(parseISO(order.date), 'd MMM, yyyy', { locale: es })}</TableCell>
-                        <TableCell>{format(parseISO(order.paymentDueDate), 'd MMM, yyyy', { locale: es })}</TableCell>
+                        <TableCell>{format(parseISO(order.paymentDueDate!), 'd MMM, yyyy', { locale: es })}</TableCell>
                         <TableCell>
                             <div className={cn("flex items-center", status.color)}>
                                 {status.icon}
                                 {status.label}
                             </div>
                         </TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(order.total, currencyCode)}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(order.balance, currencyCode)}</TableCell>
                         <TableCell className="text-right">
-                           <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="outline" size="sm">Registrar Pago</Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>Confirmar Pago</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        ¿Estás seguro de que deseas marcar esta cuenta de <span className='font-bold'>{order.customer.name}</span> por un monto de <span className='font-bold'>{formatCurrency(order.total, currencyCode)}</span> como pagada? Esta acción no se puede deshacer.
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleMarkAsPaid(order.id)}>Sí, marcar como pagada</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                            <RegisterPaymentDialog order={order}>
+                                <Button variant="outline" size="sm">Registrar Pago</Button>
+                            </RegisterPaymentDialog>
                         </TableCell>
                     </TableRow>
                 )
@@ -357,7 +436,7 @@ function Transactions({ orders, currencyCode }: { orders: any[], currencyCode: s
 }
 
 export default function FinancePage() {
-  const { orders, markOrderAsPaid } = useOrdersStore();
+  const { orders } = useOrdersStore();
   const { currency } = useCurrencyStore();
 
   return (
@@ -378,14 +457,16 @@ export default function FinancePage() {
                     <FinancialSummary orders={orders} currencyCode={currency.code} />
                 </TabsContent>
                 <TabsContent value="accounts-receivable" className="mt-6">
-                    <AccountsReceivable orders={orders} currencyCode={currency.code} markAsPaid={markOrderAsPaid} />
+                    <AccountsReceivable orders={orders} currencyCode={currency.code} />
                 </TabsContent>
                  <TabsContent value="transactions" className="mt-6">
                     <Transactions orders={orders} currencyCode={currency.code} />
-                </TabsContent>
+                 </TabsContent>
             </Tabs>
         </main>
       </div>
     </div>
   );
 }
+
+    
