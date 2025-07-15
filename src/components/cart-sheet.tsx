@@ -42,13 +42,9 @@ function RecommendedProducts() {
 
       setLoading(true);
       try {
-        // Ensure we don't recommend products already in the cart
-        const productIdsInCart = new Set(items.map(i => i.id));
-        const availableProductsForRecs = products.filter(p => !productIdsInCart.has(p.id));
-
         const result = await getRecommendedProducts({
           productsInCart: items,
-          allProducts: availableProductsForRecs,
+          allProducts: products, // Pass all products, the flow will handle filtering
         });
         setRecommendations(result.recommendations || []);
       } catch (error) {

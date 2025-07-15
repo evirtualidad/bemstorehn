@@ -92,7 +92,19 @@ const recommendProductsFlow = ai.defineFlow(
     outputSchema: RecommendedProductsOutputSchema,
   },
   async (input) => {
-    const { output } = await recommendationPrompt(input);
+    // Filter out products that are already in the cart from the list of all products.
+    const productIdsInCart = new Set(input.productsInCart.map(p => p.id));
+    const availableProducts = input.allProducts.filter(p => !productIdsInCart.has(p.id));
+
+    // If there are no available products to recommend, return an empty array.
+    if (availableProducts.length === 0) {
+      return { recommendations: [] };
+    }
+
+    const { output } = await recommendationPrompt({
+        ...input,
+        allProducts: availableProducts
+    });
     return output!;
   }
 );
