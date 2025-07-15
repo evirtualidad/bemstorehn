@@ -36,49 +36,47 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [api, setApi] = React.useState<CarouselApi | null>(null);
   const [current, setCurrent] = React.useState(0);
   const [isPlaying, setIsPlaying] = React.useState(true);
-  const autoplayPlugin = React.useRef(Autoplay({ delay: 5000, stopOnInteraction: false }));
+
+  const autoplayPlugin = React.useRef(
+    Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: true })
+  );
 
   React.useEffect(() => {
-    if (!api) {
-      return;
-    }
+    if (!api) return;
 
-    const onSettle = () => {
+    const onSelect = (api: CarouselApi) => {
       setCurrent(api.selectedScrollSnap());
     };
+
+    const onPlay = () => setIsPlaying(true);
+    const onStop = () => setIsPlaying(false);
+
+    api.on('select', onSelect);
+    api.on('autoplay:play', onPlay);
+    api.on('autoplay:stop', onStop);
     
-    const onAutoplayPlay = () => setIsPlaying(true);
-    const onAutoplayStop = () => setIsPlaying(false);
-
-    api.on('settle', onSettle);
-    api.on('autoplay:play', onAutoplayPlay);
-    api.on('autoplay:stop', onAutoplayStop);
-
-    // Initial state
+    // Set initial state
     setCurrent(api.selectedScrollSnap());
-    if (isPlaying) {
-      api.plugins().autoplay?.play();
-    }
+    setIsPlaying(api.plugins().autoplay.isPlaying());
 
     return () => {
-      api.off('settle', onSettle);
-      api.off('autoplay:play', onAutoplayPlay);
-      api.off('autoplay:stop', onAutoplayStop);
+      api.off('select', onSelect);
+      api.off('autoplay:play', onPlay);
+      api.off('autoplay:stop', onStop);
     };
-  }, [api, isPlaying]);
+  }, [api]);
 
   const togglePlay = React.useCallback(() => {
-    const autoplay = api?.plugins().autoplay;
+    const autoplay = api?.plugins()?.autoplay;
     if (!autoplay) return;
 
-    if (isPlaying) {
+    if (autoplay.isPlaying()) {
       autoplay.stop();
     } else {
       autoplay.play();
     }
-    setIsPlaying(!isPlaying);
-  }, [api, isPlaying]);
-  
+  }, [api]);
+
   if (banners.length === 0) return null;
 
   return (
@@ -87,7 +85,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
         setApi={setApi}
         plugins={[autoplayPlugin.current]}
         className="w-full"
-        opts={{ loop: true, duration: 500 }}
+        opts={{ loop: true, duration: 1000 }}
       >
         <CarouselContent>
           {banners.map((banner, index) => (
@@ -130,7 +128,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
               >
                  {index === current && isPlaying && (
                   <div
-                    key={current} // Add key to force re-render
+                    key={current} // Add key to force re-render/restart animation
                     className="h-full rounded-full bg-primary/80 animate-fill-progress"
                     style={{ animationDuration: '5s' }}
                   />
@@ -153,11 +151,12 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   );
 }
 
-
 function FeaturedProductsCarousel({ products }: { products: Product[] }) {
     if (products.length === 0) return null;
 
-    const autoplayPlugin = React.useRef(Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true }));
+    const autoplayPlugin = React.useRef(
+        Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })
+    );
 
     return (
         <section className="py-16 md:py-24 bg-gradient-to-b from-primary-light to-background">
