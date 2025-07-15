@@ -125,19 +125,19 @@ function ShippingDialog({
     const selectedShippingOption = form.watch('shippingOption');
     
     useEffect(() => {
-      const isNational = selectedShippingOption === 'national';
-      if (isNational) {
-          if (form.getValues('department') === 'Francisco Morazán') {
-              form.setValue('department', undefined);
-              form.setValue('municipality', undefined);
-          }
-      } else {
-          form.setValue('department', 'Francisco Morazán');
-          form.setValue('municipality', 'Distrito Central');
-          form.clearErrors('department');
-          form.clearErrors('municipality');
-      }
-    }, [selectedShippingOption, form]);
+    const isNational = selectedShippingOption === 'national';
+    if (isNational) {
+        if (form.getValues('department') === 'Francisco Morazán') {
+            form.setValue('department', undefined);
+            form.setValue('municipality', undefined);
+        }
+    } else {
+        form.setValue('department', 'Francisco Morazán');
+        form.setValue('municipality', 'Distrito Central');
+        form.clearErrors('department');
+        form.clearErrors('municipality');
+    }
+  }, [selectedShippingOption, form]);
 
     const handleSave = (values: z.infer<typeof shippingFormSchema>) => {
         const cost = values.shippingOption === 'local' ? shippingLocalCost : shippingNationalCost;
@@ -536,9 +536,9 @@ export default function CheckoutPage() {
                                     value={field.value}
                                     className="grid grid-cols-1 gap-4"
                                 >
-                                    <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'tarjeta' && "bg-accent border-primary")}>
+                                    <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer", field.value === 'tarjeta' && "bg-accent border-primary", "has-[input:disabled]:opacity-50 has-[input:disabled]:cursor-not-allowed")}>
                                         <div className="flex items-center gap-4">
-                                            <RadioGroupItem value="tarjeta" id="tarjeta"/>
+                                            <RadioGroupItem value="tarjeta" id="tarjeta" disabled/>
                                             <div className="flex-1 flex items-center gap-2">
                                                 <CreditCard className="h-5 w-5"/>
                                                 <p className="font-semibold">Pago con Tarjeta (Próximamente)</p>
