@@ -170,8 +170,8 @@ function ProductGrid({
                 className="object-cover group-hover:scale-105 transition-transform"
               />
             </div>
-            <div className="p-3">
-              <h3 className="font-semibold text-sm leading-tight h-10">{product.name}</h3>
+            <div className="flex-grow p-3 flex items-center">
+              <h3 className="font-semibold text-sm leading-tight h-10 flex items-center w-full">{product.name}</h3>
             </div>
              <div className="mt-auto bg-primary text-primary-foreground text-center p-2 rounded-b-md">
                 <span className="text-lg font-bold">${product.price.toFixed(2)}</span>
@@ -744,13 +744,13 @@ export default function PosPage() {
             <div className="lg:hidden fixed bottom-4 right-4 z-20">
                 <Button
                     size="lg"
-                    className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 bg-primary-light hover:bg-primary-light/90 text-primary border-4 border-background"
+                    className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 bg-primary text-primary-foreground hover:bg-primary/90 border-4 border-background"
                     onClick={() => setIsTicketVisible(true)}
                 >
                     <Receipt className="h-7 w-7" />
                     <span className="text-md font-bold">${total.toFixed(2)}</span>
                     {totalItems > 0 && (
-                        <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-bold rounded-full h-8 w-8 flex items-center justify-center border-4 border-background">
+                        <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-8 w-8 flex items-center justify-center border-4 border-background">
                             {totalItems}
                         </div>
                     )}
