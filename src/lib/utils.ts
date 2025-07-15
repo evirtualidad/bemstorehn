@@ -7,9 +7,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number, currencyCode: string, maximumFractionDigits: number = 2) {
-  return new Intl.NumberFormat('es-ES', {
+  return new Intl.NumberFormat('es-HN', {
     style: 'currency',
     currency: currencyCode,
     maximumFractionDigits: maximumFractionDigits,
+    currencyDisplay: 'symbol',
   }).format(amount);
 }
