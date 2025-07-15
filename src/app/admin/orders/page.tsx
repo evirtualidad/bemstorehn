@@ -38,7 +38,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Card,
@@ -137,11 +137,21 @@ const orderFormSchema = z
     message: 'La fecha de pago es obligatoria para pagos a crédito.',
     path: ['paymentDueDate'],
   })
-  .refine(data => data.paymentMethod !== 'credito' || (!!data.name && data.name.trim() !== ''), {
+  .refine(data => {
+    if (data.paymentMethod === 'credito') {
+      return !!data.name && data.name.trim() !== '';
+    }
+    return true;
+  }, {
     message: 'El nombre del cliente es obligatorio para pagos a crédito.',
     path: ['name'],
   })
-  .refine(data => data.paymentMethod !== 'credito' || (!!data.phone && data.phone.trim() !== ''), {
+  .refine(data => {
+    if (data.paymentMethod === 'credito') {
+      return !!data.phone && data.phone.trim() !== '';
+    }
+    return true;
+  }, {
     message: 'El teléfono del cliente es obligatorio para pagos a crédito.',
     path: ['phone'],
   })
