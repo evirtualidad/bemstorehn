@@ -108,12 +108,12 @@ export function CartSheet() {
   return (
     <Sheet open={isOpen} onOpenChange={toggleCart}>
       <SheetContent className="flex w-full flex-col sm:max-w-xl p-0">
-        <SheetHeader className="p-6">
+        <SheetHeader className="p-6 pb-0">
           <div className="flex items-center justify-between">
             <SheetTitle>Carrito de Compras ({items.length})</SheetTitle>
             <SheetClose asChild>
-                <Button variant="ghost" size="icon" className="h-10 w-10">
-                    <X className="h-6 w-6" />
+                <Button variant="ghost" size="icon" className="h-12 w-12 p-2">
+                    <X className="h-8 w-8" />
                     <span className="sr-only">Cerrar</span>
                 </Button>
             </SheetClose>
