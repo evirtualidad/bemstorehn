@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns/format';
-import { parseISO, isWithinInterval, startOfDay, endOfDay } from 'date-ns';
+import { parseISO, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import { DateRange } from 'react-day-picker';
 
