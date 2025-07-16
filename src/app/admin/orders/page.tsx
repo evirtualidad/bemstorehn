@@ -56,6 +56,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -388,22 +389,43 @@ function RejectOrderDialog({ order, children }: { order: Order; children: React.
     );
 }
 
-function CancelOrderDialog({ order, onCancel }: { order: Order; onCancel: () => void }) {
+function CancelOrderDialog({ order, children }: { order: Order; children: React.ReactNode }) {
+    const { cancelOrder } = useOrdersStore();
+    const { increaseStock } = useProductsStore();
+    const { toast } = useToast();
+
+    const handleCancel = () => {
+        if (order.status !== 'cancelled') {
+            order.items.forEach(item => {
+                increaseStock(item.id, item.quantity);
+            });
+        }
+        cancelOrder(order.id);
+        toast({
+            title: 'Pedido Cancelado',
+            description: `El pedido ${order.id} ha sido cancelado.`,
+            variant: 'destructive',
+        });
+    };
+
     return (
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>¿Estás seguro de que quieres cancelar este pedido?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Esta acción es irreversible. El pedido <span className='font-bold'>{order.id}</span> será cancelado. Si el pedido no estaba cancelado previamente, el stock de los productos será devuelto al inventario.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>No, mantener pedido</AlertDialogCancel>
-                <AlertDialogAction onClick={onCancel} className={cn(buttonVariants({ variant: "destructive" }))}>
-                    Sí, cancelar pedido
-                </AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
+        <AlertDialog>
+            <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>¿Estás seguro de que quieres cancelar este pedido?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Esta acción es irreversible. El pedido <span className='font-bold'>{order.id}</span> será cancelado. Si el pedido no estaba cancelado previamente, el stock de los productos será devuelto al inventario.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>No, mantener pedido</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleCancel} className={cn(buttonVariants({ variant: "destructive" }))}>
+                        Sí, cancelar pedido
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }
 
@@ -414,7 +436,6 @@ export default function OrdersPage() {
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
   
-  const [orderToCancel, setOrderToCancel] = React.useState<Order | null>(null);
   const [detailsOrder, setDetailsOrder] = React.useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
 
@@ -464,25 +485,6 @@ export default function OrdersPage() {
     setChannelFilter([]);
   };
 
-  const handleConfirmCancel = () => {
-    if (!orderToCancel) return;
-
-    if (orderToCancel.status !== 'cancelled') {
-        orderToCancel.items.forEach(item => {
-            increaseStock(item.id, item.quantity);
-        });
-    }
-    
-    cancelOrder(orderToCancel.id);
-
-    toast({
-        title: 'Pedido Cancelado',
-        description: `El pedido ${orderToCancel.id} ha sido cancelado y el stock ha sido devuelto.`,
-        variant: 'destructive',
-    });
-    setOrderToCancel(null);
-  };
-  
   const handleViewDetails = (order: Order) => {
     setDetailsOrder(order);
     setIsDetailsOpen(true);
@@ -645,34 +647,32 @@ export default function OrdersPage() {
                                 </RejectOrderDialog>
                             </div>
                         ) : (
-                            <AlertDialog open={!!orderToCancel} onOpenChange={(open) => !open && setOrderToCancel(null)}>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                    <Button
-                                        aria-haspopup="true"
-                                        size="icon"
-                                        variant="ghost"
-                                    >
-                                        <MoreHorizontal className="h-4 w-4" />
-                                        <span className="sr-only">Alternar menú</span>
-                                    </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                        <DropdownMenuItem onSelect={() => handleViewDetails(order)}>Ver Detalles</DropdownMenuItem>
-                                        {order.status !== 'cancelled' && (
-                                            <AlertDialogTrigger asChild>
-                                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setOrderToCancel(order); }}>
-                                                    Cancelar Pedido
-                                                </DropdownMenuItem>
-                                            </AlertDialogTrigger>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                                {orderToCancel && orderToCancel.id === order.id && (
-                                     <CancelOrderDialog order={orderToCancel} onCancel={handleConfirmCancel} />
-                                )}
-                             </AlertDialog>
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                <Button
+                                    aria-haspopup="true"
+                                    size="icon"
+                                    variant="ghost"
+                                >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">Alternar menú</span>
+                                </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                    <DropdownMenuItem onSelect={() => handleViewDetails(order)}>Ver Detalles</DropdownMenuItem>
+                                    {order.status !== 'cancelled' && (
+                                        <CancelOrderDialog order={order}>
+                                            <div className={cn(
+                                                "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                                                "text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                            )}>
+                                                Cancelar Pedido
+                                            </div>
+                                        </CancelOrderDialog>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         )}
                     </TableCell>
                     </TableRow>
