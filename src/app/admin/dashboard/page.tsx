@@ -229,7 +229,7 @@ export default function Dashboard() {
              <CardDescription>
                 Crecimiento de clientes este año.
             </CardDescription>
-          </Header>
+          </CardHeader>
           <CardContent className='pl-2'>
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={newClientsData}>
