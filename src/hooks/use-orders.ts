@@ -5,7 +5,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { subDays } from 'date-fns/subDays';
 import { addDays } from 'date-fns/addDays';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { parseISO } from 'date-fns/parseISO';
 
 export interface Payment {
