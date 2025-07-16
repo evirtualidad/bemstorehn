@@ -6,8 +6,9 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns/format';
-import { parseISO } from 'date-fns/parseISO';
+import { parseISO, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale/es';
+import { DateRange } from 'react-day-picker';
 
 import {
   Banknote,
@@ -20,7 +21,9 @@ import {
   XCircle,
   Package,
   Store,
-  Truck
+  Truck,
+  ListFilter,
+  X
 } from 'lucide-react';
 
 import {
@@ -32,7 +35,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -52,7 +54,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
 import {
@@ -61,6 +62,8 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
   Form,
@@ -409,17 +412,60 @@ export default function OrdersPage() {
   const { increaseStock } = useProductsStore();
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
+  
   const [orderToCancel, setOrderToCancel] = React.useState<Order | null>(null);
   const [detailsOrder, setDetailsOrder] = React.useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
 
+  // Filter states
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = React.useState<string[]>([]);
+  const [channelFilter, setChannelFilter] = React.useState<string[]>([]);
 
   const sortedOrders = [...orders].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const filteredOrders = React.useMemo(() => {
+    return sortedOrders.filter(order => {
+      // Date filter
+      if (dateRange?.from && dateRange?.to) {
+        const orderDate = parseISO(order.date);
+        if (!isWithinInterval(orderDate, { start: startOfDay(dateRange.from), end: endOfDay(dateRange.to) })) {
+          return false;
+        }
+      }
+      // Status filter
+      if (statusFilter.length > 0 && !statusFilter.includes(order.status)) {
+        return false;
+      }
+      // Channel filter
+      if (channelFilter.length > 0 && !channelFilter.includes(order.source)) {
+        return false;
+      }
+      return true;
+    });
+  }, [sortedOrders, dateRange, statusFilter, channelFilter]);
+
+  const handleStatusFilterChange = (status: string, checked: boolean) => {
+    setStatusFilter(prev => 
+      checked ? [...prev, status] : prev.filter(s => s !== status)
+    );
+  };
   
+  const handleChannelFilterChange = (channel: string, checked: boolean) => {
+    setChannelFilter(prev => 
+      checked ? [...prev, channel] : prev.filter(c => c !== channel)
+    );
+  };
+  
+  const clearFilters = () => {
+    setDateRange(undefined);
+    setStatusFilter([]);
+    setChannelFilter([]);
+  };
+
   const handleConfirmCancel = () => {
     if (!orderToCancel) return;
 
-    // We only restock if the order wasn't already cancelled.
     if (orderToCancel.status !== 'cancelled') {
         orderToCancel.items.forEach(item => {
             increaseStock(item.id, item.quantity);
@@ -441,6 +487,7 @@ export default function OrdersPage() {
     setIsDetailsOpen(true);
   };
 
+  const isFiltered = dateRange || statusFilter.length > 0 || channelFilter.length > 0;
 
   return (
     <main className="grid flex-1 items-start gap-4">
@@ -449,10 +496,91 @@ export default function OrdersPage() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Historial de Pedidos</CardTitle>
-          <CardDescription>
-            Una lista de todos los pedidos realizados en tu tienda.
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <CardTitle>Historial de Pedidos</CardTitle>
+                <CardDescription>
+                  Una lista de todos los pedidos realizados en tu tienda.
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant={"outline"} className={cn("w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange?.from ? (
+                        dateRange.to ? (
+                          <>
+                            {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
+                          </>
+                        ) : (
+                          format(dateRange.from, "LLL dd, y")
+                        )
+                      ) : (
+                        <span>Seleccionar fecha</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                      initialFocus
+                      mode="range"
+                      defaultMonth={dateRange?.from}
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      numberOfMonths={2}
+                      locale={es}
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-10 gap-1">
+                            <ListFilter className="h-3.5 w-3.5" />
+                            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                            Filtrar
+                            </span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Filtrar por Estado</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {Object.entries(statusConfig).map(([key, config]) => (
+                            <DropdownMenuCheckboxItem
+                                key={key}
+                                checked={statusFilter.includes(key)}
+                                onCheckedChange={(checked) => handleStatusFilterChange(key, checked)}
+                            >
+                                {config.label}
+                            </DropdownMenuCheckboxItem>
+                        ))}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Filtrar por Canal</DropdownMenuLabel>
+                         <DropdownMenuSeparator />
+                        <DropdownMenuCheckboxItem
+                            checked={channelFilter.includes('pos')}
+                            onCheckedChange={(checked) => handleChannelFilterChange('pos', checked)}
+                        >
+                            POS
+                        </DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem
+                            checked={channelFilter.includes('online-store')}
+                            onCheckedChange={(checked) => handleChannelFilterChange('online-store', checked)}
+                        >
+                            Tienda Online
+                        </DropdownMenuCheckboxItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
+                {isFiltered && (
+                    <Button variant="ghost" onClick={clearFilters}>
+                        <X className="mr-2 h-4 w-4" />
+                        Limpiar
+                    </Button>
+                )}
+              </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -469,7 +597,7 @@ export default function OrdersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedOrders.length > 0 ? sortedOrders.map((order) => {
+              {filteredOrders.length > 0 ? filteredOrders.map((order) => {
                 const statusInfo = statusConfig[order.status as keyof typeof statusConfig] || { label: 'Desconocido', color: 'bg-gray-100 text-gray-800'};
                 return (
                     <TableRow key={order.id}>
@@ -551,7 +679,7 @@ export default function OrdersPage() {
               }) : (
                 <TableRow>
                     <TableCell colSpan={8} className="h-24 text-center">
-                        No se han creado pedidos todavía.
+                        No se encontraron pedidos con los filtros aplicados.
                     </TableCell>
                 </TableRow>
               )}
@@ -560,7 +688,7 @@ export default function OrdersPage() {
         </CardContent>
         <CardFooter>
             <div className="text-xs text-muted-foreground">
-                Mostrando <strong>{orders.length}</strong> pedidos.
+                Mostrando <strong>{filteredOrders.length}</strong> de <strong>{orders.length}</strong> pedidos.
             </div>
         </CardFooter>
       </Card>
