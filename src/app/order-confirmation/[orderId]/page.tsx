@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useOrdersStore } from '@/hooks/use-orders';
-import { notFound } from 'next/navigation';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { format } from 'date-fns/format';
@@ -24,7 +23,8 @@ interface OrderConfirmationPageProps {
   };
 }
 
-export default function OrderConfirmationPage({ params: { orderId } }: OrderConfirmationPageProps) {
+export default function OrderConfirmationPage({ params }: OrderConfirmationPageProps) {
+  const { orderId } = params;
   const { getOrderById, isHydrated } = useOrdersStore();
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
