@@ -19,7 +19,14 @@ import { useCurrencyStore } from '@/hooks/use-currency';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import * as React from 'react';
 
-export default function ProductDetailPage({ params }: { params: { productId: string } }) {
+interface ProductDetailPageProps {
+    params: {
+        productId: string;
+    }
+}
+
+export default function ProductDetailPage({ params }: ProductDetailPageProps) {
+  const { productId } = params;
   const { getProductById, products } = useProductsStore();
   const { getCategoryByName } = useCategoriesStore();
   const { addToCart } = useCart();
@@ -31,7 +38,7 @@ export default function ProductDetailPage({ params }: { params: { productId: str
     setIsClient(true);
   }, []);
   
-  const product = getProductById(params.productId);
+  const product = getProductById(productId);
 
   if (!isClient) {
     return (
@@ -140,5 +147,3 @@ export default function ProductDetailPage({ params }: { params: { productId: str
     </div>
   );
 }
-
-    
