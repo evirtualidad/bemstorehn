@@ -79,8 +79,6 @@ export default function AdminLayout({
   }, [orders]);
 
   const navItems = [
-    { href: '/admin/dashboard', icon: Activity, label: 'Dashboard', exact: true },
-    { href: '/admin/dashboard-v2', icon: LineChart, label: 'Dashboard V2', exact: true },
     { href: '/admin/pos', icon: Tablet, label: 'POS' },
     { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: pendingApprovalCount > 0 ? pendingApprovalCount : null },
     { href: '/admin/inventory', icon: Archive, label: 'Inventario' },
@@ -145,7 +143,7 @@ export default function AdminLayout({
       <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
         <nav className="hidden font-medium sm:flex sm:flex-row sm:items-center sm:gap-5 sm:text-sm lg:gap-6">
           <Link
-            href="/admin/dashboard"
+            href="/admin/pos"
             className="flex items-center gap-2 font-semibold text-lg md:text-base text-foreground"
           >
             <Package2 className="h-6 w-6" />
@@ -214,5 +212,3 @@ export default function AdminLayout({
     </div>
   );
 }
-
-    
