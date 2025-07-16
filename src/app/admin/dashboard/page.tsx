@@ -62,6 +62,13 @@ const PIE_COLORS = [
   'hsl(var(--chart-5))',
 ];
 
+const statusLabels: { [key: string]: string } = {
+  'paid': 'Pagado',
+  'pending-payment': 'Pendiente de Pago',
+  'pending-approval': 'Pendiente Aprobación',
+  'cancelled': 'Cancelado',
+};
+
 export default function Dashboard() {
   const { orders } = useOrdersStore();
   const { products } = useProductsStore();
@@ -495,7 +502,7 @@ export default function Dashboard() {
                         order.status === 'pending-payment' && 'bg-amber-100 text-amber-800',
                         order.status === 'paid' && 'bg-green-100 text-green-800',
                        )}
-                       >{order.status}</Badge>
+                       >{statusLabels[order.status] || order.status}</Badge>
                     </TableCell>
                     <TableCell>
                       {format(new Date(order.date), 'd MMM, yyyy', { locale: es })}
