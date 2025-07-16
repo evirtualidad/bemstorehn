@@ -115,7 +115,7 @@ export default function Dashboard() {
         clients: newClientsByMonth[month] || 0
     }));
     
-    const recentTransactions = nonCancelledOrders
+    const recentTransactions = [...nonCancelledOrders]
       .sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime())
       .slice(0, 5);
 
@@ -136,6 +136,7 @@ export default function Dashboard() {
     'pending-approval': { label: 'Pendiente', variant: 'outline' as const },
     'pending-payment': { label: 'Pendiente', variant: 'outline' as const },
     'paid': { label: 'Aprobado', variant: 'default' as const },
+    'cancelled': { label: 'Cancelado', variant: 'destructive' as const },
   };
 
   if (!isHydrated) {

@@ -250,13 +250,5 @@ export const useOrdersStore = () => {
     setIsHydrated(true);
   }, []);
 
-  // Sort orders once on hydration, memoize for performance
-  const sortedOrders = React.useMemo(() => 
-    isHydrated ? [...store.orders].sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime()) : [],
-    [isHydrated, store.orders]
-  );
-  
-  return { ...store, orders: sortedOrders, isHydrated };
+  return { ...store, isHydrated };
 };
-
-    
