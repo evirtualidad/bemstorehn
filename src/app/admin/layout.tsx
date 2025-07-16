@@ -6,17 +6,14 @@ import {
   Bell,
   CircleUser,
   Home,
-  LineChart,
   Menu,
   Package,
   Package2,
   ShoppingCart,
   Tablet,
-  Tag,
   Users,
   Archive,
   Coins,
-  XCircle,
   Settings,
   Activity,
 } from 'lucide-react';
@@ -79,6 +76,7 @@ export default function AdminLayout({
   }, [orders]);
 
   const navItems = [
+    { href: '/admin/dashboard', icon: Activity, label: 'Dashboard', exact: true },
     { href: '/admin/pos', icon: Tablet, label: 'POS' },
     { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: pendingApprovalCount > 0 ? pendingApprovalCount : null },
     { href: '/admin/inventory', icon: Archive, label: 'Inventario' },
