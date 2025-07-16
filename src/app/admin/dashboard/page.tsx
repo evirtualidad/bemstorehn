@@ -123,9 +123,9 @@ export default function Dashboard() {
     return { totalRevenue, totalOrders, activeProducts, totalSales, salesData, newClientsData, recentTransactions };
   }, [isHydrated, orders, products, customers]);
   
-  const getInitials = (name: string) => {
-    if (!name) return 'CF';
-    const names = name.split(' ');
+  const getInitials = (name?: string) => {
+    if (!name || name.trim() === '') return 'CF';
+    const names = name.split(' ').filter(Boolean);
     if (names.length > 1) {
         return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
     }
