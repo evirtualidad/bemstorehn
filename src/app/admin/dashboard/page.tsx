@@ -4,12 +4,12 @@
 import {
   Activity,
   ArrowUpRight,
-  CircleUser,
-  CreditCard,
   DollarSign,
   Users,
   Package,
+  CreditCard,
 } from 'lucide-react';
+import Link from 'next/link';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -35,11 +35,8 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   CartesianGrid,
-  LineChart,
-  Line,
   AreaChart,
   Area
 } from 'recharts';
@@ -48,36 +45,97 @@ import { useProductsStore } from '@/hooks/use-products';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-
-const salesData = [
-    { name: 'Ene', sales: 4000 },
-    { name: 'Feb', sales: 3000 },
-    { name: 'Mar', sales: 5000 },
-    { name: 'Abr', sales: 4500 },
-    { name: 'May', sales: 6000 },
-    { name: 'Jun', sales: 5500 },
-    { name: 'Jul', sales: 7000 },
-];
-
-const newClientsData = [
-    { month: 'Ene', clients: 20 },
-    { month: 'Feb', clients: 25 },
-    { month: 'Mar', clients: 35 },
-    { month: 'Abr', clients: 40 },
-    { month: 'May', clients: 50 },
-    { month: 'Jun', clients: 55 },
-];
+import { useOrdersStore } from '@/hooks/use-orders';
+import { useCustomersStore } from '@/hooks/use-customers';
+import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { parseISO } from 'date-fns/parseISO';
 
 
 export default function Dashboard() {
-  const { products, isHydrated } = useProductsStore();
+  const { products, isHydrated: productsHydrated } = useProductsStore();
+  const { orders, isHydrated: ordersHydrated } = useOrdersStore();
+  const { customers, isHydrated: customersHydrated } = useCustomersStore();
   const { currency } = useCurrencyStore();
 
-  // Simulate dynamic data
-  const totalRevenue = 45231.89;
-  const totalSales = 12234;
-  const activeProducts = products.filter(p => p.stock > 0).length;
-  const totalOrders = 2350;
+  const isHydrated = productsHydrated && ordersHydrated && customersHydrated;
+
+  const {
+    totalRevenue,
+    totalOrders,
+    activeProducts,
+    totalSales,
+    salesData,
+    newClientsData,
+    recentTransactions
+  } = React.useMemo(() => {
+    if (!isHydrated) return { totalRevenue: 0, totalOrders: 0, activeProducts: 0, totalSales: 0, salesData: [], newClientsData: [], recentTransactions: [] };
+
+    const nonCancelledOrders = orders.filter(o => o.status !== 'cancelled');
+    const totalRevenue = nonCancelledOrders.reduce((sum, order) => sum + order.total, 0);
+    const totalOrders = nonCancelledOrders.length;
+    const activeProducts = products.filter(p => p.stock > 0).length;
+    const totalSales = nonCancelledOrders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
+
+    const salesByDay = nonCancelledOrders.reduce((acc, order) => {
+        const day = format(parseISO(order.date), 'yyyy-MM-dd');
+        acc[day] = (acc[day] || 0) + order.total;
+        return acc;
+    }, {} as Record<string, number>);
+
+    const last30Days = eachDayOfInterval({
+        start: subDays(new Date(), 29),
+        end: new Date()
+    });
+
+    const salesData = last30Days.map(date => {
+        const dayString = format(date, 'yyyy-MM-dd');
+        return {
+            name: format(date, 'd MMM', { locale: es }),
+            sales: salesByDay[dayString] || 0
+        };
+    });
+
+    const newClientsByMonth = customers.reduce((acc, customer) => {
+        // This is a simplification. A real app would store the customer creation date.
+        // For now, we'll distribute them over the last 6 months for visualization.
+        const monthIndex = parseInt(customer.id.slice(-2)) % 6; // pseudo-random month
+        const monthDate = subDays(new Date(), monthIndex * 30);
+        const monthName = format(monthDate, 'MMM', { locale: es });
+        acc[monthName] = (acc[monthName] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
+    
+    const last6Months = eachDayOfInterval({ start: subDays(new Date(), 150), end: new Date() })
+        .map(d => format(d, 'MMM', { locale: es }))
+        .filter((value, index, self) => self.indexOf(value) === index);
+
+    const newClientsData = last6Months.map(month => ({
+        month: month,
+        clients: newClientsByMonth[month] || 0
+    }));
+    
+    const recentTransactions = nonCancelledOrders
+      .sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime())
+      .slice(0, 5);
+
+
+    return { totalRevenue, totalOrders, activeProducts, totalSales, salesData, newClientsData, recentTransactions };
+  }, [isHydrated, orders, products, customers]);
+  
+  const getInitials = (name: string) => {
+      const names = name.split(' ');
+      if (names.length > 1) {
+          return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+      }
+      return name.substring(0, 2).toUpperCase();
+  }
+  
+  const statusConfig = {
+    'pending-approval': { label: 'Pendiente', variant: 'outline' as const },
+    'pending-payment': { label: 'Pendiente', variant: 'outline' as const },
+    'paid': { label: 'Aprobado', variant: 'default' as const },
+  };
 
   if (!isHydrated) {
     return <LoadingSpinner />;
@@ -94,19 +152,19 @@ export default function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalRevenue, currency.code)}</div>
             <p className="text-xs text-muted-foreground">
-              +20.1% desde el mes pasado
+              Total facturado
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ventas</CardTitle>
+            <CardTitle className="text-sm font-medium">Pedidos Totales</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{totalSales.toLocaleString('es-ES')}</div>
+            <div className="text-2xl font-bold">+{totalOrders.toLocaleString('es-ES')}</div>
             <p className="text-xs text-muted-foreground">
-              +19% desde el mes pasado
+              Pedidos no cancelados
             </p>
           </CardContent>
         </Card>
@@ -123,14 +181,14 @@ export default function Dashboard() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pedidos Totales</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Clientes Registrados</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{totalOrders.toLocaleString('es-ES')}</div>
+            <div className="text-2xl font-bold">+{customers.length}</div>
             <p className="text-xs text-muted-foreground">
-              +180.1% desde el mes pasado
+              Total de clientes
             </p>
           </CardContent>
         </Card>
@@ -140,7 +198,7 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle>Rendimiento de Ventas</CardTitle>
             <CardDescription>
-                +15% desde el mes pasado
+                Ingresos de los últimos 30 días.
             </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
@@ -169,7 +227,7 @@ export default function Dashboard() {
              <CardDescription>
                 Crecimiento de clientes este año.
             </CardDescription>
-          </CardHeader>
+          </Header>
           <CardContent className='pl-2'>
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={newClientsData}>
@@ -201,79 +259,41 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle>Ventas Recientes</CardTitle>
             <CardDescription>
-              Realizaste 265 ventas este mes.
+              Las últimas ventas de tu tienda.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6">
-            <div className="flex items-center gap-4">
-              <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="https://placehold.co/100x100.png" alt="Avatar" data-ai-hint="woman portrait" />
-                <AvatarFallback>OM</AvatarFallback>
-              </Avatar>
-              <div className="grid gap-1">
-                <p className="text-sm font-medium leading-none">
-                  Olivia Martin
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  olivia.martin@email.com
-                </p>
-              </div>
-              <div className="ml-auto font-medium">+{formatCurrency(1999, currency.code)}</div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="https://placehold.co/100x100.png" alt="Avatar" data-ai-hint="man portrait" />
-                <AvatarFallback>JL</AvatarFallback>
-              </Avatar>
-              <div className="grid gap-1">
-                <p className="text-sm font-medium leading-none">Jackson Lee</p>
-                <p className="text-sm text-muted-foreground">
-                  jackson.lee@email.com
-                </p>
-              </div>
-              <div className="ml-auto font-medium">+{formatCurrency(39, currency.code)}</div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="https://placehold.co/100x100.png" alt="Avatar" data-ai-hint="woman portrait" />
-                <AvatarFallback>IN</AvatarFallback>
-              </Avatar>
-              <div className="grid gap-1">
-                <p className="text-sm font-medium leading-none">
-                  Isabella Nguyen
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  isabella.nguyen@email.com
-                </p>
-              </div>
-              <div className="ml-auto font-medium">+{formatCurrency(299, currency.code)}</div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="https://placehold.co/100x100.png" alt="Avatar" data-ai-hint="man portrait" />
-                <AvatarFallback>WK</AvatarFallback>
-              </Avatar>
-              <div className="grid gap-1">
-                <p className="text-sm font-medium leading-none">William Kim</p>
-                <p className="text-sm text-muted-foreground">will@email.com</p>
-              </div>
-              <div className="ml-auto font-medium">+{formatCurrency(99, currency.code)}</div>
-            </div>
+            {recentTransactions.slice(0,4).map(order => (
+                <div key={order.id} className="flex items-center gap-4">
+                    <Avatar className="hidden h-9 w-9 sm:flex">
+                        <AvatarFallback>{getInitials(order.customer.name)}</AvatarFallback>
+                    </Avatar>
+                    <div className="grid gap-1">
+                        <p className="text-sm font-medium leading-none">
+                        {order.customer.name}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                        {order.customer.phone}
+                        </p>
+                    </div>
+                    <div className="ml-auto font-medium">{formatCurrency(order.total, currency.code)}</div>
+                </div>
+            ))}
           </CardContent>
         </Card>
         <Card className="xl:col-span-2">
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
-              <CardTitle>Transacciones</CardTitle>
+              <CardTitle>Transacciones Recientes</CardTitle>
               <CardDescription>
-                Transacciones recientes de tu tienda.
+                Últimas transacciones de tu tienda.
               </CardDescription>
             </div>
             <Button asChild size="sm" className="ml-auto gap-1">
-              <a href="#">
+              <Link href="/admin/orders">
                 Ver Todo
                 <ArrowUpRight className="h-4 w-4" />
-              </a>
+              </Link>
             </Button>
           </CardHeader>
           <CardContent>
@@ -294,66 +314,31 @@ export default function Dashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
-                  <TableCell>
-                    <div className="font-medium">Liam Johnson</div>
-                    <div className="hidden text-sm text-muted-foreground md:inline">
-                      liam@example.com
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden xl:table-cell">
-                    Venta
-                  </TableCell>
-                  <TableCell className="hidden xl:table-cell">
-                    <Badge className="text-xs" variant="outline">
-                      Aprobado
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell lg:hidden xl:table-cell">
-                    2023-06-23
-                  </TableCell>
-                  <TableCell className="text-right">{formatCurrency(250, currency.code)}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                    <div className="font-medium">Olivia Smith</div>
-                    <div className="hidden text-sm text-muted-foreground md:inline">
-                      olivia@example.com
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden xl:table-cell">
-                    Reembolso
-                  </TableCell>
-                  <TableCell className="hidden xl:table-cell">
-                    <Badge className="text-xs" variant="outline">
-                      Declinado
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell lg:hidden xl:table-cell">
-                    2023-06-24
-                  </TableCell>
-                  <TableCell className="text-right">{formatCurrency(150, currency.code)}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                    <div className="font-medium">Noah Williams</div>
-                    <div className="hidden text-sm text-muted-foreground md:inline">
-                      noah@example.com
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden xl:table-cell">
-                    Suscripción
-                  </TableCell>
-                  <TableCell className="hidden xl:table-cell">
-                    <Badge className="text-xs" variant="outline">
-                      Aprobado
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell lg:hidden xl:table-cell">
-                    2023-06-25
-                  </TableCell>
-                  <TableCell className="text-right">{formatCurrency(350, currency.code)}</TableCell>
-                </TableRow>
+                {recentTransactions.map(order => {
+                    const statusInfo = statusConfig[order.status as keyof typeof statusConfig] || { label: 'Cancelado', variant: 'destructive' as const };
+                    return (
+                        <TableRow key={order.id}>
+                            <TableCell>
+                                <div className="font-medium">{order.customer.name}</div>
+                                <div className="hidden text-sm text-muted-foreground md:inline">
+                                    {order.id}
+                                </div>
+                            </TableCell>
+                            <TableCell className="hidden xl:table-cell">
+                                <Badge variant="outline">{order.source === 'pos' ? 'POS' : 'Tienda Online'}</Badge>
+                            </TableCell>
+                            <TableCell className="hidden xl:table-cell">
+                                <Badge className="text-xs" variant={statusInfo.variant}>
+                                {statusInfo.label}
+                                </Badge>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell lg:hidden xl:table-cell">
+                                {format(parseISO(order.date), 'dd/MM/yyyy')}
+                            </TableCell>
+                            <TableCell className="text-right">{formatCurrency(order.total, currency.code)}</TableCell>
+                        </TableRow>
+                    )
+                })}
               </TableBody>
             </Table>
           </CardContent>
@@ -362,3 +347,5 @@ export default function Dashboard() {
     </main>
   );
 }
+
+    

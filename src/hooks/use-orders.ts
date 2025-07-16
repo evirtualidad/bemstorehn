@@ -5,6 +5,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { subDays } from 'date-fns/subDays';
 import { addDays } from 'date-fns/addDays';
+import { useState, useEffect } from 'react';
+import { parseISO } from 'date-fns/parseISO';
 
 export interface Payment {
     date: string;
@@ -142,9 +144,10 @@ type OrdersState = {
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => void;
   approveOrder: (data: { orderId: string, paymentMethod: Order['paymentMethod'], paymentDueDate?: Date, paymentReference?: string }) => void;
   cancelOrder: (orderId: string) => void;
+  getOrderById: (orderId: string) => Order | undefined;
 };
 
-export const useOrdersStore = create<OrdersState>()(
+const useOrdersStoreBase = create<OrdersState>()(
   persist(
     (set, get) => ({
       orders: mockOrders,
@@ -226,6 +229,10 @@ export const useOrdersStore = create<OrdersState>()(
           })
         }));
       },
+      getOrderById: (orderId) => {
+        const order = get().orders.find((o) => o.id === orderId);
+        return order;
+      },
     }),
     {
       name: 'orders-storage',
@@ -233,3 +240,23 @@ export const useOrdersStore = create<OrdersState>()(
     }
   )
 );
+
+// Custom hook to ensure hydration is complete before using the store
+export const useOrdersStore = () => {
+  const store = useOrdersStoreBase();
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  // Sort orders once on hydration, memoize for performance
+  const sortedOrders = React.useMemo(() => 
+    isHydrated ? [...store.orders].sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime()) : [],
+    [isHydrated, store.orders]
+  );
+  
+  return { ...store, orders: sortedOrders, isHydrated };
+};
+
+    
