@@ -38,6 +38,7 @@ import { useCurrencyStore } from '@/hooks/use-currency';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import * as React from 'react';
 import { useOrdersStore } from '@/hooks/use-orders';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 function CurrencySelector() {
     const { currency, currencies, setCurrency } = useCurrencyStore();
@@ -91,21 +92,30 @@ export default function AdminLayout({
   const DesktopNavItem = ({ item }: { item: any }) => {
     const isActive = pathname.startsWith(item.href);
     return (
-     <Button
-      asChild
-      variant={isActive ? 'secondary' : 'ghost'}
-      className="justify-start whitespace-nowrap relative"
-    >
-      <Link href={item.href}>
-        <item.icon className="mr-2 h-4 w-4" />
-        {item.label}
-        {item.badge && (
-          <Badge className="ml-auto">
-            {item.badge}
-          </Badge>
-        )}
-      </Link>
-    </Button>
+     <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            asChild
+            variant={isActive ? 'secondary' : 'ghost'}
+            className="justify-center md:justify-start relative w-10 h-10 md:w-auto"
+          >
+            <Link href={item.href}>
+              <item.icon className="h-5 w-5 md:mr-2" />
+              <span className="hidden md:inline">{item.label}</span>
+               {item.badge && (
+                <Badge className="absolute -top-2 -right-2 md:static md:ml-auto w-6 h-6 md:w-auto md:h-auto flex items-center justify-center">
+                  {item.badge}
+                </Badge>
+              )}
+            </Link>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="md:hidden">
+          <p>{item.label}</p>
+        </TooltipContent>
+      </Tooltip>
+     </TooltipProvider>
     )
   };
   
@@ -133,24 +143,26 @@ export default function AdminLayout({
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
-        <nav className="hidden font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
+        <nav className="hidden font-medium sm:flex sm:flex-row sm:items-center sm:gap-5 sm:text-sm lg:gap-6">
           <Link
             href="/admin/dashboard"
             className="flex items-center gap-2 font-semibold text-lg md:text-base text-foreground"
           >
             <Package2 className="h-6 w-6" />
-            <span className="whitespace-nowrap">BEM STORE HN</span>
+            <span className="whitespace-nowrap hidden md:inline">BEM STORE HN</span>
           </Link>
-          {navItems.map((item) => (
-             <DesktopNavItem key={item.label} item={item} />
-          ))}
+          <div className="flex items-center gap-1">
+            {navItems.map((item) => (
+              <DesktopNavItem key={item.label} item={item} />
+            ))}
+          </div>
         </nav>
         <Sheet>
           <SheetTrigger asChild>
             <Button
               variant="outline"
               size="icon"
-              className="shrink-0 md:hidden"
+              className="shrink-0 sm:hidden"
             >
               <Menu className="h-5 w-5" />
               <span className="sr-only">Alternar menú de navegación</span>
