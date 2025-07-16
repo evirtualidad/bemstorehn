@@ -37,8 +37,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
-  AreaChart,
-  Area,
   PieChart,
   Pie,
   Cell,
@@ -51,7 +49,7 @@ import { formatCurrency } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useOrdersStore } from '@/hooks/use-orders';
 import { useCustomersStore } from '@/hooks/use-customers';
-import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval } from 'date-fns';
+import { format, subDays, eachDayOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import { parseISO } from 'date-fns/parseISO';
 import { useCategoriesStore } from '@/hooks/use-categories';
@@ -62,7 +60,7 @@ export default function Dashboard() {
   const { products, isHydrated: productsHydrated } = useProductsStore();
   const { orders, isHydrated: ordersHydrated } = useOrdersStore();
   const { customers, isHydrated: customersHydrated } = useCustomersStore();
-  const { categories } = useCategoriesStore();
+  const { categories, getCategoryByName } = useCategoriesStore();
   const { currency } = useCurrencyStore();
 
   const isHydrated = productsHydrated && ordersHydrated && customersHydrated;
@@ -72,17 +70,16 @@ export default function Dashboard() {
     totalOrders,
     activeProducts,
     salesData,
-    newClientsData,
     recentTransactions,
     salesByCategoryData,
     topProductsData
   } = React.useMemo(() => {
-    if (!isHydrated) return { totalRevenue: 0, totalOrders: 0, activeProducts: 0, salesData: [], newClientsData: [], recentTransactions: [], salesByCategoryData: [], topProductsData: [] };
+    if (!isHydrated) return { totalRevenue: 0, totalOrders: 0, activeProducts: 0, salesData: [], recentTransactions: [], salesByCategoryData: [], topProductsData: [] };
 
-    const nonCancelledOrders = orders.filter(o => o.status !== 'cancelled');
+    const nonCancelledOrders = orders.filter(o => o.status !== 'cancelled' && o.status !== 'pending-approval');
     const totalRevenue = nonCancelledOrders.reduce((sum, order) => sum + order.total, 0);
-    const totalOrders = nonCancelledOrders.length;
-    const activeProducts = products.filter(p => p.stock > 0).length;
+    const totalOrdersValue = nonCancelledOrders.length;
+    const activeProductsValue = products.filter(p => p.stock > 0).length;
 
     const salesByDay = nonCancelledOrders.reduce((acc, order) => {
         const day = format(parseISO(order.date), 'yyyy-MM-dd');
@@ -102,43 +99,30 @@ export default function Dashboard() {
             sales: salesByDay[dayString] || 0
         };
     });
-
-    const newClientsByMonth = customers.reduce((acc, customer) => {
-        const monthDate = parseISO(customer.orderIds[0] ? orders.find(o => o.id === customer.orderIds[0])?.date || new Date().toISOString() : new Date().toISOString());
-        const monthName = format(monthDate, 'MMM', { locale: es });
-        acc[monthName] = (acc[monthName] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
-    
-    const last6Months = Array.from({ length: 6 }, (_, i) => subDays(new Date(), i * 30))
-        .map(d => format(d, 'MMM', { locale: es }))
-        .reverse();
-
-    const newClientsData = last6Months.map(month => ({
-        month: month,
-        clients: newClientsByMonth[month] || 0
-    }));
     
     const recentTransactions = [...nonCancelledOrders]
       .sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime())
       .slice(0, 5);
 
-    const salesByCategoryData = categories.map((cat, index) => {
-        const productsInCategory = products.filter(p => p.category === cat.name);
-        const totalRevenue = productsInCategory.reduce((acc, p) => {
-          const ordersWithProduct = nonCancelledOrders.filter(o => o.items.some(i => i.id === p.id));
-          const revenueForProduct = ordersWithProduct.reduce((sum, order) => {
-             const itemInOrder = order.items.find(i => i.id === p.id);
-             return sum + (itemInOrder ? itemInOrder.price * itemInOrder.quantity : 0);
-          }, 0);
-          return acc + revenueForProduct;
-        }, 0);
-        return {
-            name: cat.label,
-            value: Math.floor(totalRevenue),
-            color: `hsl(var(--chart-${index + 1}))`
-        }
+    const salesByCategoryMap = nonCancelledOrders.flatMap(o => o.items).reduce((acc, item) => {
+      const product = products.find(p => p.id === item.id);
+      if (product) {
+        const category = product.category;
+        const value = item.price * item.quantity;
+        acc[category] = (acc[category] || 0) + value;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    const salesByCategoryData = Object.entries(salesByCategoryMap).map(([categoryName, totalValue], index) => {
+      const categoryLabel = getCategoryByName(categoryName)?.label || categoryName;
+      return {
+        name: categoryLabel,
+        value: Math.floor(totalValue),
+        color: `hsl(var(--chart-${index + 1}))`
+      }
     }).filter(c => c.value > 0);
+
 
     const productSales = nonCancelledOrders.flatMap(o => o.items).reduce((acc, item) => {
         if (!acc[item.id]) {
@@ -155,8 +139,8 @@ export default function Dashboard() {
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5);
 
-    return { totalRevenue, totalOrders, activeProducts, salesData, newClientsData, recentTransactions, salesByCategoryData, topProductsData };
-  }, [isHydrated, orders, products, customers, categories]);
+    return { totalRevenue, totalOrders: totalOrdersValue, activeProducts: activeProductsValue, salesData, recentTransactions, salesByCategoryData, topProductsData };
+  }, [isHydrated, orders, products, categories, getCategoryByName]);
   
   const getInitials = (name?: string) => {
     if (!name || name.trim() === '') return 'CF';
@@ -277,6 +261,7 @@ export default function Dashboard() {
                       fill="#8884d8"
                       dataKey="value"
                       label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                        if (percent === 0) return null;
                         const RADIAN = Math.PI / 180;
                         const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
                         const x = cx + radius * Math.cos(-midAngle * RADIAN);
