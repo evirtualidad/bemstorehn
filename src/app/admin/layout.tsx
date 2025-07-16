@@ -18,6 +18,7 @@ import {
   Coins,
   XCircle,
   Settings,
+  LayoutDashboard,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -78,7 +79,8 @@ export default function AdminLayout({
   }, [orders]);
 
   const navItems = [
-    { href: '/admin/dashboard', icon: LineChart, label: 'Dashboard' },
+    { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { href: '/admin/dashboard-v2', icon: LineChart, label: 'Dashboard V2' },
     { href: '/admin/pos', icon: Tablet, label: 'POS' },
     { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: pendingApprovalCount > 0 ? pendingApprovalCount : null },
     { href: '/admin/inventory', icon: Archive, label: 'Inventario' },
