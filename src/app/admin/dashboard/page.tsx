@@ -7,7 +7,7 @@ import {
   Users,
   CreditCard,
   Archive,
-  LineChart,
+  Calendar as CalendarIcon,
 } from 'lucide-react';
 import {
   Card,
@@ -37,13 +37,6 @@ import {
   Cell,
   Legend,
 } from 'recharts';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
 import { useOrdersStore } from '@/hooks/use-orders';
 import { useProductsStore } from '@/hooks/use-products';
@@ -51,12 +44,15 @@ import { useCustomersStore } from '@/hooks/use-customers';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { formatCurrency, cn } from '@/lib/utils';
 import { useCurrencyStore } from '@/hooks/use-currency';
-import { format, subDays, startOfDay, endOfDay, parseISO } from 'date-fns';
+import { format, subDays, startOfDay, endOfDay, parseISO, isAfter, isBefore } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Badge } from '@/components/ui/badge';
+import { DateRange } from 'react-day-picker';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
-type TimeFilter = 'all' | '30d' | '7d' | 'today';
 
 const PIE_COLORS = [
   'hsl(var(--chart-1))',
@@ -72,7 +68,11 @@ export default function Dashboard() {
   const { customers } = useCustomersStore();
   const { categories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
-  const [timeFilter, setTimeFilter] = React.useState<TimeFilter>('30d');
+  
+  const [date, setDate] = React.useState<DateRange | undefined>({
+    from: subDays(new Date(), 29),
+    to: new Date(),
+  });
   
   const [isClient, setIsClient] = React.useState(false);
   React.useEffect(() => {
@@ -82,26 +82,13 @@ export default function Dashboard() {
   const dashboardData = React.useMemo(() => {
     if (!isClient) return null;
 
-    let startDate: Date;
-    const now = new Date();
-    switch (timeFilter) {
-      case 'today':
-        startDate = startOfDay(now);
-        break;
-      case '7d':
-        startDate = startOfDay(subDays(now, 6));
-        break;
-      case '30d':
-        startDate = startOfDay(subDays(now, 29));
-        break;
-      case 'all':
-      default:
-        startDate = new Date(0); // From the beginning of time
-    }
+    const { from, to } = date || {};
+    const startDate = from ? startOfDay(from) : new Date(0);
+    const endDate = to ? endOfDay(to) : new Date();
 
     const filteredOrders = orders.filter(o => {
         const orderDate = parseISO(o.date);
-        return o.status !== 'cancelled' && o.status !== 'pending-approval' && orderDate >= startDate;
+        return o.status !== 'cancelled' && o.status !== 'pending-approval' && isAfter(orderDate, startDate) && isBefore(orderDate, endDate);
     });
 
     const totalRevenue = filteredOrders.reduce((acc, order) => acc + order.total, 0);
@@ -140,8 +127,8 @@ export default function Dashboard() {
     
     const salesByCategoryData = Object.entries(salesByCategory).map(([name, value]) => ({ name, value }));
 
-    // Sales last 30 days (Bar Chart)
-    const salesLastDays = Array.from({ length: 30 }, (_, i) => {
+    // Sales last 30 days (Bar Chart) - This logic remains for the 30-day overview chart regardless of filter
+    const salesLast30Days = Array.from({ length: 30 }, (_, i) => {
         const date = subDays(new Date(), i);
         return {
             date: format(date, 'MMM d', { locale: es }),
@@ -154,7 +141,7 @@ export default function Dashboard() {
         const thirtyDaysAgo = startOfDay(subDays(new Date(), 29));
         if (orderDate >= thirtyDaysAgo) {
             const dateStr = format(orderDate, 'MMM d', { locale: es });
-            const dayData = salesLastDays.find(d => d.date === dateStr);
+            const dayData = salesLast30Days.find(d => d.date === dateStr);
             if (dayData) {
                 dayData.total += order.total;
             }
@@ -192,13 +179,13 @@ export default function Dashboard() {
       totalOrders,
       activeProducts,
       totalCustomers,
-      salesLastDays,
+      salesLast30Days,
       recentTransactions: filteredOrders.slice(0, 5),
       topSellingProducts,
       salesByChannelData,
       salesByCategoryData,
     };
-  }, [isClient, orders, products, customers, categories, timeFilter]);
+  }, [isClient, orders, products, customers, categories, date]);
 
   if (!isClient || !dashboardData) {
     return (
@@ -213,7 +200,7 @@ export default function Dashboard() {
     totalOrders,
     activeProducts,
     totalCustomers,
-    salesLastDays,
+    salesLast30Days,
     recentTransactions,
     topSellingProducts,
     salesByChannelData,
@@ -261,19 +248,45 @@ export default function Dashboard() {
 
   return (
     <main className="flex flex-1 flex-col gap-4 md:gap-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
-            <Select onValueChange={(value: TimeFilter) => setTimeFilter(value)} value={timeFilter}>
-                <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filtrar por tiempo" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="today">Hoy</SelectItem>
-                    <SelectItem value="7d">Últimos 7 días</SelectItem>
-                    <SelectItem value="30d">Últimos 30 días</SelectItem>
-                    <SelectItem value="all">Todos los tiempos</SelectItem>
-                </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="date"
+                  variant={"outline"}
+                  className={cn(
+                    "w-full sm:w-[300px] justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date?.from ? (
+                    date.to ? (
+                      <>
+                        {format(date.from, "LLL dd, y", { locale: es })} -{" "}
+                        {format(date.to, "LLL dd, y", { locale: es })}
+                      </>
+                    ) : (
+                      format(date.from, "LLL dd, y", { locale: es })
+                    )
+                  ) : (
+                    <span>Selecciona un rango</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={date?.from}
+                  selected={date}
+                  onSelect={setDate}
+                  numberOfMonths={2}
+                  locale={es}
+                />
+              </PopoverContent>
+            </Popover>
         </div>
 
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
@@ -321,12 +334,12 @@ export default function Dashboard() {
 
        <Card>
           <CardHeader>
-            <CardTitle>Rendimiento de Ventas</CardTitle>
-            <CardDescription>Ventas de los últimos 30 días.</CardDescription>
+            <CardTitle>Rendimiento de Ventas (Últimos 30 días)</CardTitle>
+            <CardDescription>Esta gráfica siempre muestra los últimos 30 días, independientemente del filtro.</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={salesLastDays}>
+              <BarChart data={salesLast30Days}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis
@@ -504,5 +517,3 @@ export default function Dashboard() {
     </main>
   );
 }
-
-    
