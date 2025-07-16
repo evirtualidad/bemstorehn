@@ -106,9 +106,9 @@ export default function Dashboard() {
         return acc;
     }, {} as Record<string, number>);
     
-    const last6Months = eachDayOfInterval({ start: subDays(new Date(), 150), end: new Date() })
+    const last6Months = Array.from({ length: 6 }, (_, i) => subDays(new Date(), i * 30))
         .map(d => format(d, 'MMM', { locale: es }))
-        .filter((value, index, self) => self.indexOf(value) === index);
+        .reverse();
 
     const newClientsData = last6Months.map(month => ({
         month: month,
