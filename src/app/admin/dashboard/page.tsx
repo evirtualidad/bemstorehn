@@ -38,7 +38,11 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   AreaChart,
-  Area
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
 } from 'recharts';
 import React from 'react';
 import { useProductsStore } from '@/hooks/use-products';
@@ -50,12 +54,79 @@ import { useCustomersStore } from '@/hooks/use-customers';
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import { parseISO } from 'date-fns/parseISO';
+import { useCategoriesStore } from '@/hooks/use-categories';
+import Image from 'next/image';
+import { type Product } from '@/lib/products';
+
+const topProductsData: (Product & { unitsSold: number, revenue: number })[] = [
+    {
+        id: 'prod_004',
+        name: 'Luminous Foundation',
+        image: 'https://placehold.co/400x400.png',
+        aiHint: 'makeup foundation',
+        price: 52.00,
+        description: 'A medium-coverage foundation that provides a natural, luminous finish. Available in 20 shades.',
+        category: 'Makeup',
+        stock: 30,
+        unitsSold: 120,
+        revenue: 6240
+    },
+    {
+        id: 'prod_001',
+        name: 'Glow Serum',
+        image: 'https://placehold.co/400x400.png',
+        aiHint: 'skincare serum',
+        price: 35.00,
+        description: 'A vitamin C serum for a radiant and even skin tone. Fights free radicals and boosts collagen production.',
+        category: 'Skincare',
+        stock: 25,
+        unitsSold: 95,
+        revenue: 3325
+    },
+    {
+        id: 'prod_008',
+        name: 'Waterproof Mascara',
+        image: 'https://placehold.co/400x400.png',
+        aiHint: 'eye mascara',
+        price: 26.00,
+        description: 'A clump-free, waterproof mascara that lengthens and defines lashes for a dramatic look.',
+        category: 'Makeup',
+        stock: 60,
+        unitsSold: 150,
+        revenue: 3900
+    },
+    {
+        id: 'prod_010',
+        name: 'Eyeshadow Palette',
+        image: 'https://placehold.co/400x400.png',
+        aiHint: 'eyeshadow makeup',
+        price: 39.00,
+        description: 'A versatile palette of 12 neutral and bold eyeshadows in matte and shimmer finishes.',
+        category: 'Makeup',
+        stock: 20,
+        unitsSold: 80,
+        revenue: 3120
+    },
+    {
+        id: 'prod_002',
+        name: 'Hydra-Boost Moisturizer',
+        image: 'https://placehold.co/400x400.png',
+        aiHint: 'face cream',
+        price: 38.50,
+        description: 'A lightweight, hyaluronic acid-based moisturizer for all-day hydration without a greasy feel.',
+        category: 'Skincare',
+        stock: 50,
+        unitsSold: 70,
+        revenue: 2695
+    },
+].sort((a,b) => b.revenue - a.revenue);
 
 
 export default function Dashboard() {
   const { products, isHydrated: productsHydrated } = useProductsStore();
   const { orders, isHydrated: ordersHydrated } = useOrdersStore();
   const { customers, isHydrated: customersHydrated } = useCustomersStore();
+  const { categories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
 
   const isHydrated = productsHydrated && ordersHydrated && customersHydrated;
@@ -64,18 +135,17 @@ export default function Dashboard() {
     totalRevenue,
     totalOrders,
     activeProducts,
-    totalSales,
     salesData,
     newClientsData,
-    recentTransactions
+    recentTransactions,
+    salesByCategoryData
   } = React.useMemo(() => {
-    if (!isHydrated) return { totalRevenue: 0, totalOrders: 0, activeProducts: 0, totalSales: 0, salesData: [], newClientsData: [], recentTransactions: [] };
+    if (!isHydrated) return { totalRevenue: 0, totalOrders: 0, activeProducts: 0, salesData: [], newClientsData: [], recentTransactions: [], salesByCategoryData: [] };
 
     const nonCancelledOrders = orders.filter(o => o.status !== 'cancelled');
     const totalRevenue = nonCancelledOrders.reduce((sum, order) => sum + order.total, 0);
     const totalOrders = nonCancelledOrders.length;
     const activeProducts = products.filter(p => p.stock > 0).length;
-    const totalSales = nonCancelledOrders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
 
     const salesByDay = nonCancelledOrders.reduce((acc, order) => {
         const day = format(parseISO(order.date), 'yyyy-MM-dd');
@@ -97,9 +167,7 @@ export default function Dashboard() {
     });
 
     const newClientsByMonth = customers.reduce((acc, customer) => {
-        // This is a simplification. A real app would store the customer creation date.
-        // For now, we'll distribute them over the last 6 months for visualization.
-        const monthIndex = parseInt(customer.id.slice(-2)) % 6; // pseudo-random month
+        const monthIndex = parseInt(customer.id.slice(-2)) % 6;
         const monthDate = subDays(new Date(), monthIndex * 30);
         const monthName = format(monthDate, 'MMM', { locale: es });
         acc[monthName] = (acc[monthName] || 0) + 1;
@@ -119,9 +187,19 @@ export default function Dashboard() {
       .sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime())
       .slice(0, 5);
 
+    const salesByCategoryData = categories.map((cat, index) => {
+        const productsInCategory = products.filter(p => p.category === cat.name);
+        const totalRevenue = productsInCategory.reduce((acc, p) => acc + (p.price * (50 - p.stock)), 0); // Mocked for now
+        return {
+            name: cat.label,
+            value: Math.floor(totalRevenue),
+            color: `hsl(var(--chart-${index + 1}))`
+        }
+    }).filter(c => c.value > 0);
 
-    return { totalRevenue, totalOrders, activeProducts, totalSales, salesData, newClientsData, recentTransactions };
-  }, [isHydrated, orders, products, customers]);
+
+    return { totalRevenue, totalOrders, activeProducts, salesData, newClientsData, recentTransactions, salesByCategoryData };
+  }, [isHydrated, orders, products, customers, categories]);
   
   const getInitials = (name?: string) => {
     if (!name || name.trim() === '') return 'CF';
@@ -145,6 +223,9 @@ export default function Dashboard() {
 
   return (
     <main className="flex flex-1 flex-col gap-4 md:gap-8">
+       <div className="flex items-center">
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -224,65 +305,44 @@ export default function Dashboard() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle>Nuevos Clientes</CardTitle>
-             <CardDescription>
-                Crecimiento de clientes este año.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className='pl-2'>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={newClientsData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
-                <Tooltip 
-                    cursor={{fill: 'hsl(var(--accent))', radius: '0.25rem' }}
-                    contentStyle={{
-                        backgroundColor: 'hsl(var(--background))',
-                        borderRadius: '0.5rem',
-                        border: '1px solid hsl(var(--border))',
-                    }}
-                />
-                <defs>
-                    <linearGradient id="colorClients" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                    </linearGradient>
-                </defs>
-                <Area type="monotone" dataKey="clients" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorClients)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
+            <CardHeader>
+                <CardTitle>Ventas por Categoría</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={salesByCategoryData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                        const RADIAN = Math.PI / 180;
+                        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                        return (
+                          <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+                            {`${(percent * 100).toFixed(0)}%`}
+                          </text>
+                        );
+                      }}
+                    >
+                      {salesByCategoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Legend iconSize={10} />
+                    <Tooltip formatter={(value: number) => [formatCurrency(value, currency.code), 'Ventas']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
         </Card>
       </div>
       <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-         <Card>
-          <CardHeader>
-            <CardTitle>Ventas Recientes</CardTitle>
-            <CardDescription>
-              Las últimas ventas de tu tienda.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-6">
-            {recentTransactions.slice(0,4).map(order => (
-                <div key={order.id} className="flex items-center gap-4">
-                    <Avatar className="hidden h-9 w-9 sm:flex">
-                        <AvatarFallback>{getInitials(order.customer.name)}</AvatarFallback>
-                    </Avatar>
-                    <div className="grid gap-1">
-                        <p className="text-sm font-medium leading-none">
-                        {order.customer.name}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                        {order.customer.phone}
-                        </p>
-                    </div>
-                    <div className="ml-auto font-medium">{formatCurrency(order.total, currency.code)}</div>
-                </div>
-            ))}
-          </CardContent>
-        </Card>
         <Card className="xl:col-span-2">
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
@@ -304,7 +364,7 @@ export default function Dashboard() {
                 <TableRow>
                   <TableHead>Cliente</TableHead>
                   <TableHead className="hidden xl:table-cell">
-                    Tipo
+                    Canal
                   </TableHead>
                   <TableHead className="hidden xl:table-cell">
                     Estado
@@ -344,6 +404,46 @@ export default function Dashboard() {
               </TableBody>
             </Table>
           </CardContent>
+        </Card>
+        <Card>
+              <CardHeader className="px-7">
+                <CardTitle>Productos Estrella</CardTitle>
+                <CardDescription>
+                  Tus productos más vendidos.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Producto</TableHead>
+                      <TableHead className="text-right">Ingresos</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {topProductsData.slice(0,5).map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Image
+                              src={product.image}
+                              alt={product.name}
+                              width={40}
+                              height={40}
+                              className="rounded-md object-cover aspect-square"
+                            />
+                            <div>
+                                <p className="font-medium leading-tight">{product.name}</p>
+                                <p className='text-xs text-muted-foreground'>{product.unitsSold} unidades</p>
+                            </div>
+                           </div>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(product.revenue, currency.code)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
         </Card>
       </div>
     </main>

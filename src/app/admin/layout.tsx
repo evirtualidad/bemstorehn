@@ -79,13 +79,12 @@ export default function AdminLayout({
   }, [orders]);
 
   const navItems = [
-    { href: '/admin/dashboard', icon: Home, label: 'Panel' },
+    { href: '/admin/dashboard', icon: LineChart, label: 'Dashboard' },
     { href: '/admin/pos', icon: Tablet, label: 'POS' },
     { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: pendingApprovalCount > 0 ? pendingApprovalCount : null },
     { href: '/admin/inventory', icon: Archive, label: 'Inventario' },
     { href: '/admin/finance', icon: Coins, label: 'Finanzas' },
     { href: '/admin/customers', icon: Users, label: 'Clientes' },
-    { href: '/admin/analytics', icon: LineChart, label: 'Analíticas' },
     { href: '/admin/settings', icon: Settings, label: 'Ajustes' },
   ];
 
