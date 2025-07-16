@@ -6,7 +6,6 @@ import {
   Bell,
   CircleUser,
   Home,
-  ImageIcon,
   LineChart,
   Menu,
   Package,

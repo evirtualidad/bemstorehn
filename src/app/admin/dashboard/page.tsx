@@ -58,70 +58,6 @@ import { useCategoriesStore } from '@/hooks/use-categories';
 import Image from 'next/image';
 import { type Product } from '@/lib/products';
 
-const topProductsData: (Product & { unitsSold: number, revenue: number })[] = [
-    {
-        id: 'prod_004',
-        name: 'Luminous Foundation',
-        image: 'https://placehold.co/400x400.png',
-        aiHint: 'makeup foundation',
-        price: 52.00,
-        description: 'A medium-coverage foundation that provides a natural, luminous finish. Available in 20 shades.',
-        category: 'Makeup',
-        stock: 30,
-        unitsSold: 120,
-        revenue: 6240
-    },
-    {
-        id: 'prod_001',
-        name: 'Glow Serum',
-        image: 'https://placehold.co/400x400.png',
-        aiHint: 'skincare serum',
-        price: 35.00,
-        description: 'A vitamin C serum for a radiant and even skin tone. Fights free radicals and boosts collagen production.',
-        category: 'Skincare',
-        stock: 25,
-        unitsSold: 95,
-        revenue: 3325
-    },
-    {
-        id: 'prod_008',
-        name: 'Waterproof Mascara',
-        image: 'https://placehold.co/400x400.png',
-        aiHint: 'eye mascara',
-        price: 26.00,
-        description: 'A clump-free, waterproof mascara that lengthens and defines lashes for a dramatic look.',
-        category: 'Makeup',
-        stock: 60,
-        unitsSold: 150,
-        revenue: 3900
-    },
-    {
-        id: 'prod_010',
-        name: 'Eyeshadow Palette',
-        image: 'https://placehold.co/400x400.png',
-        aiHint: 'eyeshadow makeup',
-        price: 39.00,
-        description: 'A versatile palette of 12 neutral and bold eyeshadows in matte and shimmer finishes.',
-        category: 'Makeup',
-        stock: 20,
-        unitsSold: 80,
-        revenue: 3120
-    },
-    {
-        id: 'prod_002',
-        name: 'Hydra-Boost Moisturizer',
-        image: 'https://placehold.co/400x400.png',
-        aiHint: 'face cream',
-        price: 38.50,
-        description: 'A lightweight, hyaluronic acid-based moisturizer for all-day hydration without a greasy feel.',
-        category: 'Skincare',
-        stock: 50,
-        unitsSold: 70,
-        revenue: 2695
-    },
-].sort((a,b) => b.revenue - a.revenue);
-
-
 export default function Dashboard() {
   const { products, isHydrated: productsHydrated } = useProductsStore();
   const { orders, isHydrated: ordersHydrated } = useOrdersStore();
@@ -138,9 +74,10 @@ export default function Dashboard() {
     salesData,
     newClientsData,
     recentTransactions,
-    salesByCategoryData
+    salesByCategoryData,
+    topProductsData
   } = React.useMemo(() => {
-    if (!isHydrated) return { totalRevenue: 0, totalOrders: 0, activeProducts: 0, salesData: [], newClientsData: [], recentTransactions: [], salesByCategoryData: [] };
+    if (!isHydrated) return { totalRevenue: 0, totalOrders: 0, activeProducts: 0, salesData: [], newClientsData: [], recentTransactions: [], salesByCategoryData: [], topProductsData: [] };
 
     const nonCancelledOrders = orders.filter(o => o.status !== 'cancelled');
     const totalRevenue = nonCancelledOrders.reduce((sum, order) => sum + order.total, 0);
@@ -167,8 +104,7 @@ export default function Dashboard() {
     });
 
     const newClientsByMonth = customers.reduce((acc, customer) => {
-        const monthIndex = parseInt(customer.id.slice(-2)) % 6;
-        const monthDate = subDays(new Date(), monthIndex * 30);
+        const monthDate = parseISO(customer.orderIds[0] ? orders.find(o => o.id === customer.orderIds[0])?.date || new Date().toISOString() : new Date().toISOString());
         const monthName = format(monthDate, 'MMM', { locale: es });
         acc[monthName] = (acc[monthName] || 0) + 1;
         return acc;
@@ -189,7 +125,14 @@ export default function Dashboard() {
 
     const salesByCategoryData = categories.map((cat, index) => {
         const productsInCategory = products.filter(p => p.category === cat.name);
-        const totalRevenue = productsInCategory.reduce((acc, p) => acc + (p.price * (50 - p.stock)), 0); // Mocked for now
+        const totalRevenue = productsInCategory.reduce((acc, p) => {
+          const ordersWithProduct = nonCancelledOrders.filter(o => o.items.some(i => i.id === p.id));
+          const revenueForProduct = ordersWithProduct.reduce((sum, order) => {
+             const itemInOrder = order.items.find(i => i.id === p.id);
+             return sum + (itemInOrder ? itemInOrder.price * itemInOrder.quantity : 0);
+          }, 0);
+          return acc + revenueForProduct;
+        }, 0);
         return {
             name: cat.label,
             value: Math.floor(totalRevenue),
@@ -197,8 +140,22 @@ export default function Dashboard() {
         }
     }).filter(c => c.value > 0);
 
+    const productSales = nonCancelledOrders.flatMap(o => o.items).reduce((acc, item) => {
+        if (!acc[item.id]) {
+            const productInfo = products.find(p => p.id === item.id);
+            if (!productInfo) return acc;
+            acc[item.id] = { ...productInfo, unitsSold: 0, revenue: 0 };
+        }
+        acc[item.id].unitsSold += item.quantity;
+        acc[item.id].revenue += item.price * item.quantity;
+        return acc;
+    }, {} as Record<string, Product & { unitsSold: number, revenue: number }>);
 
-    return { totalRevenue, totalOrders, activeProducts, salesData, newClientsData, recentTransactions, salesByCategoryData };
+    const topProductsData = Object.values(productSales)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+
+    return { totalRevenue, totalOrders, activeProducts, salesData, newClientsData, recentTransactions, salesByCategoryData, topProductsData };
   }, [isHydrated, orders, products, customers, categories]);
   
   const getInitials = (name?: string) => {
