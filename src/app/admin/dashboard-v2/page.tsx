@@ -47,9 +47,8 @@ import { formatCurrency } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useOrdersStore } from '@/hooks/use-orders';
 import { useCustomersStore } from '@/hooks/use-customers';
-import { format, subDays, eachDayOfInterval } from 'date-fns';
+import { format, subDays, eachDayOfInterval, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale/es';
-import { parseISO } from 'date-fns/parseISO';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import Image from 'next/image';
 import { type Product } from '@/lib/products';
@@ -58,7 +57,7 @@ export default function DashboardV2() {
   const { products, isHydrated: productsHydrated } = useProductsStore();
   const { orders, isHydrated: ordersHydrated } = useOrdersStore();
   const { customers, isHydrated: customersHydrated } = useCustomersStore();
-  const { categories, getCategoryByName } = useCategoriesStore();
+  const { getCategoryByName } = useCategoriesStore();
   const { currency } = useCurrencyStore();
 
   const isHydrated = productsHydrated && ordersHydrated && customersHydrated;
@@ -104,7 +103,7 @@ export default function DashboardV2() {
 
     const salesByCategoryMap = nonCancelledOrders.flatMap(o => o.items).reduce((acc, item) => {
       const product = products.find(p => p.id === item.id);
-      if (product) { // Ensure product exists before processing
+      if (product) {
         const category = product.category;
         const value = item.price * item.quantity;
         acc[category] = (acc[category] || 0) + value;
@@ -124,7 +123,7 @@ export default function DashboardV2() {
 
     const productSales = nonCancelledOrders.flatMap(o => o.items).reduce((acc, item) => {
         const productInfo = products.find(p => p.id === item.id);
-        if (!productInfo) return acc; // Gracefully skip if product not found
+        if (!productInfo) return acc;
 
         if (!acc[item.id]) {
             acc[item.id] = { ...productInfo, unitsSold: 0, revenue: 0 };

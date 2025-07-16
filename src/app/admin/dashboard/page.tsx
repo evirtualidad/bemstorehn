@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,9 +48,8 @@ import { formatCurrency } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useOrdersStore } from '@/hooks/use-orders';
 import { useCustomersStore } from '@/hooks/use-customers';
-import { format, subDays, eachDayOfInterval } from 'date-fns';
+import { format, subDays, eachDayOfInterval, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale/es';
-import { parseISO } from 'date-fns/parseISO';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import Image from 'next/image';
 import { type Product } from '@/lib/products';
@@ -60,7 +58,7 @@ export default function Dashboard() {
   const { products, isHydrated: productsHydrated } = useProductsStore();
   const { orders, isHydrated: ordersHydrated } = useOrdersStore();
   const { customers, isHydrated: customersHydrated } = useCustomersStore();
-  const { categories, getCategoryByName } = useCategoriesStore();
+  const { getCategoryByName } = useCategoriesStore();
   const { currency } = useCurrencyStore();
 
   const isHydrated = productsHydrated && ordersHydrated && customersHydrated;
@@ -106,7 +104,7 @@ export default function Dashboard() {
 
     const salesByCategoryMap = nonCancelledOrders.flatMap(o => o.items).reduce((acc, item) => {
       const product = products.find(p => p.id === item.id);
-      if (product) { // Ensure product exists before processing
+      if (product) {
         const category = product.category;
         const value = item.price * item.quantity;
         acc[category] = (acc[category] || 0) + value;
@@ -126,7 +124,7 @@ export default function Dashboard() {
 
     const productSales = nonCancelledOrders.flatMap(o => o.items).reduce((acc, item) => {
         const productInfo = products.find(p => p.id === item.id);
-        if (!productInfo) return acc; // Gracefully skip if product not found
+        if (!productInfo) return acc;
 
         if (!acc[item.id]) {
             acc[item.id] = { ...productInfo, unitsSold: 0, revenue: 0 };
@@ -142,15 +140,6 @@ export default function Dashboard() {
 
     return { totalRevenue, totalOrders: totalOrdersValue, activeProducts: activeProductsValue, salesData, recentTransactions, salesByCategoryData, topProductsData };
   }, [isHydrated, orders, products, getCategoryByName]);
-  
-  const getInitials = (name?: string) => {
-    if (!name || name.trim() === '') return 'CF';
-    const names = name.split(' ').filter(Boolean);
-    if (names.length > 1) {
-        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
   
   const statusConfig = {
     'pending-approval': { label: 'Pendiente', variant: 'outline' as const },
@@ -249,6 +238,9 @@ export default function Dashboard() {
         <Card>
             <CardHeader>
                 <CardTitle>Ventas por Categoría</CardTitle>
+                <CardDescription>
+                  Distribución de ingresos por categoría.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
