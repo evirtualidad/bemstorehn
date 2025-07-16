@@ -4,7 +4,6 @@
 import { products as initialProducts, type Product } from '@/lib/products';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { useState, useEffect } from 'react';
 
 type ProductsState = {
   products: Product[];
@@ -16,7 +15,7 @@ type ProductsState = {
   increaseStock: (productId: string, quantity: number) => void;
 };
 
-const useProductsStoreBase = create<ProductsState>()(
+export const useProductsStore = create<ProductsState>()(
   persist(
     (set, get) => ({
       products: initialProducts,
@@ -59,17 +58,3 @@ const useProductsStoreBase = create<ProductsState>()(
     }
   )
 );
-
-// Custom hook to ensure hydration is complete before using the store
-export const useProductsStore = () => {
-  const store = useProductsStoreBase();
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    // This effect runs only on the client side
-    // We can mark the store as hydrated here
-    setIsHydrated(true);
-  }, []);
-
-  return { ...store, isHydrated };
-};

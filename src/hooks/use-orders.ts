@@ -147,7 +147,7 @@ type OrdersState = {
   getOrderById: (orderId: string) => Order | undefined;
 };
 
-const useOrdersStoreBase = create<OrdersState>()(
+export const useOrdersStore = create<OrdersState>()(
   persist(
     (set, get) => ({
       orders: mockOrders,
@@ -240,15 +240,3 @@ const useOrdersStoreBase = create<OrdersState>()(
     }
   )
 );
-
-// Custom hook to ensure hydration is complete before using the store
-export const useOrdersStore = () => {
-  const store = useOrdersStoreBase();
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    setIsHydrated(true);
-  }, []);
-
-  return { ...store, isHydrated };
-};
