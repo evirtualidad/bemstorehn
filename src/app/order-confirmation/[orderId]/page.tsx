@@ -24,7 +24,7 @@ interface OrderConfirmationPageProps {
   };
 }
 
-export default function OrderConfirmationPage({ params }: OrderConfirmationPageProps) {
+export default function OrderConfirmationPage({ params: { orderId } }: OrderConfirmationPageProps) {
   const { getOrderById, isHydrated } = useOrdersStore();
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
@@ -32,12 +32,12 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
 
   React.useEffect(() => {
     if(isHydrated) {
-        const foundOrder = getOrderById(params.orderId);
+        const foundOrder = getOrderById(orderId);
         if (foundOrder) {
             setOrder(foundOrder);
         }
     }
-  }, [isHydrated, getOrderById, params.orderId]);
+  }, [isHydrated, getOrderById, orderId]);
 
   if (!isHydrated) {
     return (
@@ -55,7 +55,7 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
             <main className="flex-grow container mx-auto px-4 py-16 flex items-center justify-center text-center">
                 <div>
                     <h1 className="text-4xl font-bold mb-4">Pedido no encontrado</h1>
-                    <p className="text-muted-foreground mb-8">No pudimos encontrar los detalles para el pedido con ID: {params.orderId}</p>
+                    <p className="text-muted-foreground mb-8">No pudimos encontrar los detalles para el pedido con ID: {orderId}</p>
                     <Button asChild><Link href="/">Volver a la tienda</Link></Button>
                 </div>
             </main>
@@ -78,7 +78,7 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
               Tu pedido ha sido realizado con éxito y está siendo procesado.
             </p>
             <p className="text-muted-foreground text-lg mb-8">
-              Tu ID de pedido es: <span className="font-bold text-foreground">{params.orderId}</span>
+              Tu ID de pedido es: <span className="font-bold text-foreground">{orderId}</span>
             </p>
           </div>
 
@@ -143,5 +143,3 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
     </div>
   );
 }
-
-    
