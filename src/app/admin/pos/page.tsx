@@ -925,6 +925,133 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
     )
 }
 
+function MobileTicketView({
+  cart,
+  total,
+  subtotal,
+  taxAmount,
+  shippingCost,
+  totalWithShipping,
+  isVisible,
+  onUpdateQuantity,
+  onRemoveFromCart,
+  onClearCart,
+  onCheckout,
+  onClose,
+}: {
+  cart: PosCartItem[];
+  total: number;
+  subtotal: number;
+  taxAmount: number;
+  shippingCost: number;
+  totalWithShipping: number;
+  isVisible: boolean;
+  onUpdateQuantity: (productId: string, amount: number) => void;
+  onRemoveFromCart: (productId:string) => void;
+  onClearCart: () => void;
+  onCheckout: () => void;
+  onClose: () => void;
+}) {
+  if (!isVisible) return null;
+  const { currency } = useCurrencyStore();
+  const { taxRate } = useSettingsStore();
+
+  return (
+    <div className="lg:hidden fixed inset-0 bg-black/60 z-30" onClick={onClose}>
+        <div 
+            className="fixed bottom-0 left-0 right-0 h-[60vh] flex flex-col bg-muted/40 rounded-t-2xl"
+            onClick={(e) => e.stopPropagation()}
+        >
+            <div className="p-4 border-b flex-shrink-0 bg-background rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">Pedido Actual</h2>
+                     <div className='flex items-center gap-2'>
+                        <Button variant="ghost" size="sm" onClick={onClearCart} disabled={cart.length === 0}>
+                            Borrar
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={onClose}>
+                            <X className="h-5 w-5" />
+                        </Button>
+                    </div>
+                </div>
+            </div>
+            <div className="flex-grow overflow-hidden bg-background">
+                <ScrollArea className="h-full">
+                    {cart.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                        <p className="text-center text-muted-foreground p-10">
+                            Selecciona productos para empezar
+                        </p>
+                    </div>
+                    ) : (
+                    <div className="p-4 space-y-4">
+                    {cart.map((item) => (
+                        <div key={item.id} className="flex items-start gap-3">
+                        <Image
+                            src={item.image}
+                            alt={item.name}
+                            width={48}
+                            height={48}
+                            className="rounded-md object-cover aspect-square"
+                        />
+                        <div className="flex-1">
+                            <p className="font-semibold text-sm leading-tight">{item.name}</p>
+                            <p className="text-xs text-muted-foreground">{formatCurrency(item.price, currency.code)}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, -1)}>
+                                <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="w-8 text-center text-md font-bold">{item.quantity}</span>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, 1)}>
+                                <Plus className="h-4 w-4" />
+                            </Button>
+                            </div>
+                        </div>
+                        <p className="w-24 text-right font-medium text-sm">{formatCurrency(item.price * item.quantity, currency.code)}</p>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onRemoveFromCart(item.id)}>
+                            <Trash2 className="h-5 w-5" />
+                        </Button>
+                        </div>
+                    ))}
+                    </div>
+                    )}
+                </ScrollArea>
+            </div>
+            <div className="p-4 border-t bg-background space-y-4 flex-shrink-0">
+                <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                        <p className="text-muted-foreground">Subtotal</p>
+                        <p>{formatCurrency(subtotal, currency.code)}</p>
+                    </div>
+                    <div className="flex justify-between">
+                        <p className="text-muted-foreground">ISV ({taxRate * 100}%)</p>
+                        <p>{formatCurrency(taxAmount, currency.code)}</p>
+                    </div>
+                    <div className="flex justify-between">
+                        <p className="text-muted-foreground">Envío</p>
+                        <p>{shippingCost > 0 ? formatCurrency(shippingCost, currency.code) : 'N/A'}</p>
+                    </div>
+                </div>
+                <Separator />
+                <div className="flex justify-between text-xl font-bold">
+                    <p>Total</p>
+                    <p>{formatCurrency(totalWithShipping, currency.code)}</p>
+                </div>
+                <Button
+                    size="lg"
+                    className="w-full h-12 text-lg"
+                    onClick={onCheckout}
+                    disabled={cart.length === 0}
+                >
+                    <CreditCard className="mr-2 h-5 w-5" />
+                    Facturar
+                </Button>
+            </div>
+        </div>
+    </div>
+  );
+}
+
 export default function PosPage() {
   const [cart, setCart] = React.useState<PosCartItem[]>([]);
   const { products, decreaseStock, isHydrated } = useProductsStore();
