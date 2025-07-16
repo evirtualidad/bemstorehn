@@ -79,8 +79,8 @@ export default function AdminLayout({
   }, [orders]);
 
   const navItems = [
-    { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { href: '/admin/dashboard-v2', icon: LineChart, label: 'Dashboard V2' },
+    { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard', exact: true },
+    { href: '/admin/dashboard-v2', icon: LineChart, label: 'Dashboard V2', exact: true },
     { href: '/admin/pos', icon: Tablet, label: 'POS' },
     { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: pendingApprovalCount > 0 ? pendingApprovalCount : null },
     { href: '/admin/inventory', icon: Archive, label: 'Inventario' },
@@ -90,7 +90,7 @@ export default function AdminLayout({
   ];
 
   const DesktopNavItem = ({ item }: { item: any }) => {
-    const isActive = pathname.startsWith(item.href);
+    const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
     return (
      <TooltipProvider>
       <Tooltip>
@@ -120,7 +120,7 @@ export default function AdminLayout({
   };
   
   const MobileNavItem = ({ item }: { item: any }) => {
-    const isActive = pathname.startsWith(item.href);
+    const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
     return (
     <Link
       href={item.href}

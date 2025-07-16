@@ -153,9 +153,6 @@ export default function DashboardV2() {
 
   return (
     <main className="flex flex-1 flex-col gap-4 md:gap-8">
-       <div className="flex items-center">
-            <h1 className="text-2xl font-bold">Dashboard V2</h1>
-       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -237,6 +234,9 @@ export default function DashboardV2() {
         <Card>
             <CardHeader>
                 <CardTitle>Ventas por Categoría</CardTitle>
+                <CardDescription>
+                    Distribución de ingresos por categoría de producto.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
