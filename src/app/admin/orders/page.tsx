@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns/format';
-import { parseISO, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { parseISO, isWithinInterval, startOfDay, endOfDay } from 'date-ns';
 import { es } from 'date-fns/locale/es';
 import { DateRange } from 'react-day-picker';
 
@@ -23,7 +23,8 @@ import {
   Store,
   Truck,
   ListFilter,
-  X
+  X,
+  ClipboardList
 } from 'lucide-react';
 
 import {
@@ -118,6 +119,11 @@ const paymentMethodLabels = {
   tarjeta: 'Tarjeta',
   transferencia: 'Transferencia',
   credito: 'Crédito',
+};
+
+const deliveryMethodLabels = {
+  pickup: 'Recoger en Tienda',
+  delivery: 'Envío a Domicilio',
 };
 
 const orderApprovalFormSchema = z
@@ -431,10 +437,8 @@ function CancelOrderDialog({ order, children }: { order: Order; children: React.
 
 
 export default function OrdersPage() {
-  const { orders, cancelOrder } = useOrdersStore();
-  const { increaseStock } = useProductsStore();
+  const { orders } = useOrdersStore();
   const { currency } = useCurrencyStore();
-  const { toast } = useToast();
   
   const [detailsOrder, setDetailsOrder] = React.useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
@@ -443,6 +447,9 @@ export default function OrdersPage() {
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined);
   const [statusFilter, setStatusFilter] = React.useState<string[]>([]);
   const [channelFilter, setChannelFilter] = React.useState<string[]>([]);
+  const [paymentMethodFilter, setPaymentMethodFilter] = React.useState<string[]>([]);
+  const [deliveryMethodFilter, setDeliveryMethodFilter] = React.useState<string[]>([]);
+
 
   const sortedOrders = [...orders].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -463,19 +470,21 @@ export default function OrdersPage() {
       if (channelFilter.length > 0 && !channelFilter.includes(order.source)) {
         return false;
       }
+       // Payment Method filter
+      if (paymentMethodFilter.length > 0 && !paymentMethodFilter.includes(order.paymentMethod)) {
+        return false;
+      }
+       // Delivery Method filter
+      if (deliveryMethodFilter.length > 0 && !deliveryMethodFilter.includes(order.deliveryMethod || '')) {
+        return false;
+      }
       return true;
     });
-  }, [sortedOrders, dateRange, statusFilter, channelFilter]);
+  }, [sortedOrders, dateRange, statusFilter, channelFilter, paymentMethodFilter, deliveryMethodFilter]);
 
-  const handleStatusFilterChange = (status: string, checked: boolean) => {
-    setStatusFilter(prev => 
-      checked ? [...prev, status] : prev.filter(s => s !== status)
-    );
-  };
-  
-  const handleChannelFilterChange = (channel: string, checked: boolean) => {
-    setChannelFilter(prev => 
-      checked ? [...prev, channel] : prev.filter(c => c !== channel)
+  const handleFilterChange = (setter: React.Dispatch<React.SetStateAction<string[]>>) => (value: string, checked: boolean) => {
+    setter(prev => 
+      checked ? [...prev, value] : prev.filter(v => v !== value)
     );
   };
   
@@ -483,6 +492,8 @@ export default function OrdersPage() {
     setDateRange(undefined);
     setStatusFilter([]);
     setChannelFilter([]);
+    setPaymentMethodFilter([]);
+    setDeliveryMethodFilter([]);
   };
 
   const handleViewDetails = (order: Order) => {
@@ -490,7 +501,7 @@ export default function OrdersPage() {
     setIsDetailsOpen(true);
   };
 
-  const isFiltered = dateRange || statusFilter.length > 0 || channelFilter.length > 0;
+  const isFiltered = dateRange || statusFilter.length > 0 || channelFilter.length > 0 || paymentMethodFilter.length > 0 || deliveryMethodFilter.length > 0;
 
   return (
     <main className="grid flex-1 items-start gap-4">
@@ -506,10 +517,10 @@ export default function OrdersPage() {
                   Una lista de todos los pedidos realizados en tu tienda.
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant={"outline"} className={cn("w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                    <Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {dateRange?.from ? (
                         dateRange.to ? (
@@ -542,7 +553,7 @@ export default function OrdersPage() {
                         <Button variant="outline" size="sm" className="h-10 gap-1">
                             <ListFilter className="h-3.5 w-3.5" />
                             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                            Filtrar
+                            Filtros
                             </span>
                         </Button>
                     </DropdownMenuTrigger>
@@ -553,7 +564,7 @@ export default function OrdersPage() {
                             <DropdownMenuCheckboxItem
                                 key={key}
                                 checked={statusFilter.includes(key)}
-                                onCheckedChange={(checked) => handleStatusFilterChange(key, checked)}
+                                onCheckedChange={(checked) => handleFilterChange(setStatusFilter)(key, checked as boolean)}
                             >
                                 {config.label}
                             </DropdownMenuCheckboxItem>
@@ -563,21 +574,45 @@ export default function OrdersPage() {
                          <DropdownMenuSeparator />
                         <DropdownMenuCheckboxItem
                             checked={channelFilter.includes('pos')}
-                            onCheckedChange={(checked) => handleChannelFilterChange('pos', checked)}
+                            onCheckedChange={(checked) => handleFilterChange(setChannelFilter)('pos', checked as boolean)}
                         >
                             POS
                         </DropdownMenuCheckboxItem>
                         <DropdownMenuCheckboxItem
                             checked={channelFilter.includes('online-store')}
-                            onCheckedChange={(checked) => handleChannelFilterChange('online-store', checked)}
+                            onCheckedChange={(checked) => handleFilterChange(setChannelFilter)('online-store', checked as boolean)}
                         >
                             Tienda Online
                         </DropdownMenuCheckboxItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Método de Pago</DropdownMenuLabel>
+                         <DropdownMenuSeparator />
+                        {Object.entries(paymentMethodLabels).map(([key, label]) => (
+                          <DropdownMenuCheckboxItem
+                              key={key}
+                              checked={paymentMethodFilter.includes(key)}
+                              onCheckedChange={(checked) => handleFilterChange(setPaymentMethodFilter)(key, checked as boolean)}
+                          >
+                              {label}
+                          </DropdownMenuCheckboxItem>
+                        ))}
+                         <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Tipo de Pedido</DropdownMenuLabel>
+                         <DropdownMenuSeparator />
+                        {Object.entries(deliveryMethodLabels).map(([key, label]) => (
+                          <DropdownMenuCheckboxItem
+                              key={key}
+                              checked={deliveryMethodFilter.includes(key)}
+                              onCheckedChange={(checked) => handleFilterChange(setDeliveryMethodFilter)(key, checked as boolean)}
+                          >
+                              {label}
+                          </DropdownMenuCheckboxItem>
+                        ))}
                     </DropdownMenuContent>
                 </DropdownMenu>
 
                 {isFiltered && (
-                    <Button variant="ghost" onClick={clearFilters}>
+                    <Button variant="ghost" onClick={clearFilters} className="h-10">
                         <X className="mr-2 h-4 w-4" />
                         Limpiar
                     </Button>
@@ -592,6 +627,7 @@ export default function OrdersPage() {
                 <TableHead>Pedido</TableHead>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Canal</TableHead>
+                <TableHead>Tipo</TableHead>
                 <TableHead>Fecha</TableHead>
                 <TableHead>Método de Pago</TableHead>
                 <TableHead>Estado</TableHead>
@@ -617,11 +653,17 @@ export default function OrdersPage() {
                     <TableCell>
                         <Badge variant="outline">{order.source === 'pos' ? 'POS' : 'Tienda Online'}</Badge>
                     </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {order.deliveryMethod === 'pickup' ? <Store className="h-4 w-4 text-muted-foreground" /> : <Truck className="h-4 w-4 text-muted-foreground" />}
+                        <span className="hidden sm:inline">{deliveryMethodLabels[order.deliveryMethod || 'pickup']}</span>
+                      </div>
+                    </TableCell>
                     <TableCell>{format(parseISO(order.date), 'd MMM, yyyy')}</TableCell>
                     <TableCell>
                         <div className="flex items-center gap-2">
                             {paymentMethodIcons[order.paymentMethod as keyof typeof paymentMethodIcons]}
-                            {paymentMethodLabels[order.paymentMethod as keyof typeof paymentMethodLabels]}
+                            <span className="hidden sm:inline">{paymentMethodLabels[order.paymentMethod as keyof typeof paymentMethodLabels]}</span>
                         </div>
                     </TableCell>
                     <TableCell>
@@ -679,7 +721,7 @@ export default function OrdersPage() {
                 )
               }) : (
                 <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center">
+                    <TableCell colSpan={9} className="h-24 text-center">
                         No se encontraron pedidos con los filtros aplicados.
                     </TableCell>
                 </TableRow>
