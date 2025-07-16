@@ -11,23 +11,6 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast"
-import { cn } from "@/lib/utils"
-
-const CustomToastViewport = React.forwardRef<
-  React.ElementRef<typeof ToastViewport>,
-  React.ComponentPropsWithoutRef<typeof ToastViewport>
->(({ className, ...props }, ref) => (
-  <ToastViewport
-    ref={ref}
-    className={cn(
-      "fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:top-0 sm:right-1/2 sm:translate-x-1/2 sm:flex-col md:max-w-[420px]",
-      className
-    )}
-    {...props}
-  />
-));
-CustomToastViewport.displayName = "ToastViewport"
-
 
 export function Toaster() {
   const { toasts } = useToast()
@@ -48,7 +31,7 @@ export function Toaster() {
           </Toast>
         )
       })}
-      <CustomToastViewport />
+      <ToastViewport />
     </ToastProvider>
   )
 }
