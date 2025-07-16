@@ -124,12 +124,12 @@ export default function Dashboard() {
   }, [isHydrated, orders, products, customers]);
   
   const getInitials = (name: string) => {
-      if (!name) return 'CF';
-      const names = name.split(' ');
-      if (names.length > 1) {
-          return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-      }
-      return name.substring(0, 2).toUpperCase();
+    if (!name) return 'CF';
+    const names = name.split(' ');
+    if (names.length > 1) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   };
   
   const statusConfig = {
