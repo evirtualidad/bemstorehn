@@ -926,7 +926,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
 
 export default function PosPage() {
   const [cart, setCart] = React.useState<PosCartItem[]>([]);
-  const { products, decreaseStock, isHydrated } = useProductsStore();
+  const { products, decreaseStock } = useProductsStore();
   const { addOrder } = useOrdersStore();
   const { addOrUpdateCustomer } = useCustomersStore();
   const { categories } = useCategoriesStore();
@@ -939,12 +939,17 @@ export default function PosPage() {
   const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
   const [shippingCost, setShippingCost] = React.useState(0);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = React.useState(false);
+  const [isClient, setIsClient] = React.useState(false);
 
-  const productCategories = React.useMemo(() => isHydrated ? [...new Set(products.map((p) => p.category))] : [], [products, isHydrated]);
-  const hasOfferProducts = React.useMemo(() => isHydrated ? products.some(p => p.originalPrice && p.originalPrice > p.price) : false, [products, isHydrated]);
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const productCategories = React.useMemo(() => isClient ? [...new Set(products.map((p) => p.category))] : [], [products, isClient]);
+  const hasOfferProducts = React.useMemo(() => isClient ? products.some(p => p.originalPrice && p.originalPrice > p.price) : false, [products, isClient]);
   
   const filteredProducts = React.useMemo(() => {
-    if (!isHydrated) return [];
+    if (!isClient) return [];
     if (!selectedFilter) return products;
     
     if (selectedFilter.type === 'category') {
@@ -954,7 +959,7 @@ export default function PosPage() {
       return products.filter(p => p.originalPrice && p.originalPrice > p.price);
     }
     return products;
-  }, [selectedFilter, products, isHydrated]);
+  }, [selectedFilter, products, isClient]);
 
   const { subtotal, taxAmount, total } = React.useMemo(() => {
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -1189,7 +1194,7 @@ export default function PosPage() {
     }
   }
 
-  if (!isHydrated) {
+  if (!isClient) {
     return (
       <div className="flex h-screen flex-col bg-muted/40">
         <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20">
