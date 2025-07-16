@@ -744,7 +744,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
                         name="phone"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Teléfono {(paymentMethod !== 'credito' && deliveryMethod !== 'delivery') && '(Opcional)'}</FormLabel>
+                                <FormLabel>Teléfono</FormLabel>
                                 <FormControl>
                                     <Input placeholder="Número de teléfono" {...field} className="h-11"/>
                                 </FormControl>

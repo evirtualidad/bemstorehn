@@ -65,7 +65,7 @@ export function CustomerSearch({ onCustomerSelect, form }: CustomerSearchProps) 
             name="name"
             render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Nombre del Cliente (Opcional)</FormLabel>
+                    <FormLabel>Nombre del Cliente</FormLabel>
                     <div className='relative'>
                         <UserSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <FormControl>
