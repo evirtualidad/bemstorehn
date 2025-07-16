@@ -106,7 +106,7 @@ export default function Dashboard() {
 
     const salesByCategoryMap = nonCancelledOrders.flatMap(o => o.items).reduce((acc, item) => {
       const product = products.find(p => p.id === item.id);
-      if (product) {
+      if (product) { // Ensure product exists before processing
         const category = product.category;
         const value = item.price * item.quantity;
         acc[category] = (acc[category] || 0) + value;
@@ -125,9 +125,10 @@ export default function Dashboard() {
 
 
     const productSales = nonCancelledOrders.flatMap(o => o.items).reduce((acc, item) => {
+        const productInfo = products.find(p => p.id === item.id);
+        if (!productInfo) return acc; // Gracefully skip if product not found
+
         if (!acc[item.id]) {
-            const productInfo = products.find(p => p.id === item.id);
-            if (!productInfo) return acc;
             acc[item.id] = { ...productInfo, unitsSold: 0, revenue: 0 };
         }
         acc[item.id].unitsSold += item.quantity;
@@ -140,7 +141,7 @@ export default function Dashboard() {
       .slice(0, 5);
 
     return { totalRevenue, totalOrders: totalOrdersValue, activeProducts: activeProductsValue, salesData, recentTransactions, salesByCategoryData, topProductsData };
-  }, [isHydrated, orders, products, categories, getCategoryByName]);
+  }, [isHydrated, orders, products, getCategoryByName]);
   
   const getInitials = (name?: string) => {
     if (!name || name.trim() === '') return 'CF';
@@ -391,3 +392,5 @@ export default function Dashboard() {
     </main>
   );
 }
+
+    
