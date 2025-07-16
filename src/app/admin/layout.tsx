@@ -36,6 +36,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import * as React from 'react';
 import { useOrdersStore } from '@/hooks/use-orders';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 function CurrencySelector() {
     const { currency, currencies, setCurrency } = useCurrencyStore();
@@ -76,7 +77,7 @@ export default function AdminLayout({
   }, [orders]);
 
   const navItems = [
-    { href: '/admin/dashboard', icon: Activity, label: 'Dashboard', exact: true },
+    { href: '/admin/dashboard', icon: Activity, label: 'Dashboard' },
     { href: '/admin/pos', icon: Tablet, label: 'POS' },
     { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: pendingApprovalCount > 0 ? pendingApprovalCount : null },
     { href: '/admin/inventory', icon: Archive, label: 'Inventario' },
@@ -184,6 +185,7 @@ export default function AdminLayout({
         </Sheet>
         <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
           <div className="ml-auto flex items-center gap-4">
+             <ThemeToggle />
              <CurrencySelector />
           </div>
           <DropdownMenu>
