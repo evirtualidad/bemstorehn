@@ -162,19 +162,24 @@ function FeaturedProductsCarousel({ products }: { products: Product[] }) {
 }
 
 export default function Home() {
-  const { products, isHydrated } = useProductsStore();
+  const { products } = useProductsStore();
   const { banners } = useBannersStore();
   const { categories } = useCategoriesStore();
   const { items, total, toggleCart } = useCart();
   const { currency } = useCurrencyStore();
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const itemCount = React.useMemo(() => {
     return items.reduce((sum, item) => sum + item.quantity, 0);
   }, [items]);
 
   const productsByCategory = React.useMemo(() => {
-    if (!isHydrated) return {};
+    if (!isClient) return {};
     return products.reduce((acc, product) => {
       const { category } = product;
       if (!acc[category]) {
@@ -183,15 +188,15 @@ export default function Home() {
       acc[category].push(product);
       return acc;
     }, {} as Record<string, Product[]>);
-  }, [products, isHydrated]);
+  }, [products, isClient]);
   
   const featuredOfferProducts = React.useMemo(() => 
-    isHydrated ? products.filter((p) => p.featured && p.originalPrice && p.originalPrice > p.price) : [], 
-  [products, isHydrated]);
+    isClient ? products.filter((p) => p.featured && p.originalPrice && p.originalPrice > p.price) : [], 
+  [products, isClient]);
   
   const offerProducts = React.useMemo(() => 
-    isHydrated ? products.filter(p => p.originalPrice && p.originalPrice > p.price) : [],
-  [products, isHydrated]);
+    isClient ? products.filter(p => p.originalPrice && p.originalPrice > p.price) : [],
+  [products, isClient]);
 
   const filteredProducts = React.useMemo(() => {
     if (!selectedCategory) return [];
@@ -202,7 +207,7 @@ export default function Home() {
   }, [selectedCategory, products, offerProducts]);
   
   
-  if (!isHydrated) {
+  if (!isClient) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header 

@@ -17,21 +17,29 @@ import { Product } from '@/lib/products';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import * as React from 'react';
 
 export default function ProductDetailPage({ params }: { params: { productId: string } }) {
-  const { getProductById, products, isHydrated } = useProductsStore();
+  const { getProductById, products } = useProductsStore();
   const { getCategoryByName } = useCategoriesStore();
   const { addToCart } = useCart();
   const { toast } = useToast();
   const { currency } = useCurrencyStore();
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
   
   const product = getProductById(params.productId);
 
-  if (!isHydrated) {
+  if (!isClient) {
     return (
         <div className="bg-background min-h-screen">
           <Header />
-          <LoadingSpinner />
+          <div className="flex-1 flex items-center justify-center">
+            <LoadingSpinner />
+          </div>
         </div>
     );
   }
