@@ -57,10 +57,7 @@ export function CustomerSearch({ onCustomerSelect, form }: CustomerSearchProps) 
       const newQuery = e.target.value;
       setSearchQuery(newQuery);
       form.setValue('name', newQuery); // Update form value as user types
-      // If user starts typing a new name, clear previous customer's other data
-      if (form.getValues('address')) {
-         onCustomerSelect(null);
-      }
+      onCustomerSelect(null);
   }
 
   return (

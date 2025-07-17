@@ -132,12 +132,10 @@ function ShippingDialog({
     const selectedShippingOption = form.watch('shippingOption');
     
     useEffect(() => {
-        const isNational = selectedShippingOption === 'national';
-        if (!isNational) {
+        // Si es un envío local y el departamento está vacío, lo seteamos.
+        if (selectedShippingOption === 'local' && !form.getValues('department')) {
             form.setValue('department', 'Francisco Morazán');
             form.setValue('municipality', 'Distrito Central');
-            form.clearErrors('department');
-            form.clearErrors('municipality');
         }
     }, [selectedShippingOption, form]);
 

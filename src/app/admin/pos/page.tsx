@@ -434,14 +434,10 @@ function ShippingDialog({
   const selectedShippingOption = form.watch('shippingOption');
 
   React.useEffect(() => {
-    // This effect now only runs if the component is being initialized for a new entry
-    // or if the address type changes, but not to set a default.
-    const isNational = selectedShippingOption === 'national';
-    if (!isNational) {
+    // Si es un envío local y el departamento está vacío, lo seteamos.
+    if (selectedShippingOption === 'local' && !form.getValues('department')) {
       form.setValue('department', 'Francisco Morazán');
       form.setValue('municipality', 'Distrito Central');
-      form.clearErrors('department');
-      form.clearErrors('municipality');
     }
   }, [selectedShippingOption, form]);
 
@@ -612,7 +608,7 @@ function ShippingDialog({
   );
 }
 
-function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, subtotal, taxAmount, shippingCost, totalWithShipping, change, isInDialog, onOpenShipping, onCustomerSelect }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, cart: PosCartItem[], total: number, subtotal: number, taxAmount: number, shippingCost: number, totalWithShipping: number, change: number, isInDialog?: boolean, onOpenShipping: () => void, onCustomerSelect: (customer: Customer) => void }) {
+function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, subtotal, taxAmount, shippingCost, totalWithShipping, change, isInDialog, onOpenShipping, onCustomerSelect }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, cart: PosCartItem[], total: number, subtotal: number, taxAmount: number, shippingCost: number, totalWithShipping: number, change: number, isInDialog?: boolean, onOpenShipping: () => void, onCustomerSelect: (customer: Customer | null) => void }) {
     const paymentMethod = form.watch('paymentMethod');
     const deliveryMethod = form.watch('deliveryMethod');
     const address = form.watch('address');
@@ -963,22 +959,14 @@ export default function PosPage() {
   };
 
   const handleCustomerSelect = (customer: Customer | null) => {
+    form.setValue('address', undefined);
+    setShippingCost(0);
+        
     if (customer) {
         form.setValue('name', customer.name);
         form.setValue('phone', customer.phone || '');
         if (customer.address) {
             form.setValue('address', customer.address as Address);
-        } else {
-            form.setValue('address', undefined);
-            if (form.getValues('deliveryMethod') === 'delivery') {
-                setShippingCost(0);
-            }
-        }
-    } else {
-        // This case handles when the user clears the search or types a new name
-        form.setValue('address', undefined);
-        if (form.getValues('deliveryMethod') === 'delivery') {
-            setShippingCost(0);
         }
     }
 };
