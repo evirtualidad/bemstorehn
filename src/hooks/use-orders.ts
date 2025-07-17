@@ -56,7 +56,7 @@ type OrdersState = {
   orders: Order[];
   isLoading: boolean;
   fetchOrders: () => Promise<void>;
-  addOrder: (orderData: NewOrderData) => Promise<Order | null>;
+  addOrder: (orderData: NewOrderData) => Promise<Order>;
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => Promise<void>;
   approveOrder: (data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
@@ -95,9 +95,8 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
         .single();
     
     if (error) {
-        toast({ title: 'Error', description: error.message, variant: 'destructive' });
         set({ isLoading: false });
-        return null;
+        throw new Error(error.message);
     }
 
     const newOrder = data as Order;

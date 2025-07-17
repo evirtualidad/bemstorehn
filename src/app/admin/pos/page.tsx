@@ -1029,7 +1029,7 @@ export default function PosPage() {
       return;
     }
     
-    const userId = session?.user?.id || 'mock-admin-id';
+    const userId = session?.user?.id;
 
     try {
         const orderData: NewOrderData = {
@@ -1037,7 +1037,7 @@ export default function PosPage() {
             customer_name: values.name || 'Consumidor Final',
             customer_phone: values.phone || 'N/A',
             customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
-            items: cart.map(({ aiHint, ...rest }) => rest), // Remove aiHint before storing
+            items: cart.map(({ aiHint, ...rest }) => rest),
             total: totalWithShipping,
             shipping_cost: shippingCost,
             payment_method: values.paymentMethod,
@@ -1058,41 +1058,36 @@ export default function PosPage() {
 
       const newOrder = await addOrder(orderData);
 
-      if (newOrder) {
-        for (const item of cart) {
-            await decreaseStock(item.id, item.quantity);
-        }
-        
-        if (values.phone) {
-             await addOrUpdateCustomer({
-                phone: values.phone,
-                name: values.name || 'Cliente',
-                address: values.address,
-                order_id: newOrder.id,
-                total_to_add: totalWithShipping,
-             });
-        }
-
-
-        setTimeout(() => {
-          toast({
-            title: '¡Pedido Creado!',
-            description: `Pedido ${newOrder.display_id} creado con éxito.`,
-          });
-        }, 0);
-
-        clearCartAndForm();
-        setIsCheckoutOpen(false);
-        setIsTicketVisible(false);
-      } else {
-        throw new Error('La creación del pedido falló en el store.');
+      for (const item of cart) {
+          await decreaseStock(item.id, item.quantity);
       }
-    } catch (error) {
+      
+      if (values.phone) {
+           await addOrUpdateCustomer({
+              phone: values.phone,
+              name: values.name || 'Cliente',
+              address: values.address,
+              order_id: newOrder.id,
+              total_to_add: totalWithShipping,
+           });
+      }
+
+      setTimeout(() => {
+        toast({
+          title: '¡Pedido Creado!',
+          description: `Pedido ${newOrder.display_id} creado con éxito.`,
+        });
+      }, 0);
+
+      clearCartAndForm();
+      setIsCheckoutOpen(false);
+      setIsTicketVisible(false);
+    } catch (error: any) {
       console.error('Error al crear el pedido:', error);
       setTimeout(() => {
         toast({
           title: 'Error al crear pedido',
-          description: 'Hubo un problema al crear el pedido. Intenta de nuevo.',
+          description: error.message || 'Hubo un problema al crear el pedido. Intenta de nuevo.',
           variant: 'destructive',
         });
       }, 0);
