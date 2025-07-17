@@ -240,10 +240,13 @@ function BannersManager() {
         imageUrl = uploadedUrl;
     }
     
-    const newBannerData = {
-      ...values,
+    const newBannerData: Omit<Banner, 'id'> = {
+      title: values.title,
+      description: values.description,
       image: imageUrl,
+      ...(values.aiHint && { aiHint: values.aiHint }),
     };
+
     await addBanner(supabaseClient, newBannerData);
     setIsDialogOpen(false);
   };
@@ -260,11 +263,18 @@ function BannersManager() {
         imageUrl = values.image;
     }
 
-    await updateBanner(supabaseClient, {
+    const updatedBannerData: Banner = {
       ...editingBanner,
       ...values,
       image: imageUrl,
-    });
+      ...(values.aiHint && { aiHint: values.aiHint }),
+    };
+    
+    if (!values.aiHint) {
+        delete (updatedBannerData as Partial<Banner>).aiHint;
+    }
+
+    await updateBanner(supabaseClient, updatedBannerData);
 
     setEditingBanner(null);
     setIsDialogOpen(false);
