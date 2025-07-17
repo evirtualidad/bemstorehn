@@ -76,7 +76,7 @@ export default function UsersPage() {
             ...u,
             app_metadata: {
                 ...u.app_metadata,
-                role: u.app_metadata.role || 'cashier', // Default to cashier if no role
+                role: u.app_metadata.role || 'admin', // Default to admin if no role
             },
         }));
         setUsers(sanitizedUsers);
