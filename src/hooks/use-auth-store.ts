@@ -18,7 +18,8 @@ type AuthState = {
 
 const getRoleFromSession = (session: Session | null): UserRole | null => {
   if (!session) return null;
-  return session.user?.app_metadata?.role || null;
+  // Default to 'cashier' if no role is explicitly assigned.
+  return session.user?.app_metadata?.role || 'cashier';
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
