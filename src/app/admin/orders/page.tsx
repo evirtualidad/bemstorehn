@@ -527,10 +527,10 @@ export default function OrdersPage() {
                   Una lista de todos los pedidos realizados en tu tienda.
                 </CardDescription>
               </div>
-              <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2 w-full sm:w-auto">
+              <div className="flex items-center gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant={"outline"} className={cn("w-full sm:w-auto md:w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                    <Button variant={"outline"} className={cn("w-[240px] sm:w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {dateRange?.from ? (
                         dateRange.to ? (
@@ -560,7 +560,7 @@ export default function OrdersPage() {
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-10 gap-1 w-full sm:w-auto">
+                        <Button variant="outline" size="sm" className="h-10 gap-1">
                             <ListFilter className="h-3.5 w-3.5" />
                             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                             Filtros
@@ -622,7 +622,7 @@ export default function OrdersPage() {
                 </DropdownMenu>
 
                 {isFiltered && (
-                    <Button variant="ghost" onClick={clearFilters} className="h-10 w-full sm:w-auto">
+                    <Button variant="ghost" onClick={clearFilters} className="h-10">
                         <X className="mr-2 h-4 w-4" />
                         Limpiar
                     </Button>
