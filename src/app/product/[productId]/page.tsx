@@ -46,7 +46,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     return (
         <div className="bg-background min-h-screen">
           <Header />
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center h-[50vh]">
             <LoadingSpinner />
           </div>
         </div>
