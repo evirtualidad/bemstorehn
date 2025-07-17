@@ -1,117 +1,115 @@
+-- Habilitar la extensión para generar UUIDs si no está habilitada
+create extension if not exists "uuid-ossp" with schema extensions;
 
--- Habilitar la extensión para generar UUIDs
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
-
--- Crear la tabla de categorías
-CREATE TABLE IF NOT EXISTS public.categories (
-    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    name TEXT NOT NULL UNIQUE,
-    label TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+-- Tabla para Categorías de Productos
+create table if not exists public.categories (
+  id uuid primary key default uuid_generate_v4(),
+  name text not null unique,
+  label text not null,
+  created_at timestamptz not null default now()
 );
 
--- Crear la tabla de productos
-CREATE TABLE IF NOT EXISTS public.products (
-    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    name TEXT NOT NULL,
-    description TEXT,
-    price NUMERIC NOT NULL,
-    originalPrice NUMERIC,
-    image TEXT,
-    aiHint TEXT,
-    stock INT NOT NULL DEFAULT 0,
-    featured BOOLEAN DEFAULT false,
-    category TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+-- Tabla para Productos
+create table if not exists public.products (
+  id uuid primary key default uuid_generate_v4(),
+  name text not null,
+  description text,
+  price numeric(10, 2) not null,
+  original_price numeric(10, 2),
+  image text,
+  ai_hint text,
+  category text not null,
+  stock integer not null default 0,
+  featured boolean default false,
+  created_at timestamptz not null default now()
 );
 
--- Crear la tabla de banners
-CREATE TABLE IF NOT EXISTS public.banners (
-    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    title TEXT NOT NULL,
-    description TEXT,
-    image TEXT,
-    aiHint TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+-- Tabla para Banners del Carrusel
+create table if not exists public.banners (
+  id uuid primary key default uuid_generate_v4(),
+  title text not null,
+  description text,
+  image text,
+  ai_hint text,
+  created_at timestamptz not null default now()
 );
 
--- Crear la tabla de clientes
-CREATE TABLE IF NOT EXISTS public.customers (
-    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    name TEXT NOT NULL,
-    phone TEXT NOT NULL UNIQUE,
-    address JSONB,
-    total_spent NUMERIC NOT NULL DEFAULT 0,
-    order_count INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+-- Tabla para Clientes
+create table if not exists public.customers (
+  id uuid primary key default uuid_generate_v4(),
+  name text not null,
+  phone text not null unique,
+  address jsonb,
+  total_spent numeric(10, 2) not null default 0,
+  order_count integer not null default 0,
+  created_at timestamptz not null default now()
 );
 
--- Crear la tabla de pedidos
-CREATE TABLE IF NOT EXISTS public.orders (
-    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
-    display_id TEXT UNIQUE NOT NULL DEFAULT concat('ORD-', substr(replace(extensions.uuid_generate_v4()::text, '-', ''), 1, 6)),
-    customer_id UUID REFERENCES public.customers(id),
-    customer_name TEXT,
-    customer_phone TEXT,
-    customer_address JSONB,
-    items JSONB NOT NULL,
-    total NUMERIC NOT NULL,
-    shipping_cost NUMERIC,
-    balance NUMERIC NOT NULL DEFAULT 0,
-    payments JSONB DEFAULT '[]'::jsonb,
-    payment_method TEXT,
-    payment_reference TEXT,
-    payment_due_date TIMESTAMPTZ,
-    status TEXT NOT NULL,
-    source TEXT NOT NULL,
-    delivery_method TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+-- Tabla para Pedidos
+create table if not exists public.orders (
+  id uuid primary key default uuid_generate_v4(),
+  display_id text unique not null default concat('BEM-', substr(upper(md5(random()::text)), 1, 6)),
+  created_at timestamptz not null default now(),
+  customer_id uuid references public.customers(id),
+  customer_name text not null,
+  customer_phone text,
+  customer_address jsonb,
+  items jsonb not null,
+  total numeric(10, 2) not null,
+  shipping_cost numeric(10, 2) not null default 0,
+  balance numeric(10, 2) not null default 0,
+  payments jsonb,
+  payment_method text not null,
+  payment_due_date timestamptz,
+  payment_reference text,
+  status text not null,
+  source text not null,
+  delivery_method text
 );
 
--- Configurar Políticas de Seguridad a Nivel de Fila (RLS)
--- Habilitar RLS para todas las tablas
-ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.banners ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
+-- Políticas de Seguridad (Row Level Security)
 
--- Políticas para acceso público de LECTURA (SELECT)
-DROP POLICY IF EXISTS "Public can read categories" ON public.categories;
-CREATE POLICY "Public can read categories" ON public.categories FOR SELECT USING (true);
+-- Permitir acceso público de lectura a categorías, productos y banners
+alter table public.categories enable row level security;
+drop policy if exists "Public can read categories" on public.categories;
+create policy "Public can read categories" on public.categories for select using (true);
 
-DROP POLICY IF EXISTS "Public can read products" ON public.products;
-CREATE POLICY "Public can read products" ON public.products FOR SELECT USING (true);
+alter table public.products enable row level security;
+drop policy if exists "Public can read products" on public.products;
+create policy "Public can read products" on public.products for select using (true);
 
-DROP POLICY IF EXISTS "Public can read banners" ON public.banners;
-CREATE POLICY "Public can read banners" ON public.banners FOR SELECT USING (true);
+alter table public.banners enable row level security;
+drop policy if exists "Public can read banners" on public.banners;
+create policy "Public can read banners" on public.banners for select using (true);
 
--- Políticas para que los usuarios autenticados puedan gestionar la información
--- Cualquiera autenticado puede gestionar las tablas
-DROP POLICY IF EXISTS "Authenticated users can manage data" ON public.categories;
-CREATE POLICY "Authenticated users can manage data" ON public.categories FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
+-- Permitir a usuarios autenticados gestionar datos
+drop policy if exists "Authenticated users can manage data" on public.categories;
+create policy "Authenticated users can manage data" on public.categories for all
+using (auth.role() = 'authenticated')
+with check (auth.role() = 'authenticated');
 
-DROP POLICY IF EXISTS "Authenticated users can manage data" ON public.products;
-CREATE POLICY "Authenticated users can manage data" ON public.products FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
+drop policy if exists "Authenticated users can manage data" on public.products;
+create policy "Authenticated users can manage data" on public.products for all
+using (auth.role() = 'authenticated')
+with check (auth.role() = 'authenticated');
 
-DROP POLICY IF EXISTS "Authenticated users can manage data" ON public.banners;
-CREATE POLICY "Authenticated users can manage data" ON public.banners FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
+drop policy if exists "Authenticated users can manage data" on public.banners;
+create policy "Authenticated users can manage data" on public.banners for all
+using (auth.role() = 'authenticated')
+with check (auth.role() = 'authenticated');
 
-DROP POLICY IF EXISTS "Authenticated users can manage data" ON public.orders;
-CREATE POLICY "Authenticated users can manage data" ON public.orders FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
+-- Permitir a usuarios autenticados gestionar pedidos y clientes
+alter table public.orders enable row level security;
+drop policy if exists "Authenticated users can manage data" on public.orders;
+create policy "Authenticated users can manage data" on public.orders for all
+using (auth.role() = 'authenticated')
+with check (auth.role() = 'authenticated');
 
-DROP POLICY IF EXISTS "Authenticated users can manage data" ON public.customers;
-CREATE POLICY "Authenticated users can manage data" ON public.customers FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
+alter table public.customers enable row level security;
+drop policy if exists "Authenticated users can manage data" on public.customers;
+create policy "Authenticated users can manage data" on public.customers for all
+using (auth.role() = 'authenticated')
+with check (auth.role() = 'authenticated');
 
 
 -- Insertar datos de ejemplo
@@ -121,6 +119,27 @@ INSERT INTO public.categories (name, label) VALUES
 ('Makeup', 'Maquillaje'),
 ('Haircare', 'Cuidado del Cabello')
 ON CONFLICT (name) DO NOTHING;
+
+-- Seed data for products
+INSERT INTO public.products (name, image, ai_hint, price, original_price, description, category, stock, featured) VALUES
+('Glow Serum', 'https://placehold.co/400x400.png', 'skincare serum', 35.00, 45.00, 'A vitamin C serum for a radiant and even skin tone. Fights free radicals and boosts collagen production.', 'Skincare', 25, true),
+('Hydra-Boost Moisturizer', 'https://placehold.co/400x400.png', 'face cream', 38.50, NULL, 'A lightweight, hyaluronic acid-based moisturizer for all-day hydration without a greasy feel.', 'Skincare', 50, false),
+('Velvet Matte Lipstick', 'https://placehold.co/400x400.png', 'red lipstick', 24.00, NULL, 'A long-lasting, highly pigmented matte lipstick in a classic red shade. Enriched with vitamin E.', 'Makeup', 8, true),
+('Luminous Foundation', 'https://placehold.co/400x400.png', 'makeup foundation', 52.00, 60.00, 'A medium-coverage foundation that provides a natural, luminous finish. Available in 20 shades.', 'Makeup', 30, true),
+('Argan Oil Hair Repair', 'https://placehold.co/400x400.png', 'hair oil', 30.00, NULL, 'Nourishing argan oil treatment to tame frizz, add shine, and protect hair from heat damage.', 'Haircare', 0, false),
+('Volumizing Dry Shampoo', 'https://placehold.co/400x400.png', 'hair shampoo', 18.00, NULL, 'Absorbs oil and adds instant volume and texture, leaving hair feeling fresh and clean.', 'Haircare', 15, false),
+('Purifying Clay Mask', 'https://placehold.co/400x400.png', 'face mask', 28.00, NULL, 'A deep-cleansing clay mask with activated charcoal to detoxify pores and refine skin texture.', 'Skincare', 40, true),
+('Waterproof Mascara', 'https://placehold.co/400x400.png', 'eye mascara', 26.00, NULL, 'A clump-free, waterproof mascara that lengthens and defines lashes for a dramatic look.', 'Makeup', 60, false)
+ON CONFLICT (name) DO NOTHING;
+
+
+-- Seed data for banners
+INSERT INTO public.banners (title, description, image, ai_hint) VALUES
+('Verano Radiante', 'Descubre nuestros productos estrella para un look fresco y luminoso esta temporada.', 'https://placehold.co/1200x600.png', 'summer cosmetics'),
+('Cuidado Esencial', 'Todo lo que tu piel necesita para sentirse hidratada y protegida cada día.', 'https://placehold.co/1200x600.png', 'skincare routine'),
+('Ofertas Imperdibles', 'Aprovecha descuentos de hasta el 20% en productos seleccionados. ¡Solo por tiempo limitado!', 'https://placehold.co/1200x600.png', 'makeup sale')
+ON CONFLICT (title) DO NOTHING;
+
 
 -- Storage Bucket para Imágenes de Productos
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
