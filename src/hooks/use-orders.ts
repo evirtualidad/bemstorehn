@@ -55,6 +55,7 @@ type OrdersState = {
   orders: Order[];
   isLoading: boolean;
   fetchOrders: () => Promise<void>;
+  addOrder: (order: Order) => void; // For simulation
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => Promise<void>;
   approveOrder: (data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
@@ -80,6 +81,13 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     }
   },
   
+  // This is for local simulation to unblock UI development
+  addOrder: (order: Order) => {
+    set(produce((state: OrdersState) => {
+        state.orders.unshift(order);
+    }));
+  },
+
   addPayment: async (orderId, amount, method) => {
      const order = get().orders.find(o => o.id === orderId);
      if (!order) return;
