@@ -3,8 +3,6 @@
 
 import * as React from 'react';
 import {
-  File,
-  ListFilter,
   MoreHorizontal,
   PlusCircle,
 } from 'lucide-react';
@@ -46,20 +44,63 @@ import { BannerForm, bannerFormSchema } from '@/components/banner-form';
 import { z } from 'zod';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { supabaseClient } from '@/lib/supabase';
+import imageCompression from 'browser-image-compression';
+import { useToast } from '@/hooks/use-toast';
 
+
+// NOTE: This component is not directly used as a page anymore,
+// but its logic is now inside `src/app/admin/settings/page.tsx`.
+// It is kept here for reference or future use if banners get their own dedicated page again.
 export function BannersManager() {
   const { banners, addBanner, updateBanner, deleteBanner, fetchBanners, isLoading } = useBannersStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingBanner, setEditingBanner] = React.useState<Banner | null>(null);
+  const { toast } = useToast();
 
   React.useEffect(() => {
     fetchBanners(supabaseClient);
   }, [fetchBanners]);
 
+  const uploadImage = async (file: File): Promise<string | null> => {
+    const options = {
+      maxSizeMB: 1,
+      maxWidthOrHeight: 1920,
+      useWebWorker: true,
+    };
+
+    try {
+      const compressedFile = await imageCompression(file, options);
+      const fileName = `${Date.now()}-${compressedFile.name}`;
+      const { data, error } = await supabaseClient.storage.from('banner-images').upload(fileName, compressedFile);
+      
+      if (error) throw error;
+      
+      const { data: { publicUrl } } = supabaseClient.storage.from('banner-images').getPublicUrl(data.path);
+      return publicUrl;
+    } catch (error: any) {
+       toast({
+            title: 'Error al subir la imagen',
+            description: error.message || 'La compresión o subida falló.',
+            variant: 'destructive',
+        });
+        console.error("Upload/Compression error:", error)
+        return null;
+    }
+  }
+
+
   const handleAddBanner = async (values: z.infer<typeof bannerFormSchema>) => {
+    let imageUrl = `https://placehold.co/1200x600.png?text=${values.title.replace(/\s/g, '+')}`;
+    
+    if (values.image && typeof values.image !== 'string') {
+        const uploadedUrl = await uploadImage(values.image);
+        if (!uploadedUrl) return;
+        imageUrl = uploadedUrl;
+    }
+    
     const newBannerData = {
       ...values,
-      image: values.image || `https://placehold.co/1200x600.png?text=${values.title.replace(/\s/g, '+')}`,
+      image: imageUrl,
     };
     await addBanner(supabaseClient, newBannerData);
     setIsDialogOpen(false);
@@ -68,9 +109,19 @@ export function BannersManager() {
   const handleEditBanner = async (values: z.infer<typeof bannerFormSchema>) => {
     if (!editingBanner) return;
     
+    let imageUrl = editingBanner.image;
+    if (values.image && typeof values.image !== 'string') {
+        const uploadedUrl = await uploadImage(values.image);
+        if (!uploadedUrl) return;
+        imageUrl = uploadedUrl;
+    } else if (typeof values.image === 'string') {
+        imageUrl = values.image;
+    }
+
     await updateBanner(supabaseClient, {
       ...editingBanner,
       ...values,
+      image: imageUrl,
     });
 
     setEditingBanner(null);
@@ -223,5 +274,10 @@ export function BannersManager() {
 }
 
 export default function BannersPage() {
-    return <BannersManager />;
+    return (
+        <main className="grid flex-1 items-start gap-8">
+            <h1 className="text-2xl font-bold">Banners</h1>
+            <BannersManager />
+        </main>
+    );
 }

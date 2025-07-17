@@ -6,15 +6,44 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useSettingsStore } from '@/hooks/use-settings-store';
 import { useToast } from '@/hooks/use-toast';
-import { Percent, DollarSign, Store } from 'lucide-react';
+import { Percent, DollarSign, Store, MoreHorizontal, PlusCircle } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BannersManager } from '../banners/page';
+import { useBannersStore, type Banner } from '@/hooks/use-banners';
+import { supabaseClient } from '@/lib/supabase';
+import imageCompression from 'browser-image-compression';
+import { BannerForm, bannerFormSchema } from '@/components/banner-form';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import Image from 'next/image';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+
 
 const settingsFormSchema = z.object({
   taxRate: z.coerce.number().min(0, 'La tasa debe ser 0 o mayor.').max(100, 'La tasa no puede exceder 100.'),
@@ -162,6 +191,227 @@ function GeneralSettings() {
       </Form>
   )
 }
+
+function BannersManager() {
+  const { banners, addBanner, updateBanner, deleteBanner, fetchBanners, isLoading } = useBannersStore();
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [editingBanner, setEditingBanner] = React.useState<Banner | null>(null);
+  const { toast } = useToast();
+
+  React.useEffect(() => {
+    fetchBanners(supabaseClient);
+  }, [fetchBanners]);
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    const options = {
+      maxSizeMB: 1,
+      maxWidthOrHeight: 1920,
+      useWebWorker: true,
+    };
+
+    try {
+      const compressedFile = await imageCompression(file, options);
+      const fileName = `${Date.now()}-${compressedFile.name}`;
+      const { data, error } = await supabaseClient.storage.from('banner-images').upload(fileName, compressedFile);
+      
+      if (error) throw error;
+      
+      const { data: { publicUrl } } = supabaseClient.storage.from('banner-images').getPublicUrl(data.path);
+      return publicUrl;
+    } catch (error: any) {
+       toast({
+            title: 'Error al subir la imagen',
+            description: error.message || 'La compresión o subida falló.',
+            variant: 'destructive',
+        });
+        console.error("Upload/Compression error:", error)
+        return null;
+    }
+  }
+
+  const handleAddBanner = async (values: z.infer<typeof bannerFormSchema>) => {
+    let imageUrl = `https://placehold.co/1200x600.png?text=${values.title.replace(/\s/g, '+')}`;
+    
+    if (values.image && typeof values.image !== 'string') {
+        const uploadedUrl = await uploadImage(values.image);
+        if (!uploadedUrl) return;
+        imageUrl = uploadedUrl;
+    }
+    
+    const newBannerData = {
+      ...values,
+      image: imageUrl,
+    };
+    await addBanner(supabaseClient, newBannerData);
+    setIsDialogOpen(false);
+  };
+
+  const handleEditBanner = async (values: z.infer<typeof bannerFormSchema>) => {
+    if (!editingBanner) return;
+    
+    let imageUrl = editingBanner.image;
+    if (values.image && typeof values.image !== 'string') {
+        const uploadedUrl = await uploadImage(values.image);
+        if (!uploadedUrl) return;
+        imageUrl = uploadedUrl;
+    } else if (typeof values.image === 'string') {
+        imageUrl = values.image;
+    }
+
+    await updateBanner(supabaseClient, {
+      ...editingBanner,
+      ...values,
+      image: imageUrl,
+    });
+
+    setEditingBanner(null);
+    setIsDialogOpen(false);
+  };
+
+  const handleDeleteBanner = async (bannerId: string) => {
+    await deleteBanner(supabaseClient, bannerId);
+  };
+
+  const openEditDialog = (banner: Banner) => {
+    setEditingBanner(banner);
+    setIsDialogOpen(true);
+  };
+
+  const openAddDialog = () => {
+    setEditingBanner(null);
+    setIsDialogOpen(true);
+  };
+  
+  const handleDialogChange = (open: boolean) => {
+    if (!open) {
+      setEditingBanner(null);
+    }
+    setIsDialogOpen(open);
+  };
+
+  const onSubmit = editingBanner ? handleEditBanner : handleAddBanner;
+  
+  if (isLoading) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Banners del Carrusel</CardTitle>
+                <CardDescription>
+                    Gestiona los banners que aparecen en el carrusel de la página de inicio.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex justify-center items-center h-48">
+                    <LoadingSpinner />
+                </div>
+            </CardContent>
+        </Card>
+    );
+  }
+
+  return (
+    <>
+      <div className="flex items-center mb-4">
+        <div className="ml-auto flex items-center gap-2">
+          <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="h-8 gap-1" onClick={openAddDialog}>
+                <PlusCircle className="h-3.5 w-3.5" />
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                  Añadir Banner
+                </span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[525px]">
+              <DialogHeader>
+                <DialogTitle>{editingBanner ? 'Editar Banner' : 'Añadir Nuevo Banner'}</DialogTitle>
+                <DialogDescription>
+                  {editingBanner ? 'Modifica los detalles del banner.' : 'Rellena los detalles del nuevo banner.'} Haz clic en guardar cuando termines.
+                </DialogDescription>
+              </DialogHeader>
+              <BannerForm
+                key={editingBanner?.id || 'new'}
+                banner={editingBanner}
+                onSubmit={onSubmit}
+                onCancel={() => handleDialogChange(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Banners del Carrusel</CardTitle>
+          <CardDescription>
+            Gestiona los banners que aparecen en el carrusel de la página de inicio.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="hidden w-[150px] sm:table-cell">
+                  Imagen
+                </TableHead>
+                <TableHead>Título</TableHead>
+                <TableHead>Descripción</TableHead>
+                <TableHead>
+                  <span className="sr-only">Acciones</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {banners.map((banner) => (
+                <TableRow key={banner.id}>
+                  <TableCell className="hidden sm:table-cell">
+                    <Image
+                      alt={banner.title}
+                      className="aspect-video rounded-md object-cover"
+                      height="72"
+                      src={banner.image || 'https://placehold.co/128x72.png'}
+                      width="128"
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {banner.title}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {banner.description}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          aria-haspopup="true"
+                          size="icon"
+                          variant="ghost"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Alternar menú</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => openEditDialog(banner)}>Editar</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteBanner(banner.id)}>Eliminar</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+        <CardFooter>
+          <div className="text-xs text-muted-foreground">
+            Mostrando <strong>1-{banners.length}</strong> de <strong>{banners.length}</strong> banners
+          </div>
+        </CardFooter>
+      </Card>
+    </>
+  );
+}
+
 
 export default function SettingsPage() {
   return (
