@@ -125,9 +125,11 @@ export function CartSheet() {
                 <p>Total</p>
                 <p>{formatCurrency(total, currency.code)}</p>
               </div>
-              <Button asChild className="w-full" size="lg">
-                <Link href="/checkout" onClick={toggleCart}>Finalizar Compra</Link>
-              </Button>
+              <SheetClose asChild>
+                <Button asChild className="w-full" size="lg">
+                    <Link href="/checkout">Finalizar Compra</Link>
+                </Button>
+              </SheetClose>
             </div>
           </>
         ) : (

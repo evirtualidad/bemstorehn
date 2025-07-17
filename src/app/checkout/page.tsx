@@ -306,7 +306,7 @@ function ShippingDialog({
 
 
 export default function CheckoutPage() {
-  const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart, toggleCart } = useCart();
+  const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart } = useCart();
   const { decreaseStock } = useProductsStore();
   const { addOrder } = useOrdersStore();
   const { addOrUpdateCustomer } = useCustomersStore();
