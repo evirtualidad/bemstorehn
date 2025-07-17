@@ -96,6 +96,7 @@ import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { paymentMethods, paymentMethodIcons, paymentMethodLabels } from '@/lib/payment-methods.tsx';
+import { supabaseClient } from '@/lib/supabase';
 
 const deliveryMethodLabels = {
   pickup: 'Recoger en Tienda',
