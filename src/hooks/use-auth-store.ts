@@ -4,8 +4,11 @@
 import { create } from 'zustand';
 import { SupabaseClient, Session } from '@supabase/supabase-js';
 
+type UserRole = 'admin' | 'cashier';
+
 type AuthState = {
   session: Session | null;
+  role: UserRole | null;
   loading: boolean;
   login: (supabase: SupabaseClient, email: string, password: string) => Promise<string | null>;
   logout: (supabase: SupabaseClient) => Promise<void>;
@@ -13,8 +16,14 @@ type AuthState = {
   setLoading: (loading: boolean) => void;
 };
 
+const getRoleFromSession = (session: Session | null): UserRole | null => {
+  if (!session) return null;
+  return session.user?.app_metadata?.role || null;
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   session: null,
+  role: null,
   loading: true,
   login: async (supabase, email, password) => {
     set({ loading: true });
@@ -24,7 +33,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         password,
       });
       if (error) throw error;
-      set({ session: data.session, loading: false });
+      set({ session: data.session, role: getRoleFromSession(data.session), loading: false });
       return null;
     } catch (error: any) {
       set({ loading: false });
@@ -38,9 +47,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async (supabase) => {
     set({ loading: true });
     await supabase.auth.signOut();
-    set({ session: null, loading: false });
+    set({ session: null, role: null, loading: false });
   },
-  setSession: (session) => set({ session }),
+  setSession: (session) => set({ session, role: getRoleFromSession(session) }),
   setLoading: (loading) => set({ loading }),
 }));
 

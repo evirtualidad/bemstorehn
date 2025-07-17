@@ -43,6 +43,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useAuthStore } from '@/hooks/use-auth-store';
+import { useRouter } from 'next/navigation';
 
 
 const settingsFormSchema = z.object({
@@ -414,6 +416,23 @@ function BannersManager() {
 
 
 export default function SettingsPage() {
+  const { role } = useAuthStore();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (role && role !== 'admin') {
+      router.replace('/admin/dashboard');
+    }
+  }, [role, router]);
+
+  if (role !== 'admin') {
+    return (
+      <div className="flex h-[80vh] items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
   return (
     <main className="grid flex-1 items-start gap-8">
       <h1 className="text-2xl font-bold">Ajustes</h1>

@@ -71,6 +71,8 @@ import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { paymentMethodIcons, paymentMethodLabels } from '@/lib/payment-methods.tsx';
 import { supabaseClient } from '@/lib/supabase';
+import { useAuthStore } from '@/hooks/use-auth-store';
+import { useRouter } from 'next/navigation';
 
 
 function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCode: string }) {
@@ -456,6 +458,22 @@ function Transactions({ orders, currencyCode }: { orders: any[], currencyCode: s
 export default function FinancePage() {
   const { orders } = useOrdersStore();
   const { currency } = useCurrencyStore();
+  const { role } = useAuthStore();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (role && role !== 'admin') {
+      router.replace('/admin/dashboard');
+    }
+  }, [role, router]);
+
+  if (role !== 'admin') {
+    return (
+      <div className="flex h-[80vh] items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col">
