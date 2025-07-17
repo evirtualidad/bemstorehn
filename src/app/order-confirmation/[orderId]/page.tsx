@@ -17,13 +17,8 @@ import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import { useSettingsStore } from '@/hooks/use-settings-store';
 
-interface OrderConfirmationPageProps {
-  params: {
-    orderId: string;
-  };
-}
-
-export default function OrderConfirmationPage({ params: { orderId } }: OrderConfirmationPageProps) {
+export default function OrderConfirmationPage({ params }: { params: { orderId: string } }) {
+  const { orderId } = params;
   const { getOrderById } = useOrdersStore();
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
