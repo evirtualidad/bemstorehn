@@ -43,7 +43,6 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCustomersStore } from '@/hooks/use-customers';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(2, {
@@ -297,7 +296,6 @@ function ShippingDialog({
 export default function CheckoutPage() {
   const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart } = useCart();
   const { addOrder } = useOrdersStore();
-  const { addOrUpdateCustomer } = useCustomersStore();
   const { taxRate, pickupAddress } = useSettingsStore();
   const { toast } = useToast();
   const router = useRouter();
@@ -355,16 +353,9 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
-      const customerId = await addOrUpdateCustomer({
-        phone: values.phone,
-        name: values.name,
-        address: shippingAddress,
-        total_to_add: total,
-      });
-
       const newOrderData: NewOrderData = {
         user_id: null, // Anonymous user from online store
-        customer_id: customerId || null,
+        customer_id: null, // We are not linking to customers table on creation anymore
         customer_name: values.name,
         customer_phone: values.phone,
         customer_address: values.deliveryMethod === 'delivery' ? shippingAddress : null,
@@ -397,15 +388,11 @@ export default function CheckoutPage() {
         clearCart();
         router.push(`/order-confirmation/${newOrder.display_id}`);
       } else {
-        throw new Error("Order creation failed.");
+        // Error toast is handled inside addOrder
       }
     } catch (error) {
-        console.error('Error final en onSubmit:', error);
-        toast({
-            title: 'Error al enviar pedido',
-            description: (error as Error).message || 'Ocurrió un error inesperado.',
-            variant: 'destructive',
-        });
+        console.error('Error final en onSubmit de checkout:', error);
+        // Toast is handled in store
     } finally {
         setIsSubmitting(false);
     }
@@ -687,5 +674,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-
-    

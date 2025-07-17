@@ -54,7 +54,6 @@ export type NewOrderData = Omit<Order, 'id' | 'display_id' | 'created_at'>;
 type OrdersState = {
   orders: Order[];
   isLoading: boolean;
-  fetchOrders: () => Promise<void>;
   addOrder: (orderData: NewOrderData) => Promise<Order | null>;
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => Promise<void>;
   approveOrder: (data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => Promise<void>;
@@ -65,21 +64,6 @@ type OrdersState = {
 export const useOrdersStore = create<OrdersState>((set, get) => ({
   orders: [],
   isLoading: false,
-
-  fetchOrders: async () => {
-    set({ isLoading: true });
-    const { data, error } = await supabaseClient
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        toast({ title: 'Error', description: 'No se pudieron cargar los pedidos.', variant: 'destructive' });
-        set({ isLoading: false });
-    } else {
-        set({ orders: data as Order[], isLoading: false });
-    }
-  },
 
   addOrder: async (orderData) => {
     set({ isLoading: true });
@@ -114,7 +98,7 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
             variant: 'destructive',
             duration: 10000
         });
-        throw new Error(errorMessage);
+        return null;
     }
   },
 
@@ -216,4 +200,3 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
   },
 }));
 
-    

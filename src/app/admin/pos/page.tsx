@@ -869,7 +869,7 @@ export default function PosPage() {
   } = usePosCart();
   const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
   const { addOrder, isLoading: isAddingOrder } = useOrdersStore();
-  const { addOrUpdateCustomer, fetchCustomers, isLoading: isLoadingCustomers } = useCustomersStore();
+  const { customers, fetchCustomers, isLoading: isLoadingCustomers } = useCustomersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
@@ -1029,16 +1029,9 @@ export default function PosPage() {
     const userId = session?.user?.id;
 
     try {
-      const customerId = await addOrUpdateCustomer({
-        phone: values.phone || '',
-        name: values.name || 'Consumidor Final',
-        address: values.deliveryMethod === 'delivery' ? values.address : null,
-        total_to_add: totalWithShipping,
-      });
-
       const orderData: NewOrderData = {
           user_id: userId,
-          customer_id: customerId || null,
+          customer_id: null, // We are not linking to customers table on creation anymore
           customer_name: values.name || 'Consumidor Final',
           customer_phone: values.phone || 'N/A',
           customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
@@ -1073,15 +1066,11 @@ export default function PosPage() {
         setIsCheckoutOpen(false);
         setIsTicketVisible(false);
       } else {
-        throw new Error('La creación del pedido falló en el store.');
+        // The error toast is now handled inside addOrder
       }
     } catch (error) {
-      console.error('Error al crear el pedido:', error);
-      toast({
-        title: 'Error al Crear Pedido',
-        description: (error as Error).message || 'Ocurrió un error inesperado. Revisa la consola.',
-        variant: 'destructive',
-      });
+       console.error('Error final en onSubmit del POS:', error);
+       // The toast is already shown in the store, no need to repeat it
     }
   }
   
@@ -1213,4 +1202,3 @@ export default function PosPage() {
   );
 }
 
-    
