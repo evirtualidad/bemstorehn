@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import type { Product } from '@/lib/products';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { toast } from './use-toast';
+import { products as mockProducts } from '@/lib/products';
 
 type ProductsState = {
   products: Product[];
@@ -20,16 +21,17 @@ type ProductsState = {
 };
 
 export const useProductsStore = create<ProductsState>((set, get) => ({
-  products: [],
-  isLoading: true,
+  products: mockProducts,
+  isLoading: false,
   error: null,
   
   fetchProducts: async (supabase: SupabaseClient) => {
-    set({ isLoading: true, error: null });
+    // This is a mock implementation. It will be replaced with a real DB call.
+    set({ isLoading: true });
     try {
-      const { data, error } = await supabase.from('products').select('*').order('name', { ascending: true });
-      if (error) throw error;
-      set({ products: data || [], isLoading: false });
+      // const { data, error } = await supabase.from('products').select('*').order('name', { ascending: true });
+      // if (error) throw error;
+      set({ products: mockProducts, isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
       toast({
@@ -45,72 +47,46 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   },
 
   addProduct: async (supabase: SupabaseClient, productData) => {
-    try {
-      const { data, error } = await supabase.from('products').insert([productData]).select();
-      if (error) throw error;
-      const newProduct = data[0];
-      set((state) => ({ products: [newProduct, ...state.products] }));
-      return newProduct;
-    } catch (error: any) {
-       toast({
-        title: 'Error al añadir producto',
-        description: error.message,
-        variant: 'destructive',
-      });
-      return null;
-    }
+    // This is a mock implementation.
+    console.log("Adding product (mock):", productData);
+    const newProduct = { ...productData, id: `prod_${Date.now()}` };
+    set((state) => ({ products: [newProduct, ...state.products] }));
+    return newProduct;
   },
 
   updateProduct: async (supabase: SupabaseClient, product) => {
-    try {
-      const { error } = await supabase.from('products').update(product).eq('id', product.id);
-      if (error) throw error;
-      set((state) => ({
-        products: state.products.map((p) => (p.id === product.id ? product : p)),
-      }));
-    } catch (error: any) {
-       toast({
-        title: 'Error al actualizar producto',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
+    // This is a mock implementation.
+    console.log("Updating product (mock):", product);
+    set((state) => ({
+      products: state.products.map((p) => (p.id === product.id ? product : p)),
+    }));
   },
 
   deleteProduct: async (supabase: SupabaseClient, productId) => {
-    try {
-      const { error } = await supabase.from('products').delete().eq('id', productId);
-      if (error) throw error;
-      set((state) => ({
-        products: state.products.filter((p) => p.id !== productId),
-      }));
-    } catch (error: any) {
-       toast({
-        title: 'Error al eliminar producto',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
+    // This is a mock implementation.
+    console.log("Deleting product (mock):", productId);
+    set((state) => ({
+      products: state.products.filter((p) => p.id !== productId),
+    }));
   },
 
   decreaseStock: async (supabase: SupabaseClient, productId: string, quantity: number) => {
-     try {
-        const { data, error } = await supabase.rpc('decrease_stock', { p_id: productId, p_quantity: quantity });
-        if (error) throw error;
-        get().fetchProducts(supabase); // Re-fetch to ensure consistency
-    } catch (error: any) {
-        console.error("Failed to decrease stock:", error.message);
-        // Optionally show a toast to the user
-    }
+    // This is a mock implementation.
+    console.log(`Decreasing stock for ${productId} by ${quantity} (mock)`);
+    set(state => ({
+      products: state.products.map(p => 
+        p.id === productId ? { ...p, stock: p.stock - quantity } : p
+      )
+    }));
   },
 
   increaseStock: async (supabase: SupabaseClient, productId: string, quantity: number) => {
-     try {
-        const { data, error } = await supabase.rpc('increase_stock', { p_id: productId, p_quantity: quantity });
-        if (error) throw error;
-        get().fetchProducts(supabase); // Re-fetch to ensure consistency
-    } catch (error: any) {
-        console.error("Failed to increase stock:", error.message);
-    }
+    // This is a mock implementation.
+     console.log(`Increasing stock for ${productId} by ${quantity} (mock)`);
+    set(state => ({
+      products: state.products.map(p => 
+        p.id === productId ? { ...p, stock: p.stock + quantity } : p
+      )
+    }));
   },
 }));
