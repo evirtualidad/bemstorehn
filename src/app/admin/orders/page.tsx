@@ -259,6 +259,7 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
     const [today, setToday] = React.useState<Date | null>(null);
 
     React.useEffect(() => {
+        // Set date only on client-side to avoid hydration mismatch
         setToday(new Date());
     }, []);
 
