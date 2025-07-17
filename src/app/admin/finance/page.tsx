@@ -68,6 +68,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 
 const paymentMethodIcons = {
@@ -322,6 +323,12 @@ function RegisterPaymentDialog({ order, children }: { order: Order, children: Re
 }
 
 function AccountsReceivable({ orders, currencyCode }: { orders: any[], currencyCode: string }) {
+  const [isClient, setIsClient] = React.useState(false);
+  
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const creditOrders = orders.filter(o => o.status === 'pending-payment');
 
   const getStatus = (dueDate: string) => {
@@ -340,51 +347,57 @@ function AccountsReceivable({ orders, currencyCode }: { orders: any[], currencyC
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Fecha de Venta</TableHead>
-              <TableHead>Fecha de Vencimiento</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="text-right">Saldo Pendiente</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {creditOrders.length > 0 ? creditOrders.map(order => {
-                const status = getStatus(order.paymentDueDate!);
-                return (
-                    <TableRow key={order.id}>
-                        <TableCell>
-                            <div className="font-medium">{order.customer.name}</div>
-                            <div className="text-sm text-muted-foreground">{order.customer.phone}</div>
-                        </TableCell>
-                        <TableCell>{format(parseISO(order.date), 'd MMM, yyyy', { locale: es })}</TableCell>
-                        <TableCell>{format(parseISO(order.paymentDueDate!), 'd MMM, yyyy', { locale: es })}</TableCell>
-                        <TableCell>
-                            <div className={cn("flex items-center", status.color)}>
-                                {status.icon}
-                                {status.label}
-                            </div>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(order.balance, currencyCode)}</TableCell>
-                        <TableCell className="text-right">
-                            <RegisterPaymentDialog order={order}>
-                                <Button variant="outline" size="sm">Registrar Pago</Button>
-                            </RegisterPaymentDialog>
-                        </TableCell>
-                    </TableRow>
-                )
-            }) : (
-                <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                        No hay cuentas por cobrar pendientes.
-                    </TableCell>
-                </TableRow>
-            )}
-          </TableBody>
-        </Table>
+        {!isClient ? (
+           <div className="h-60">
+             <LoadingSpinner />
+           </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Fecha de Venta</TableHead>
+                <TableHead>Fecha de Vencimiento</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Saldo Pendiente</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {creditOrders.length > 0 ? creditOrders.map(order => {
+                  const status = getStatus(order.paymentDueDate!);
+                  return (
+                      <TableRow key={order.id}>
+                          <TableCell>
+                              <div className="font-medium">{order.customer.name}</div>
+                              <div className="text-sm text-muted-foreground">{order.customer.phone}</div>
+                          </TableCell>
+                          <TableCell>{format(parseISO(order.date), 'd MMM, yyyy', { locale: es })}</TableCell>
+                          <TableCell>{format(parseISO(order.paymentDueDate!), 'd MMM, yyyy', { locale: es })}</TableCell>
+                          <TableCell>
+                              <div className={cn("flex items-center", status.color)}>
+                                  {status.icon}
+                                  {status.label}
+                              </div>
+                          </TableCell>
+                          <TableCell className="text-right font-medium">{formatCurrency(order.balance, currencyCode)}</TableCell>
+                          <TableCell className="text-right">
+                              <RegisterPaymentDialog order={order}>
+                                  <Button variant="outline" size="sm">Registrar Pago</Button>
+                              </RegisterPaymentDialog>
+                          </TableCell>
+                      </TableRow>
+                  )
+              }) : (
+                  <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                          No hay cuentas por cobrar pendientes.
+                      </TableCell>
+                  </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
       </CardContent>
     </Card>
   )
