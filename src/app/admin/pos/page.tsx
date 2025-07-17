@@ -869,7 +869,7 @@ export default function PosPage() {
       clearCart,
   } = usePosCart();
   const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
-  const { addOrder: addOrderToState } = useOrdersStore();
+  const { addOrderToState, fetchOrders } = useOrdersStore();
   const { customers, fetchCustomers, isLoading: isLoadingCustomers } = useCustomersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
