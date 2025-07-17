@@ -56,19 +56,10 @@ const checkoutFormSchema = z.object({
   deliveryMethod: z.enum(['pickup', 'delivery'], {
     required_error: 'Debes seleccionar un método de entrega.',
   }),
-  address: z.custom<Address>().optional(),
   paymentMethod: z.enum(['tarjeta', 'transferencia', 'efectivo'], {
     required_error: "Debes seleccionar un método de pago."
   }),
   paymentReference: z.string().optional(),
-}).refine((data) => {
-    if (data.deliveryMethod === 'delivery' && !data.address) {
-        return false;
-    }
-    return true;
-}, {
-    message: 'La dirección de envío es obligatoria.',
-    path: ['address'],
 }).refine((data) => {
     if (data.deliveryMethod === 'delivery' && (!data.name || data.name.trim() === '')) {
         return false;
@@ -306,7 +297,7 @@ function ShippingDialog({
 
 
 export default function CheckoutPage() {
-  const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart } = useCart();
+  const { items, total: cartTotal, clearCart } = useCart();
   const { decreaseStock } = useProductsStore();
   const { addOrder, isLoading: isAddingOrder } = useOrdersStore();
   const { addOrUpdateCustomer } = useCustomersStore();
@@ -316,53 +307,64 @@ export default function CheckoutPage() {
   const [isShippingDialogOpen, setIsShippingDialogOpen] = useState(false);
   const { currency } = useCurrencyStore();
 
+  const [shippingAddress, setShippingAddress] = useState<Address | undefined>(undefined);
+  const [shippingCost, setShippingCost] = useState(0);
+
   const form = useForm<z.infer<typeof checkoutFormSchema>>({
     resolver: zodResolver(checkoutFormSchema),
     defaultValues: {
       name: '',
       phone: '',
       deliveryMethod: 'pickup',
-      address: undefined,
       paymentMethod: 'efectivo',
       paymentReference: '',
     },
   });
 
   const deliveryMethod = form.watch('deliveryMethod');
-  const paymentMethod = form.watch('paymentMethod');
-  const address = form.watch('address');
 
   useEffect(() => {
-    // Reset shipping cost when delivery method changes
     if (deliveryMethod === 'pickup') {
       setShippingCost(0);
-      form.setValue('address', undefined);
-      form.clearErrors('address');
-    } else if (deliveryMethod === 'delivery' && !address) {
+      setShippingAddress(undefined);
+    } else if (deliveryMethod === 'delivery' && !shippingAddress) {
        setShippingCost(0);
     }
-  }, [deliveryMethod, setShippingCost, form, address]);
+  }, [deliveryMethod, shippingAddress]);
   
   // Clean up shipping cost on unmount
   useEffect(() => {
     return () => {
         setShippingCost(0);
     }
-  }, [setShippingCost]);
+  }, []);
 
+  const total = cartTotal + shippingCost;
+  const subtotal = total / (1 + taxRate);
+  const taxAmount = total - subtotal;
+  
   const handleSaveShippingInfo = (address: Address, cost: number, type: 'local' | 'national') => {
-    // Add a 'type' property to address to remember the choice for re-editing
     const addressWithTye = { ...address, type };
-    form.setValue('address', addressWithTye as Address);
+    setShippingAddress(addressWithTye as Address);
     setShippingCost(cost);
   };
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
+    
+    if (values.deliveryMethod === 'delivery' && !shippingAddress) {
+        toast({
+            title: 'Dirección Requerida',
+            description: 'Por favor, añade una dirección para el envío a domicilio.',
+            variant: 'destructive',
+        });
+        return;
+    }
+
     try {
       const newOrderData: NewOrderData = {
         customer_name: values.name,
         customer_phone: values.phone,
-        customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
+        customer_address: values.deliveryMethod === 'delivery' ? shippingAddress : null,
         items: items.map(item => ({
           id: item.id,
           name: item.name,
@@ -393,7 +395,7 @@ export default function CheckoutPage() {
              await addOrUpdateCustomer(supabaseClient, {
                 phone: values.phone,
                 name: values.name,
-                address: values.address,
+                address: shippingAddress,
                 order_id: newOrder.id,
                 total_to_add: total,
              });
@@ -483,7 +485,6 @@ export default function CheckoutPage() {
                   <Card>
                     <CardHeader>
                       <CardTitle>2. Método de Entrega</CardTitle>
-                       <FormMessage>{form.formState.errors.address?.message}</FormMessage>
                     </CardHeader>
                      <CardContent>
                         <Controller
@@ -522,14 +523,14 @@ export default function CheckoutPage() {
                                         </div>
                                          {field.value === 'delivery' && (
                                             <div className="pl-8 pt-2 text-sm">
-                                                {address ? (
+                                                {shippingAddress ? (
                                                     <div className='text-muted-foreground space-y-2'>
                                                         <div className='flex items-center gap-2 text-green-600 font-semibold'>
                                                            <CheckCircle className="h-5 w-5"/> Dirección guardada
                                                         </div>
-                                                        <p className='font-medium'>{address.exactAddress}</p>
-                                                        <p>{address.colony}</p>
-                                                        <p>{address.municipality}, {address.department}</p>
+                                                        <p className='font-medium'>{shippingAddress.exactAddress}</p>
+                                                        <p>{shippingAddress.colony}</p>
+                                                        <p>{shippingAddress.municipality}, {shippingAddress.department}</p>
                                                         <Button variant="link" className="p-0 h-auto" type="button" onClick={() => setIsShippingDialogOpen(true)}>Editar Dirección</Button>
                                                     </div>
                                                 ) : (
@@ -689,9 +690,11 @@ export default function CheckoutPage() {
             isOpen={isShippingDialogOpen}
             onOpenChange={setIsShippingDialogOpen}
             onSave={handleSaveShippingInfo}
-            currentAddress={address}
+            currentAddress={shippingAddress}
         />
       </main>
     </div>
   );
 }
+
+    
