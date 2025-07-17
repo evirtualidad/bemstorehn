@@ -25,6 +25,7 @@ export interface Order {
   id: string; // uuid from Supabase
   display_id: string;
   created_at: string;
+  user_id: string | null;
   customer_id: string | null;
   customer_name: string;
   customer_phone: string;

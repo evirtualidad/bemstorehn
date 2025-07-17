@@ -38,6 +38,7 @@ import { CustomerSearch } from '@/components/customer-search';
 import { paymentMethods } from '@/lib/payment-methods.tsx';
 import { ProductGrid } from '@/components/product-grid';
 import { supabaseClient } from '@/lib/supabase';
+import { useAuthStore } from '@/hooks/use-auth-store';
 
 type PosCartItem = Product & { quantity: number };
 
@@ -870,6 +871,7 @@ export default function PosPage() {
   const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
   const [shippingCost, setShippingCost] = React.useState(0);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = React.useState(false);
+  const { session } = useAuthStore();
 
   React.useEffect(() => {
     fetchProducts(supabaseClient);
@@ -1063,9 +1065,19 @@ export default function PosPage() {
       }, 0);
       return;
     }
+    
+    if (!session?.user?.id) {
+       toast({
+          title: 'Error de autenticación',
+          description: 'No se pudo identificar al usuario. Por favor, inicia sesión de nuevo.',
+          variant: 'destructive',
+        });
+       return;
+    }
 
     try {
         const orderData: NewOrderData = {
+            user_id: session.user.id,
             customer_name: values.name || 'Consumidor Final',
             customer_phone: values.phone || 'N/A',
             customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
