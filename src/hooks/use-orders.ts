@@ -86,7 +86,16 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     set({ isLoading: true });
     try {
       const { data, error } = await supabase.from('orders').insert([orderData]).select().single();
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Supabase insert error:", error);
+        throw error;
+      }
+      
+      if (!data) {
+        throw new Error("No data returned from Supabase after insert.");
+      }
+
       set((state) => ({ orders: [data, ...state.orders] }));
       return data;
     } catch (error: any) {

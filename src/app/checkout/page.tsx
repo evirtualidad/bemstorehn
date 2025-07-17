@@ -297,18 +297,18 @@ function ShippingDialog({
 
 
 export default function CheckoutPage() {
-  const { items, total: cartTotal, clearCart } = useCart();
+  const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart } = useCart();
   const { decreaseStock } = useProductsStore();
   const { addOrder, isLoading: isAddingOrder } = useOrdersStore();
   const { addOrUpdateCustomer } = useCustomersStore();
   const { taxRate, pickupAddress } = useSettingsStore();
   const { toast } = useToast();
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = useState(false);
   const { currency } = useCurrencyStore();
 
   const [shippingAddress, setShippingAddress] = useState<Address | undefined>(undefined);
-  const [shippingCost, setShippingCost] = useState(0);
 
   const form = useForm<z.infer<typeof checkoutFormSchema>>({
     resolver: zodResolver(checkoutFormSchema),
@@ -330,22 +330,18 @@ export default function CheckoutPage() {
     } else if (deliveryMethod === 'delivery' && !shippingAddress) {
        setShippingCost(0);
     }
-  }, [deliveryMethod, shippingAddress]);
+  }, [deliveryMethod, shippingAddress, setShippingCost]);
   
   // Clean up shipping cost on unmount
   useEffect(() => {
     return () => {
         setShippingCost(0);
     }
-  }, []);
-
-  const total = cartTotal + shippingCost;
-  const subtotal = total / (1 + taxRate);
-  const taxAmount = total - subtotal;
+  }, [setShippingCost]);
   
   const handleSaveShippingInfo = (address: Address, cost: number, type: 'local' | 'national') => {
-    const addressWithTye = { ...address, type };
-    setShippingAddress(addressWithTye as Address);
+    const addressWithType = { ...address, type };
+    setShippingAddress(addressWithType as Address);
     setShippingCost(cost);
   };
 
@@ -359,6 +355,7 @@ export default function CheckoutPage() {
         });
         return;
     }
+    setIsSubmitting(true);
 
     try {
       const newOrderData: NewOrderData = {
@@ -379,7 +376,7 @@ export default function CheckoutPage() {
         delivery_method: values.deliveryMethod,
         status: 'pending-approval',
         source: 'online-store',
-        balance: 0,
+        balance: total,
         payments: [],
         payment_due_date: null,
       };
@@ -417,10 +414,12 @@ export default function CheckoutPage() {
         description: 'Hubo un problema al realizar tu pedido. Por favor, intenta de nuevo.',
         variant: 'destructive',
       });
+    } finally {
+        setIsSubmitting(false);
     }
   }
 
-  if (items.length === 0 && !isAddingOrder) {
+  if (items.length === 0 && !isSubmitting) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
@@ -674,8 +673,8 @@ export default function CheckoutPage() {
                 <Link href="/" className={cn(buttonVariants({ variant: 'outline', size: 'lg'}), 'w-full')}>
                   Continuar Comprando
                 </Link>
-                <Button type="submit" size="lg" className="w-full" disabled={isAddingOrder}>
-                  {isAddingOrder && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Enviar Pedido
                 </Button>
               </div>
@@ -696,5 +695,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-
-    
