@@ -26,6 +26,10 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   error: null,
   
   fetchProducts: async () => {
+    // Only fetch initial products if the store is empty
+    if (get().products.length > 0) {
+      return;
+    }
     set({ isLoading: true });
     // Simulate API call
     setTimeout(() => {
