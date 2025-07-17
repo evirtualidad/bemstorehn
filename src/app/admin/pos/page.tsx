@@ -36,7 +36,7 @@ import { hondurasGeodata } from '@/lib/honduras-geodata';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCustomersStore, type Customer } from '@/hooks/use-customers';
 import { CustomerSearch } from '@/components/customer-search';
-import { paymentMethods } from '@/lib/payment-methods';
+import { paymentMethods } from '@/lib/payment-methods.tsx';
 import { ProductGrid } from '@/components/product-grid';
 import { ProductCard } from '@/components/product-card';
 
@@ -757,7 +757,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
                                          className="h-16 text-md flex items-center justify-start gap-3"
                                          onClick={() => field.onChange(method.value)}
                                      >
-                                         <method.icon className="h-6 w-6"/>
+                                         <method.icon />
                                          {method.label}
                                      </Button>
                                    ))}
@@ -1160,19 +1160,7 @@ export default function PosPage() {
                     <Separator />
                 </div>
                  <ScrollArea className="flex-1 p-4 bg-background">
-                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
-                        {filteredProducts.map((product) => (
-                           <ProductCard
-                             key={product.id}
-                             product={product}
-                             className="cursor-pointer"
-                             onClick={(e) => {
-                                 e.preventDefault();
-                                 handleProductSelect(product);
-                             }}
-                            />
-                        ))}
-                    </div>
+                     <ProductGrid products={filteredProducts} />
                 </ScrollArea>
             </main>
         </div>

@@ -69,21 +69,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-
-
-const paymentMethodIcons = {
-  efectivo: <Banknote className="h-4 w-4 text-muted-foreground" />,
-  tarjeta: <CreditCard className="h-4 w-4 text-muted-foreground" />,
-  transferencia: <Landmark className="h-4 w-4 text-muted-foreground" />,
-  credito: <Coins className="h-4 w-4 text-muted-foreground" />,
-};
-
-const paymentMethodLabels = {
-  efectivo: 'Efectivo',
-  tarjeta: 'Tarjeta',
-  transferencia: 'Transferencia',
-  credito: 'Crédito',
-};
+import { paymentMethodIcons, paymentMethodLabels } from '@/lib/payment-methods.tsx';
 
 
 function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCode: string }) {

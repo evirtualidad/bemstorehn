@@ -95,7 +95,7 @@ import { useSettingsStore } from '@/hooks/use-settings-store';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { paymentMethods, paymentMethodIcons, paymentMethodLabels } from '@/lib/payment-methods';
+import { paymentMethods, paymentMethodIcons, paymentMethodLabels } from '@/lib/payment-methods.tsx';
 
 const deliveryMethodLabels = {
   pickup: 'Recoger en Tienda',
@@ -284,7 +284,7 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
                                                 className="h-12"
                                                 onClick={() => field.onChange(method.value)}
                                             >
-                                                <method.icon className="mr-2 h-4 w-4" /> {method.label}
+                                                <method.icon /> {method.label}
                                             </Button>
                                         ))}
                                     </div>
@@ -503,10 +503,10 @@ export default function OrdersPage() {
                   Una lista de todos los pedidos realizados en tu tienda.
                 </CardDescription>
               </div>
-              <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2">
+              <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2 w-full sm:w-auto">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                    <Button variant={"outline"} className={cn("w-full sm:w-auto justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {dateRange?.from ? (
                         dateRange.to ? (
@@ -536,7 +536,7 @@ export default function OrdersPage() {
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-10 gap-1">
+                        <Button variant="outline" size="sm" className="h-10 gap-1 w-full sm:w-auto">
                             <ListFilter className="h-3.5 w-3.5" />
                             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                             Filtros
@@ -598,7 +598,7 @@ export default function OrdersPage() {
                 </DropdownMenu>
 
                 {isFiltered && (
-                    <Button variant="ghost" onClick={clearFilters} className="h-10">
+                    <Button variant="ghost" onClick={clearFilters} className="h-10 w-full sm:w-auto">
                         <X className="mr-2 h-4 w-4" />
                         Limpiar
                     </Button>
