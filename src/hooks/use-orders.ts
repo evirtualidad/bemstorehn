@@ -87,7 +87,7 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     try {
       const { data, error } = await supabase.from('orders').insert([orderData]).select().single();
       if (error) throw error;
-      set((state) => ({ orders: [data, ...state.orders], isLoading: false }));
+      set((state) => ({ orders: [data, ...state.orders] }));
       return data;
     } catch (error: any) {
        toast({
@@ -95,8 +95,9 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
         description: error.message,
         variant: 'destructive',
       });
-       set({ isLoading: false });
       return null;
+    } finally {
+       set({ isLoading: false });
     }
   },
 

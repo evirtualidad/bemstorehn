@@ -308,12 +308,11 @@ function ShippingDialog({
 export default function CheckoutPage() {
   const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart } = useCart();
   const { decreaseStock } = useProductsStore();
-  const { addOrder } = useOrdersStore();
+  const { addOrder, isLoading: isAddingOrder } = useOrdersStore();
   const { addOrUpdateCustomer } = useCustomersStore();
   const { taxRate, pickupAddress } = useSettingsStore();
   const { toast } = useToast();
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = useState(false);
   const { currency } = useCurrencyStore();
 
@@ -359,7 +358,6 @@ export default function CheckoutPage() {
   };
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
-    setIsSubmitting(true);
     try {
       const newOrderData: NewOrderData = {
         customer_name: values.name,
@@ -377,11 +375,11 @@ export default function CheckoutPage() {
         payment_method: values.paymentMethod,
         payment_reference: values.paymentReference || null,
         delivery_method: values.deliveryMethod,
-        status: 'pending-approval', // Online orders always start as pending approval
+        status: 'pending-approval',
         source: 'online-store',
-        balance: 0, // Will be updated on approval
-        payments: [], // Will be updated on approval
-        payment_due_date: null, // Will be updated on approval
+        balance: 0,
+        payments: [],
+        payment_due_date: null,
       };
 
       const newOrder = await addOrder(supabaseClient, newOrderData);
@@ -417,12 +415,10 @@ export default function CheckoutPage() {
         description: 'Hubo un problema al realizar tu pedido. Por favor, intenta de nuevo.',
         variant: 'destructive',
       });
-    } finally {
-        setIsSubmitting(false);
     }
   }
 
-  if (items.length === 0 && !isSubmitting) {
+  if (items.length === 0 && !isAddingOrder) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
@@ -677,8 +673,8 @@ export default function CheckoutPage() {
                 <Link href="/" className={cn(buttonVariants({ variant: 'outline', size: 'lg'}), 'w-full')}>
                   Continuar Comprando
                 </Link>
-                <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button type="submit" size="lg" className="w-full" disabled={isAddingOrder}>
+                  {isAddingOrder && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Enviar Pedido
                 </Button>
               </div>
