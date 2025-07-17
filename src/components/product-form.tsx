@@ -117,7 +117,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
             <FormItem>
               <FormLabel>Imagen del Producto</FormLabel>
               <FormControl>
-                <>
+                <div>
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -147,7 +147,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
                         <p className="mt-2 text-sm text-muted-foreground">Haz clic para subir una imagen</p>
                     </div>
                   )}
-                </>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
