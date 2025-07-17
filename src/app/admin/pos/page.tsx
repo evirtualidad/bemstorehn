@@ -40,8 +40,7 @@ import { ProductGrid } from '@/components/product-grid';
 import { supabaseClient } from '@/lib/supabase';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import type { Session } from '@supabase/supabase-js';
-
-type PosCartItem = Product & { quantity: number };
+import { usePosCart, type PosCartItem } from '@/hooks/use-pos-cart';
 
 type SelectedFilter = { type: 'category' | 'offer'; value: string } | null;
 
@@ -859,18 +858,30 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
 }
 
 export default function PosPage() {
-  const [cart, setCart] = React.useState<PosCartItem[]>([]);
+  const { 
+      items: cart,
+      setItems: setCart,
+      totalWithShipping,
+      subtotal,
+      taxAmount,
+      total,
+      shippingCost,
+      setShippingCost,
+      addToCart,
+      removeFromCart,
+      increaseQuantity,
+      decreaseQuantity,
+      clearCart,
+  } = usePosCart();
   const { products, decreaseStock, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
   const { addOrder, isLoading: isAddingOrder } = useOrdersStore();
   const { addOrUpdateCustomer, fetchCustomers, isLoading: isLoadingCustomers } = useCustomersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
-  const { taxRate } = useSettingsStore();
   const { toast } = useToast();
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
   const [isTicketVisible, setIsTicketVisible] = React.useState(false);
   const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
-  const [shippingCost, setShippingCost] = React.useState(0);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = React.useState(false);
   const { session } = useAuthStore();
 
@@ -894,15 +905,6 @@ export default function PosPage() {
     }
     return products;
   }, [selectedFilter, products]);
-
-  const { subtotal, taxAmount, total } = React.useMemo(() => {
-    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const subtotal = total / (1 + taxRate);
-    const taxAmount = total - subtotal;
-    return { subtotal, taxAmount, total };
-  }, [cart, taxRate]);
-
-  const totalWithShipping = React.useMemo(() => total + shippingCost, [total, shippingCost]);
 
   const totalItems = React.useMemo(() => {
     return cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -946,7 +948,7 @@ export default function PosPage() {
     } else if (deliveryMethod === 'delivery' && !form.getValues('address')) {
       setShippingCost(0);
     }
-  }, [deliveryMethod, form]);
+  }, [deliveryMethod, form, setShippingCost]);
 
   const handleSaveShippingInfo = (address: Address, cost: number, type: 'local' | 'national') => {
     const addressWithType = { ...address, type };
@@ -966,27 +968,7 @@ export default function PosPage() {
       }, 0);
       return;
     }
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id);
-      if (existingItem) {
-        if(existingItem.quantity < product.stock) {
-          return prevCart.map((item) =>
-            item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-          );
-        } else {
-           setTimeout(() => {
-            toast({
-              title: 'Stock Máximo Alcanzado',
-              description: `No puedes añadir más ${product.name}.`,
-              variant: 'destructive',
-              duration: 3000,
-            });
-          }, 0);
-          return prevCart;
-        }
-      }
-      return [...prevCart, { ...product, quantity: 1 }];
-    });
+    addToCart(product)
   };
   
   const handleProductClick = (product: Product) => {
@@ -1009,41 +991,29 @@ export default function PosPage() {
   };
 
   const updateQuantity = (productId: string, amount: number) => {
-    setCart((prevCart) => {
-      const itemToUpdate = prevCart.find(item => item.id === productId);
-      if (!itemToUpdate) return prevCart;
-
-      const newQuantity = itemToUpdate.quantity + amount;
-
-      if (newQuantity > itemToUpdate.stock) {
-         setTimeout(() => {
-          toast({
-            title: 'Stock Insuficiente',
-            description: `Solo hay ${itemToUpdate.stock} unidades de ${itemToUpdate.name}.`,
-            variant: 'destructive',
-            duration: 3000,
-          });
-        }, 0);
-        return prevCart;
-      }
-
-      if (newQuantity <= 0) {
-        return prevCart.filter(item => item.id !== productId);
-      }
-      
-      return prevCart.map(item =>
-          item.id === productId ? { ...item, quantity: newQuantity } : item
-        );
-    });
-  };
-
-  const removeFromCart = (productId: string) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+    const itemToUpdate = cart.find(item => item.id === productId);
+    if (!itemToUpdate) return;
+    
+    if (amount > 0) {
+        if(itemToUpdate.quantity < itemToUpdate.stock) {
+            increaseQuantity(productId)
+        } else {
+            setTimeout(() => {
+                toast({
+                    title: 'Stock Máximo Alcanzado',
+                    description: `No puedes añadir más ${itemToUpdate.name}.`,
+                    variant: 'destructive',
+                    duration: 3000,
+                });
+            }, 0);
+        }
+    } else {
+        decreaseQuantity(productId);
+    }
   };
 
   const clearCartAndForm = () => {
-    setCart([]);
-    setShippingCost(0);
+    clearCart();
     form.reset({ name: '', phone: '', deliveryMethod: 'pickup', address: undefined, paymentMethod: 'efectivo', paymentDueDate: undefined, cashAmount: '', paymentReference: '' });
   }
 
@@ -1207,7 +1177,7 @@ export default function PosPage() {
             total={total}
             shippingCost={shippingCost}
             totalWithShipping={totalWithShipping}
-            onUpdateQuantity={updateQuantity}
+            onUpdateQuantity={(pid, a) => updateQuantity(pid, a)}
             onRemoveFromCart={removeFromCart}
             onClearCart={clearCartAndForm}
             onCheckout={() => {
@@ -1224,7 +1194,7 @@ export default function PosPage() {
             shippingCost={shippingCost}
             totalWithShipping={totalWithShipping}
             isVisible={isTicketVisible}
-            onUpdateQuantity={updateQuantity}
+            onUpdateQuantity={(pid, a) => updateQuantity(pid, a)}
             onRemoveFromCart={removeFromCart}
             onClearCart={clearCartAndForm}
             onCheckout={() => {
