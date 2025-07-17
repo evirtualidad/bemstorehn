@@ -10,6 +10,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { supabaseClient } from '@/lib/supabase';
+import type { Order, Address as OrderAddress, Payment } from '@/hooks/use-orders';
+import type { Customer } from '@/hooks/use-customers';
 
 const ProductSchema = z.object({
   id: z.string(),
@@ -58,6 +61,65 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderO
   return createOrderFlow(input);
 }
 
+// Helper to add or update a customer
+const addOrUpdateCustomer = async (
+  customerData: { phone?: string; name?: string; address?: OrderAddress }, 
+  totalToAdd: number
+): Promise<string | null> => {
+    if (!customerData.phone && !customerData.name) {
+        return null;
+    }
+
+    const { data: existingCustomer, error: findError } = await supabaseClient
+      .from('customers')
+      .select('*')
+      .eq('phone', customerData.phone)
+      .single();
+
+    if (findError && findError.code !== 'PGRST116') { // PGRST116 is 'not found'
+      console.error('Error finding customer:', findError);
+      throw new Error('No se pudo verificar el cliente.');
+    }
+
+    if (existingCustomer) {
+      const { data: updatedCustomer, error: updateError } = await supabaseClient
+        .from('customers')
+        .update({
+          name: customerData.name || existingCustomer.name,
+          address: customerData.address || existingCustomer.address,
+          total_spent: existingCustomer.total_spent + totalToAdd,
+          order_count: existingCustomer.order_count + 1
+        })
+        .eq('id', existingCustomer.id)
+        .select()
+        .single();
+      
+      if (updateError) {
+        console.error('Error updating customer:', updateError);
+        throw new Error('No se pudo actualizar el cliente.');
+      }
+      return updatedCustomer.id;
+    } else {
+      const { data: newCustomer, error: insertError } = await supabaseClient
+        .from('customers')
+        .insert([{
+          phone: customerData.phone,
+          name: customerData.name,
+          address: customerData.address || null,
+          total_spent: totalToAdd,
+          order_count: 1
+        }])
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error creating customer:', insertError);
+        throw new Error('No se pudo crear el nuevo cliente.');
+      }
+      return newCustomer.id;
+    }
+};
+
 
 const createOrderFlow = ai.defineFlow(
   {
@@ -67,45 +129,74 @@ const createOrderFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      // Simulate creating an order by logging it to the console
-      const orderId = `ORD-${Date.now().toString().slice(-6)}`;
+      const customerId = await addOrUpdateCustomer({
+        name: input.customer.name,
+        phone: input.customer.phone,
+        address: input.customer.address,
+      }, input.total);
       
-      console.log("--- MOCK ORDER CREATED ---");
-      console.log("Order ID:", orderId);
-      console.log("Customer:", input.customer.name || 'Consumidor Final');
-      if (input.deliveryMethod === 'delivery' && input.customer.address) {
-        console.log("Delivery Method: Envío a Domicilio");
-        console.log("Address:", `${input.customer.address.exactAddress}, ${input.customer.address.colony}, ${input.customer.address.municipality}, ${input.customer.address.department}`);
-      } else if (input.deliveryMethod === 'pickup') {
-         console.log("Delivery Method: Recoger en Tienda");
-      }
-      console.log("Items:", input.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })));
-      if (input.shippingCost) {
-        console.log("Shipping Cost:", input.shippingCost);
-      }
-      console.log("Total:", input.total);
-      console.log("Payment Method:", input.paymentMethod);
-      if (input.paymentMethod === 'efectivo' && input.cashAmount) {
-        console.log("Cash Received:", input.cashAmount);
-        console.log("Change Given:", input.cashAmount - input.total);
-      }
-      if (input.paymentReference) {
-        console.log("Payment Reference:", input.paymentReference);
-      }
-      if (input.paymentDueDate) {
-        console.log("Payment Due Date:", new Date(input.paymentDueDate).toLocaleDateString());
-      }
-      console.log("--------------------------");
+      const newOrderData: Omit<Order, 'id' | 'display_id' | 'created_at'> = {
+        user_id: null, // From POS, no specific user
+        customer_id: customerId,
+        customer_name: input.customer.name || 'Consumidor Final',
+        customer_phone: input.customer.phone || 'N/A',
+        customer_address: input.customer.address as OrderAddress | null,
+        items: input.items.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image,
+        })),
+        total: input.total,
+        shipping_cost: input.shippingCost || 0,
+        payment_method: input.paymentMethod,
+        payment_reference: input.paymentReference || null,
+        status: input.paymentMethod === 'credito' ? 'pending-payment' : 'paid',
+        source: 'pos',
+        delivery_method: input.deliveryMethod || 'pickup',
+        balance: input.paymentMethod === 'credito' ? input.total : 0,
+        payments: input.paymentMethod !== 'credito' ? [{
+            amount: input.total,
+            method: input.paymentMethod,
+            date: new Date().toISOString(),
+            cash_received: input.cashAmount,
+            change_given: input.cashAmount ? input.cashAmount - input.total : undefined,
+        }] : [],
+        payment_due_date: input.paymentDueDate || null,
+      };
 
-      // In a real app, stock update would happen here in a secure server-side transaction.
-      // For this local simulation, the client will handle the stock update after getting a success response.
+       const { data, error } = await supabaseClient
+        .from('orders')
+        .insert([newOrderData])
+        .select()
+        .single();
+        
+      if (error) {
+        throw new Error(`Error al crear pedido en DB: ${error.message}`);
+      }
+
+      const newOrder = data as Order;
+      
+      // Update stock for each item
+      for (const item of newOrder.items) {
+          const { error: stockError } = await supabaseClient.rpc('decrease_stock', {
+              product_id: item.id,
+              quantity_to_decrease: item.quantity
+          });
+          if (stockError) {
+              // Note: In a real-world scenario, you'd want to handle this more gracefully,
+              // maybe by trying to revert the order creation or flagging it for manual review.
+              console.error(`Failed to update stock for product ${item.id}:`, stockError.message);
+          }
+      }
 
       return {
-        orderId: orderId,
+        orderId: newOrder.display_id,
         success: true,
       };
-    } catch (error) {
-      console.error("Error creating mock order:", error);
+    } catch (error: any) {
+      console.error("Error creating order in flow:", error);
       return {
         orderId: '',
         success: false,
