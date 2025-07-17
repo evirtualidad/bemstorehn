@@ -8,6 +8,7 @@ import {
   MoreHorizontal,
   PlusCircle,
 } from 'lucide-react';
+import imageCompression from 'browser-image-compression';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -68,21 +69,35 @@ export function ProductsManager() {
   }, [fetchProducts]);
   
   const uploadImage = async (file: File): Promise<string | null> => {
-      const fileName = `${Date.now()}-${file.name}`;
-      const { data, error } = await supabaseClient.storage.from('product-images').upload(fileName, file);
-      
-      if (error) {
-          toast({
+      const options = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1080,
+        useWebWorker: true,
+      };
+
+      try {
+        console.log(`Original file size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+        const compressedFile = await imageCompression(file, options);
+        console.log(`Compressed file size: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`);
+        
+        const fileName = `${Date.now()}-${compressedFile.name}`;
+        const { data, error } = await supabaseClient.storage.from('product-images').upload(fileName, compressedFile);
+        
+        if (error) {
+            throw error;
+        }
+        
+        const { data: { publicUrl } } = supabaseClient.storage.from('product-images').getPublicUrl(data.path);
+        return publicUrl;
+      } catch (error: any) {
+         toast({
               title: 'Error al subir la imagen',
-              description: error.message,
+              description: error.message || 'La compresión o subida falló.',
               variant: 'destructive',
           });
-          console.error("Upload error:", error)
+          console.error("Upload/Compression error:", error)
           return null;
       }
-      
-      const { data: { publicUrl } } = supabaseClient.storage.from('product-images').getPublicUrl(data.path);
-      return publicUrl;
   }
 
   const handleAddProduct = async (values: z.infer<typeof productFormSchema>) => {
