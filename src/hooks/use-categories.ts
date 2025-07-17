@@ -3,7 +3,7 @@
 
 import { create } from 'zustand';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { useToast } from './use-toast';
+import { toast } from './use-toast';
 
 export interface Category {
   id: string;
@@ -36,7 +36,7 @@ export const useCategoriesStore = create<CategoriesState>((set, get) => ({
       set({ categories: data || [], isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
-      useToast.getState().toast({
+      toast({
         title: 'Error al cargar categorías',
         description: error.message,
         variant: 'destructive',
@@ -59,7 +59,7 @@ export const useCategoriesStore = create<CategoriesState>((set, get) => ({
       const newCategory = data[0];
       set((state) => ({ categories: [newCategory, ...state.categories] }));
     } catch (error: any) {
-      useToast.getState().toast({
+      toast({
         title: 'Error al añadir categoría',
         description: error.message,
         variant: 'destructive',
@@ -75,7 +75,7 @@ export const useCategoriesStore = create<CategoriesState>((set, get) => ({
         categories: state.categories.map((c) => (c.id === category.id ? category : c)),
       }));
     } catch (error: any) {
-      useToast.getState().toast({
+      toast({
         title: 'Error al actualizar categoría',
         description: error.message,
         variant: 'destructive',
@@ -91,7 +91,7 @@ export const useCategoriesStore = create<CategoriesState>((set, get) => ({
         categories: state.categories.filter((c) => c.id !== categoryId),
       }));
     } catch (error: any) {
-      useToast.getState().toast({
+      toast({
         title: 'Error al eliminar categoría',
         description: error.message,
         variant: 'destructive',

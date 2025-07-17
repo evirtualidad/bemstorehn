@@ -4,7 +4,7 @@
 import { create } from 'zustand';
 import type { Product } from '@/lib/products';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { useToast } from './use-toast';
+import { toast } from './use-toast';
 
 type ProductsState = {
   products: Product[];
@@ -32,7 +32,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
       set({ products: data || [], isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
-      useToast.getState().toast({
+      toast({
         title: 'Error al cargar productos',
         description: error.message,
         variant: 'destructive',
@@ -52,7 +52,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
       set((state) => ({ products: [newProduct, ...state.products] }));
       return newProduct;
     } catch (error: any) {
-       useToast.getState().toast({
+       toast({
         title: 'Error al añadir producto',
         description: error.message,
         variant: 'destructive',
@@ -69,7 +69,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
         products: state.products.map((p) => (p.id === product.id ? product : p)),
       }));
     } catch (error: any) {
-       useToast.getState().toast({
+       toast({
         title: 'Error al actualizar producto',
         description: error.message,
         variant: 'destructive',
@@ -85,7 +85,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
         products: state.products.filter((p) => p.id !== productId),
       }));
     } catch (error: any) {
-       useToast.getState().toast({
+       toast({
         title: 'Error al eliminar producto',
         description: error.message,
         variant: 'destructive',

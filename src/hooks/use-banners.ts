@@ -3,7 +3,7 @@
 
 import { create } from 'zustand';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { useToast } from './use-toast';
+import { toast } from './use-toast';
 
 export interface Banner {
   id: string;
@@ -36,7 +36,7 @@ export const useBannersStore = create<BannersState>((set) => ({
       set({ banners: data || [], isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
-      useToast.getState().toast({
+      toast({
         title: 'Error al cargar banners',
         description: error.message,
         variant: 'destructive',
@@ -51,7 +51,7 @@ export const useBannersStore = create<BannersState>((set) => ({
       const newBanner = data[0];
       set((state) => ({ banners: [newBanner, ...state.banners] }));
     } catch (error: any) {
-       useToast.getState().toast({
+       toast({
         title: 'Error al añadir banner',
         description: error.message,
         variant: 'destructive',
@@ -67,7 +67,7 @@ export const useBannersStore = create<BannersState>((set) => ({
         banners: state.banners.map((b) => (b.id === banner.id ? banner : b)),
       }));
     } catch (error: any) {
-      useToast.getState().toast({
+      toast({
         title: 'Error al actualizar banner',
         description: error.message,
         variant: 'destructive',
@@ -83,7 +83,7 @@ export const useBannersStore = create<BannersState>((set) => ({
         banners: state.banners.filter((b) => b.id !== bannerId),
       }));
     } catch (error: any)      {
-      useToast.getState().toast({
+      toast({
         title: 'Error al eliminar banner',
         description: error.message,
         variant: 'destructive',
