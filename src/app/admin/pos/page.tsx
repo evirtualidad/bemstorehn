@@ -1054,7 +1054,7 @@ export default function PosPage() {
     }
   };
 
-  async function onSubmit(values: z.infer<typeof checkoutFormSchema>, currentSession: Session | null) {
+  async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
     if (cart.length === 0) {
       setTimeout(() => {
         toast({
@@ -1067,7 +1067,7 @@ export default function PosPage() {
       return;
     }
     
-    if (!currentSession?.user?.id) {
+    if (!session?.user?.id) {
        toast({
           title: 'Error de autenticación',
           description: 'No se pudo identificar al usuario. Por favor, inicia sesión de nuevo.',
@@ -1078,7 +1078,7 @@ export default function PosPage() {
 
     try {
         const orderData: NewOrderData = {
-            user_id: currentSession.user.id,
+            user_id: session.user.id,
             customer_name: values.name || 'Consumidor Final',
             customer_phone: values.phone || 'N/A',
             customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
@@ -1243,7 +1243,7 @@ export default function PosPage() {
                     <div className="p-4">
                         <CheckoutForm 
                             form={form} 
-                            onSubmit={(values) => onSubmit(values, session)} 
+                            onSubmit={onSubmit} 
                             isSubmitting={isAddingOrder} 
                             onCancel={() => handleOpenChangeCheckout(false)} 
                             cart={cart}
