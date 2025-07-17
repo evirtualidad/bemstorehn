@@ -39,6 +39,7 @@ import { paymentMethods } from '@/lib/payment-methods.tsx';
 import { ProductGrid } from '@/components/product-grid';
 import { supabaseClient } from '@/lib/supabase';
 import { useAuthStore } from '@/hooks/use-auth-store';
+import type { Session } from '@supabase/supabase-js';
 
 type PosCartItem = Product & { quantity: number };
 
@@ -1053,7 +1054,7 @@ export default function PosPage() {
     }
   };
 
-  async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
+  async function onSubmit(values: z.infer<typeof checkoutFormSchema>, currentSession: Session | null) {
     if (cart.length === 0) {
       setTimeout(() => {
         toast({
@@ -1066,7 +1067,7 @@ export default function PosPage() {
       return;
     }
     
-    if (!session?.user?.id) {
+    if (!currentSession?.user?.id) {
        toast({
           title: 'Error de autenticación',
           description: 'No se pudo identificar al usuario. Por favor, inicia sesión de nuevo.',
@@ -1077,7 +1078,7 @@ export default function PosPage() {
 
     try {
         const orderData: NewOrderData = {
-            user_id: session.user.id,
+            user_id: currentSession.user.id,
             customer_name: values.name || 'Consumidor Final',
             customer_phone: values.phone || 'N/A',
             customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
@@ -1242,7 +1243,7 @@ export default function PosPage() {
                     <div className="p-4">
                         <CheckoutForm 
                             form={form} 
-                            onSubmit={onSubmit} 
+                            onSubmit={(values) => onSubmit(values, session)} 
                             isSubmitting={isAddingOrder} 
                             onCancel={() => handleOpenChangeCheckout(false)} 
                             cart={cart}
