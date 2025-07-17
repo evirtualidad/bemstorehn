@@ -23,7 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogFo
 import { cn, formatCurrency } from '@/lib/utils';
 import { es } from 'date-fns/locale/es';
 import { ProductSearch } from '@/components/product-search';
-import { useCategoriesStore } from '@/hooks/use-categories';
+import { useCategoriesStore, type Category as CategoryType } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -98,13 +98,11 @@ function CategoryList({
   selectedFilter,
   hasOfferProducts,
 }: {
-  categories: string[];
+  categories: CategoryType[];
   onSelectFilter: (filter: SelectedFilter) => void;
   selectedFilter: SelectedFilter;
   hasOfferProducts: boolean;
 }) {
-  const { getCategoryByName } = useCategoriesStore();
-  
   const isSelected = (type: 'category' | 'offer' | null, value?: string) => {
     if (!selectedFilter && !type) return true;
     if (!selectedFilter) return false;
@@ -131,20 +129,16 @@ function CategoryList({
           Ofertas
         </Button>
       )}
-      {categories.map((categoryName) => {
-        const category = getCategoryByName(categoryName);
-        if (!category) return null;
-        return (
-          <Button
-            key={category.id}
-            variant={isSelected('category', category.name) ? 'default' : 'outline'}
-            className="justify-start h-11 px-4"
-            onClick={() => onSelectFilter({ type: 'category', value: category.name })}
-          >
-            {category.label}
-          </Button>
-        )
-      })}
+      {categories.map((category) => (
+        <Button
+          key={category.id}
+          variant={isSelected('category', category.name) ? 'default' : 'outline'}
+          className="justify-start h-11 px-4"
+          onClick={() => onSelectFilter({ type: 'category', value: category.name })}
+        >
+          {category.label}
+        </Button>
+      ))}
     </div>
   );
 }
@@ -889,8 +883,7 @@ export default function PosPage() {
     fetchCategories();
     fetchCustomers();
   }, [fetchProducts, fetchCategories, fetchCustomers]);
-
-  const productCategories = React.useMemo(() => [...new Set(products.map((p) => p.category))], [products]);
+  
   const hasOfferProducts = React.useMemo(() => products.some(p => p.originalPrice && p.originalPrice > p.price), [products]);
   
   const filteredProducts = React.useMemo(() => {
@@ -1124,7 +1117,7 @@ export default function PosPage() {
             <main className="flex-1 flex flex-col">
                 <div className="p-4 space-y-4 flex-shrink-0 bg-background">
                      <CategoryList
-                        categories={productCategories}
+                        categories={categories}
                         selectedFilter={selectedFilter}
                         onSelectFilter={setSelectedFilter}
                         hasOfferProducts={hasOfferProducts}
