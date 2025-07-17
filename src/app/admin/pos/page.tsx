@@ -1036,6 +1036,15 @@ export default function PosPage() {
     form.reset({ name: '', phone: '', deliveryMethod: 'pickup', address: undefined, paymentMethod: 'efectivo', paymentDueDate: undefined, cashAmount: '', paymentReference: '' });
   }
 
+  const handleOpenChangeCheckout = (open: boolean) => {
+    setIsCheckoutOpen(open);
+    if (!open) {
+      // Reset shipping cost if dialog is closed without completing order
+      setShippingCost(0);
+      form.reset({ name: '', phone: '', deliveryMethod: 'pickup', address: undefined, paymentMethod: 'efectivo', paymentDueDate: undefined, cashAmount: '', paymentReference: '' });
+    }
+  };
+
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
     if (cart.length === 0) {
       toast({
@@ -1215,7 +1224,7 @@ export default function PosPage() {
             onClose={() => setIsTicketVisible(false)}
         />
 
-        <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
+        <Dialog open={isCheckoutOpen} onOpenChange={handleOpenChangeCheckout}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Finalizar Pedido</DialogTitle>
@@ -1226,7 +1235,7 @@ export default function PosPage() {
                             form={form} 
                             onSubmit={onSubmit} 
                             isSubmitting={isSubmitting} 
-                            onCancel={() => setIsCheckoutOpen(false)} 
+                            onCancel={() => handleOpenChangeCheckout(false)} 
                             cart={cart}
                             subtotal={subtotal}
                             taxAmount={taxAmount}
