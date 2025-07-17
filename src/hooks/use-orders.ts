@@ -50,19 +50,13 @@ export interface Order {
   payment_due_date: string | null;
 }
 
-export type NewOrderData = Omit<Order, 'id' | 'display_id' | 'created_at' | 'customer_id'>;
-
-type CustomerInfo = {
-  name?: string;
-  phone?: string;
-  address?: Address | null;
-}
+export type NewOrderData = Omit<Order, 'id' | 'display_id' | 'created_at'>;
 
 type OrdersState = {
   orders: Order[];
   isLoading: boolean;
   fetchOrders: () => Promise<void>;
-  addOrder: (orderData: NewOrderData, customerInfo?: CustomerInfo) => Promise<Order>;
+  addOrder: (orderData: NewOrderData) => Promise<Order | null>;
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => Promise<void>;
   approveOrder: (data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
@@ -88,28 +82,26 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     }
   },
 
-  addOrder: async (orderData, customerInfo) => {
+  addOrder: async (orderData) => {
     set({ isLoading: true });
     
-    // Call the RPC function
-    const { data, error } = await supabaseClient.rpc('create_order_and_update_stock', {
-      p_order_data: orderData,
-      p_customer_info: customerInfo || null
-    });
-
-    if (error) {
-      console.error("RPC Error:", error);
-      set({ isLoading: false });
-      throw new Error(error.message);
-    }
+    const { data, error } = await supabaseClient
+        .from('orders')
+        .insert([orderData])
+        .select()
+        .single();
     
-    // The RPC function returns the newly created order
+    if (error) {
+        set({ isLoading: false });
+        console.error("Error creating order:", error);
+        toast({ title: 'Error al crear pedido', description: error.message, variant: 'destructive' });
+        return null;
+    }
+
     const newOrder = data as Order;
 
     set(produce((state: OrdersState) => {
         state.orders.unshift(newOrder);
-        // We also need to fetch customers again in case a new one was created or one was updated.
-        useCustomersStore.getState().fetchCustomers();
     }));
 
     set({ isLoading: false });

@@ -26,7 +26,6 @@ type CustomersState = {
       phone: string;
       name: string;
       address?: Address | null;
-      order_id: string;
       total_to_add: number;
     }
   ) => Promise<string | undefined>; // Returns customer ID
@@ -51,7 +50,11 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     }
   },
   
-  addOrUpdateCustomer: async ({ phone, name, address, order_id, total_to_add }) => {
+  addOrUpdateCustomer: async ({ phone, name, address, total_to_add }) => {
+    if (!phone && !name) {
+        return undefined; // Do not create/update "Consumidor Final"
+    }
+
     const { data: existingCustomer, error: findError } = await supabaseClient
       .from('customers')
       .select('*')

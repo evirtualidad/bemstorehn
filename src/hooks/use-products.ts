@@ -185,7 +185,6 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     const someFailed = results.some(res => res.error);
 
     if (someFailed) {
-      // Note: This doesn't roll back successful updates, but prevents toast spam.
       console.error("Some stock updates failed", results.map(r => r.error).filter(Boolean));
       throw new Error("Una o más actualizaciones de stock fallaron.");
     }

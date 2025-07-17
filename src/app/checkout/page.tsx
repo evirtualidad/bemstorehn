@@ -296,7 +296,7 @@ function ShippingDialog({
 
 export default function CheckoutPage() {
   const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart } = useCart();
-  const { decreaseStock } = useProductsStore();
+  const { updateMultipleStocks } = useProductsStore();
   const { addOrder, isLoading: isAddingOrder } = useOrdersStore();
   const { addOrUpdateCustomer } = useCustomersStore();
   const { taxRate, pickupAddress } = useSettingsStore();
@@ -356,8 +356,16 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
+      const customerId = await addOrUpdateCustomer({
+        phone: values.phone,
+        name: values.name,
+        address: shippingAddress,
+        total_to_add: total,
+      });
+
       const newOrderData: NewOrderData = {
         user_id: null, // Anonymous user from online store
+        customer_id: customerId || null,
         customer_name: values.name,
         customer_phone: values.phone,
         customer_address: values.deliveryMethod === 'delivery' ? shippingAddress : null,
@@ -383,19 +391,11 @@ export default function CheckoutPage() {
       const newOrder = await addOrder(newOrderData);
 
       if (newOrder) {
-        for (const item of items) {
-          await decreaseStock(item.id, item.quantity);
-        }
-
-        if (values.phone && values.name) {
-             await addOrUpdateCustomer({
-                phone: values.phone,
-                name: values.name,
-                address: shippingAddress,
-                order_id: newOrder.id,
-                total_to_add: total,
-             });
-        }
+        const stockUpdates = items.map(item => ({
+          id: item.id,
+          quantity: item.quantity,
+        }));
+        await updateMultipleStocks(stockUpdates);
 
         toast({
           title: '¡Pedido Recibido!',
@@ -694,5 +694,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-
-    

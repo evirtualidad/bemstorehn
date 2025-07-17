@@ -434,8 +434,8 @@ function ShippingDialog({
     if (isOpen) {
       form.reset({
         shippingOption: (currentAddress as any)?.type || 'local',
-        department: currentAddress?.department || undefined,
-        municipality: currentAddress?.municipality || undefined,
+        department: currentAddress?.department,
+        municipality: currentAddress?.municipality,
         colony: currentAddress?.colony || '',
         exactAddress: currentAddress?.exactAddress || '',
       });
@@ -867,7 +867,7 @@ export default function PosPage() {
       decreaseQuantity,
       clearCart,
   } = usePosCart();
-  const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
+  const { products, fetchProducts, isLoading: isLoadingProducts, updateMultipleStocks } = useProductsStore();
   const { addOrder, isLoading: isAddingOrder } = useOrdersStore();
   const { addOrUpdateCustomer, fetchCustomers, isLoading: isLoadingCustomers } = useCustomersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
@@ -1032,8 +1032,16 @@ export default function PosPage() {
     const userId = session?.user?.id;
 
     try {
+      const customerId = await addOrUpdateCustomer({
+        phone: values.phone || '',
+        name: values.name || 'Consumidor Final',
+        address: values.deliveryMethod === 'delivery' ? values.address : null,
+        total_to_add: totalWithShipping,
+      });
+
       const orderData: NewOrderData = {
           user_id: userId,
+          customer_id: customerId || null,
           customer_name: values.name || 'Consumidor Final',
           customer_phone: values.phone || 'N/A',
           customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
@@ -1056,33 +1064,28 @@ export default function PosPage() {
           }] : [],
       };
       
-      const newOrder = await addOrder(orderData, { 
-        phone: values.phone, 
-        name: values.name, 
-        address: values.address 
-      });
+      const newOrder = await addOrder(orderData);
 
-      // The RPC function now handles stock updates, so this is no longer needed.
-      // const stockUpdates = cart.map(item => ({
-      //   id: item.id,
-      //   quantity: item.quantity,
-      // }));
-      // await updateMultipleStocks(stockUpdates);
+      if (newOrder) {
+        const stockUpdates = cart.map(item => ({
+          id: item.id,
+          quantity: item.quantity,
+        }));
+        await updateMultipleStocks(stockUpdates);
 
-      // We need to refetch products to get the latest stock.
-      await fetchProducts();
+        setTimeout(() => {
+          toast({
+            title: '¡Pedido Creado!',
+            description: `Pedido ${newOrder.display_id} creado con éxito.`,
+          });
+        }, 0);
 
-      setTimeout(() => {
-        toast({
-          title: '¡Pedido Creado!',
-          description: `Pedido ${newOrder.display_id} creado con éxito.`,
-        });
-      }, 0);
-
-      clearCartAndForm();
-      setIsCheckoutOpen(false);
-      setIsTicketVisible(false);
-
+        clearCartAndForm();
+        setIsCheckoutOpen(false);
+        setIsTicketVisible(false);
+      } else {
+        throw new Error('La creación del pedido falló.');
+      }
     } catch (error: any) {
       console.error('Error al crear el pedido:', error);
       setTimeout(() => {
