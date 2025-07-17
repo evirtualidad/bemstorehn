@@ -5,6 +5,7 @@ import type { Product } from '@/lib/products';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { useSettingsStore } from './use-settings-store';
+import { toast } from './use-toast';
 
 export type PosCartItem = {
   quantity: number;
@@ -18,7 +19,7 @@ type CartState = {
   shippingCost: number; 
   totalWithShipping: number;
   setItems: (items: PosCartItem[]) => void;
-  addToCart: (product: Product) => void;
+  addToCart: (product: Product) => boolean;
   removeFromCart: (productId: string) => void;
   increaseQuantity: (productId: string) => void;
   decreaseQuantity: (productId: string) => void;
@@ -62,14 +63,34 @@ export const usePosCart = create<CartState>()(
                 : item
             );
           } else {
-            // Potentially show a toast here if you want to notify the user
-            return; // Do nothing if stock limit is reached
+             setTimeout(() => {
+                toast({
+                    title: 'Stock Máximo Alcanzado',
+                    description: `No puedes añadir más de ${product.name}.`,
+                    variant: 'destructive',
+                    duration: 3000,
+                });
+            }, 0);
+            return false;
           }
         } else {
-          updatedItems = [...items, { ...product, quantity: 1 }];
+           if (product.stock > 0) {
+              updatedItems = [...items, { ...product, quantity: 1 }];
+           } else {
+              setTimeout(() => {
+                toast({
+                  title: 'Producto Agotado',
+                  description: `${product.name} no tiene stock disponible.`,
+                  variant: 'destructive',
+                  duration: 3000,
+                });
+              }, 0);
+              return false;
+           }
         }
         
         set({ items: updatedItems, ...calculateCartTotals(updatedItems, shippingCost) });
+        return true;
       },
       removeFromCart: (productId) => {
         const updatedItems = get().items.filter((item) => item.id !== productId);
@@ -91,7 +112,7 @@ export const usePosCart = create<CartState>()(
 
         if (existingItem?.quantity === 1) {
           const updatedItems = items.filter((item) => item.id !== productId);
-          set({ items: updatedItems, ...calculateCartTotals(updatedItems, shippingCost) });
+          set({ items: updatedItems, ...calculateCartTotals(updatedItems, get().shippingCost) });
         } else {
           const updatedItems = items.map((item) =>
             item.id === productId

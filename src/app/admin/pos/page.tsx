@@ -956,19 +956,7 @@ export default function PosPage() {
   };
 
   const handleProductSelect = (product: Product): boolean => {
-    if (product.stock <= 0) {
-      setTimeout(() => {
-        toast({
-          title: 'Producto Agotado',
-          description: `${product.name} no tiene stock disponible.`,
-          variant: 'destructive',
-          duration: 3000,
-        });
-      }, 0);
-      return false;
-    }
-    addToCart(product);
-    return true;
+    return addToCart(product);
   };
   
   const handleProductClick = (product: Product) => {
