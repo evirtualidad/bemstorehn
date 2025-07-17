@@ -4,63 +4,13 @@
  * @fileOverview A flow for creating an order and saving it to the system.
  *
  * - createOrder - A function that handles the order creation process.
- * - CreateOrderInput - The input type for the createOrder function.
- * - CreateOrderOutput - The return type for the createOrder function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
-import type { Order, Address as OrderAddress, Payment } from '@/hooks/use-orders';
-import type { Customer } from '@/hooks/use-customers';
-
-
-const ProductSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  price: z.number(),
-  quantity: z.number(),
-  image: z.string(),
-  category: z.string(),
-  description: z.string(),
-  stock: z.number(),
-});
-
-const AddressSchema = z.object({
-  department: z.string(),
-  municipality: z.string(),
-  colony: z.string().optional(),
-  exactAddress: z.string(),
-});
-
-export const CreateOrderInputSchema = z.object({
-  customer: z.object({
-    name: z.string().optional(),
-    phone: z.string().optional(),
-    address: AddressSchema.optional(),
-  }),
-  items: z.array(ProductSchema),
-  total: z.number(),
-  shippingCost: z.number().optional(),
-  paymentMethod: z.enum(['efectivo', 'tarjeta', 'transferencia', 'credito']),
-  deliveryMethod: z.enum(['pickup', 'delivery']).optional(),
-  paymentDueDate: z.string().optional(),
-  cashAmount: z.number().optional(),
-  paymentReference: z.string().optional(),
-});
-
-export type CreateOrderInput = z.infer<typeof CreateOrderInputSchema>;
-
-const CreateOrderOutputSchema = z.object({
-  orderId: z.string(),
-  success: z.boolean(),
-});
-
-export type CreateOrderOutput = z.infer<typeof CreateOrderOutputSchema>;
-
-export async function createOrder(input: CreateOrderInput): Promise<CreateOrderOutput> {
-  return createOrderFlow(input);
-}
+import type { Order, Address as OrderAddress } from '@/hooks/use-orders';
+import { CreateOrderInputSchema, CreateOrderOutputSchema, type CreateOrderInput, type CreateOrderOutput } from '@/ai/schemas';
 
 // Helper to add or update a customer
 const addOrUpdateCustomer = async (
@@ -78,7 +28,7 @@ const addOrUpdateCustomer = async (
       .eq('phone', customerData.phone)
       .single();
 
-    if (findError && findError.code !== 'PGRST116') { // PGRST116 is 'not found'
+    if (findError && findError.code !== 'PGRST116') { // PGRST1116 is 'not found'
       console.error('Error finding customer:', findError);
       throw new Error(`No se pudo verificar el cliente: ${findError.message}`);
     }
@@ -205,3 +155,8 @@ const createOrderFlow = ai.defineFlow(
     }
   }
 );
+
+
+export async function createOrder(input: CreateOrderInput): Promise<CreateOrderOutput> {
+  return createOrderFlow(input);
+}

@@ -41,7 +41,8 @@ import { useAuthStore } from '@/hooks/use-auth-store';
 import type { Session } from '@supabase/supabase-js';
 import { usePosCart, type PosCartItem } from '@/hooks/use-pos-cart';
 import { v4 as uuidv4 } from 'uuid';
-import { createOrder, type CreateOrderInput } from '@/ai/flows/create-order-flow';
+import { createOrder } from '@/ai/flows/create-order-flow';
+import type { CreateOrderInput } from '@/ai/schemas';
 
 type SelectedFilter = { type: 'category' | 'offer'; value: string } | null;
 
