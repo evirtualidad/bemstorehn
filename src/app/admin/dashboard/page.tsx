@@ -80,15 +80,8 @@ export default function Dashboard() {
     from: subDays(new Date(), 29),
     to: new Date(),
   });
-  
-  const [isClient, setIsClient] = React.useState(false);
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const dashboardData = React.useMemo(() => {
-    if (!isClient) return null;
-
     const { from, to } = date || {};
     const startDate = from ? startOfDay(from) : new Date(0);
     const endDate = to ? endOfDay(to) : new Date();
@@ -192,9 +185,9 @@ export default function Dashboard() {
       salesByChannelData,
       salesByCategoryData,
     };
-  }, [isClient, orders, products, customers, categories, date]);
+  }, [orders, products, customers, categories, date]);
 
-  if (!isClient || !dashboardData) {
+  if (!dashboardData) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
         <LoadingSpinner />

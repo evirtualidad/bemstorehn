@@ -3,10 +3,6 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { subDays } from 'date-fns/subDays';
-import { addDays } from 'date-fns/addDays';
-import React, { useState, useEffect } from 'react';
-import { parseISO } from 'date-fns/parseISO';
 
 export interface Payment {
     date: string;
@@ -48,8 +44,6 @@ export interface Order {
   paymentDueDate?: string;
 }
 
-const now = new Date();
-
 const mockOrders: Order[] = [
   {
     id: 'ORD-001',
@@ -57,11 +51,11 @@ const mockOrders: Order[] = [
     items: [{ id: 'prod_001', name: 'Glow Serum', price: 35.00, quantity: 1, image: 'https://placehold.co/400x400.png' }],
     total: 35.00,
     balance: 0,
-    payments: [{ date: subDays(now, 1).toISOString(), amount: 35.00, method: 'tarjeta' }],
+    payments: [{ date: '2024-07-15T12:00:00.000Z', amount: 35.00, method: 'tarjeta' }],
     paymentMethod: 'tarjeta',
     status: 'paid',
     source: 'pos',
-    date: subDays(now, 1).toISOString(),
+    date: '2024-07-15T12:00:00.000Z',
     deliveryMethod: 'pickup',
   },
   {
@@ -74,8 +68,8 @@ const mockOrders: Order[] = [
     paymentMethod: 'credito',
     status: 'pending-payment',
     source: 'pos',
-    date: subDays(now, 2).toISOString(),
-    paymentDueDate: addDays(subDays(now, 2), 30).toISOString(),
+    date: '2024-07-14T12:00:00.000Z',
+    paymentDueDate: '2024-08-13T12:00:00.000Z',
     deliveryMethod: 'pickup',
   },
   {
@@ -84,11 +78,11 @@ const mockOrders: Order[] = [
     items: [{ id: 'prod_008', name: 'Waterproof Mascara', price: 26.00, quantity: 1, image: 'https://placehold.co/400x400.png' }],
     total: 26.00,
     balance: 0,
-    payments: [{ date: subDays(now, 5).toISOString(), amount: 26.00, method: 'efectivo' }],
+    payments: [{ date: '2024-07-11T12:00:00.000Z', amount: 26.00, method: 'efectivo' }],
     paymentMethod: 'efectivo',
     status: 'paid',
     source: 'pos',
-    date: subDays(now, 5).toISOString(),
+    date: '2024-07-11T12:00:00.000Z',
      deliveryMethod: 'pickup',
   },
    {
@@ -105,7 +99,7 @@ const mockOrders: Order[] = [
     status: 'pending-approval',
     source: 'online-store',
     deliveryMethod: 'pickup',
-    date: subDays(now, 1).toISOString(),
+    date: '2024-07-15T14:00:00.000Z',
   },
   {
     id: 'ORD-005',
@@ -113,12 +107,12 @@ const mockOrders: Order[] = [
     items: [{ id: 'prod_003', name: 'Velvet Matte Lipstick', price: 24.00, quantity: 3, image: 'https://placehold.co/400x400.png' }],
     total: 72.00,
     balance: 22.00,
-    payments: [{ date: subDays(now, 10).toISOString(), amount: 50.00, method: 'efectivo' }],
+    payments: [{ date: '2024-07-06T12:00:00.000Z', amount: 50.00, method: 'efectivo' }],
     paymentMethod: 'credito',
     status: 'pending-payment',
     source: 'pos',
-    date: subDays(now, 10).toISOString(),
-    paymentDueDate: addDays(now, 5).toISOString(),
+    date: '2024-07-06T12:00:00.000Z',
+    paymentDueDate: '2024-07-21T12:00:00.000Z',
      deliveryMethod: 'pickup',
   },
    {
@@ -131,8 +125,8 @@ const mockOrders: Order[] = [
     paymentMethod: 'credito',
     status: 'pending-payment',
     source: 'pos',
-    date: subDays(now, 15).toISOString(),
-    paymentDueDate: subDays(now, 2).toISOString(), // Vencida
+    date: '2024-07-01T12:00:00.000Z',
+    paymentDueDate: '2024-07-14T12:00:00.000Z', // Vencida
     deliveryMethod: 'pickup',
   },
 ];
