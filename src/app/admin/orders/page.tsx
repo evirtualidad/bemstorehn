@@ -256,6 +256,11 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
     const { approveOrder } = useOrdersStore();
     const { toast } = useToast();
     const [isOpen, setIsOpen] = React.useState(false);
+    const [today, setToday] = React.useState<Date | null>(null);
+
+    React.useEffect(() => {
+        setToday(new Date());
+    }, []);
 
     const form = useForm<z.infer<typeof orderApprovalFormSchema>>({
         resolver: zodResolver(orderApprovalFormSchema),
@@ -334,7 +339,7 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
                                                     mode="single"
                                                     selected={field.value}
                                                     onSelect={field.onChange}
-                                                    disabled={(date) => date < new Date() }
+                                                    disabled={(date) => today ? date < today : true}
                                                     initialFocus
                                                 />
                                             </PopoverContent>
