@@ -21,11 +21,20 @@ export function CustomerSearch({ onCustomerSelect, form }: CustomerSearchProps) 
   const searchContainerRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
+    // Set initial search query from form if it exists
+    const initialName = form.getValues('name');
+    if (initialName) {
+        setSearchQuery(initialName);
+    }
+  }, []);
+
+
+  React.useEffect(() => {
     if (searchQuery) {
       const lowerCaseQuery = searchQuery.toLowerCase();
       const filteredCustomers = customers.filter((customer) =>
         customer.name.toLowerCase().includes(lowerCaseQuery) ||
-        customer.phone.includes(lowerCaseQuery)
+        (customer.phone && customer.phone.includes(lowerCaseQuery))
       );
       setResults(filteredCustomers);
       setIsOpen(true);
@@ -57,7 +66,15 @@ export function CustomerSearch({ onCustomerSelect, form }: CustomerSearchProps) 
       const newQuery = e.target.value;
       setSearchQuery(newQuery);
       form.setValue('name', newQuery); // Update form value as user types
-      onCustomerSelect(null);
+      
+      // If the query is cleared, also clear associated customer data
+      if (newQuery === '') {
+        onCustomerSelect(null);
+        form.setValue('phone', '');
+        form.setValue('address', undefined);
+      } else {
+        onCustomerSelect(null);
+      }
   }
 
   return (
@@ -77,7 +94,7 @@ export function CustomerSearch({ onCustomerSelect, form }: CustomerSearchProps) 
                                 className="h-11 pl-10"
                                 onFocus={() => searchQuery && setIsOpen(true)}
                                 onChange={handleInputChange}
-                                value={searchQuery || field.value}
+                                value={searchQuery}
                                 autoComplete='off'
                             />
                         </FormControl>
@@ -107,5 +124,4 @@ export function CustomerSearch({ onCustomerSelect, form }: CustomerSearchProps) 
     </div>
   );
 }
-
     
