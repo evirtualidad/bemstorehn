@@ -22,7 +22,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Loader2, Truck, MapPin, Store, CheckCircle, Banknote, CreditCard, Landmark } from 'lucide-react';
-import { createOrder } from '@/ai/flows/create-order-flow';
 import { useProductsStore } from '@/hooks/use-products';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
@@ -309,12 +308,11 @@ function ShippingDialog({
 export default function CheckoutPage() {
   const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart, toggleCart } = useCart();
   const { decreaseStock } = useProductsStore();
-  const { addOrder } = useOrdersStore();
+  const { addOrder, isLoading: isSubmitting } = useOrdersStore();
   const { addOrUpdateCustomer } = useCustomersStore();
   const { taxRate, pickupAddress } = useSettingsStore();
   const { toast } = useToast();
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = useState(false);
   const { currency } = useCurrencyStore();
 
@@ -360,9 +358,7 @@ export default function CheckoutPage() {
   };
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
-    setIsSubmitting(true);
     try {
-      
       const newOrderData: NewOrderData = {
         customer_name: values.name || 'Consumidor Final',
         customer_phone: values.phone || 'N/A',
@@ -413,8 +409,6 @@ export default function CheckoutPage() {
         description: 'Hubo un problema al realizar tu pedido. Por favor, intenta de nuevo.',
         variant: 'destructive',
       });
-    } finally {
-      setIsSubmitting(false);
     }
   }
 

@@ -9,6 +9,8 @@ export interface Payment {
     date: string;
     amount: number;
     method: 'efectivo' | 'tarjeta' | 'transferencia';
+    cash_received?: number | null;
+    change_given?: number | null;
 }
 
 export interface Address {
@@ -52,6 +54,7 @@ export type NewOrderData = Omit<Order, 'id' | 'display_id' | 'created_at' | 'cus
 type OrdersState = {
   orders: Order[];
   isLoading: boolean;
+  fetchOrders: (supabase: SupabaseClient) => Promise<void>;
   addOrder: (supabase: SupabaseClient, orderData: NewOrderData) => Promise<Order | null>;
   addPayment: (supabase: SupabaseClient, orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => Promise<void>;
   approveOrder: (supabase: SupabaseClient, data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => Promise<void>;
@@ -62,6 +65,22 @@ type OrdersState = {
 export const useOrdersStore = create<OrdersState>((set, get) => ({
   orders: [],
   isLoading: false,
+
+  fetchOrders: async (supabase: SupabaseClient) => {
+    set({ isLoading: true });
+    try {
+      const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      set({ orders: data || [], isLoading: false });
+    } catch (error: any) {
+      toast({
+        title: 'Error al cargar pedidos',
+        description: error.message,
+        variant: 'destructive',
+      });
+      set({ isLoading: false });
+    }
+  },
 
   addOrder: async (supabase, orderData) => {
     set({ isLoading: true });
