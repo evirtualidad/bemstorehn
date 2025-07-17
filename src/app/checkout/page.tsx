@@ -212,7 +212,7 @@ function ShippingDialog({
                                     render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Departamento</FormLabel>
-                                        <Select onValueChange={(value) => { field.onChange(value); form.setValue('municipality', undefined); }} defaultValue={field.value}>
+                                        <Select onValueChange={(value) => { field.onChange(value); form.setValue('municipality', undefined); }} value={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
                                             <SelectValue placeholder="Selecciona un departamento" />
@@ -690,3 +690,5 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
+    

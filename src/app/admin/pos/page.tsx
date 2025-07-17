@@ -434,6 +434,8 @@ function ShippingDialog({
   const selectedShippingOption = form.watch('shippingOption');
 
   React.useEffect(() => {
+    // This effect now only runs if the component is being initialized for a new entry
+    // or if the address type changes, but not to set a default.
     const isNational = selectedShippingOption === 'national';
     if (!isNational) {
       form.setValue('department', 'Francisco Morazán');
@@ -960,13 +962,26 @@ export default function PosPage() {
     }
   };
 
-  const handleCustomerSelect = (customer: Customer) => {
-    form.setValue('name', customer.name);
-    form.setValue('phone', customer.phone || '');
-    if(customer.address) {
-      form.setValue('address', customer.address as Address);
+  const handleCustomerSelect = (customer: Customer | null) => {
+    if (customer) {
+        form.setValue('name', customer.name);
+        form.setValue('phone', customer.phone || '');
+        if (customer.address) {
+            form.setValue('address', customer.address as Address);
+        } else {
+            form.setValue('address', undefined);
+            if (form.getValues('deliveryMethod') === 'delivery') {
+                setShippingCost(0);
+            }
+        }
+    } else {
+        // This case handles when the user clears the search or types a new name
+        form.setValue('address', undefined);
+        if (form.getValues('deliveryMethod') === 'delivery') {
+            setShippingCost(0);
+        }
     }
-  };
+};
 
   const updateQuantity = (productId: string, amount: number) => {
     const itemToUpdate = cart.find(item => item.id === productId);
@@ -1212,3 +1227,5 @@ export default function PosPage() {
     </div>
   );
 }
+
+    

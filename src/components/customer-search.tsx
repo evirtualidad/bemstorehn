@@ -9,7 +9,7 @@ import { UserSearch } from 'lucide-react';
 import { UseFormReturn } from 'react-hook-form';
 
 interface CustomerSearchProps {
-  onCustomerSelect: (customer: Customer) => void;
+  onCustomerSelect: (customer: Customer | null) => void;
   form: UseFormReturn<any>;
 }
 
@@ -54,8 +54,13 @@ export function CustomerSearch({ onCustomerSelect, form }: CustomerSearchProps) 
   };
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchQuery(e.target.value);
-      form.setValue('name', e.target.value); // Update form value as user types
+      const newQuery = e.target.value;
+      setSearchQuery(newQuery);
+      form.setValue('name', newQuery); // Update form value as user types
+      // If user starts typing a new name, clear previous customer's other data
+      if (form.getValues('address')) {
+         onCustomerSelect(null);
+      }
   }
 
   return (
@@ -105,3 +110,5 @@ export function CustomerSearch({ onCustomerSelect, form }: CustomerSearchProps) 
     </div>
   );
 }
+
+    
