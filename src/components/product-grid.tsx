@@ -16,10 +16,16 @@ export function ProductGrid({ products, onProductClick }: ProductGridProps) {
     );
   }
 
+  const handleCardClick = (product: Product) => {
+    if (onProductClick) {
+      onProductClick(product);
+    }
+  };
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} onProductClick={onProductClick} />
+        <ProductCard key={product.id} product={product} onProductClick={handleCardClick} />
       ))}
     </div>
   );

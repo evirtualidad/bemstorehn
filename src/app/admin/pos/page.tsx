@@ -961,13 +961,6 @@ export default function PosPage() {
       });
       return;
     }
-
-    toast({
-        title: 'Producto añadido',
-        description: `${product.name} añadido al pedido.`,
-        duration: 3000,
-    });
-
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === product.id);
       if (existingItem) {
@@ -1150,7 +1143,16 @@ export default function PosPage() {
                     <Separator />
                 </div>
                  <ScrollArea className="flex-1 p-4 bg-background">
-                     <ProductGrid products={filteredProducts} onProductClick={handleProductSelect} />
+                     <ProductGrid products={filteredProducts} onProductClick={(product) => {
+                        if (product.stock > 0) {
+                            toast({
+                                title: 'Producto añadido',
+                                description: `${product.name} añadido al pedido.`,
+                                duration: 3000,
+                            });
+                        }
+                        handleProductSelect(product);
+                     }} />
                 </ScrollArea>
             </main>
         </div>
