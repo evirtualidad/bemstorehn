@@ -57,35 +57,35 @@ export default function UsersPage() {
     }
   }, [adminRole, router]);
 
-  const fetchUsers = React.useCallback(async () => {
-    setIsLoading(true);
-    const result = await getUsers();
-    if (result.error) {
-      toast({
-        title: 'Error al cargar usuarios',
-        description: result.error,
-        variant: 'destructive',
-      });
-      setUsers([]);
-    } else {
-      // Ensure app_metadata and role exist to prevent runtime errors
-      const sanitizedUsers = result.users.map(u => ({
-          ...u,
-          app_metadata: {
-              ...u.app_metadata,
-              role: u.app_metadata.role || 'cashier', // Default to cashier if no role
-          },
-      }));
-      setUsers(sanitizedUsers);
-    }
-    setIsLoading(false);
-  }, [toast]);
-  
   React.useEffect(() => {
-    if (adminRole === 'admin') {
-      fetchUsers();
-    }
-  }, [adminRole, fetchUsers]);
+    if (adminRole !== 'admin') return;
+
+    const fetchUsers = async () => {
+        setIsLoading(true);
+        const result = await getUsers();
+        if (result.error) {
+        toast({
+            title: 'Error al cargar usuarios',
+            description: result.error,
+            variant: 'destructive',
+        });
+        setUsers([]);
+        } else {
+        // Ensure app_metadata and role exist to prevent runtime errors
+        const sanitizedUsers = result.users.map(u => ({
+            ...u,
+            app_metadata: {
+                ...u.app_metadata,
+                role: u.app_metadata.role || 'cashier', // Default to cashier if no role
+            },
+        }));
+        setUsers(sanitizedUsers);
+        }
+        setIsLoading(false);
+    };
+    
+    fetchUsers();
+  }, [adminRole, router, toast]);
   
 
   const handleRoleChange = async (userId: string, newRole: 'admin' | 'cashier') => {
@@ -169,7 +169,7 @@ export default function UsersPage() {
                     <div className="font-medium">{user.email}</div>
                   </TableCell>
                   <TableCell>
-                    {format(new Date(user.created_at), 'd MMM, yyyy', { locale: es })}
+                    {user.created_at ? format(new Date(user.created_at), 'd MMM, yyyy', { locale: es }) : 'N/A'}
                   </TableCell>
                    <TableCell>
                     {user.last_sign_in_at ? format(new Date(user.last_sign_in_at), 'd MMM, yyyy HH:mm', { locale: es }) : 'Nunca'}
