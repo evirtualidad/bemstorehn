@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -55,19 +54,17 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { cn } from '@/lib/utils';
 
 export function ProductsManager() {
-  const { products, addProduct, updateProduct, deleteProduct } = useProductsStore();
+  const { products, addProduct, updateProduct, deleteProduct, fetchProducts, isLoading } = useProductsStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
   const { currency } = useCurrencyStore();
-  const [isClient, setIsClient] = React.useState(false);
 
   React.useEffect(() => {
-    setIsClient(true);
-  }, []);
+    fetchProducts();
+  }, [fetchProducts]);
 
-  const handleAddProduct = (values: z.infer<typeof productFormSchema>) => {
-    const newProduct: Product = {
-      id: `prod_${Math.random().toString(36).substr(2, 9)}`,
+  const handleAddProduct = async (values: z.infer<typeof productFormSchema>) => {
+    const newProductData = {
       ...values,
       image: values.image || `https://placehold.co/400x400.png?text=${values.name.replace(/\s/g, '+')}`,
       price: Number(values.price),
@@ -75,14 +72,14 @@ export function ProductsManager() {
       stock: Number(values.stock),
       featured: values.featured,
     };
-    addProduct(newProduct);
+    await addProduct(newProductData);
     setIsDialogOpen(false);
   };
   
-  const handleEditProduct = (values: z.infer<typeof productFormSchema>) => {
+  const handleEditProduct = async (values: z.infer<typeof productFormSchema>) => {
     if (!editingProduct) return;
     
-    updateProduct({
+    await updateProduct({
       ...editingProduct,
       ...values,
       price: Number(values.price),
@@ -95,8 +92,8 @@ export function ProductsManager() {
     setIsDialogOpen(false);
   };
   
-  const handleDeleteProduct = (productId: string) => {
-    deleteProduct(productId);
+  const handleDeleteProduct = async (productId: string) => {
+    await deleteProduct(productId);
   };
   
   const openEditDialog = (product: Product) => {
@@ -118,7 +115,7 @@ export function ProductsManager() {
 
   const onSubmit = editingProduct ? handleEditProduct : handleAddProduct;
 
-  if (!isClient) {
+  if (isLoading) {
     return (
         <Card>
             <CardHeader>
@@ -178,7 +175,7 @@ export function ProductsManager() {
               <DialogHeader>
                 <DialogTitle>{editingProduct ? 'Editar Producto' : 'Añadir Nuevo Producto'}</DialogTitle>
                 <DialogDescription>
-                  {editingProduct ? 'Modifica los detalles del producto.' : 'Rellena los detalles del nuevo producto.'} Haz clic en guardar cuando termines.
+                  {editingProduct ? 'Modifica los detalles del producto.' : 'Rellena los detalles de la nueva producto.'} Haz clic en guardar cuando termines.
                 </DialogDescription>
               </DialogHeader>
               <ProductForm

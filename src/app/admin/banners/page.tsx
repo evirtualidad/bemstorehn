@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -44,26 +43,30 @@ import Image from 'next/image';
 import { useBannersStore, type Banner } from '@/hooks/use-banners';
 import { BannerForm, bannerFormSchema } from '@/components/banner-form';
 import { z } from 'zod';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export function BannersManager() {
-  const { banners, addBanner, updateBanner, deleteBanner } = useBannersStore();
+  const { banners, addBanner, updateBanner, deleteBanner, fetchBanners, isLoading } = useBannersStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingBanner, setEditingBanner] = React.useState<Banner | null>(null);
 
-  const handleAddBanner = (values: z.infer<typeof bannerFormSchema>) => {
-    const newBanner: Banner = {
-      id: `banner_${Date.now()}`,
+  React.useEffect(() => {
+    fetchBanners();
+  }, [fetchBanners]);
+
+  const handleAddBanner = async (values: z.infer<typeof bannerFormSchema>) => {
+    const newBannerData = {
       ...values,
       image: values.image || `https://placehold.co/1200x600.png?text=${values.title.replace(/\s/g, '+')}`,
     };
-    addBanner(newBanner);
+    await addBanner(newBannerData);
     setIsDialogOpen(false);
   };
 
-  const handleEditBanner = (values: z.infer<typeof bannerFormSchema>) => {
+  const handleEditBanner = async (values: z.infer<typeof bannerFormSchema>) => {
     if (!editingBanner) return;
     
-    updateBanner({
+    await updateBanner({
       ...editingBanner,
       ...values,
     });
@@ -72,8 +75,8 @@ export function BannersManager() {
     setIsDialogOpen(false);
   };
 
-  const handleDeleteBanner = (bannerId: string) => {
-    deleteBanner(bannerId);
+  const handleDeleteBanner = async (bannerId: string) => {
+    await deleteBanner(bannerId);
   };
 
   const openEditDialog = (banner: Banner) => {
@@ -94,6 +97,25 @@ export function BannersManager() {
   };
 
   const onSubmit = editingBanner ? handleEditBanner : handleAddBanner;
+  
+  if (isLoading) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Banners del Carrusel</CardTitle>
+                <CardDescription>
+                    Gestiona los banners que aparecen en el carrusel de la página de inicio.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex justify-center items-center h-48">
+                    <LoadingSpinner />
+                </div>
+            </CardContent>
+        </Card>
+    );
+  }
+
 
   return (
     <>

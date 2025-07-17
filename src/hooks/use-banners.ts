@@ -1,8 +1,8 @@
-
 'use client';
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { supabase } from '@/lib/supabase';
+import { useToast } from './use-toast';
 
 export interface Banner {
   id: string;
@@ -12,60 +12,81 @@ export interface Banner {
   aiHint?: string;
 }
 
-const initialBanners: Banner[] = [
-    {
-      id: 'banner_1',
-      title: 'Belleza en su Forma más Pura',
-      description: 'Descubre nuestra colección exclusiva de cosméticos, elaborados con los mejores ingredientes naturales.',
-      image: 'https://placehold.co/1200x600.png',
-      aiHint: 'cosmetics flatlay',
-    },
-    {
-      id: 'banner_2',
-      title: 'Novedades de Skincare',
-      description: 'Renueva tu piel con nuestros últimos lanzamientos. Fórmulas potentes para resultados visibles.',
-      image: 'https://placehold.co/1200x600.png',
-      aiHint: 'skincare products',
-    },
-    {
-      id: 'banner_3',
-      title: 'Esenciales de Maquillaje',
-      description: 'Colores vibrantes y texturas que te encantarán. Encuentra tus nuevos favoritos.',
-      image: 'https://placehold.co/1200x600.png',
-      aiHint: 'makeup collection',
-    },
-];
-
 type BannersState = {
   banners: Banner[];
-  addBanner: (banner: Banner) => void;
-  updateBanner: (banner: Banner) => void;
-  deleteBanner: (bannerId: string) => void;
+  isLoading: boolean;
+  error: string | null;
+  fetchBanners: () => Promise<void>;
+  addBanner: (banner: Omit<Banner, 'id'>) => Promise<void>;
+  updateBanner: (banner: Banner) => Promise<void>;
+  deleteBanner: (bannerId: string) => Promise<void>;
 };
 
-export const useBannersStore = create<BannersState>()(
-  persist(
-    (set) => ({
-      banners: initialBanners,
-      addBanner: (banner) => {
-        set((state) => ({ banners: [banner, ...state.banners] }));
-      },
-      updateBanner: (banner) => {
-        set((state) => ({
-          banners: state.banners.map((b) =>
-            b.id === banner.id ? banner : b
-          ),
-        }));
-      },
-      deleteBanner: (bannerId) => {
-        set((state) => ({
-          banners: state.banners.filter((b) => b.id !== bannerId),
-        }));
-      },
-    }),
-    {
-      name: 'banners-storage',
-      storage: createJSONStorage(() => localStorage),
+export const useBannersStore = create<BannersState>((set) => ({
+  banners: [],
+  isLoading: true,
+  error: null,
+
+  fetchBanners: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const { data, error } = await supabase.from('banners').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      set({ banners: data || [], isLoading: false });
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+      useToast.getState().toast({
+        title: 'Error al cargar banners',
+        description: error.message,
+        variant: 'destructive',
+      });
     }
-  )
-);
+  },
+
+  addBanner: async (bannerData) => {
+    try {
+      const { data, error } = await supabase.from('banners').insert([bannerData]).select();
+      if (error) throw error;
+      const newBanner = data[0];
+      set((state) => ({ banners: [newBanner, ...state.banners] }));
+    } catch (error: any) {
+       useToast.getState().toast({
+        title: 'Error al añadir banner',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  },
+
+  updateBanner: async (banner) => {
+    try {
+      const { error } = await supabase.from('banners').update(banner).eq('id', banner.id);
+      if (error) throw error;
+      set((state) => ({
+        banners: state.banners.map((b) => (b.id === banner.id ? banner : b)),
+      }));
+    } catch (error: any) {
+      useToast.getState().toast({
+        title: 'Error al actualizar banner',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  },
+
+  deleteBanner: async (bannerId) => {
+    try {
+      const { error } = await supabase.from('banners').delete().eq('id', bannerId);
+      if (error) throw error;
+      set((state) => ({
+        banners: state.banners.filter((b) => b.id !== bannerId),
+      }));
+    } catch (error: any)      {
+      useToast.getState().toast({
+        title: 'Error al eliminar banner',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  },
+}));

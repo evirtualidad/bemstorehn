@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useProductsStore } from '@/hooks/use-products';
@@ -27,20 +26,21 @@ interface ProductDetailPageProps {
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { productId } = params;
-  const { getProductById, products } = useProductsStore();
-  const { getCategoryByName } = useCategoriesStore();
+  const { getProductById, products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
+  const { getCategoryByName, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
   const { addToCart } = useCart();
   const { toast } = useToast();
   const { currency } = useCurrencyStore();
-  const [isClient, setIsClient] = React.useState(false);
-
+  
   React.useEffect(() => {
-    setIsClient(true);
-  }, []);
+    fetchProducts();
+    fetchCategories();
+  }, [fetchProducts, fetchCategories]);
   
   const product = getProductById(productId);
+  const isLoading = isLoadingProducts || isLoadingCategories;
 
-  if (!isClient) {
+  if (isLoading) {
     return (
         <div className="bg-background min-h-screen">
           <Header />

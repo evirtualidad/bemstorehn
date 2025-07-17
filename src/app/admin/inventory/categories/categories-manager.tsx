@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -46,6 +45,7 @@ import { Input } from '@/components/ui/input';
 import { useCategoriesStore, type Category } from '@/hooks/use-categories';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const categoryFormSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres.'),
@@ -107,23 +107,23 @@ function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps) {
 
 
 export function CategoriesManager() {
-  const { categories, addCategory, updateCategory, deleteCategory } = useCategoriesStore();
+  const { categories, addCategory, updateCategory, deleteCategory, fetchCategories, isLoading } = useCategoriesStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingCategory, setEditingCategory] = React.useState<Category | null>(null);
 
-  const handleAddCategory = (values: z.infer<typeof categoryFormSchema>) => {
-    const newCategory: Category = {
-      id: `cat_${Date.now()}`,
-      ...values,
-    };
-    addCategory(newCategory);
+  React.useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  const handleAddCategory = async (values: z.infer<typeof categoryFormSchema>) => {
+    await addCategory(values);
     setIsDialogOpen(false);
   };
 
-  const handleEditCategory = (values: z.infer<typeof categoryFormSchema>) => {
+  const handleEditCategory = async (values: z.infer<typeof categoryFormSchema>) => {
     if (!editingCategory) return;
     
-    updateCategory({
+    await updateCategory({
       ...editingCategory,
       ...values,
     });
@@ -132,8 +132,8 @@ export function CategoriesManager() {
     setIsDialogOpen(false);
   };
 
-  const handleDeleteCategory = (categoryId: string) => {
-    deleteCategory(categoryId);
+  const handleDeleteCategory = async (categoryId: string) => {
+    await deleteCategory(categoryId);
   };
 
   const openEditDialog = (category: Category) => {
@@ -154,6 +154,24 @@ export function CategoriesManager() {
   };
 
   const onSubmit = editingCategory ? handleEditCategory : handleAddCategory;
+
+  if (isLoading) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Categorías de Productos</CardTitle>
+                <CardDescription>
+                    Gestiona las categorías que agrupan tus productos.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex justify-center items-center h-48">
+                    <LoadingSpinner />
+                </div>
+            </CardContent>
+        </Card>
+    );
+  }
 
   return (
     <>

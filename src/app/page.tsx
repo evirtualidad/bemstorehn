@@ -39,7 +39,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [isPlaying, setIsPlaying] = React.useState(true);
 
   React.useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || banners.length === 0) return;
 
     const timer = setTimeout(() => {
       setCurrent((prev) => (prev === banners.length - 1 ? 0 : prev + 1));
@@ -162,24 +162,24 @@ function FeaturedProductsCarousel({ products }: { products: Product[] }) {
 }
 
 export default function Home() {
-  const { products } = useProductsStore();
-  const { banners } = useBannersStore();
-  const { categories } = useCategoriesStore();
+  const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
+  const { banners, fetchBanners, isLoading: isLoadingBanners } = useBannersStore();
+  const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
   const { items, total, toggleCart } = useCart();
   const { currency } = useCurrencyStore();
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
-  const [isClient, setIsClient] = React.useState(false);
-
+  
   React.useEffect(() => {
-    setIsClient(true);
-  }, []);
+    fetchProducts();
+    fetchBanners();
+    fetchCategories();
+  }, [fetchProducts, fetchBanners, fetchCategories]);
 
   const itemCount = React.useMemo(() => {
     return items.reduce((sum, item) => sum + item.quantity, 0);
   }, [items]);
 
   const productsByCategory = React.useMemo(() => {
-    if (!isClient) return {};
     return products.reduce((acc, product) => {
       const { category } = product;
       if (!acc[category]) {
@@ -188,15 +188,15 @@ export default function Home() {
       acc[category].push(product);
       return acc;
     }, {} as Record<string, Product[]>);
-  }, [products, isClient]);
+  }, [products]);
   
   const featuredOfferProducts = React.useMemo(() => 
-    isClient ? products.filter((p) => p.featured && p.originalPrice && p.originalPrice > p.price) : [], 
-  [products, isClient]);
+    products.filter((p) => p.featured && p.originalPrice && p.originalPrice > p.price), 
+  [products]);
   
   const offerProducts = React.useMemo(() => 
-    isClient ? products.filter(p => p.originalPrice && p.originalPrice > p.price) : [],
-  [products, isClient]);
+    products.filter(p => p.originalPrice && p.originalPrice > p.price),
+  [products]);
 
   const filteredProducts = React.useMemo(() => {
     if (!selectedCategory) return [];
@@ -206,8 +206,9 @@ export default function Home() {
     return products.filter(p => p.category === selectedCategory);
   }, [selectedCategory, products, offerProducts]);
   
-  
-  if (!isClient) {
+  const isLoading = isLoadingProducts || isLoadingBanners || isLoadingCategories;
+
+  if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header 
