@@ -91,35 +91,27 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
   addOrder: async (orderData, customerInfo) => {
     set({ isLoading: true });
     
-    let customerId: string | null = null;
-    if (customerInfo?.phone) {
-      const id = await useCustomersStore.getState().addOrUpdateCustomer({
-        phone: customerInfo.phone,
-        name: customerInfo.name || 'Cliente',
-        address: customerInfo.address,
-        order_id: '', // Will be updated later if needed, not essential for creation
-        total_to_add: orderData.total,
-      });
-      if (id) customerId = id;
-    }
+    // Call the RPC function
+    const { data, error } = await supabaseClient.rpc('create_order_and_update_stock', {
+      p_order_data: orderData,
+      p_customer_info: customerInfo || null
+    });
 
-    const display_id = `BEM-${Date.now().toString().slice(-6)}`;
-    
-    const { data, error } = await supabaseClient
-        .from('orders')
-        .insert([{ ...orderData, display_id, customer_id: customerId }])
-        .select()
-        .single();
-    
     if (error) {
-        set({ isLoading: false });
-        throw new Error(error.message);
+      console.error("RPC Error:", error);
+      set({ isLoading: false });
+      throw new Error(error.message);
     }
-
+    
+    // The RPC function returns the newly created order
     const newOrder = data as Order;
+
     set(produce((state: OrdersState) => {
         state.orders.unshift(newOrder);
+        // We also need to fetch customers again in case a new one was created or one was updated.
+        useCustomersStore.getState().fetchCustomers();
     }));
+
     set({ isLoading: false });
     return newOrder;
   },

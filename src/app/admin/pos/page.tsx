@@ -867,7 +867,7 @@ export default function PosPage() {
       decreaseQuantity,
       clearCart,
   } = usePosCart();
-  const { products, updateMultipleStocks, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
+  const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
   const { addOrder, isLoading: isAddingOrder } = useOrdersStore();
   const { addOrUpdateCustomer, fetchCustomers, isLoading: isLoadingCustomers } = useCustomersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
@@ -1037,7 +1037,7 @@ export default function PosPage() {
           customer_name: values.name || 'Consumidor Final',
           customer_phone: values.phone || 'N/A',
           customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
-          items: cart.map(({ aiHint, ...rest }) => rest),
+          items: cart.map(({ aiHint, stock, ...rest }) => rest),
           total: totalWithShipping,
           shipping_cost: shippingCost,
           payment_method: values.paymentMethod,
@@ -1055,18 +1055,22 @@ export default function PosPage() {
               change_given: change,
           }] : [],
       };
-
+      
       const newOrder = await addOrder(orderData, { 
         phone: values.phone, 
         name: values.name, 
         address: values.address 
       });
-      
-      const stockUpdates = cart.map(item => ({
-        id: item.id,
-        quantity: item.quantity,
-      }));
-      await updateMultipleStocks(stockUpdates);
+
+      // The RPC function now handles stock updates, so this is no longer needed.
+      // const stockUpdates = cart.map(item => ({
+      //   id: item.id,
+      //   quantity: item.quantity,
+      // }));
+      // await updateMultipleStocks(stockUpdates);
+
+      // We need to refetch products to get the latest stock.
+      await fetchProducts();
 
       setTimeout(() => {
         toast({
