@@ -1,7 +1,8 @@
+
 'use client';
 
 import { create } from 'zustand';
-import { supabase } from '@/lib/supabase';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { useToast } from './use-toast';
 
 export interface Banner {
@@ -16,10 +17,10 @@ type BannersState = {
   banners: Banner[];
   isLoading: boolean;
   error: string | null;
-  fetchBanners: () => Promise<void>;
-  addBanner: (banner: Omit<Banner, 'id'>) => Promise<void>;
-  updateBanner: (banner: Banner) => Promise<void>;
-  deleteBanner: (bannerId: string) => Promise<void>;
+  fetchBanners: (supabase: SupabaseClient) => Promise<void>;
+  addBanner: (supabase: SupabaseClient, banner: Omit<Banner, 'id'>) => Promise<void>;
+  updateBanner: (supabase: SupabaseClient, banner: Banner) => Promise<void>;
+  deleteBanner: (supabase: SupabaseClient, bannerId: string) => Promise<void>;
 };
 
 export const useBannersStore = create<BannersState>((set) => ({
@@ -27,7 +28,7 @@ export const useBannersStore = create<BannersState>((set) => ({
   isLoading: true,
   error: null,
 
-  fetchBanners: async () => {
+  fetchBanners: async (supabase: SupabaseClient) => {
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase.from('banners').select('*').order('created_at', { ascending: false });
@@ -43,7 +44,7 @@ export const useBannersStore = create<BannersState>((set) => ({
     }
   },
 
-  addBanner: async (bannerData) => {
+  addBanner: async (supabase: SupabaseClient, bannerData) => {
     try {
       const { data, error } = await supabase.from('banners').insert([bannerData]).select();
       if (error) throw error;
@@ -58,7 +59,7 @@ export const useBannersStore = create<BannersState>((set) => ({
     }
   },
 
-  updateBanner: async (banner) => {
+  updateBanner: async (supabase: SupabaseClient, banner) => {
     try {
       const { error } = await supabase.from('banners').update(banner).eq('id', banner.id);
       if (error) throw error;
@@ -74,7 +75,7 @@ export const useBannersStore = create<BannersState>((set) => ({
     }
   },
 
-  deleteBanner: async (bannerId) => {
+  deleteBanner: async (supabase: SupabaseClient, bannerId) => {
     try {
       const { error } = await supabase.from('banners').delete().eq('id', bannerId);
       if (error) throw error;

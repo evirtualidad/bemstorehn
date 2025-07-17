@@ -39,6 +39,7 @@ import { CustomerSearch } from '@/components/customer-search';
 import { paymentMethods } from '@/lib/payment-methods.tsx';
 import { ProductGrid } from '@/components/product-grid';
 import { ProductCard } from '@/components/product-card';
+import { supabaseClient } from '@/lib/supabase';
 
 type PosCartItem = Product & { quantity: number };
 
@@ -859,10 +860,10 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
 
 export default function PosPage() {
   const [cart, setCart] = React.useState<PosCartItem[]>([]);
-  const { products, decreaseStock } = useProductsStore();
+  const { products, decreaseStock, fetchProducts } = useProductsStore();
   const { addOrder } = useOrdersStore();
   const { addOrUpdateCustomer } = useCustomersStore();
-  const { categories } = useCategoriesStore();
+  const { categories, fetchCategories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
   const { toast } = useToast();
@@ -876,7 +877,9 @@ export default function PosPage() {
 
   React.useEffect(() => {
     setIsClient(true);
-  }, []);
+    fetchProducts(supabaseClient);
+    fetchCategories(supabaseClient);
+  }, [fetchProducts, fetchCategories]);
 
   const productCategories = React.useMemo(() => isClient ? [...new Set(products.map((p) => p.category))] : [], [products, isClient]);
   const hasOfferProducts = React.useMemo(() => isClient ? products.some(p => p.originalPrice && p.originalPrice > p.price) : false, [products, isClient]);
@@ -1039,9 +1042,7 @@ export default function PosPage() {
   const handleOpenChangeCheckout = (open: boolean) => {
     setIsCheckoutOpen(open);
     if (!open) {
-      // Reset shipping cost if dialog is closed without completing order
-      setShippingCost(0);
-      form.reset({ name: '', phone: '', deliveryMethod: 'pickup', address: undefined, paymentMethod: 'efectivo', paymentDueDate: undefined, cashAmount: '', paymentReference: '' });
+      clearCartAndForm();
     }
   };
 
@@ -1077,7 +1078,7 @@ export default function PosPage() {
       const result = await createOrder(orderInput);
 
       if (result.success) {
-        cart.forEach((item) => decreaseStock(item.id, item.quantity));
+        cart.forEach((item) => decreaseStock(supabaseClient, item.id, item.quantity));
         
         // Add order to store
         addOrder({

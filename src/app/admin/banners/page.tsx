@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -44,6 +45,7 @@ import { useBannersStore, type Banner } from '@/hooks/use-banners';
 import { BannerForm, bannerFormSchema } from '@/components/banner-form';
 import { z } from 'zod';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { supabaseClient } from '@/lib/supabase';
 
 export function BannersManager() {
   const { banners, addBanner, updateBanner, deleteBanner, fetchBanners, isLoading } = useBannersStore();
@@ -51,7 +53,7 @@ export function BannersManager() {
   const [editingBanner, setEditingBanner] = React.useState<Banner | null>(null);
 
   React.useEffect(() => {
-    fetchBanners();
+    fetchBanners(supabaseClient);
   }, [fetchBanners]);
 
   const handleAddBanner = async (values: z.infer<typeof bannerFormSchema>) => {
@@ -59,14 +61,14 @@ export function BannersManager() {
       ...values,
       image: values.image || `https://placehold.co/1200x600.png?text=${values.title.replace(/\s/g, '+')}`,
     };
-    await addBanner(newBannerData);
+    await addBanner(supabaseClient, newBannerData);
     setIsDialogOpen(false);
   };
 
   const handleEditBanner = async (values: z.infer<typeof bannerFormSchema>) => {
     if (!editingBanner) return;
     
-    await updateBanner({
+    await updateBanner(supabaseClient, {
       ...editingBanner,
       ...values,
     });
@@ -76,7 +78,7 @@ export function BannersManager() {
   };
 
   const handleDeleteBanner = async (bannerId: string) => {
-    await deleteBanner(bannerId);
+    await deleteBanner(supabaseClient, bannerId);
   };
 
   const openEditDialog = (banner: Banner) => {

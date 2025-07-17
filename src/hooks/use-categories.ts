@@ -1,7 +1,8 @@
+
 'use client';
 
 import { create } from 'zustand';
-import { supabase } from '@/lib/supabase';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { useToast } from './use-toast';
 
 export interface Category {
@@ -14,10 +15,10 @@ type CategoriesState = {
   categories: Category[];
   isLoading: boolean;
   error: string | null;
-  fetchCategories: () => Promise<void>;
-  addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
-  updateCategory: (category: Category) => Promise<void>;
-  deleteCategory: (categoryId: string) => Promise<void>;
+  fetchCategories: (supabase: SupabaseClient) => Promise<void>;
+  addCategory: (supabase: SupabaseClient, category: Omit<Category, 'id'>) => Promise<void>;
+  updateCategory: (supabase: SupabaseClient, category: Category) => Promise<void>;
+  deleteCategory: (supabase: SupabaseClient, categoryId: string) => Promise<void>;
   getCategoryById: (categoryId: string) => Category | undefined;
   getCategoryByName: (categoryName: string) => Category | undefined;
 };
@@ -27,7 +28,7 @@ export const useCategoriesStore = create<CategoriesState>((set, get) => ({
   isLoading: true,
   error: null,
 
-  fetchCategories: async () => {
+  fetchCategories: async (supabase: SupabaseClient) => {
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase.from('categories').select('*').order('label', { ascending: true });
@@ -51,7 +52,7 @@ export const useCategoriesStore = create<CategoriesState>((set, get) => ({
     return get().categories.find((c) => c.name === categoryName);
   },
 
-  addCategory: async (categoryData) => {
+  addCategory: async (supabase: SupabaseClient, categoryData) => {
     try {
       const { data, error } = await supabase.from('categories').insert([categoryData]).select();
       if (error) throw error;
@@ -66,7 +67,7 @@ export const useCategoriesStore = create<CategoriesState>((set, get) => ({
     }
   },
 
-  updateCategory: async (category) => {
+  updateCategory: async (supabase: SupabaseClient, category) => {
     try {
       const { error } = await supabase.from('categories').update(category).eq('id', category.id);
       if (error) throw error;
@@ -82,7 +83,7 @@ export const useCategoriesStore = create<CategoriesState>((set, get) => ({
     }
   },
 
-  deleteCategory: async (categoryId) => {
+  deleteCategory: async (supabase: SupabaseClient, categoryId) => {
     try {
       const { error } = await supabase.from('categories').delete().eq('id', categoryId);
       if (error) throw error;

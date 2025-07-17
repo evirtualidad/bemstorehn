@@ -45,6 +45,7 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCustomersStore } from '@/hooks/use-customers';
+import { supabaseClient } from '@/lib/supabase';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(2, {
@@ -379,7 +380,7 @@ export default function CheckoutPage() {
 
       if (result.success) {
         items.forEach(item => {
-          decreaseStock(item.id, item.quantity);
+          decreaseStock(supabaseClient, item.id, item.quantity);
         });
         
         addOrder({

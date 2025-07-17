@@ -1,21 +1,22 @@
+
 'use client';
 
 import { create } from 'zustand';
 import type { Product } from '@/lib/products';
-import { supabase } from '@/lib/supabase';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { useToast } from './use-toast';
 
 type ProductsState = {
   products: Product[];
   isLoading: boolean;
   error: string | null;
-  fetchProducts: () => Promise<void>;
-  addProduct: (product: Omit<Product, 'id'>) => Promise<Product | null>;
-  updateProduct: (product: Product) => Promise<void>;
-  deleteProduct: (productId: string) => Promise<void>;
+  fetchProducts: (supabase: SupabaseClient) => Promise<void>;
+  addProduct: (supabase: SupabaseClient, product: Omit<Product, 'id'>) => Promise<Product | null>;
+  updateProduct: (supabase: SupabaseClient, product: Product) => Promise<void>;
+  deleteProduct: (supabase: SupabaseClient, productId: string) => Promise<void>;
   getProductById: (productId: string) => Product | undefined;
-  decreaseStock: (productId: string, quantity: number) => Promise<void>;
-  increaseStock: (productId: string, quantity: number) => Promise<void>;
+  decreaseStock: (supabase: SupabaseClient, productId: string, quantity: number) => Promise<void>;
+  increaseStock: (supabase: SupabaseClient, productId: string, quantity: number) => Promise<void>;
 };
 
 export const useProductsStore = create<ProductsState>((set, get) => ({
@@ -23,7 +24,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   isLoading: true,
   error: null,
   
-  fetchProducts: async () => {
+  fetchProducts: async (supabase: SupabaseClient) => {
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase.from('products').select('*').order('name', { ascending: true });
@@ -43,7 +44,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     return get().products.find((p) => p.id === productId);
   },
 
-  addProduct: async (productData) => {
+  addProduct: async (supabase: SupabaseClient, productData) => {
     try {
       const { data, error } = await supabase.from('products').insert([productData]).select();
       if (error) throw error;
@@ -60,7 +61,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     }
   },
 
-  updateProduct: async (product) => {
+  updateProduct: async (supabase: SupabaseClient, product) => {
     try {
       const { error } = await supabase.from('products').update(product).eq('id', product.id);
       if (error) throw error;
@@ -76,7 +77,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     }
   },
 
-  deleteProduct: async (productId) => {
+  deleteProduct: async (supabase: SupabaseClient, productId) => {
     try {
       const { error } = await supabase.from('products').delete().eq('id', productId);
       if (error) throw error;
@@ -92,22 +93,22 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     }
   },
 
-  decreaseStock: async (productId: string, quantity: number) => {
+  decreaseStock: async (supabase: SupabaseClient, productId: string, quantity: number) => {
      try {
         const { data, error } = await supabase.rpc('decrease_stock', { p_id: productId, p_quantity: quantity });
         if (error) throw error;
-        get().fetchProducts(); // Re-fetch to ensure consistency
+        get().fetchProducts(supabase); // Re-fetch to ensure consistency
     } catch (error: any) {
         console.error("Failed to decrease stock:", error.message);
         // Optionally show a toast to the user
     }
   },
 
-  increaseStock: async (productId: string, quantity: number) => {
+  increaseStock: async (supabase: SupabaseClient, productId: string, quantity: number) => {
      try {
         const { data, error } = await supabase.rpc('increase_stock', { p_id: productId, p_quantity: quantity });
         if (error) throw error;
-        get().fetchProducts(); // Re-fetch to ensure consistency
+        get().fetchProducts(supabase); // Re-fetch to ensure consistency
     } catch (error: any) {
         console.error("Failed to increase stock:", error.message);
     }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -52,6 +53,7 @@ import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { cn } from '@/lib/utils';
+import { supabaseClient } from '@/lib/supabase';
 
 export function ProductsManager() {
   const { products, addProduct, updateProduct, deleteProduct, fetchProducts, isLoading } = useProductsStore();
@@ -60,7 +62,7 @@ export function ProductsManager() {
   const { currency } = useCurrencyStore();
 
   React.useEffect(() => {
-    fetchProducts();
+    fetchProducts(supabaseClient);
   }, [fetchProducts]);
 
   const handleAddProduct = async (values: z.infer<typeof productFormSchema>) => {
@@ -72,14 +74,14 @@ export function ProductsManager() {
       stock: Number(values.stock),
       featured: values.featured,
     };
-    await addProduct(newProductData);
+    await addProduct(supabaseClient, newProductData);
     setIsDialogOpen(false);
   };
   
   const handleEditProduct = async (values: z.infer<typeof productFormSchema>) => {
     if (!editingProduct) return;
     
-    await updateProduct({
+    await updateProduct(supabaseClient, {
       ...editingProduct,
       ...values,
       price: Number(values.price),
@@ -93,7 +95,7 @@ export function ProductsManager() {
   };
   
   const handleDeleteProduct = async (productId: string) => {
-    await deleteProduct(productId);
+    await deleteProduct(supabaseClient, productId);
   };
   
   const openEditDialog = (product: Product) => {
