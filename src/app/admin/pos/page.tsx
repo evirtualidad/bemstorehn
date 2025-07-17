@@ -27,7 +27,7 @@ import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { useOrdersStore, type Address } from '@/hooks/use-orders';
+import { useOrdersStore, type Address, type NewOrderData } from '@/hooks/use-orders';
 import { useSettingsStore } from '@/hooks/use-settings-store';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
@@ -1046,7 +1046,7 @@ export default function PosPage() {
     }
 
     try {
-        const orderData = {
+        const orderData: NewOrderData = {
             customer_name: values.name || 'Consumidor Final',
             customer_phone: values.phone || 'N/A',
             customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
@@ -1144,13 +1144,11 @@ export default function PosPage() {
                 </div>
                  <ScrollArea className="flex-1 p-4 bg-background">
                      <ProductGrid products={filteredProducts} onProductClick={(product) => {
-                        if (product.stock > 0) {
-                            toast({
-                                title: 'Producto añadido',
-                                description: `${product.name} añadido al pedido.`,
-                                duration: 3000,
-                            });
-                        }
+                         toast({
+                            title: 'Producto añadido',
+                            description: `${product.name} añadido al pedido.`,
+                            duration: 3000,
+                        });
                         handleProductSelect(product);
                      }} />
                 </ScrollArea>

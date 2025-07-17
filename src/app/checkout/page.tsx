@@ -26,7 +26,7 @@ import { createOrder } from '@/ai/flows/create-order-flow';
 import { useProductsStore } from '@/hooks/use-products';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
-import { useOrdersStore, type Address } from '@/hooks/use-orders';
+import { useOrdersStore, type Address, type NewOrderData } from '@/hooks/use-orders';
 import { useSettingsStore } from '@/hooks/use-settings-store';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -362,49 +362,38 @@ export default function CheckoutPage() {
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
     setIsSubmitting(true);
     try {
-      const orderInput = {
-        customer: { 
-          name: values.name || 'Consumidor Final', 
-          phone: values.phone || 'N/A',
-          address: values.deliveryMethod === 'delivery' ? values.address : undefined,
-        },
-        items: items.map(item => ({ ...item, quantity: item.quantity, stock: item.stock, category: item.category, description: item.description })),
+      
+      const newOrderData: NewOrderData = {
+        customer_name: values.name || 'Consumidor Final',
+        customer_phone: values.phone || 'N/A',
+        customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
+        items: items.map(({ aiHint, ...rest }) => ({ ...rest, quantity: rest.quantity, stock: rest.stock, category: rest.category, description: rest.description })),
         total: total,
-        shippingCost: shippingCost,
-        paymentMethod: values.paymentMethod,
-        paymentReference: values.paymentReference,
-        deliveryMethod: values.deliveryMethod,
+        shipping_cost: shippingCost,
+        payment_method: values.paymentMethod,
+        payment_reference: values.paymentReference || null,
+        delivery_method: values.deliveryMethod,
+        status: 'pending-approval',
+        source: 'online-store',
+        balance: 0, 
+        payments: [], 
+        payment_due_date: null,
       };
 
-      const result = await createOrder(orderInput);
+      const newOrder = await addOrder(supabaseClient, newOrderData);
 
-      if (result.success) {
+      if (newOrder) {
         items.forEach(item => {
           decreaseStock(supabaseClient, item.id, item.quantity);
         });
-        
-        addOrder({
-          id: result.orderId,
-          customer: orderInput.customer,
-          items: orderInput.items,
-          total: orderInput.total,
-          shippingCost: orderInput.shippingCost,
-          paymentMethod: orderInput.paymentMethod,
-          paymentReference: orderInput.paymentReference, 
-          date: new Date().toISOString(),
-          status: 'pending-approval',
-          source: 'online-store',
-          deliveryMethod: orderInput.deliveryMethod,
-        });
 
-        if (orderInput.customer.name && orderInput.customer.phone) {
-             addOrUpdateCustomer({
-                id: `cust_${orderInput.customer.phone}`,
-                name: orderInput.customer.name,
-                phone: orderInput.customer.phone,
-                address: orderInput.customer.address,
-                orderIds: [result.orderId],
-                totalSpent: orderInput.total,
+        if (values.phone && values.name) {
+             await addOrUpdateCustomer(supabaseClient, {
+                phone: values.phone,
+                name: values.name,
+                address: values.address,
+                order_id: newOrder.id,
+                total_to_add: total,
              });
         }
 
@@ -413,7 +402,7 @@ export default function CheckoutPage() {
           description: 'Gracias por tu compra. Tu pedido está siendo procesado.',
         });
         clearCart();
-        router.push(`/order-confirmation/${result.orderId}`);
+        router.push(`/order-confirmation/${newOrder.display_id}`);
       } else {
         throw new Error('La creación del pedido falló');
       }

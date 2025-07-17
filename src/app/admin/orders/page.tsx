@@ -130,31 +130,31 @@ function OrderDetailsDialog({ order, isOpen, onOpenChange }: { order: Order | nu
     const subtotal = order.total / (1 + taxRate);
     const tax = order.total - subtotal;
     
-    const deliveryMethodIcon = order.deliveryMethod === 'pickup' ? <Store className="mr-2 h-4 w-4"/> : <Truck className="mr-2 h-4 w-4"/>;
-    const deliveryMethodLabel = order.deliveryMethod === 'pickup' ? 'Recoger en Tienda' : 'Envío a Domicilio';
+    const deliveryMethodIcon = order.delivery_method === 'pickup' ? <Store className="mr-2 h-4 w-4"/> : <Truck className="mr-2 h-4 w-4"/>;
+    const deliveryMethodLabel = order.delivery_method === 'pickup' ? 'Recoger en Tienda' : 'Envío a Domicilio';
     
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>Detalles del Pedido: {order.id}</DialogTitle>
+                    <DialogTitle>Detalles del Pedido: {order.display_id}</DialogTitle>
                     <DialogDescription>
-                        {format(parseISO(order.date), "d 'de' MMMM, yyyy 'a las' HH:mm", { locale: es })}
+                        {format(parseISO(order.created_at), "d 'de' MMMM, yyyy 'a las' HH:mm", { locale: es })}
                     </DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="max-h-[70vh] -mx-6">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 py-4">
                     <div>
                         <h3 className='font-semibold mb-2'>Cliente</h3>
-                        <p>{order.customer.name}</p>
-                        <p className='text-sm text-muted-foreground'>{order.customer.phone}</p>
+                        <p>{order.customer_name}</p>
+                        <p className='text-sm text-muted-foreground'>{order.customer_phone}</p>
                     </div>
                     
-                    {order.deliveryMethod === 'delivery' && order.customer.address && (
+                    {order.delivery_method === 'delivery' && order.customer_address && (
                         <div>
                             <h3 className='font-semibold mb-2'>Dirección de Envío</h3>
-                            <p>{order.customer.address.exactAddress}, {order.customer.address.colony}</p>
-                            <p className='text-sm text-muted-foreground'>{order.customer.address.municipality}, {order.customer.address.department}</p>
+                            <p>{order.customer_address.exactAddress}, {order.customer_address.colony}</p>
+                            <p className='text-sm text-muted-foreground'>{order.customer_address.municipality}, {order.customer_address.department}</p>
                         </div>
                     )}
                     
@@ -168,8 +168,8 @@ function OrderDetailsDialog({ order, isOpen, onOpenChange }: { order: Order | nu
                     <div>
                         <h3 className='font-semibold mb-2'>Método de Pago</h3>
                         <div className="flex items-center">
-                            {paymentMethodIcons[order.paymentMethod]}
-                            <span>{paymentMethodLabels[order.paymentMethod]}</span>
+                            {paymentMethodIcons[order.payment_method]}
+                            <span>{paymentMethodLabels[order.payment_method]}</span>
                         </div>
                     </div>
                  </div>
@@ -205,10 +205,10 @@ function OrderDetailsDialog({ order, isOpen, onOpenChange }: { order: Order | nu
                         <p className="text-muted-foreground">ISV ({taxRate * 100}%)</p>
                         <p>{formatCurrency(tax, currency.code)}</p>
                     </div>
-                    {order.shippingCost && order.shippingCost > 0 && (
+                    {order.shipping_cost && order.shipping_cost > 0 && (
                         <div className="flex justify-between text-sm">
                             <p className="text-muted-foreground">Envío</p>
-                            <p>{formatCurrency(order.shippingCost, currency.code)}</p>
+                            <p>{formatCurrency(order.shipping_cost, currency.code)}</p>
                         </div>
                     )}
                     <div className="flex justify-between font-bold text-lg">
@@ -243,19 +243,19 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
     const form = useForm<z.infer<typeof orderApprovalFormSchema>>({
         resolver: zodResolver(orderApprovalFormSchema),
         defaultValues: {
-            paymentMethod: order.paymentMethod || 'tarjeta',
-            paymentReference: order.paymentReference || '',
+            paymentMethod: order.payment_method || 'tarjeta',
+            paymentReference: order.payment_reference || '',
         },
     });
 
     async function onSubmit(values: z.infer<typeof orderApprovalFormSchema>) {
-        approveOrder({
+        approveOrder(supabaseClient, {
             orderId: order.id,
             paymentMethod: values.paymentMethod,
             paymentDueDate: values.paymentDueDate,
             paymentReference: values.paymentReference,
         });
-        toast({ title: '¡Pedido Aprobado!', description: `El pedido ${order.id} ha sido facturado.` });
+        toast({ title: '¡Pedido Aprobado!', description: `El pedido ${order.display_id} ha sido facturado.` });
         setIsOpen(false);
     }
 
@@ -264,7 +264,7 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Aprobar y Facturar Pedido {order.id}</DialogTitle>
+                    <DialogTitle>Aprobar y Facturar Pedido {order.display_id}</DialogTitle>
                     <DialogDescription>Selecciona el método de pago para finalizar la transacción.</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -349,13 +349,13 @@ function RejectOrderDialog({ order, children }: { order: Order; children: React.
     const { toast } = useToast();
 
     const handleReject = () => {
-        cancelOrder(order.id);
+        cancelOrder(supabaseClient, order.id);
         order.items.forEach(item => {
-            increaseStock(item.id, item.quantity);
+            increaseStock(supabaseClient, item.id, item.quantity);
         });
         toast({
             title: 'Pedido Rechazado',
-            description: `El pedido ${order.id} ha sido cancelado y el stock ha sido devuelto.`,
+            description: `El pedido ${order.display_id} ha sido cancelado y el stock ha sido devuelto.`,
             variant: 'destructive',
         });
     };
@@ -367,7 +367,7 @@ function RejectOrderDialog({ order, children }: { order: Order; children: React.
                 <AlertDialogHeader>
                     <AlertDialogTitle>¿Estás seguro de que quieres rechazar este pedido?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Esta acción es irreversible. El pedido <span className='font-bold'>{order.id}</span> será cancelado y el stock de los productos será devuelto al inventario.
+                        Esta acción es irreversible. El pedido <span className='font-bold'>{order.display_id}</span> será cancelado y el stock de los productos será devuelto al inventario.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -389,13 +389,13 @@ function CancelOrderDialog({ order, children }: { order: Order; children: React.
     const handleCancel = () => {
         if (order.status !== 'cancelled') {
             order.items.forEach(item => {
-                increaseStock(item.id, item.quantity);
+                increaseStock(supabaseClient, item.id, item.quantity);
             });
         }
-        cancelOrder(order.id);
+        cancelOrder(supabaseClient, order.id);
         toast({
             title: 'Pedido Cancelado',
-            description: `El pedido ${order.id} ha sido cancelado.`,
+            description: `El pedido ${order.display_id} ha sido cancelado.`,
             variant: 'destructive',
         });
     };
@@ -407,7 +407,7 @@ function CancelOrderDialog({ order, children }: { order: Order; children: React.
                 <AlertDialogHeader>
                     <AlertDialogTitle>¿Estás seguro de que quieres cancelar este pedido?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Esta acción es irreversible. El pedido <span className='font-bold'>{order.id}</span> será cancelado. Si el pedido no estaba cancelado previamente, el stock de los productos será devuelto al inventario.
+                        Esta acción es irreversible. El pedido <span className='font-bold'>{order.display_id}</span> será cancelado. Si el pedido no estaba cancelado previamente, el stock de los productos será devuelto al inventario.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -437,13 +437,13 @@ export default function OrdersPage() {
   const [deliveryMethodFilter, setDeliveryMethodFilter] = React.useState<string[]>([]);
 
 
-  const sortedOrders = [...orders].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const sortedOrders = [...orders].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const filteredOrders = React.useMemo(() => {
     return sortedOrders.filter(order => {
       // Date filter
       if (dateRange?.from && dateRange?.to) {
-        const orderDate = parseISO(order.date);
+        const orderDate = parseISO(order.created_at);
         if (!isWithinInterval(orderDate, { start: startOfDay(dateRange.from), end: endOfDay(dateRange.to) })) {
           return false;
         }
@@ -457,11 +457,11 @@ export default function OrdersPage() {
         return false;
       }
        // Payment Method filter
-      if (paymentMethodFilter.length > 0 && !paymentMethodFilter.includes(order.paymentMethod)) {
+      if (paymentMethodFilter.length > 0 && !paymentMethodFilter.includes(order.payment_method)) {
         return false;
       }
        // Delivery Method filter
-      if (deliveryMethodFilter.length > 0 && !deliveryMethodFilter.includes(order.deliveryMethod || '')) {
+      if (deliveryMethodFilter.length > 0 && !deliveryMethodFilter.includes(order.delivery_method || '')) {
         return false;
       }
       return true;
@@ -627,29 +627,29 @@ export default function OrdersPage() {
                 return (
                     <TableRow key={order.id}>
                     <TableCell>
-                        <div className="font-medium text-primary hover:underline cursor-pointer" onClick={() => handleViewDetails(order)}>{order.id}</div>
-                         {order.paymentMethod === 'transferencia' && order.paymentReference && (
-                           <p className="text-xs text-muted-foreground">Ref: {order.paymentReference}</p>
+                        <div className="font-medium text-primary hover:underline cursor-pointer" onClick={() => handleViewDetails(order)}>{order.display_id}</div>
+                         {order.payment_method === 'transferencia' && order.payment_reference && (
+                           <p className="text-xs text-muted-foreground">Ref: {order.payment_reference}</p>
                          )}
                     </TableCell>
                     <TableCell>
-                        <div className="font-medium">{order.customer.name}</div>
-                        <div className="text-sm text-muted-foreground">{order.customer.phone}</div>
+                        <div className="font-medium">{order.customer_name}</div>
+                        <div className="text-sm text-muted-foreground">{order.customer_phone}</div>
                     </TableCell>
                     <TableCell>
                         <Badge variant="outline">{order.source === 'pos' ? 'POS' : 'Tienda Online'}</Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {order.deliveryMethod === 'pickup' ? <Store className="h-4 w-4 text-muted-foreground" /> : <Truck className="h-4 w-4 text-muted-foreground" />}
-                        <span className="hidden sm:inline">{deliveryMethodLabels[order.deliveryMethod || 'pickup']}</span>
+                        {order.delivery_method === 'pickup' ? <Store className="h-4 w-4 text-muted-foreground" /> : <Truck className="h-4 w-4 text-muted-foreground" />}
+                        <span className="hidden sm:inline">{deliveryMethodLabels[order.delivery_method || 'pickup']}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{format(parseISO(order.date), 'd MMM, yyyy')}</TableCell>
+                    <TableCell>{format(parseISO(order.created_at), 'd MMM, yyyy')}</TableCell>
                     <TableCell>
                         <div className="flex items-center gap-2">
-                            {paymentMethodIcons[order.paymentMethod as keyof typeof paymentMethodIcons]}
-                            <span className="hidden sm:inline">{paymentMethodLabels[order.paymentMethod as keyof typeof paymentMethodLabels]}</span>
+                            {paymentMethodIcons[order.payment_method as keyof typeof paymentMethodIcons]}
+                            <span className="hidden sm:inline">{paymentMethodLabels[order.payment_method as keyof typeof paymentMethodLabels]}</span>
                         </div>
                     </TableCell>
                     <TableCell>

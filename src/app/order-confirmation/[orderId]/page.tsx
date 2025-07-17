@@ -77,7 +77,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ or
               Tu pedido ha sido realizado con éxito y está siendo procesado.
             </p>
             <p className="text-muted-foreground text-lg mb-8">
-              Tu ID de pedido es: <span className="font-bold text-foreground">{orderId}</span>
+              Tu ID de pedido es: <span className="font-bold text-foreground">{order.display_id}</span>
             </p>
           </div>
 
@@ -114,10 +114,10 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ or
               <p>ISV ({taxRate * 100}%)</p>
               <p>{formatCurrency(tax, currency.code)}</p>
             </div>
-            {order.shippingCost && order.shippingCost > 0 ? (
+            {order.shipping_cost && order.shipping_cost > 0 ? (
                  <div className="flex justify-between">
                     <p>Envío</p>
-                    <p>{formatCurrency(order.shippingCost, currency.code)}</p>
+                    <p>{formatCurrency(order.shipping_cost, currency.code)}</p>
                 </div>
             ): null}
           </div>

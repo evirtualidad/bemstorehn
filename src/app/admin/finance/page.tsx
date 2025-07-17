@@ -70,6 +70,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { paymentMethodIcons, paymentMethodLabels } from '@/lib/payment-methods.tsx';
+import { supabaseClient } from '@/lib/supabase';
 
 
 function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCode: string }) {
@@ -84,7 +85,7 @@ function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCod
     
     const revenueByMethod = financialOrders.reduce((acc, order) => {
       // For credit, count payments, for others count total
-      if (order.paymentMethod === 'credito') {
+      if (order.payment_method === 'credito') {
           order.payments.forEach(p => {
               const method = p.method;
                if (!acc[method]) {
@@ -93,7 +94,7 @@ function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCod
               acc[method].value += p.amount;
           });
       } else {
-        const method = order.paymentMethod;
+        const method = order.payment_method;
         if (!acc[method]) {
             acc[method] = { name: paymentMethodLabels[method], value: 0 };
         }
@@ -105,7 +106,7 @@ function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCod
     }, {} as Record<string, {name: string, value: number}>);
     
     const salesByMonth = financialOrders.reduce((acc, order) => {
-        const month = format(parseISO(order.date), 'MMM', { locale: es });
+        const month = format(parseISO(order.created_at), 'MMM', { locale: es });
         if(!acc[month]){
             acc[month] = { name: month, Ingresos: 0 };
         }
@@ -240,10 +241,10 @@ function RegisterPaymentDialog({ order, children }: { order: Order, children: Re
             return;
         }
         setError('');
-        addPayment(order.id, paymentAmount, paymentMethod);
+        addPayment(supabaseClient, order.id, paymentAmount, paymentMethod);
         toast({
             title: '¡Pago Registrado!',
-            description: `Se registró un pago de ${formatCurrency(paymentAmount, currency.code)} para el pedido ${order.id}.`,
+            description: `Se registró un pago de ${formatCurrency(paymentAmount, currency.code)} para el pedido ${order.display_id}.`,
         });
         setIsOpen(false);
         setAmount('');
@@ -262,9 +263,9 @@ function RegisterPaymentDialog({ order, children }: { order: Order, children: Re
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Registrar Pago para {order.customer.name}</DialogTitle>
+                    <DialogTitle>Registrar Pago para {order.customer_name}</DialogTitle>
                     <DialogDescription>
-                        Pedido: {order.id} <br/>
+                        Pedido: {order.display_id} <br/>
                         Saldo pendiente: <span className='font-bold'>{formatCurrency(order.balance, currency.code)}</span>
                     </DialogDescription>
                 </DialogHeader>
@@ -354,15 +355,15 @@ function AccountsReceivable({ orders, currencyCode }: { orders: any[], currencyC
             </TableHeader>
             <TableBody>
               {creditOrders.length > 0 ? creditOrders.map(order => {
-                  const status = getStatus(order.paymentDueDate!);
+                  const status = getStatus(order.payment_due_date!);
                   return (
                       <TableRow key={order.id}>
                           <TableCell>
-                              <div className="font-medium">{order.customer.name}</div>
-                              <div className="text-sm text-muted-foreground">{order.customer.phone}</div>
+                              <div className="font-medium">{order.customer_name}</div>
+                              <div className="text-sm text-muted-foreground">{order.customer_phone}</div>
                           </TableCell>
-                          <TableCell>{format(parseISO(order.date), 'd MMM, yyyy', { locale: es })}</TableCell>
-                          <TableCell>{format(parseISO(order.paymentDueDate!), 'd MMM, yyyy', { locale: es })}</TableCell>
+                          <TableCell>{format(parseISO(order.created_at), 'd MMM, yyyy', { locale: es })}</TableCell>
+                          <TableCell>{format(parseISO(order.payment_due_date!), 'd MMM, yyyy', { locale: es })}</TableCell>
                           <TableCell>
                               <div className={cn("flex items-center", status.color)}>
                                   {status.icon}
@@ -424,15 +425,15 @@ function Transactions({ orders, currencyCode }: { orders: any[], currencyCode: s
                          return (
                             <TableRow key={order.id}>
                                 <TableCell>
-                                    <div className="font-medium">{order.customer.name}</div>
+                                    <div className="font-medium">{order.customer_name}</div>
                                     <div className="hidden text-sm text-muted-foreground md:inline">
-                                        {order.id}
+                                        {order.display_id}
                                     </div>
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
-                                        {paymentMethodIcons[order.paymentMethod as keyof typeof paymentMethodIcons]}
-                                        {paymentMethodLabels[order.paymentMethod as keyof typeof paymentMethodLabels]}
+                                        {paymentMethodIcons[order.payment_method as keyof typeof paymentMethodIcons]}
+                                        {paymentMethodLabels[order.payment_method as keyof typeof paymentMethodLabels]}
                                     </div>
                                 </TableCell>
                                 <TableCell>
@@ -440,7 +441,7 @@ function Transactions({ orders, currencyCode }: { orders: any[], currencyCode: s
                                         {statusInfo.label}
                                     </Badge>
                                 </TableCell>
-                                <TableCell>{format(parseISO(order.date), 'd MMM, yyyy')}</TableCell>
+                                <TableCell>{format(parseISO(order.created_at), 'd MMM, yyyy')}</TableCell>
                                 <TableCell className="text-right">{formatCurrency(order.total, currencyCode)}</TableCell>
                             </TableRow>
                         )
