@@ -953,12 +953,14 @@ export default function PosPage() {
 
   const handleProductSelect = (product: Product) => {
     if(product.stock <= 0) {
-      toast({
-        title: 'Producto Agotado',
-        description: `${product.name} no tiene stock disponible.`,
-        variant: 'destructive',
-        duration: 3000,
-      });
+      setTimeout(() => {
+        toast({
+          title: 'Producto Agotado',
+          description: `${product.name} no tiene stock disponible.`,
+          variant: 'destructive',
+          duration: 3000,
+        });
+      }, 0);
       return;
     }
     setCart((prevCart) => {
@@ -969,12 +971,14 @@ export default function PosPage() {
             item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
           );
         } else {
-           toast({
-            title: 'Stock Máximo Alcanzado',
-            description: `No puedes añadir más ${product.name}.`,
-            variant: 'destructive',
-            duration: 3000,
-          });
+           setTimeout(() => {
+            toast({
+              title: 'Stock Máximo Alcanzado',
+              description: `No puedes añadir más ${product.name}.`,
+              variant: 'destructive',
+              duration: 3000,
+            });
+          }, 0);
           return prevCart;
         }
       }
@@ -984,11 +988,13 @@ export default function PosPage() {
   
   const handleProductClick = (product: Product) => {
       handleProductSelect(product);
-      toast({
-          title: 'Producto añadido',
-          description: `${product.name} añadido al pedido.`,
-          duration: 3000,
-      });
+      setTimeout(() => {
+        toast({
+            title: 'Producto añadido',
+            description: `${product.name} añadido al pedido.`,
+            duration: 3000,
+        });
+      }, 0);
   };
 
   const handleCustomerSelect = (customer: Customer) => {
@@ -1007,12 +1013,14 @@ export default function PosPage() {
       const newQuantity = itemToUpdate.quantity + amount;
 
       if (newQuantity > itemToUpdate.stock) {
-         toast({
-          title: 'Stock Insuficiente',
-          description: `Solo hay ${itemToUpdate.stock} unidades de ${itemToUpdate.name}.`,
-          variant: 'destructive',
-          duration: 3000,
-        });
+         setTimeout(() => {
+          toast({
+            title: 'Stock Insuficiente',
+            description: `Solo hay ${itemToUpdate.stock} unidades de ${itemToUpdate.name}.`,
+            variant: 'destructive',
+            duration: 3000,
+          });
+        }, 0);
         return prevCart;
       }
 
@@ -1045,12 +1053,14 @@ export default function PosPage() {
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
     if (cart.length === 0) {
-      toast({
-        title: 'Carrito Vacío',
-        description: 'Añade productos antes de crear un pedido.',
-        variant: 'destructive',
-        duration: 3000,
-      });
+      setTimeout(() => {
+        toast({
+          title: 'Carrito Vacío',
+          description: 'Añade productos antes de crear un pedido.',
+          variant: 'destructive',
+          duration: 3000,
+        });
+      }, 0);
       return;
     }
 
@@ -1096,10 +1106,12 @@ export default function PosPage() {
         }
 
 
-        toast({
-          title: '¡Pedido Creado!',
-          description: `Pedido ${newOrder.display_id} creado con éxito.`,
-        });
+        setTimeout(() => {
+          toast({
+            title: '¡Pedido Creado!',
+            description: `Pedido ${newOrder.display_id} creado con éxito.`,
+          });
+        }, 0);
 
         clearCartAndForm();
         setIsCheckoutOpen(false);
@@ -1109,11 +1121,13 @@ export default function PosPage() {
       }
     } catch (error) {
       console.error('Error al crear el pedido:', error);
-      toast({
-        title: 'Error al crear pedido',
-        description: 'Hubo un problema al crear el pedido. Intenta de nuevo.',
-        variant: 'destructive',
-      });
+      setTimeout(() => {
+        toast({
+          title: 'Error al crear pedido',
+          description: 'Hubo un problema al crear el pedido. Intenta de nuevo.',
+          variant: 'destructive',
+        });
+      }, 0);
     }
   }
   
