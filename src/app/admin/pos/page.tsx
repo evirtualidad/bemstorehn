@@ -1018,14 +1018,11 @@ export default function PosPage() {
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
     if (cart.length === 0) {
-      setTimeout(() => {
-        toast({
-          title: 'Carrito Vacío',
-          description: 'Añade productos antes de crear un pedido.',
-          variant: 'destructive',
-          duration: 3000,
-        });
-      }, 0);
+      toast({
+        title: 'Carrito Vacío',
+        description: 'Añade productos antes de crear un pedido.',
+        variant: 'destructive',
+      });
       return;
     }
     
@@ -1073,28 +1070,18 @@ export default function PosPage() {
         }));
         await updateMultipleStocks(stockUpdates);
 
-        setTimeout(() => {
-          toast({
-            title: '¡Pedido Creado!',
-            description: `Pedido ${newOrder.display_id} creado con éxito.`,
-          });
-        }, 0);
+        toast({
+          title: '¡Pedido Creado!',
+          description: `Pedido ${newOrder.display_id} creado con éxito.`,
+        });
 
         clearCartAndForm();
         setIsCheckoutOpen(false);
         setIsTicketVisible(false);
-      } else {
-        throw new Error('La creación del pedido falló.');
       }
     } catch (error: any) {
-      console.error('Error al crear el pedido:', error);
-      setTimeout(() => {
-        toast({
-          title: 'Error al crear pedido',
-          description: error.message || 'Hubo un problema al crear el pedido. Intenta de nuevo.',
-          variant: 'destructive',
-        });
-      }, 0);
+      // The error is already toasted in the store, no need to toast again
+      console.error('Error final en onSubmit:', error);
     }
   }
   
@@ -1225,3 +1212,4 @@ export default function PosPage() {
     </div>
   );
 }
+

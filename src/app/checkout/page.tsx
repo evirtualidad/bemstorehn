@@ -403,16 +403,9 @@ export default function CheckoutPage() {
         });
         clearCart();
         router.push(`/order-confirmation/${newOrder.display_id}`);
-      } else {
-        throw new Error('La creación del pedido falló');
       }
     } catch (error) {
-      console.error('Error al crear el pedido:', error);
-      toast({
-        title: '¡Oh no! Algo salió mal.',
-        description: 'Hubo un problema al realizar tu pedido. Por favor, intenta de nuevo.',
-        variant: 'destructive',
-      });
+        console.error('Error final en onSubmit:', error);
     } finally {
         setIsSubmitting(false);
     }
@@ -694,3 +687,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+

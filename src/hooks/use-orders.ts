@@ -93,9 +93,15 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     
     if (error) {
         set({ isLoading: false });
-        console.error("Error creating order:", error);
-        toast({ title: 'Error al crear pedido', description: error.message, variant: 'destructive' });
-        return null;
+        const errorMessage = error.message || 'Ocurrió un error desconocido al crear el pedido.';
+        console.error("Error creating order:", JSON.stringify(error, null, 2));
+        toast({ 
+            title: 'Error al Crear Pedido', 
+            description: `${errorMessage} Es posible que falten permisos de escritura (RLS) en la tabla 'orders'. Revise la consola del navegador para más detalles.`, 
+            variant: 'destructive',
+            duration: 10000
+        });
+        throw new Error(errorMessage);
     }
 
     const newOrder = data as Order;
@@ -205,3 +211,4 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     return get().orders.find((o) => o.display_id === orderId || o.id === orderId);
   },
 }));
+
