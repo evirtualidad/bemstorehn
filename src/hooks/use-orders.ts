@@ -55,7 +55,7 @@ type OrdersState = {
   orders: Order[];
   isLoading: boolean;
   fetchOrders: () => Promise<void>;
-  addOrder: (order: Order) => void; // For simulation
+  addOrder: (order: NewOrderData) => Promise<Order | null>;
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => Promise<void>;
   approveOrder: (data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
@@ -81,11 +81,34 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     }
   },
   
-  // This is for local simulation to unblock UI development
-  addOrder: (order: Order) => {
+  addOrder: async (orderData) => {
+    set({ isLoading: true });
+    
+    const { data, error } = await supabaseClient
+        .from('orders')
+        .insert([orderData])
+        .select()
+        .single();
+    
+    if (error) {
+        set({ isLoading: false });
+        const errorMessage = error.message || 'Ocurrió un error desconocido al crear el pedido.';
+        console.error("Error creating order:", JSON.stringify(error, null, 2));
+        toast({ 
+            title: 'Error al Crear Pedido', 
+            description: `${errorMessage} Es posible que falten permisos de escritura (RLS) en la tabla 'orders'. Revise la consola del navegador para más detalles.`, 
+            variant: 'destructive' 
+        });
+        return null;
+    }
+    
+    const newOrder = data as Order;
     set(produce((state: OrdersState) => {
-        state.orders.unshift(order);
+        state.orders.unshift(newOrder);
+        state.isLoading = false;
     }));
+    
+    return newOrder;
   },
 
   addPayment: async (orderId, amount, method) => {

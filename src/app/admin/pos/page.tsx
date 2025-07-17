@@ -870,7 +870,7 @@ export default function PosPage() {
       clearCart,
   } = usePosCart();
   const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
-  const { addOrder: addOrderToState } = useOrdersStore();
+  const { fetchOrders } = useOrdersStore();
   const { customers, fetchCustomers, isLoading: isLoadingCustomers } = useCustomersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
@@ -1019,71 +1019,64 @@ export default function PosPage() {
     }
   };
 
-  const generateDisplayId = () => {
-    const now = new Date();
-    const year = now.getFullYear().toString().slice(-2);
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const day = now.getDate().toString().padStart(2, '0');
-    const randomPart = Math.floor(Math.random() * 900 + 100); // 3-digit random number
-    return `${day}${month}${year}-${randomPart}`;
-  };
-
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
-    console.warn(
-      'MODO DE SIMULACIÓN ACTIVO: El pedido no se guardará en la base de datos real. ' +
-      'Para activar la funcionalidad completa, asegúrate de que la variable `SUPABASE_SERVICE_ROLE_KEY` ' +
-      'esté configurada correctamente en los secretos de Firebase Studio.'
-    );
     if (cart.length === 0) {
       toast({ title: 'Carrito Vacío', description: 'Añade productos antes de crear un pedido.', variant: 'destructive' });
       return;
     }
     
     setIsSubmitting(true);
-
-    // Simulate a successful order creation
-    const newOrder: Order = {
-        id: uuidv4(),
-        display_id: generateDisplayId(),
-        created_at: new Date().toISOString(),
-        user_id: session?.user?.id || null,
-        customer_id: null,
-        customer_name: values.name || 'Consumidor Final',
-        customer_phone: values.phone || 'N/A',
-        customer_address: values.address || null,
-        items: cart.map(({ aiHint, ...rest }) => rest),
-        total: totalWithShipping,
-        shipping_cost: shippingCost,
-        payment_method: values.paymentMethod,
-        payment_reference: values.paymentReference || null,
-        status: values.paymentMethod === 'credito' ? 'pending-payment' : 'paid',
-        source: 'pos',
-        delivery_method: values.deliveryMethod,
-        balance: values.paymentMethod === 'credito' ? totalWithShipping : 0,
-        payments: values.paymentMethod !== 'credito' ? [{
-            amount: totalWithShipping,
-            method: values.paymentMethod,
-            date: new Date().toISOString(),
-            cash_received: values.cashAmount ? Number(values.cashAmount) : undefined,
-            change_given: change > 0 ? change : undefined,
-        }] : [],
-        payment_due_date: values.paymentDueDate ? values.paymentDueDate.toISOString() : null,
+    
+    const orderInput: CreateOrderInput = {
+      customer: {
+        name: values.name,
+        phone: values.phone,
+        address: values.address,
+      },
+      items: cart.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.image,
+        category: item.category,
+        description: item.description,
+        stock: item.stock,
+      })),
+      total: totalWithShipping,
+      shippingCost: shippingCost,
+      paymentMethod: values.paymentMethod,
+      deliveryMethod: values.deliveryMethod,
+      paymentDueDate: values.paymentDueDate?.toISOString(),
+      cashAmount: values.cashAmount ? Number(values.cashAmount) : undefined,
+      paymentReference: values.paymentReference,
     };
-    
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    addOrderToState(newOrder);
 
-    toast({
-        title: '¡Pedido Creado! (Simulación)',
-        description: `Pedido ${newOrder.display_id} creado localmente con éxito.`,
-    });
-
-    clearCartAndForm();
-    setIsCheckoutOpen(false);
-    setIsTicketVisible(false);
-    setIsSubmitting(false);
+    try {
+      const result = await createOrder(orderInput);
+      
+      if (result.success) {
+        toast({
+          title: '¡Pedido Creado!',
+          description: `Pedido ${result.orderId} creado con éxito.`,
+        });
+        clearCartAndForm();
+        setIsCheckoutOpen(false);
+        setIsTicketVisible(false);
+        fetchOrders(); // Refresh orders list
+      } else {
+        throw new Error('La creación del pedido falló desde el servidor.');
+      }
+    } catch (error: any) {
+       console.error('Error al crear el pedido:', error);
+       toast({
+         title: 'Error al Crear Pedido',
+         description: error.message || 'Ocurrió un error inesperado al contactar el servidor.',
+         variant: 'destructive',
+       });
+    } finally {
+        setIsSubmitting(false);
+    }
   }
   
   const isLoading = isLoadingProducts || isLoadingCategories || isLoadingCustomers;

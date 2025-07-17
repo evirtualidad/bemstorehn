@@ -10,9 +10,22 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { supabaseClient } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import type { Order, Address as OrderAddress, Payment } from '@/hooks/use-orders';
 import type { Customer } from '@/hooks/use-customers';
+
+// Ensure Supabase client is initialized with service role for server-side operations
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
+
 
 const ProductSchema = z.object({
   id: z.string(),
@@ -70,7 +83,7 @@ const addOrUpdateCustomer = async (
         return null;
     }
 
-    const { data: existingCustomer, error: findError } = await supabaseClient
+    const { data: existingCustomer, error: findError } = await supabaseAdmin
       .from('customers')
       .select('*')
       .eq('phone', customerData.phone)
@@ -82,7 +95,7 @@ const addOrUpdateCustomer = async (
     }
 
     if (existingCustomer) {
-      const { data: updatedCustomer, error: updateError } = await supabaseClient
+      const { data: updatedCustomer, error: updateError } = await supabaseAdmin
         .from('customers')
         .update({
           name: customerData.name || existingCustomer.name,
@@ -100,7 +113,7 @@ const addOrUpdateCustomer = async (
       }
       return updatedCustomer.id;
     } else {
-      const { data: newCustomer, error: insertError } = await supabaseClient
+      const { data: newCustomer, error: insertError } = await supabaseAdmin
         .from('customers')
         .insert([{
           phone: customerData.phone,
@@ -166,7 +179,7 @@ const createOrderFlow = ai.defineFlow(
         payment_due_date: input.paymentDueDate || null,
       };
 
-       const { data, error } = await supabaseClient
+       const { data, error } = await supabaseAdmin
         .from('orders')
         .insert([newOrderData])
         .select()
