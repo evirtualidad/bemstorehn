@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -231,6 +232,7 @@ function OrderDetailsDialog({ order, isOpen, onOpenChange }: { order: Order | nu
 
 function ApproveOrderDialog({ order, children }: { order: Order; children: React.ReactNode }) {
     const { approveOrder } = useOrdersStore();
+    const { getProductById } = useProductsStore();
     const { toast } = useToast();
     const [isOpen, setIsOpen] = React.useState(false);
     const [today, setToday] = React.useState<Date | null>(null);
@@ -250,6 +252,19 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
     });
 
     async function onSubmit(values: z.infer<typeof orderApprovalFormSchema>) {
+        // --- Stock Validation ---
+        for (const item of order.items) {
+            const product = getProductById(item.id);
+            if (!product || product.stock < item.quantity) {
+                toast({
+                    title: '¡Stock Insuficiente!',
+                    description: `No hay suficiente stock para "${item.name}". Stock disponible: ${product?.stock || 0}, Pedido: ${item.quantity}.`,
+                    variant: 'destructive',
+                });
+                return; // Stop the process
+            }
+        }
+        
         approveOrder(supabaseClient, {
             orderId: order.id,
             paymentMethod: values.paymentMethod,
