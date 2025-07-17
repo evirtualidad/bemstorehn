@@ -4,6 +4,7 @@
 import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
+import { supabaseClient } from '@/lib/supabase';
 
 export interface Payment {
     date: string;
@@ -50,7 +51,6 @@ export interface Order {
 
 export type NewOrderData = Omit<Order, 'id' | 'display_id' | 'created_at' | 'customer_id'>;
 
-let mockOrders: Order[] = []; // Start with an empty array
 
 type OrdersState = {
   orders: Order[];
@@ -63,77 +63,142 @@ type OrdersState = {
   getOrderById: (orderId: string) => Order | undefined;
 };
 
-const generateMockOrder = (orderData: NewOrderData): Order => {
-  const id = `order-${Date.now()}`;
-  const display_id = `BEM-${Date.now().toString().slice(-6)}`;
-  return {
-    ...orderData,
-    id,
-    display_id,
-    created_at: new Date().toISOString(),
-    customer_id: `cust-${Date.now()}` // Mock customer id
-  };
-};
-
 export const useOrdersStore = create<OrdersState>((set, get) => ({
   orders: [],
   isLoading: false,
 
   fetchOrders: async () => {
     set({ isLoading: true });
-    setTimeout(() => {
-        set({ orders: mockOrders, isLoading: false });
-    }, 500);
+    const { data, error } = await supabaseClient
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        toast({ title: 'Error', description: 'No se pudieron cargar los pedidos.', variant: 'destructive' });
+        set({ isLoading: false });
+    } else {
+        set({ orders: data as Order[], isLoading: false });
+    }
   },
 
   addOrder: async (orderData) => {
     set({ isLoading: true });
-    const newOrder = generateMockOrder(orderData);
-    mockOrders = [newOrder, ...mockOrders]; // Add to the mock "DB"
-    set({ orders: mockOrders, isLoading: false });
+    
+    // Generate display_id on the client
+    const display_id = `BEM-${Date.now().toString().slice(-6)}`;
+    
+    const { data, error } = await supabaseClient
+        .from('orders')
+        .insert([{ ...orderData, display_id }])
+        .select()
+        .single();
+    
+    if (error) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        set({ isLoading: false });
+        return null;
+    }
+
+    const newOrder = data as Order;
+    set(produce((state: OrdersState) => {
+        state.orders.unshift(newOrder);
+    }));
+    set({ isLoading: false });
     return newOrder;
   },
 
   addPayment: async (orderId, amount, method) => {
-    set(produce((state: OrdersState) => {
-        const order = state.orders.find(o => o.id === orderId);
-        if (order) {
-            order.balance -= amount;
-            order.payments.push({ amount, method, date: new Date().toISOString() });
-            if (order.balance <= 0) {
-                order.status = 'paid';
+     const order = get().orders.find(o => o.id === orderId);
+     if (!order) return;
+
+     const newBalance = order.balance - amount;
+     const newStatus = newBalance <= 0 ? 'paid' : order.status;
+     const newPayment: Payment = { amount, method, date: new Date().toISOString() };
+     const updatedPayments = [...order.payments, newPayment];
+     
+     const { data, error } = await supabaseClient
+        .from('orders')
+        .update({
+            balance: newBalance,
+            status: newStatus,
+            payments: updatedPayments,
+        })
+        .eq('id', orderId)
+        .select()
+        .single();
+    
+    if (error) {
+        toast({ title: 'Error', description: 'No se pudo registrar el pago.', variant: 'destructive' });
+    } else {
+        set(produce((state: OrdersState) => {
+            const index = state.orders.findIndex(o => o.id === orderId);
+            if (index !== -1) {
+                state.orders[index] = data as Order;
             }
-        }
-    }));
+        }));
+        toast({ title: 'Pago Registrado', description: 'El pago se registró con éxito.' });
+    }
   },
 
   approveOrder: async ({ orderId, paymentMethod, paymentDueDate, paymentReference }) => {
-    set(produce((state: OrdersState) => {
-        const order = state.orders.find(o => o.id === orderId);
-        if (order && order.status === 'pending-approval') {
-            order.payment_method = paymentMethod;
-            order.payment_due_date = paymentDueDate ? paymentDueDate.toISOString() : order.payment_due_date;
-            order.payment_reference = paymentReference || order.payment_reference;
-            
-            if (paymentMethod === 'credito') {
-                order.status = 'pending-payment';
-                order.balance = order.total;
-            } else {
-                order.status = 'paid';
-                order.balance = 0;
-                order.payments = [{ amount: order.total, date: new Date().toISOString(), method: paymentMethod }];
+    const order = get().orders.find(o => o.id === orderId);
+    if (!order) return;
+
+    let updateData: Partial<Order> = {
+        payment_method: paymentMethod,
+        payment_due_date: paymentDueDate ? paymentDueDate.toISOString() : order.payment_due_date,
+        payment_reference: paymentReference || order.payment_reference,
+    };
+    
+    if (paymentMethod === 'credito') {
+        updateData.status = 'pending-payment';
+        updateData.balance = order.total;
+    } else {
+        updateData.status = 'paid';
+        updateData.balance = 0;
+        updateData.payments = [{ amount: order.total, date: new Date().toISOString(), method: paymentMethod }];
+    }
+
+    const { data, error } = await supabaseClient
+        .from('orders')
+        .update(updateData)
+        .eq('id', orderId)
+        .select()
+        .single();
+
+    if (error) {
+        toast({ title: 'Error', description: 'No se pudo aprobar el pedido.', variant: 'destructive' });
+    } else {
+        set(produce((state: OrdersState) => {
+            const index = state.orders.findIndex(o => o.id === orderId);
+            if (index !== -1) {
+                state.orders[index] = data as Order;
             }
-        }
-    }));
+        }));
+        toast({ title: 'Pedido Aprobado', description: 'El pedido ha sido facturado.' });
+    }
   },
 
   cancelOrder: async (orderId) => {
-    set(produce((state: OrdersState) => {
-        const order = state.orders.find(o => o.id === orderId);
-        if (order) {
-            order.status = 'cancelled';
-        }
-    }));
+    const { data, error } = await supabaseClient
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', orderId)
+        .select()
+        .single();
+
+    if (error) {
+        toast({ title: 'Error', description: 'No se pudo cancelar el pedido.', variant: 'destructive' });
+    } else {
+        set(produce((state: OrdersState) => {
+            const index = state.orders.findIndex(o => o.id === orderId);
+            if (index !== -1) {
+                state.orders[index] = data as Order;
+            }
+        }));
+        toast({ title: 'Pedido Cancelado' });
+    }
   },
 
   getOrderById: (orderId: string) => {

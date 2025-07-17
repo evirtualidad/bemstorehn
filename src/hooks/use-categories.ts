@@ -4,27 +4,22 @@
 import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
+import { supabaseClient } from '@/lib/supabase';
 
 export interface Category {
-  id: string;
+  id: string; // uuid
+  created_at?: string;
   name: string;
   label: string;
 }
-
-// Mock Data
-const mockCategories: Category[] = [
-    { id: 'cat-1', name: 'skincare', label: 'Cuidado de la Piel' },
-    { id: 'cat-2', name: 'makeup', label: 'Maquillaje' },
-    { id: 'cat-3', name: 'haircare', label: 'Cuidado del Cabello' },
-];
 
 type CategoriesState = {
   categories: Category[];
   isLoading: boolean;
   error: string | null;
   fetchCategories: () => Promise<void>;
-  addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
-  updateCategory: (category: Category) => Promise<void>;
+  addCategory: (category: Omit<Category, 'id' | 'created_at'>) => Promise<void>;
+  updateCategory: (category: Omit<Category, 'created_at'>) => Promise<void>;
   deleteCategory: (categoryId: string) => Promise<void>;
   getCategoryById: (categoryId: string) => Category | undefined;
   getCategoryByName: (categoryName: string) => Category | undefined;
@@ -37,10 +32,17 @@ export const useCategoriesStore = create<CategoriesState>((set, get) => ({
 
   fetchCategories: async () => {
     set({ isLoading: true });
-    // Simulate API call
-    setTimeout(() => {
-        set({ categories: mockCategories, isLoading: false });
-    }, 300);
+    const { data, error } = await supabaseClient
+      .from('categories')
+      .select('*')
+      .order('label', { ascending: true });
+
+    if (error) {
+      set({ error: error.message, isLoading: false });
+      toast({ title: 'Error', description: 'No se pudieron cargar las categorías.', variant: 'destructive' });
+    } else {
+      set({ categories: data, isLoading: false });
+    }
   },
   
   getCategoryById: (categoryId: string) => {
@@ -52,32 +54,68 @@ export const useCategoriesStore = create<CategoriesState>((set, get) => ({
   },
 
   addCategory: async (categoryData) => {
-    set(produce((state: CategoriesState) => {
-        const newCategory: Category = {
-            id: `cat-${Date.now()}`,
-            ...categoryData,
-        };
-        state.categories.push(newCategory);
+    set({ isLoading: true });
+    const { data, error } = await supabaseClient
+      .from('categories')
+      .insert([categoryData])
+      .select()
+      .single();
+
+    if (error) {
+      set({ error: error.message, isLoading: false });
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      set(produce((state: CategoriesState) => {
+        state.categories.push(data as Category);
         state.categories.sort((a,b) => a.label.localeCompare(b.label));
-    }));
-     toast({ title: 'Categoría añadida' });
+      }));
+      toast({ title: 'Categoría añadida' });
+    }
+    set({ isLoading: false });
   },
 
   updateCategory: async (category) => {
-    set(produce((state: CategoriesState) => {
-        const index = state.categories.findIndex((c) => c.id === category.id);
-        if (index !== -1) {
-            state.categories[index] = category;
-            state.categories.sort((a,b) => a.label.localeCompare(b.label));
-        }
-    }));
-    toast({ title: 'Categoría actualizada' });
+    set({ isLoading: true });
+    const { data, error } = await supabaseClient
+      .from('categories')
+      .update({ name: category.name, label: category.label })
+      .eq('id', category.id)
+      .select()
+      .single();
+    
+    if (error) {
+      set({ error: error.message, isLoading: false });
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      set(produce((state: CategoriesState) => {
+          const index = state.categories.findIndex((c) => c.id === category.id);
+          if (index !== -1) {
+              state.categories[index] = data as Category;
+              state.categories.sort((a,b) => a.label.localeCompare(b.label));
+          }
+      }));
+      toast({ title: 'Categoría actualizada' });
+    }
+    set({ isLoading: false });
   },
 
   deleteCategory: async (categoryId: string) => {
-     set(produce((state: CategoriesState) => {
-        state.categories = state.categories.filter((c) => c.id !== categoryId);
+    const originalCategories = get().categories;
+    // Optimistic delete
+    set(produce((state: CategoriesState) => {
+       state.categories = state.categories.filter((c) => c.id !== categoryId);
     }));
-    toast({ title: 'Categoría eliminada', variant: 'destructive' });
+
+    const { error } = await supabaseClient
+      .from('categories')
+      .delete()
+      .eq('id', categoryId);
+
+    if (error) {
+      set({ categories: originalCategories });
+      toast({ title: 'Error al eliminar', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Categoría eliminada' });
+    }
   },
 }));

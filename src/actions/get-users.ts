@@ -1,9 +1,7 @@
 
 'use server';
 
-// NOTE: This server action is temporarily disabled while the application is using mock data.
-// It will be re-enabled when Supabase integration is restored.
-
+import { supabaseClient } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 
 export type UserWithRole = User & {
@@ -14,29 +12,36 @@ export type UserWithRole = User & {
     }
 }
 
-// Mock implementation
 export async function getUsers(): Promise<{ users: UserWithRole[], error?: string }> {
-  console.warn("getUsers is using mock data.");
-  const mockUsers: UserWithRole[] = [
+  // NOTE: This can only be called from a server component or a server action
+  // for it to have the necessary service_role permissions.
+  // We are creating a temporary admin client here for this action.
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
-      id: 'mock-user-1',
-      app_metadata: { role: 'admin', provider: 'email' },
-      user_metadata: {},
-      aud: 'authenticated',
-      created_at: new Date().toISOString(),
-      email: 'admin@example.com',
-      last_sign_in_at: new Date().toISOString(),
-    },
-    {
-      id: 'mock-user-2',
-      app_metadata: { role: 'cashier', provider: 'email' },
-      user_metadata: {},
-      aud: 'authenticated',
-      created_at: new Date().toISOString(),
-      email: 'cashier@example.com',
-      last_sign_in_at: new Date().toISOString(),
-    },
-  ];
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  );
 
-  return Promise.resolve({ users: mockUsers });
+  const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
+  
+  if (error) {
+    console.error('Error fetching users:', error.message);
+    return { users: [], error: error.message };
+  }
+
+  // Cast users to UserWithRole, ensuring app_metadata exists
+  const usersWithRoles: UserWithRole[] = users.map(user => ({
+    ...user,
+    app_metadata: {
+      ...user.app_metadata,
+      role: user.app_metadata.role || 'cashier', // Default to cashier if no role
+    },
+  }));
+
+  return { users: usersWithRoles };
 }
