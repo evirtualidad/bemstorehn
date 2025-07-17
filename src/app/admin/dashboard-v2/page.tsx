@@ -53,17 +53,21 @@ import { useCurrencyStore } from '@/hooks/use-currency';
 import { format, subDays, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import Link from 'next/link';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function DashboardV2() {
-  const { orders, isHydrated: ordersHydrated } = useOrdersStore();
-  const { products, isHydrated: productsHydrated } = useProductsStore();
-  const { customers, isHydrated: customersHydrated } = useCustomersStore();
+  const { orders } = useOrdersStore();
+  const { products } = useProductsStore();
+  const { customers } = useCustomersStore();
   const { currency } = useCurrencyStore();
 
-  const isHydrated = ordersHydrated && productsHydrated && customersHydrated;
+  const [isClient, setIsClient] = React.useState(false);
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const dashboardData = React.useMemo(() => {
-    if (!isHydrated) return null;
+    if (!isClient) return null;
 
     const nonCancelledOrders = orders.filter((o) => o.status !== 'cancelled');
 
@@ -136,12 +140,12 @@ export default function DashboardV2() {
       recentTransactions: nonCancelledOrders.slice(0, 5),
       topSellingProducts,
     };
-  }, [isHydrated, orders, products, customers, currency.code]);
+  }, [isClient, orders, products, customers, currency.code]);
 
-  if (!isHydrated || !dashboardData) {
+  if (!isClient || !dashboardData) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
+        <LoadingSpinner />
       </div>
     );
   }

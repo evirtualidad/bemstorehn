@@ -55,10 +55,15 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { cn } from '@/lib/utils';
 
 export function ProductsManager() {
-  const { products, addProduct, updateProduct, deleteProduct, isHydrated } = useProductsStore();
+  const { products, addProduct, updateProduct, deleteProduct } = useProductsStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
   const { currency } = useCurrencyStore();
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleAddProduct = (values: z.infer<typeof productFormSchema>) => {
     const newProduct: Product = {
@@ -113,7 +118,7 @@ export function ProductsManager() {
 
   const onSubmit = editingProduct ? handleEditProduct : handleAddProduct;
 
-  if (!isHydrated) {
+  if (!isClient) {
     return (
         <Card>
             <CardHeader>
