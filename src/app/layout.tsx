@@ -18,18 +18,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning className="light" style={{ colorScheme: 'light' }}>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-        >
-          {children}
-          <Toaster />
-          <CartSheet />
-        </ThemeProvider>
+        {children}
+        <Toaster />
+        <CartSheet />
       </body>
     </html>
   );

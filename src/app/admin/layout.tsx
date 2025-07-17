@@ -37,6 +37,7 @@ import * as React from 'react';
 import { useOrdersStore } from '@/hooks/use-orders';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeProvider } from '@/components/theme-provider';
 
 function CurrencySelector() {
     const { currency, currencies, setCurrency } = useCurrencyStore();
@@ -64,7 +65,7 @@ function CurrencySelector() {
     );
 }
 
-export default function AdminLayout({
+function AdminLayoutContent({
   children,
 }: {
   children: React.ReactNode;
@@ -211,4 +212,21 @@ export default function AdminLayout({
       </div>
     </div>
   );
+}
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </ThemeProvider>
+  )
 }
