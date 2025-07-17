@@ -5,7 +5,6 @@ import { create } from 'zustand';
 import type { Product } from '@/lib/products';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { toast } from './use-toast';
-import { products as mockProducts } from '@/lib/products';
 
 type ProductsState = {
   products: Product[];
@@ -21,17 +20,16 @@ type ProductsState = {
 };
 
 export const useProductsStore = create<ProductsState>((set, get) => ({
-  products: mockProducts,
+  products: [],
   isLoading: false,
   error: null,
   
   fetchProducts: async (supabase: SupabaseClient) => {
-    // This is a mock implementation. It will be replaced with a real DB call.
     set({ isLoading: true });
     try {
-      // const { data, error } = await supabase.from('products').select('*').order('name', { ascending: true });
-      // if (error) throw error;
-      set({ products: mockProducts, isLoading: false });
+      const { data, error } = await supabase.from('products').select('*').order('name', { ascending: true });
+      if (error) throw error;
+      set({ products: data, isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
       toast({
@@ -47,46 +45,93 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   },
 
   addProduct: async (supabase: SupabaseClient, productData) => {
-    // This is a mock implementation.
-    console.log("Adding product (mock):", productData);
-    const newProduct = { ...productData, id: `prod_${Date.now()}` };
-    set((state) => ({ products: [newProduct, ...state.products] }));
-    return newProduct;
+    try {
+      const { data, error } = await supabase.from('products').insert([productData]).select();
+      if (error) throw error;
+      const newProduct = data[0];
+      set((state) => ({ products: [newProduct, ...state.products] }));
+      return newProduct;
+    } catch (error: any) {
+        toast({
+            title: 'Error al añadir producto',
+            description: error.message,
+            variant: 'destructive',
+        });
+        return null;
+    }
   },
 
   updateProduct: async (supabase: SupabaseClient, product) => {
-    // This is a mock implementation.
-    console.log("Updating product (mock):", product);
-    set((state) => ({
-      products: state.products.map((p) => (p.id === product.id ? product : p)),
-    }));
+     try {
+      const { data, error } = await supabase.from('products').update(product).eq('id', product.id).select();
+      if (error) throw error;
+      set((state) => ({
+        products: state.products.map((p) => (p.id === product.id ? data[0] : p)),
+      }));
+    } catch (error: any) {
+        toast({
+            title: 'Error al actualizar producto',
+            description: error.message,
+            variant: 'destructive',
+        });
+    }
   },
 
   deleteProduct: async (supabase: SupabaseClient, productId) => {
-    // This is a mock implementation.
-    console.log("Deleting product (mock):", productId);
-    set((state) => ({
-      products: state.products.filter((p) => p.id !== productId),
-    }));
+     try {
+      const { error } = await supabase.from('products').delete().eq('id', productId);
+      if (error) throw error;
+      set((state) => ({
+        products: state.products.filter((p) => p.id !== productId),
+      }));
+    } catch (error: any) {
+        toast({
+            title: 'Error al eliminar producto',
+            description: error.message,
+            variant: 'destructive',
+        });
+    }
   },
 
   decreaseStock: async (supabase: SupabaseClient, productId: string, quantity: number) => {
-    // This is a mock implementation.
-    console.log(`Decreasing stock for ${productId} by ${quantity} (mock)`);
-    set(state => ({
-      products: state.products.map(p => 
-        p.id === productId ? { ...p, stock: p.stock - quantity } : p
-      )
-    }));
+    const product = get().products.find(p => p.id === productId);
+    if (!product) return;
+    const newStock = product.stock - quantity;
+    try {
+        const { error } = await supabase.from('products').update({ stock: newStock }).eq('id', productId);
+        if (error) throw error;
+        set(state => ({
+            products: state.products.map(p => 
+                p.id === productId ? { ...p, stock: newStock } : p
+            )
+        }));
+    } catch (error: any) {
+        toast({
+            title: 'Error al actualizar stock',
+            description: error.message,
+            variant: 'destructive',
+        });
+    }
   },
 
   increaseStock: async (supabase: SupabaseClient, productId: string, quantity: number) => {
-    // This is a mock implementation.
-     console.log(`Increasing stock for ${productId} by ${quantity} (mock)`);
-    set(state => ({
-      products: state.products.map(p => 
-        p.id === productId ? { ...p, stock: p.stock + quantity } : p
-      )
-    }));
+    const product = get().products.find(p => p.id === productId);
+    if (!product) return;
+    const newStock = product.stock + quantity;
+     try {
+        const { error } = await supabase.from('products').update({ stock: newStock }).eq('id', productId);
+        if (error) throw error;
+        set(state => ({
+            products: state.products.map(p => 
+                p.id === productId ? { ...p, stock: newStock } : p
+            )
+        }));
+    } catch (error: any) {
+        toast({
+            title: 'Error al actualizar stock',
+            description: error.message,
+            variant: 'destructive',
+        });
+    }
   },
 }));
