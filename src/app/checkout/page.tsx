@@ -308,11 +308,12 @@ function ShippingDialog({
 export default function CheckoutPage() {
   const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart, toggleCart } = useCart();
   const { decreaseStock } = useProductsStore();
-  const { addOrder, isLoading: isSubmitting } = useOrdersStore();
+  const { addOrder } = useOrdersStore();
   const { addOrUpdateCustomer } = useCustomersStore();
   const { taxRate, pickupAddress } = useSettingsStore();
   const { toast } = useToast();
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = useState(false);
   const { currency } = useCurrencyStore();
 
@@ -358,12 +359,19 @@ export default function CheckoutPage() {
   };
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
+    setIsSubmitting(true);
     try {
       const newOrderData: NewOrderData = {
         customer_name: values.name || 'Consumidor Final',
         customer_phone: values.phone || 'N/A',
         customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
-        items: items.map(({ aiHint, ...rest }) => ({ ...rest, quantity: rest.quantity, stock: rest.stock, category: rest.category, description: rest.description })),
+        items: items.map(item => ({ 
+            id: item.id, 
+            name: item.name, 
+            price: item.price, 
+            quantity: item.quantity, 
+            image: item.image 
+        })),
         total: total,
         shipping_cost: shippingCost,
         payment_method: values.paymentMethod,
@@ -409,6 +417,8 @@ export default function CheckoutPage() {
         description: 'Hubo un problema al realizar tu pedido. Por favor, intenta de nuevo.',
         variant: 'destructive',
       });
+    } finally {
+        setIsSubmitting(false);
     }
   }
 
@@ -689,3 +699,5 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
+    

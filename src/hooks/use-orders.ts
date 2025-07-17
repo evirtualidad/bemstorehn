@@ -83,7 +83,6 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
   },
 
   addOrder: async (supabase, orderData) => {
-    set({ isLoading: true });
     try {
       const { data, error } = await supabase.from('orders').insert(orderData).select().single();
       if (error) throw error;
@@ -96,8 +95,6 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
         variant: 'destructive',
       });
       return null;
-    } finally {
-        set({ isLoading: false });
     }
   },
 
@@ -196,3 +193,5 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     return order;
   },
 }));
+
+    
