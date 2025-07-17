@@ -867,7 +867,7 @@ export default function PosPage() {
       decreaseQuantity,
       clearCart,
   } = usePosCart();
-  const { products, decreaseStock, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
+  const { products, updateMultipleStocks, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
   const { addOrder, isLoading: isAddingOrder } = useOrdersStore();
   const { addOrUpdateCustomer, fetchCustomers, isLoading: isLoadingCustomers } = useCustomersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
@@ -1032,45 +1032,41 @@ export default function PosPage() {
     const userId = session?.user?.id;
 
     try {
-        const orderData: NewOrderData = {
-            user_id: userId,
-            customer_name: values.name || 'Consumidor Final',
-            customer_phone: values.phone || 'N/A',
-            customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
-            items: cart.map(({ aiHint, ...rest }) => rest),
-            total: totalWithShipping,
-            shipping_cost: shippingCost,
-            payment_method: values.paymentMethod,
-            payment_due_date: values.paymentDueDate ? values.paymentDueDate.toISOString() : null,
-            payment_reference: values.paymentReference || null,
-            delivery_method: values.deliveryMethod,
-            source: 'pos',
-            status: values.paymentMethod === 'credito' ? 'pending-payment' : 'paid',
-            balance: values.paymentMethod === 'credito' ? totalWithShipping : 0,
-            payments: values.paymentMethod !== 'credito' ? [{
-                amount: totalWithShipping,
-                date: new Date().toISOString(),
-                method: values.paymentMethod,
-                cash_received: values.cashAmount ? parseFloat(values.cashAmount) : null,
-                change_given: change,
-            }] : [],
-        };
+      const orderData: NewOrderData = {
+          user_id: userId,
+          customer_name: values.name || 'Consumidor Final',
+          customer_phone: values.phone || 'N/A',
+          customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
+          items: cart.map(({ aiHint, ...rest }) => rest),
+          total: totalWithShipping,
+          shipping_cost: shippingCost,
+          payment_method: values.paymentMethod,
+          payment_due_date: values.paymentDueDate ? values.paymentDueDate.toISOString() : null,
+          payment_reference: values.paymentReference || null,
+          delivery_method: values.deliveryMethod,
+          source: 'pos',
+          status: values.paymentMethod === 'credito' ? 'pending-payment' : 'paid',
+          balance: values.paymentMethod === 'credito' ? totalWithShipping : 0,
+          payments: values.paymentMethod !== 'credito' ? [{
+              amount: totalWithShipping,
+              date: new Date().toISOString(),
+              method: values.paymentMethod,
+              cash_received: values.cashAmount ? parseFloat(values.cashAmount) : null,
+              change_given: change,
+          }] : [],
+      };
 
-      const newOrder = await addOrder(orderData);
-
-      for (const item of cart) {
-          await decreaseStock(item.id, item.quantity);
-      }
+      const newOrder = await addOrder(orderData, { 
+        phone: values.phone, 
+        name: values.name, 
+        address: values.address 
+      });
       
-      if (values.phone) {
-           await addOrUpdateCustomer({
-              phone: values.phone,
-              name: values.name || 'Cliente',
-              address: values.address,
-              order_id: newOrder.id,
-              total_to_add: totalWithShipping,
-           });
-      }
+      const stockUpdates = cart.map(item => ({
+        id: item.id,
+        quantity: item.quantity,
+      }));
+      await updateMultipleStocks(stockUpdates);
 
       setTimeout(() => {
         toast({
@@ -1082,6 +1078,7 @@ export default function PosPage() {
       clearCartAndForm();
       setIsCheckoutOpen(false);
       setIsTicketVisible(false);
+
     } catch (error: any) {
       console.error('Error al crear el pedido:', error);
       setTimeout(() => {
@@ -1221,5 +1218,3 @@ export default function PosPage() {
     </div>
   );
 }
-
-    

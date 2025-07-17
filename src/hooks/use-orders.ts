@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
 import { supabaseClient } from '@/lib/supabase';
+import { useCustomersStore } from './use-customers';
 
 export interface Payment {
     date: string;
@@ -51,12 +52,17 @@ export interface Order {
 
 export type NewOrderData = Omit<Order, 'id' | 'display_id' | 'created_at' | 'customer_id'>;
 
+type CustomerInfo = {
+  name?: string;
+  phone?: string;
+  address?: Address | null;
+}
 
 type OrdersState = {
   orders: Order[];
   isLoading: boolean;
   fetchOrders: () => Promise<void>;
-  addOrder: (orderData: NewOrderData) => Promise<Order>;
+  addOrder: (orderData: NewOrderData, customerInfo?: CustomerInfo) => Promise<Order>;
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => Promise<void>;
   approveOrder: (data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
@@ -82,15 +88,26 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     }
   },
 
-  addOrder: async (orderData) => {
+  addOrder: async (orderData, customerInfo) => {
     set({ isLoading: true });
     
-    // Generate display_id on the client
+    let customerId: string | null = null;
+    if (customerInfo?.phone) {
+      const id = await useCustomersStore.getState().addOrUpdateCustomer({
+        phone: customerInfo.phone,
+        name: customerInfo.name || 'Cliente',
+        address: customerInfo.address,
+        order_id: '', // Will be updated later if needed, not essential for creation
+        total_to_add: orderData.total,
+      });
+      if (id) customerId = id;
+    }
+
     const display_id = `BEM-${Date.now().toString().slice(-6)}`;
     
     const { data, error } = await supabaseClient
         .from('orders')
-        .insert([{ ...orderData, display_id }])
+        .insert([{ ...orderData, display_id, customer_id: customerId }])
         .select()
         .single();
     
