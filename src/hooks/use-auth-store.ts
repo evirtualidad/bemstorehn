@@ -4,7 +4,7 @@
 import { create } from 'zustand';
 import { SupabaseClient, Session } from '@supabase/supabase-js';
 
-type UserRole = 'admin' | 'cashier';
+export type UserRole = 'admin' | 'cashier';
 
 type AuthState = {
   session: Session | null;
@@ -49,7 +49,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     await supabase.auth.signOut();
     set({ session: null, role: null, loading: false });
   },
-  setSession: (session) => set({ session, role: getRoleFromSession(session) }),
+  setSession: (session) => {
+    const role = getRoleFromSession(session);
+    set({ session, role });
+  },
   setLoading: (loading) => set({ loading }),
 }));
 
@@ -63,5 +66,5 @@ supabaseClient.auth.getSession().then(({ data: { session } }) => {
 
 supabaseClient.auth.onAuthStateChange((_event, session) => {
   useAuthStore.getState().setSession(session);
-  useAuthStore.getState().setLoading(false);
+  // No need to set loading to false here, as it's for background updates
 });
