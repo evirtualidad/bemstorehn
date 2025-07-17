@@ -259,8 +259,10 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
     const [today, setToday] = React.useState<Date | null>(null);
 
     React.useEffect(() => {
-        setToday(new Date());
-    }, []);
+        if (isOpen) {
+            setToday(new Date());
+        }
+    }, [isOpen]);
 
     const form = useForm<z.infer<typeof orderApprovalFormSchema>>({
         resolver: zodResolver(orderApprovalFormSchema),
@@ -340,7 +342,7 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
                                                     selected={field.value}
                                                     onSelect={field.onChange}
                                                     disabled={(date) => {
-                                                        if (!today) return true;
+                                                        if (!today) return true; // Disable if today is not set yet (on server)
                                                         return date < today;
                                                     }}
                                                     initialFocus
