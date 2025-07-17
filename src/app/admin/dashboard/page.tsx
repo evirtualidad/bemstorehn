@@ -76,10 +76,7 @@ export default function Dashboard() {
   const { categories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
   
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: subDays(new Date(), 29),
-    to: new Date(),
-  });
+  const [date, setDate] = React.useState<DateRange | undefined>(undefined);
 
   const dashboardData = React.useMemo(() => {
     const { from, to } = date || {};
