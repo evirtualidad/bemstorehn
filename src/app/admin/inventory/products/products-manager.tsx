@@ -54,21 +54,48 @@ import { formatCurrency } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { cn } from '@/lib/utils';
 import { supabaseClient } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
 
 export function ProductsManager() {
   const { products, addProduct, updateProduct, deleteProduct, fetchProducts, isLoading } = useProductsStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
   const { currency } = useCurrencyStore();
+  const { toast } = useToast();
 
   React.useEffect(() => {
     fetchProducts(supabaseClient);
   }, [fetchProducts]);
+  
+  const uploadImage = async (file: File): Promise<string | null> => {
+      const fileName = `${Date.now()}-${file.name}`;
+      const { data, error } = await supabaseClient.storage.from('product-images').upload(fileName, file);
+      
+      if (error) {
+          toast({
+              title: 'Error al subir la imagen',
+              description: error.message,
+              variant: 'destructive',
+          });
+          return null;
+      }
+      
+      const { data: { publicUrl } } = supabaseClient.storage.from('product-images').getPublicUrl(data.path);
+      return publicUrl;
+  }
 
   const handleAddProduct = async (values: z.infer<typeof productFormSchema>) => {
+    let imageUrl = `https://placehold.co/400x400.png?text=${values.name.replace(/\s/g, '+')}`;
+    
+    if (values.image && typeof values.image !== 'string') {
+        const uploadedUrl = await uploadImage(values.image);
+        if (!uploadedUrl) return; // Stop if upload fails
+        imageUrl = uploadedUrl;
+    }
+    
     const newProductData = {
       ...values,
-      image: values.image || `https://placehold.co/400x400.png?text=${values.name.replace(/\s/g, '+')}`,
+      image: imageUrl,
       price: Number(values.price),
       originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,
       stock: Number(values.stock),
@@ -81,9 +108,19 @@ export function ProductsManager() {
   const handleEditProduct = async (values: z.infer<typeof productFormSchema>) => {
     if (!editingProduct) return;
     
+    let imageUrl = editingProduct.image;
+    if (values.image && typeof values.image !== 'string') {
+        const uploadedUrl = await uploadImage(values.image);
+        if (!uploadedUrl) return; // Stop if upload fails
+        imageUrl = uploadedUrl;
+    } else if (typeof values.image === 'string') {
+        imageUrl = values.image;
+    }
+
     await updateProduct(supabaseClient, {
       ...editingProduct,
       ...values,
+      image: imageUrl,
       price: Number(values.price),
       originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,
       stock: Number(values.stock),
