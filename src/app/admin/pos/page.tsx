@@ -700,6 +700,12 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
     const { currency } = useCurrencyStore();
     const { taxRate, pickupAddress } = useSettingsStore();
 
+    const [today, setToday] = React.useState<Date | null>(null);
+
+    React.useEffect(() => {
+        setToday(new Date());
+    }, []);
+
     const CancelButton = () => {
         const button = (
             <Button type="button" variant="outline" size="lg" className='w-full sm:w-auto' onClick={onCancel} disabled={isSubmitting}>
@@ -900,9 +906,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
                                             mode="single"
                                             selected={field.value}
                                             onSelect={field.onChange}
-                                            disabled={(date) =>
-                                                date < new Date() || date < new Date('1900-01-01')
-                                            }
+                                            disabled={(date) => today ? date < today : true}
                                             initialFocus
                                         />
                                     </PopoverContent>
