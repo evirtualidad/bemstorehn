@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { format } from 'date-fns/format';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,7 @@ import { useProductsStore } from '@/hooks/use-products';
 import { createOrder } from '@/ai/flows/create-order-flow';
 import type { Product } from '@/lib/products';
 import Image from 'next/image';
-import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard, Banknote, Landmark, X, BadgePercent, Truck, Store, MapPin, CheckCircle } from 'lucide-react';
+import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard, X, BadgePercent, Truck, Store, MapPin, CheckCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -36,6 +36,9 @@ import { hondurasGeodata } from '@/lib/honduras-geodata';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCustomersStore, type Customer } from '@/hooks/use-customers';
 import { CustomerSearch } from '@/components/customer-search';
+import { paymentMethods } from '@/lib/payment-methods';
+import { ProductGrid } from '@/components/product-grid';
+import { ProductCard } from '@/components/product-card';
 
 type PosCartItem = Product & { quantity: number };
 
@@ -147,72 +150,6 @@ function CategoryList({
   );
 }
 
-
-function ProductGrid({
-  products,
-  onProductSelect,
-}: {
-  products: Product[];
-  onProductSelect: (product: Product) => void;
-}) {
-  const { currency } = useCurrencyStore();
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
-      {products.map((product) => {
-        const stockStatus = product.stock <= 0 ? "Agotado" : product.stock < 10 ? "Poco Stock" : "En Stock";
-        const isDiscounted = product.originalPrice && product.originalPrice > product.price;
-
-        return (
-          <Card
-            key={product.id}
-            onClick={() => onProductSelect(product)}
-            className={cn(
-              "cursor-pointer hover:shadow-lg transition-shadow overflow-hidden group flex flex-col",
-              isDiscounted && "border-offer"
-            )}
-          >
-            <CardContent className="p-0 flex-grow flex flex-col">
-              <div className="relative aspect-square">
-                <Image
-                  src={product.image || 'https://placehold.co/400x400.png'}
-                  alt={product.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform"
-                />
-                <div className="absolute top-2 right-2 flex flex-col gap-2 items-end">
-                   {isDiscounted && <Badge variant="offer">Oferta</Badge>}
-                  <Badge 
-                    className={cn(
-                      "w-fit",
-                      stockStatus === "Agotado" && "bg-destructive text-destructive-foreground",
-                      stockStatus === "Poco Stock" && "bg-amber-500 text-white"
-                    )}
-                  >
-                    {stockStatus}
-                  </Badge>
-                 </div>
-              </div>
-              <div className="p-3 flex-grow flex items-center justify-center">
-                <h3 className="font-semibold text-sm leading-tight text-center w-full">{product.name}</h3>
-              </div>
-               <div className={cn(
-                    "mt-auto text-center p-2 rounded-b-md text-primary-foreground",
-                    isDiscounted ? "bg-offer text-offer-foreground" : "bg-primary"
-                )}>
-                    <div className="flex items-baseline justify-center gap-2">
-                        <span className="text-lg font-bold">{formatCurrency(product.price, currency.code)}</span>
-                        {isDiscounted && (
-                            <span className="text-sm line-through opacity-80">{formatCurrency(product.originalPrice!, currency.code)}</span>
-                        )}
-                    </div>
-              </div>
-            </CardContent>
-          </Card>
-        )
-      })}
-    </div>
-  );
-}
 
 function TicketView({
   cart,
@@ -452,14 +389,6 @@ function MobileTicketView({
     </div>
   );
 }
-
-
-const paymentMethods = [
-    { value: 'efectivo', label: 'Efectivo', icon: Banknote },
-    { value: 'tarjeta', label: 'Tarjeta', icon: CreditCard },
-    { value: 'transferencia', label: 'Transferencia', icon: Landmark },
-    { value: 'credito', label: 'Crédito', icon: Receipt },
-] as const;
 
 function ShippingDialog({
   isOpen,
@@ -1145,8 +1074,8 @@ export default function PosPage() {
         addOrder({
             id: result.orderId,
             customer: {
-              name: orderInput.customer.name || 'Consumidor Final',
-              phone: orderInput.customer.phone || 'N/A',
+              name: orderInput.customer.name,
+              phone: orderInput.customer.phone,
               address: orderInput.customer.address,
             },
             items: orderInput.items,
@@ -1231,7 +1160,19 @@ export default function PosPage() {
                     <Separator />
                 </div>
                  <ScrollArea className="flex-1 p-4 bg-background">
-                    <ProductGrid products={filteredProducts} onProductSelect={handleProductSelect} />
+                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
+                        {filteredProducts.map((product) => (
+                           <ProductCard
+                             key={product.id}
+                             product={product}
+                             className="cursor-pointer"
+                             onClick={(e) => {
+                                 e.preventDefault();
+                                 handleProductSelect(product);
+                             }}
+                            />
+                        ))}
+                    </div>
                 </ScrollArea>
             </main>
         </div>

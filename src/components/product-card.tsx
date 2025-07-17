@@ -14,13 +14,12 @@ import Link from 'next/link';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
 
-interface ProductCardProps {
+interface ProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
   product: Product;
-  className?: string;
   showDescription?: boolean;
 }
 
-export function ProductCard({ product, className, showDescription = true }: ProductCardProps) {
+export function ProductCard({ product, className, showDescription = true, ...props }: ProductCardProps) {
   const { getCategoryByName } = useCategoriesStore();
   const stockStatus = product.stock <= 0 ? "Agotado" : product.stock < 10 ? "Poco Stock" : "En Stock";
   const { addToCart } = useCart();
@@ -41,63 +40,65 @@ export function ProductCard({ product, className, showDescription = true }: Prod
   const category = getCategoryByName(product.category);
 
   return (
-    <Link href={`/product/${product.id}`} className="group block h-full">
-      <Card className={cn(
-          "flex flex-col overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 animate-in fade-in-0 slide-in-from-bottom-5 ease-in-out h-full", 
-          isDiscounted && "border-offer",
-          className
-      )}>
-        <CardHeader className="p-0 border-b relative">
-          <Image
-            src={product.image || 'https://placehold.co/400x400.png'}
-            alt={product.name}
-            width={400}
-            height={400}
-            className="w-full h-auto object-cover aspect-square"
-            data-ai-hint={product.aiHint}
-          />
-          <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
-            {isDiscounted && <Badge variant="offer">Oferta</Badge>}
-            <Badge 
-              className={cn(
-                "w-fit",
-                stockStatus === "Agotado" && "bg-destructive text-destructive-foreground",
-                stockStatus === "Poco Stock" && "bg-amber-500 text-white"
-              )}
-            >
-              {stockStatus}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4 flex-grow flex flex-col">
-          {category && <Badge variant="outline" className="mb-2 w-fit text-xs">{category.label}</Badge>}
-          <h4 className="font-bold text-md leading-tight flex-grow group-hover:text-primary transition-colors">{product.name}</h4>
-          {showDescription && product.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{product.description}</p>}
-        </CardContent>
-        <CardFooter className="p-4 pt-0 flex flex-col items-start gap-3 mt-auto">
-          <div className="flex flex-col items-start w-full">
-            <div className="flex items-baseline gap-2">
-                <p className={cn("font-bold text-foreground", isDiscounted ? "text-xl text-offer" : "text-xl")}>
-                    {formatCurrency(product.price, currency.code)}
-                </p>
-                {isDiscounted && (
-                    <p className="text-md text-muted-foreground line-through">
-                        {formatCurrency(product.originalPrice!, currency.code)}
-                    </p>
+    <div {...props}>
+      <Link href={`/product/${product.id}`} className="group block h-full">
+        <Card className={cn(
+            "flex flex-col overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 animate-in fade-in-0 slide-in-from-bottom-5 ease-in-out h-full", 
+            isDiscounted && "border-offer",
+            className
+        )}>
+          <CardHeader className="p-0 border-b relative">
+            <Image
+              src={product.image || 'https://placehold.co/400x400.png'}
+              alt={product.name}
+              width={400}
+              height={400}
+              className="w-full h-auto object-cover aspect-square"
+              data-ai-hint={product.aiHint}
+            />
+            <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+              {isDiscounted && <Badge variant="offer">Oferta</Badge>}
+              <Badge 
+                className={cn(
+                  "w-fit",
+                  stockStatus === "Agotado" && "bg-destructive text-destructive-foreground",
+                  stockStatus === "Poco Stock" && "bg-amber-500 text-white"
                 )}
+              >
+                {stockStatus}
+              </Badge>
             </div>
-          </div>
-          <Button 
-            variant="outline" 
-            className="w-full"
-            disabled={product.stock <= 0}
-            onClick={handleAddToCart}
-          >
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            Añadir al Carrito
-          </Button>
-        </CardFooter>
-      </Card>
-    </Link>
+          </CardHeader>
+          <CardContent className="p-4 flex-grow flex flex-col">
+            {category && <Badge variant="outline" className="mb-2 w-fit text-xs">{category.label}</Badge>}
+            <h4 className="font-bold text-md leading-tight flex-grow group-hover:text-primary transition-colors">{product.name}</h4>
+            {showDescription && product.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{product.description}</p>}
+          </CardContent>
+          <CardFooter className="p-4 pt-0 flex flex-col items-start gap-3 mt-auto">
+            <div className="flex flex-col items-start w-full">
+              <div className="flex items-baseline gap-2">
+                  <p className={cn("font-bold text-foreground", isDiscounted ? "text-xl text-offer" : "text-xl")}>
+                      {formatCurrency(product.price, currency.code)}
+                  </p>
+                  {isDiscounted && (
+                      <p className="text-md text-muted-foreground line-through">
+                          {formatCurrency(product.originalPrice!, currency.code)}
+                      </p>
+                  )}
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              disabled={product.stock <= 0}
+              onClick={handleAddToCart}
+            >
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Añadir al Carrito
+            </Button>
+          </CardFooter>
+        </Card>
+      </Link>
+    </div>
   );
 }

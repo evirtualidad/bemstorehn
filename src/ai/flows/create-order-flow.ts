@@ -69,11 +69,10 @@ const createOrderFlow = ai.defineFlow(
     try {
       // Simulate creating an order by logging it to the console
       const orderId = `ORD-${Date.now().toString().slice(-6)}`;
-      const customerName = input.customer.name || 'Consumidor Final';
       
       console.log("--- MOCK ORDER CREATED ---");
       console.log("Order ID:", orderId);
-      console.log("Customer:", customerName);
+      console.log("Customer:", input.customer.name || 'Consumidor Final');
       if (input.deliveryMethod === 'delivery' && input.customer.address) {
         console.log("Delivery Method: Envío a Domicilio");
         console.log("Address:", `${input.customer.address.exactAddress}, ${input.customer.address.colony}, ${input.customer.address.municipality}, ${input.customer.address.department}`);

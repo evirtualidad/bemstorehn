@@ -11,13 +11,9 @@ import { es } from 'date-fns/locale/es';
 import { DateRange } from 'react-day-picker';
 
 import {
-  Banknote,
   CalendarIcon,
   Check,
-  CreditCard,
-  Landmark,
   MoreHorizontal,
-  Coins,
   XCircle,
   Package,
   Store,
@@ -99,27 +95,7 @@ import { useSettingsStore } from '@/hooks/use-settings-store';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
-const paymentMethods = [
-    { value: 'efectivo', label: 'Efectivo', icon: Banknote },
-    { value: 'tarjeta', label: 'Tarjeta', icon: CreditCard },
-    { value: 'transferencia', label: 'Transferencia', icon: Landmark },
-    { value: 'credito', label: 'Crédito', icon: Coins },
-] as const;
-
-const paymentMethodIcons = {
-  efectivo: <Banknote className="h-4 w-4 text-muted-foreground" />,
-  tarjeta: <CreditCard className="h-4 w-4 text-muted-foreground" />,
-  transferencia: <Landmark className="h-4 w-4 text-muted-foreground" />,
-  credito: <Coins className="h-4 w-4 text-muted-foreground" />,
-};
-
-const paymentMethodLabels = {
-  efectivo: 'Efectivo',
-  tarjeta: 'Tarjeta',
-  transferencia: 'Transferencia',
-  credito: 'Crédito',
-};
+import { paymentMethods, paymentMethodIcons, paymentMethodLabels } from '@/lib/payment-methods';
 
 const deliveryMethodLabels = {
   pickup: 'Recoger en Tienda',
@@ -342,7 +318,7 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
                                                     selected={field.value}
                                                     onSelect={field.onChange}
                                                     disabled={(date) => {
-                                                        if (!today) return true; // Disable if today is not set yet (on server)
+                                                        if (!today) return true;
                                                         return date < today;
                                                     }}
                                                     initialFocus
@@ -527,10 +503,10 @@ export default function OrdersPage() {
                   Una lista de todos los pedidos realizados en tu tienda.
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant={"outline"} className={cn("w-[240px] sm:w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                    <Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {dateRange?.from ? (
                         dateRange.to ? (
