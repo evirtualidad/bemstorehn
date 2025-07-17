@@ -33,7 +33,7 @@ const AddressSchema = z.object({
   exactAddress: z.string(),
 });
 
-const CreateOrderInputSchema = z.object({
+export const CreateOrderInputSchema = z.object({
   customer: z.object({
     name: z.string().optional(),
     phone: z.string().optional(),
