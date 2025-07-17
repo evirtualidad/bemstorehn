@@ -340,7 +340,7 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
                                                     selected={field.value}
                                                     onSelect={field.onChange}
                                                     disabled={(date) => {
-                                                        if (!today) return true; 
+                                                        if (!today) return true;
                                                         return date < today;
                                                     }}
                                                     initialFocus
@@ -525,18 +525,18 @@ export default function OrdersPage() {
                   Una lista de todos los pedidos realizados en tu tienda.
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant={"outline"} className={cn("w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                    <Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {dateRange?.from ? (
                         dateRange.to ? (
                           <>
-                            {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
+                            {format(dateRange.from, "LLL dd, y", { locale: es })} - {format(dateRange.to, "LLL dd, y", { locale: es })}
                           </>
                         ) : (
-                          format(dateRange.from, "LLL dd, y")
+                          format(dateRange.from, "LLL dd, y", { locale: es })
                         )
                       ) : (
                         <span>Seleccionar fecha</span>
@@ -558,7 +558,7 @@ export default function OrdersPage() {
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-10 gap-1">
+                        <Button variant="outline" size="sm" className="h-10 gap-1 w-full sm:w-auto">
                             <ListFilter className="h-3.5 w-3.5" />
                             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                             Filtros
@@ -620,7 +620,7 @@ export default function OrdersPage() {
                 </DropdownMenu>
 
                 {isFiltered && (
-                    <Button variant="ghost" onClick={clearFilters} className="h-10">
+                    <Button variant="ghost" onClick={clearFilters} className="h-10 w-full sm:w-auto">
                         <X className="mr-2 h-4 w-4" />
                         Limpiar
                     </Button>
