@@ -27,7 +27,7 @@ import { useCategoriesStore, type Category as CategoryType } from '@/hooks/use-c
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { useOrdersStore, type Address, type Order, type NewOrderData } from '@/hooks/use-orders';
+import { useOrdersStore, type Address, type NewOrderData } from '@/hooks/use-orders';
 import { useSettingsStore } from '@/hooks/use-settings-store';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
