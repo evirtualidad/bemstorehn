@@ -982,6 +982,15 @@ export default function PosPage() {
     });
   };
   
+  const handleProductClick = (product: Product) => {
+      handleProductSelect(product);
+      toast({
+          title: 'Producto añadido',
+          description: `${product.name} añadido al pedido.`,
+          duration: 3000,
+      });
+  };
+
   const handleCustomerSelect = (customer: Customer) => {
     form.setValue('name', customer.name);
     form.setValue('phone', customer.phone);
@@ -1143,14 +1152,7 @@ export default function PosPage() {
                     <Separator />
                 </div>
                  <ScrollArea className="flex-1 p-4 bg-background">
-                     <ProductGrid products={filteredProducts} onProductClick={(product) => {
-                         toast({
-                            title: 'Producto añadido',
-                            description: `${product.name} añadido al pedido.`,
-                            duration: 3000,
-                        });
-                        handleProductSelect(product);
-                     }} />
+                     <ProductGrid products={filteredProducts} onProductClick={handleProductClick} />
                 </ScrollArea>
             </main>
         </div>
