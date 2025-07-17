@@ -296,8 +296,7 @@ function ShippingDialog({
 
 export default function CheckoutPage() {
   const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart } = useCart();
-  const { updateMultipleStocks } = useProductsStore();
-  const { addOrder, isLoading: isAddingOrder } = useOrdersStore();
+  const { addOrder } = useOrdersStore();
   const { addOrUpdateCustomer } = useCustomersStore();
   const { taxRate, pickupAddress } = useSettingsStore();
   const { toast } = useToast();
@@ -391,21 +390,22 @@ export default function CheckoutPage() {
       const newOrder = await addOrder(newOrderData);
 
       if (newOrder) {
-        const stockUpdates = items.map(item => ({
-          id: item.id,
-          quantity: item.quantity,
-        }));
-        await updateMultipleStocks(stockUpdates);
-
         toast({
           title: '¡Pedido Recibido!',
           description: 'Gracias por tu compra. Tu pedido está siendo procesado.',
         });
         clearCart();
         router.push(`/order-confirmation/${newOrder.display_id}`);
+      } else {
+        throw new Error("Order creation failed.");
       }
     } catch (error) {
         console.error('Error final en onSubmit:', error);
+        toast({
+            title: 'Error al enviar pedido',
+            description: (error as Error).message || 'Ocurrió un error inesperado.',
+            variant: 'destructive',
+        });
     } finally {
         setIsSubmitting(false);
     }
@@ -688,3 +688,4 @@ export default function CheckoutPage() {
   );
 }
 
+    

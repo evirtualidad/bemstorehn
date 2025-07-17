@@ -867,7 +867,7 @@ export default function PosPage() {
       decreaseQuantity,
       clearCart,
   } = usePosCart();
-  const { products, fetchProducts, isLoading: isLoadingProducts, updateMultipleStocks } = useProductsStore();
+  const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
   const { addOrder, isLoading: isAddingOrder } = useOrdersStore();
   const { addOrUpdateCustomer, fetchCustomers, isLoading: isLoadingCustomers } = useCustomersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
@@ -1064,12 +1064,6 @@ export default function PosPage() {
       const newOrder = await addOrder(orderData);
 
       if (newOrder) {
-        const stockUpdates = cart.map(item => ({
-          id: item.id,
-          quantity: item.quantity,
-        }));
-        await updateMultipleStocks(stockUpdates);
-
         toast({
           title: '¡Pedido Creado!',
           description: `Pedido ${newOrder.display_id} creado con éxito.`,
@@ -1078,10 +1072,16 @@ export default function PosPage() {
         clearCartAndForm();
         setIsCheckoutOpen(false);
         setIsTicketVisible(false);
+      } else {
+        throw new Error('La creación del pedido falló en el store.');
       }
-    } catch (error: any) {
-      // The error is already toasted in the store, no need to toast again
-      console.error('Error final en onSubmit:', error);
+    } catch (error) {
+      console.error('Error al crear el pedido:', error);
+      toast({
+        title: 'Error al Crear Pedido',
+        description: (error as Error).message || 'Ocurrió un error inesperado. Revisa la consola.',
+        variant: 'destructive',
+      });
     }
   }
   
@@ -1213,3 +1213,4 @@ export default function PosPage() {
   );
 }
 
+    

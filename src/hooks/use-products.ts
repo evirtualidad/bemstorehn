@@ -9,11 +9,6 @@ import { supabaseClient } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import imageCompression from 'browser-image-compression';
 
-type StockUpdate = {
-  id: string;
-  quantity: number;
-}
-
 type ProductsState = {
   products: Product[];
   isLoading: boolean;
@@ -25,7 +20,6 @@ type ProductsState = {
   getProductById: (productId: string) => Product | undefined;
   decreaseStock: (productId: string, quantity: number) => Promise<void>;
   increaseStock: (productId: string, quantity: number) => Promise<void>;
-  updateMultipleStocks: (updates: StockUpdate[]) => Promise<void>;
 };
 
 const BUCKET_NAME = 'products';
@@ -165,51 +159,25 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     }
   },
 
-  updateMultipleStocks: async (updates: StockUpdate[]) => {
-    const { data: products, error: fetchError } = await supabaseClient
-      .from('products')
-      .select('id, stock')
-      .in('id', updates.map(u => u.id));
-
-    if (fetchError) throw new Error("Could not fetch products for stock update");
-    
-    const stockUpdatePromises = updates.map(update => {
-        const product = products.find(p => p.id === update.id);
-        if (!product) return Promise.resolve();
-
-        const newStock = product.stock - update.quantity;
-        return supabaseClient.from('products').update({ stock: newStock }).eq('id', update.id);
-    });
-
-    const results = await Promise.all(stockUpdatePromises);
-    const someFailed = results.some(res => res.error);
-
-    if (someFailed) {
-      console.error("Some stock updates failed", results.map(r => r.error).filter(Boolean));
-      throw new Error("Una o más actualizaciones de stock fallaron.");
-    }
-    
-    // Optimistically update local state
-    set(produce((state: ProductsState) => {
-        updates.forEach(update => {
-            const product = state.products.find(p => p.id === update.id);
-            if (product) {
-                product.stock -= update.quantity;
-            }
-        });
-    }));
-  },
-
   decreaseStock: async (productId: string, quantity: number) => {
     const product = get().products.find(p => p.id === productId);
-    if (!product) return;
+    if (!product) {
+      throw new Error(`Producto con ID ${productId} no encontrado.`);
+    }
 
     const newStock = product.stock - quantity;
+    if (newStock < 0) {
+      throw new Error(`Stock insuficiente para el producto ${product.name}.`);
+    }
     
-    await supabaseClient
+    const { error } = await supabaseClient
         .from('products')
         .update({ stock: newStock })
         .eq('id', productId);
+
+    if (error) {
+        throw new Error(`Error al actualizar stock para ${product.name}: ${error.message}`);
+    }
     
     set(produce((state: ProductsState) => {
         const p = state.products.find(p => p.id === productId);
@@ -219,18 +187,26 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
 
   increaseStock: async (productId: string, quantity: number) => {
      const product = get().products.find(p => p.id === productId);
-    if (!product) return;
+    if (!product) {
+       throw new Error(`Producto con ID ${productId} no encontrado.`);
+    }
 
     const newStock = product.stock + quantity;
     
-    await supabaseClient
+    const { error } = await supabaseClient
         .from('products')
         .update({ stock: newStock })
         .eq('id', productId);
     
+     if (error) {
+        throw new Error(`Error al actualizar stock para ${product.name}: ${error.message}`);
+    }
+
     set(produce((state: ProductsState) => {
         const p = state.products.find(p => p.id === productId);
         if (p) p.stock = newStock;
     }));
   },
 }));
+
+    

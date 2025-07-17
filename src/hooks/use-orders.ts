@@ -5,7 +5,6 @@ import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
 import { supabaseClient } from '@/lib/supabase';
-import { useCustomersStore } from './use-customers';
 
 export interface Payment {
     date: string;
@@ -85,13 +84,27 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
   addOrder: async (orderData) => {
     set({ isLoading: true });
     
-    const { data, error } = await supabaseClient
-        .from('orders')
-        .insert([orderData])
-        .select()
-        .single();
-    
-    if (error) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('orders')
+            .insert([orderData])
+            .select()
+            .single();
+        
+        if (error) {
+            throw error;
+        }
+
+        const newOrder = data as Order;
+
+        set(produce((state: OrdersState) => {
+            state.orders.unshift(newOrder);
+        }));
+
+        set({ isLoading: false });
+        return newOrder;
+
+    } catch (error: any) {
         set({ isLoading: false });
         const errorMessage = error.message || 'Ocurrió un error desconocido al crear el pedido.';
         console.error("Error creating order:", JSON.stringify(error, null, 2));
@@ -103,15 +116,6 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
         });
         throw new Error(errorMessage);
     }
-
-    const newOrder = data as Order;
-
-    set(produce((state: OrdersState) => {
-        state.orders.unshift(newOrder);
-    }));
-
-    set({ isLoading: false });
-    return newOrder;
   },
 
   addPayment: async (orderId, amount, method) => {
@@ -186,7 +190,7 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     }
   },
 
-  cancelOrder: async (orderId) => {
+  cancelOrder: async (orderId: string) => {
     const { data, error } = await supabaseClient
         .from('orders')
         .update({ status: 'cancelled' })
@@ -212,3 +216,4 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
   },
 }));
 
+    

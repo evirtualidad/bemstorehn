@@ -230,7 +230,7 @@ function OrderDetailsDialog({ order, isOpen, onOpenChange }: { order: Order | nu
 
 function ApproveOrderDialog({ order, children }: { order: Order; children: React.ReactNode }) {
     const { approveOrder } = useOrdersStore();
-    const { getProductById } = useProductsStore();
+    const { getProductById, decreaseStock } = useProductsStore();
     const { toast } = useToast();
     const [isOpen, setIsOpen] = React.useState(false);
     const [today, setToday] = React.useState<Date | null>(null);
@@ -263,12 +263,27 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
             }
         }
         
-        approveOrder({
+        // --- Decrease stock for each item ---
+        try {
+            for (const item of order.items) {
+                await decreaseStock(item.id, item.quantity);
+            }
+        } catch (error: any) {
+             toast({
+                title: '¡Error al actualizar stock!',
+                description: `No se pudo actualizar el stock: ${error.message}`,
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        await approveOrder({
             orderId: order.id,
             paymentMethod: values.paymentMethod,
             paymentDueDate: values.paymentDueDate,
             paymentReference: values.paymentReference,
         });
+
         toast({ title: '¡Pedido Aprobado!', description: `El pedido ${order.display_id} ha sido facturado.` });
         setIsOpen(false);
     }
@@ -359,17 +374,13 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
 
 function RejectOrderDialog({ order, children }: { order: Order; children: React.ReactNode }) {
     const { cancelOrder } = useOrdersStore();
-    const { increaseStock } = useProductsStore();
     const { toast } = useToast();
 
-    const handleReject = () => {
-        cancelOrder(order.id);
-        order.items.forEach(item => {
-            increaseStock(item.id, item.quantity);
-        });
+    const handleReject = async () => {
+        await cancelOrder(order.id);
         toast({
             title: 'Pedido Rechazado',
-            description: `El pedido ${order.display_id} ha sido cancelado y el stock ha sido devuelto.`,
+            description: `El pedido ${order.display_id} ha sido cancelado. El stock NO ha sido devuelto.`,
             variant: 'destructive',
         });
     };
@@ -381,7 +392,7 @@ function RejectOrderDialog({ order, children }: { order: Order; children: React.
                 <AlertDialogHeader>
                     <AlertDialogTitle>¿Estás seguro de que quieres rechazar este pedido?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Esta acción es irreversible. El pedido <span className='font-bold'>{order.display_id}</span> será cancelado y el stock de los productos será devuelto al inventario.
+                        Esta acción es irreversible. El pedido <span className='font-bold'>{order.display_id}</span> será marcado como cancelado. El stock de los productos no se verá afectado.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -400,13 +411,15 @@ function CancelOrderDialog({ order, children }: { order: Order; children: React.
     const { increaseStock } = useProductsStore();
     const { toast } = useToast();
 
-    const handleCancel = () => {
-        if (order.status !== 'cancelled') {
-            order.items.forEach(item => {
-                increaseStock(item.id, item.quantity);
-            });
+    const handleCancel = async () => {
+        // Only return stock if the order was not in a 'pending-approval' or 'cancelled' state.
+        // This means it was a processed order.
+        if (order.status !== 'pending-approval' && order.status !== 'cancelled') {
+             for (const item of order.items) {
+                await increaseStock(item.id, item.quantity);
+            }
         }
-        cancelOrder(order.id);
+        await cancelOrder(order.id);
         toast({
             title: 'Pedido Cancelado',
             description: `El pedido ${order.display_id} ha sido cancelado.`,
@@ -421,7 +434,7 @@ function CancelOrderDialog({ order, children }: { order: Order; children: React.
                 <AlertDialogHeader>
                     <AlertDialogTitle>¿Estás seguro de que quieres cancelar este pedido?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Esta acción es irreversible. El pedido <span className='font-bold'>{order.display_id}</span> será cancelado. Si el pedido no estaba cancelado previamente, el stock de los productos será devuelto al inventario.
+                        Esta acción es irreversible. El pedido <span className='font-bold'>{order.display_id}</span> será cancelado. Si el pedido ya había sido facturado, el stock de los productos será devuelto al inventario.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -740,3 +753,5 @@ export default function OrdersPage() {
     </main>
   );
 }
+
+    
