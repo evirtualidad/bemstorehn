@@ -2,77 +2,124 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import type { Address, Order } from './use-orders';
+import { toast } from './use-toast';
+import type { Address } from './use-orders';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 export interface Customer {
-  id: string; // Based on phone number
+  id: string; // uuid
+  created_at: string;
   name: string;
   phone: string;
-  address?: Address;
-  orderIds: string[];
-  totalSpent: number;
+  address: Address | null;
+  total_spent: number;
+  order_count: number;
 }
-
-const initialCustomers: Customer[] = [
-    { id: 'cust_555-0101', name: 'Olivia Martin', phone: '555-0101', orderIds: ['ORD-001'], totalSpent: 35.00 },
-    { id: 'cust_555-0102', name: 'Jackson Lee', phone: '555-0102', orderIds: ['ORD-002'], totalSpent: 104.00 },
-    { id: 'cust_555-0103', name: 'Isabella Nguyen', phone: '555-0103', orderIds: ['ORD-003'], totalSpent: 26.00 },
-    { id: 'cust_555-0109', name: 'Mason Garcia', phone: '555-0109', orderIds: ['ORD-009-ONLINE'], totalSpent: 36.00 },
-    { id: 'cust_555-0105', name: 'Sophia Rodriguez', phone: '555-0105', orderIds: ['ORD-005'], totalSpent: 72.00 },
-    { id: 'cust_555-0106', name: 'Liam Johnson', phone: '555-0106', orderIds: ['ORD-006'], totalSpent: 28.00 },
-];
 
 type CustomersState = {
   customers: Customer[];
-  addOrUpdateCustomer: (data: {
-    id: string;
-    name: string;
-    phone: string;
-    address?: Address;
-    orderIds: string[];
-    totalSpent: number;
-  }) => void;
+  isLoading: boolean;
+  fetchCustomers: (supabase: SupabaseClient) => Promise<void>;
+  addOrUpdateCustomer: (
+    supabase: SupabaseClient,
+    data: {
+      phone: string;
+      name: string;
+      address?: Address | null;
+      order_id: string;
+      total_to_add: number;
+    }
+  ) => Promise<void>;
   getCustomerById: (id: string) => Customer | undefined;
 };
 
-export const useCustomersStore = create<CustomersState>()(
-  persist(
-    (set, get) => ({
-      customers: initialCustomers,
-      addOrUpdateCustomer: (data) => {
-        set((state) => {
-          const existingCustomer = state.customers.find((c) => c.id === data.id);
-          if (existingCustomer) {
-            // Update existing customer
-            return {
-              customers: state.customers.map((c) =>
-                c.id === data.id
-                  ? {
-                      ...c,
-                      name: data.name, // Update name in case it changes
-                      address: data.address || c.address, // Update address if a new one is provided
-                      orderIds: [...c.orderIds, ...data.orderIds],
-                      totalSpent: c.totalSpent + data.totalSpent,
-                    }
-                  : c
-              ),
-            };
-          } else {
-            // Add new customer
-            return {
-              customers: [...state.customers, data],
-            };
-          }
-        });
-      },
-      getCustomerById: (id) => {
-        return get().customers.find((c) => c.id === id);
-      },
-    }),
-    {
-      name: 'customers-storage',
-      storage: createJSONStorage(() => localStorage),
+export const useCustomersStore = create<CustomersState>((set, get) => ({
+  customers: [],
+  isLoading: false,
+  fetchCustomers: async (supabase: SupabaseClient) => {
+    set({ isLoading: true });
+    try {
+      const { data, error } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      set({ customers: data || [], isLoading: false });
+    } catch (error: any) {
+      toast({
+        title: 'Error al cargar clientes',
+        description: error.message,
+        variant: 'destructive',
+      });
+      set({ isLoading: false });
     }
-  )
-);
+  },
+  
+  addOrUpdateCustomer: async (supabase, { phone, name, address, order_id, total_to_add }) => {
+    try {
+      const { data: existing, error: fetchError } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('phone', phone)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      
+      let customerData: Customer;
+
+      if (existing) {
+        // Update existing customer
+        const { data: updated, error: updateError } = await supabase
+          .from('customers')
+          .update({
+            name: name, // Always update name
+            address: address || existing.address, // Update address if new one is provided
+            total_spent: existing.total_spent + total_to_add,
+            order_count: existing.order_count + 1,
+          })
+          .eq('id', existing.id)
+          .select()
+          .single();
+        if (updateError) throw updateError;
+        customerData = updated;
+        set({
+          customers: get().customers.map((c) => (c.id === customerData.id ? customerData : c)),
+        });
+      } else {
+        // Add new customer
+        const { data: created, error: createError } = await supabase
+          .from('customers')
+          .insert({
+            phone,
+            name,
+            address,
+            total_spent: total_to_add,
+            order_count: 1,
+          })
+          .select()
+          .single();
+        if (createError) throw createError;
+        customerData = created;
+        set({ customers: [...get().customers, customerData] });
+      }
+      
+      // Link customer to the order
+      const { error: orderUpdateError } = await supabase
+          .from('orders')
+          .update({ customer_id: customerData.id })
+          .eq('id', order_id);
+      if (orderUpdateError) {
+          console.warn(`Could not link customer to order ${order_id}:`, orderUpdateError.message);
+      }
+
+
+    } catch (error: any) {
+      toast({
+        title: 'Error al guardar cliente',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  },
+
+  getCustomerById: (id) => {
+    return get().customers.find((c) => c.id === id);
+  },
+}));

@@ -52,6 +52,7 @@ import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { supabaseClient } from '@/lib/supabase';
 
 
 const PIE_COLORS = [
@@ -70,29 +71,33 @@ const statusLabels: { [key: string]: string } = {
 };
 
 export default function Dashboard() {
-  const { orders } = useOrdersStore();
-  const { products } = useProductsStore();
-  const { customers } = useCustomersStore();
-  const { categories } = useCategoriesStore();
+  const { orders, fetchOrders, isLoading: isLoadingOrders } = useOrdersStore();
+  const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
+  const { customers, fetchCustomers, isLoading: isLoadingCustomers } = useCustomersStore();
+  const { categories, isLoading: isLoadingCategories } = useCategoriesStore(); // Assuming categories are fetched elsewhere, e.g. layout
   const { currency } = useCurrencyStore();
   
   const [date, setDate] = React.useState<DateRange | undefined>(undefined);
 
+  React.useEffect(() => {
+    fetchOrders(supabaseClient);
+    fetchProducts(supabaseClient);
+    fetchCustomers(supabaseClient);
+  }, [fetchOrders, fetchProducts, fetchCustomers]);
+
   const dashboardData = React.useMemo(() => {
     const { from, to } = date || {};
-    // If no date is selected, we show all-time data.
     const startDate = from ? startOfDay(from) : new Date(0);
     const endDate = to ? endOfDay(to) : new Date();
 
     const filteredOrders = orders.filter(o => {
-        const orderDate = parseISO(o.date);
+        const orderDate = parseISO(o.created_at);
         return o.status !== 'cancelled' && o.status !== 'pending-approval' && isAfter(orderDate, startDate) && isBefore(orderDate, endDate);
     });
 
     const totalRevenue = filteredOrders.reduce((acc, order) => acc + order.total, 0);
     const totalOrders = filteredOrders.length;
     
-    // These are not time-filtered as they represent current state
     const activeProducts = products.filter((p) => p.stock > 0).length;
     const totalCustomers = customers.length; 
 
@@ -137,7 +142,7 @@ export default function Dashboard() {
     }).reverse();
 
     orders.filter(o => o.status !== 'cancelled' && o.status !== 'pending-approval').forEach(order => {
-        const orderDate = parseISO(order.date);
+        const orderDate = parseISO(order.created_at);
         const thirtyDaysAgo = startOfDay(subDays(new Date(), 29));
         if (orderDate >= thirtyDaysAgo) {
             const dateStr = format(orderDate, 'MMM d', { locale: es });
@@ -187,7 +192,9 @@ export default function Dashboard() {
     };
   }, [orders, products, customers, categories, date]);
 
-  if (!dashboardData) {
+  const isLoading = isLoadingOrders || isLoadingProducts || isLoadingCustomers || isLoadingCategories;
+
+  if (isLoading) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
         <LoadingSpinner />
@@ -484,9 +491,9 @@ export default function Dashboard() {
                 {recentTransactions.length > 0 ? recentTransactions.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell>
-                      <div className="font-medium">{order.customer.name}</div>
+                      <div className="font-medium">{order.customer_name}</div>
                       <div className="hidden text-sm text-muted-foreground md:inline">
-                        {order.customer.phone}
+                        {order.customer_phone}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -498,7 +505,7 @@ export default function Dashboard() {
                        >{statusLabels[order.status] || order.status}</Badge>
                     </TableCell>
                     <TableCell>
-                      {format(new Date(order.date), 'd MMM, yyyy', { locale: es })}
+                      {format(new Date(order.created_at), 'd MMM, yyyy', { locale: es })}
                     </TableCell>
                     <TableCell className="text-right">{formatCurrency(order.total, currency.code)}</TableCell>
                   </TableRow>

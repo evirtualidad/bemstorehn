@@ -11,9 +11,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { useProductsStore } from '@/hooks/use-products';
-import { createOrder } from '@/ai/flows/create-order-flow';
 import type { Product } from '@/lib/products';
 import Image from 'next/image';
 import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard, X, BadgePercent, Truck, Store, MapPin, CheckCircle } from 'lucide-react';
@@ -38,7 +37,6 @@ import { useCustomersStore, type Customer } from '@/hooks/use-customers';
 import { CustomerSearch } from '@/components/customer-search';
 import { paymentMethods } from '@/lib/payment-methods.tsx';
 import { ProductGrid } from '@/components/product-grid';
-import { ProductCard } from '@/components/product-card';
 import { supabaseClient } from '@/lib/supabase';
 
 type PosCartItem = Product & { quantity: number };
@@ -860,32 +858,29 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
 
 export default function PosPage() {
   const [cart, setCart] = React.useState<PosCartItem[]>([]);
-  const { products, decreaseStock, fetchProducts } = useProductsStore();
-  const { addOrder } = useOrdersStore();
-  const { addOrUpdateCustomer } = useCustomersStore();
-  const { categories, fetchCategories } = useCategoriesStore();
+  const { products, decreaseStock, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
+  const { addOrder, isLoading: isAddingOrder } = useOrdersStore();
+  const { addOrUpdateCustomer, fetchCustomers, isLoading: isLoadingCustomers } = useCustomersStore();
+  const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
   const [isTicketVisible, setIsTicketVisible] = React.useState(false);
   const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
   const [shippingCost, setShippingCost] = React.useState(0);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = React.useState(false);
-  const [isClient, setIsClient] = React.useState(false);
 
   React.useEffect(() => {
-    setIsClient(true);
     fetchProducts(supabaseClient);
     fetchCategories(supabaseClient);
-  }, [fetchProducts, fetchCategories]);
+    fetchCustomers(supabaseClient);
+  }, [fetchProducts, fetchCategories, fetchCustomers]);
 
-  const productCategories = React.useMemo(() => isClient ? [...new Set(products.map((p) => p.category))] : [], [products, isClient]);
-  const hasOfferProducts = React.useMemo(() => isClient ? products.some(p => p.originalPrice && p.originalPrice > p.price) : false, [products, isClient]);
+  const productCategories = React.useMemo(() => [...new Set(products.map((p) => p.category))], [products]);
+  const hasOfferProducts = React.useMemo(() => products.some(p => p.originalPrice && p.originalPrice > p.price), [products]);
   
   const filteredProducts = React.useMemo(() => {
-    if (!isClient) return [];
     if (!selectedFilter) return products;
     
     if (selectedFilter.type === 'category') {
@@ -895,7 +890,7 @@ export default function PosPage() {
       return products.filter(p => p.originalPrice && p.originalPrice > p.price);
     }
     return products;
-  }, [selectedFilter, products, isClient]);
+  }, [selectedFilter, products]);
 
   const { subtotal, taxAmount, total } = React.useMemo(() => {
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -998,7 +993,7 @@ export default function PosPage() {
     form.setValue('name', customer.name);
     form.setValue('phone', customer.phone);
     if(customer.address) {
-      form.setValue('address', customer.address);
+      form.setValue('address', customer.address as Address);
     }
   };
 
@@ -1057,72 +1052,58 @@ export default function PosPage() {
       return;
     }
 
-    setIsSubmitting(true);
     try {
-        const orderInput = {
-            customer: { 
-                name: values.name, 
-                phone: values.phone,
-                address: values.deliveryMethod === 'delivery' ? values.address : undefined,
-            },
-            items: cart,
+        const orderData = {
+            customer_name: values.name || 'Consumidor Final',
+            customer_phone: values.phone || 'N/A',
+            customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
+            items: cart.map(({ aiHint, ...rest }) => rest), // Remove aiHint before storing
             total: totalWithShipping,
-            shippingCost: shippingCost,
-            paymentMethod: values.paymentMethod,
-            paymentDueDate: values.paymentDueDate ? values.paymentDueDate.toISOString() : undefined,
-            cashAmount: values.cashAmount ? parseFloat(values.cashAmount) : undefined,
-            paymentReference: values.paymentReference,
-            deliveryMethod: values.deliveryMethod,
+            shipping_cost: shippingCost,
+            payment_method: values.paymentMethod,
+            payment_due_date: values.paymentDueDate ? values.paymentDueDate.toISOString() : null,
+            payment_reference: values.paymentReference || null,
+            delivery_method: values.deliveryMethod,
+            source: 'pos',
+            status: values.paymentMethod === 'credito' ? 'pending-payment' : 'paid',
+            balance: values.paymentMethod === 'credito' ? totalWithShipping : 0,
+            payments: values.paymentMethod !== 'credito' ? [{
+                amount: totalWithShipping,
+                date: new Date().toISOString(),
+                method: values.paymentMethod,
+                cash_received: values.cashAmount ? parseFloat(values.cashAmount) : null,
+                change_given: change,
+            }] : [],
         };
 
-      const result = await createOrder(orderInput);
+      const newOrder = await addOrder(supabaseClient, orderData);
 
-      if (result.success) {
-        cart.forEach((item) => decreaseStock(supabaseClient, item.id, item.quantity));
+      if (newOrder) {
+        for (const item of cart) {
+            await decreaseStock(supabaseClient, item.id, item.quantity);
+        }
         
-        // Add order to store
-        addOrder({
-            id: result.orderId,
-            customer: {
-              name: orderInput.customer.name,
-              phone: orderInput.customer.phone,
-              address: orderInput.customer.address,
-            },
-            items: orderInput.items,
-            total: orderInput.total,
-            shippingCost: orderInput.shippingCost,
-            paymentMethod: orderInput.paymentMethod,
-            date: new Date().toISOString(),
-            paymentDueDate: orderInput.paymentDueDate,
-            status: orderInput.paymentMethod === 'credito' ? 'pending-payment' : 'paid',
-            source: 'pos',
-            deliveryMethod: orderInput.deliveryMethod,
-        });
-        
-        // Add or update customer
-        if (orderInput.customer.name && orderInput.customer.phone) {
-             addOrUpdateCustomer({
-                id: `cust_${orderInput.customer.phone}`,
-                name: orderInput.customer.name,
-                phone: orderInput.customer.phone,
-                address: orderInput.customer.address,
-                orderIds: [result.orderId],
-                totalSpent: orderInput.total,
+        if (values.phone) {
+             await addOrUpdateCustomer(supabaseClient, {
+                phone: values.phone,
+                name: values.name || 'Cliente',
+                address: values.address,
+                order_id: newOrder.id,
+                total_to_add: totalWithShipping,
              });
         }
 
 
         toast({
           title: '¡Pedido Creado!',
-          description: `Pedido ${result.orderId} creado con éxito.`,
-          duration: 3000,
+          description: `Pedido ${newOrder.display_id} creado con éxito.`,
         });
 
         clearCartAndForm();
         setIsCheckoutOpen(false);
         setIsTicketVisible(false);
       } else {
-        throw new Error('La creación del pedido falló en el flujo.');
+        throw new Error('La creación del pedido falló en el store.');
       }
     } catch (error) {
       console.error('Error al crear el pedido:', error);
@@ -1130,14 +1111,13 @@ export default function PosPage() {
         title: 'Error al crear pedido',
         description: 'Hubo un problema al crear el pedido. Intenta de nuevo.',
         variant: 'destructive',
-        duration: 3000,
       });
-    } finally {
-      setIsSubmitting(false);
     }
   }
+  
+  const isLoading = isLoadingProducts || isLoadingCategories || isLoadingCustomers;
 
-  if (!isClient) {
+  if (isLoading) {
     return (
       <div className="flex h-screen flex-col bg-muted/40">
         <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20">
@@ -1235,7 +1215,7 @@ export default function PosPage() {
                         <CheckoutForm 
                             form={form} 
                             onSubmit={onSubmit} 
-                            isSubmitting={isSubmitting} 
+                            isSubmitting={isAddingOrder} 
                             onCancel={() => handleOpenChangeCheckout(false)} 
                             cart={cart}
                             subtotal={subtotal}

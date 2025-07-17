@@ -38,6 +38,7 @@ import { useOrdersStore } from '@/hooks/use-orders';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { ThemeProvider } from '@/components/theme-provider';
+import { supabaseClient } from '@/lib/supabase';
 
 function CurrencySelector() {
     const { currency, currencies, setCurrency } = useCurrencyStore();
@@ -71,7 +72,11 @@ function AdminLayoutContent({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { orders } = useOrdersStore();
+  const { orders, fetchOrders } = useOrdersStore();
+  
+  React.useEffect(() => {
+    fetchOrders(supabaseClient);
+  }, [fetchOrders]);
 
   const pendingApprovalCount = React.useMemo(() => {
     return orders.filter(o => o.status === 'pending-approval').length;

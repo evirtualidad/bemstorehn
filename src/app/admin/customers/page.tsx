@@ -18,20 +18,26 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useCustomersStore, type Customer } from '@/hooks/use-customers';
+import { useCustomersStore } from '@/hooks/use-customers';
 import { formatCurrency } from '@/lib/utils';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { supabaseClient } from '@/lib/supabase';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function CustomersPage() {
-  const { customers } = useCustomersStore();
+  const { customers, fetchCustomers, isLoading } = useCustomersStore();
   const { currency } = useCurrencyStore();
   const [searchTerm, setSearchTerm] = React.useState('');
+  
+  React.useEffect(() => {
+    fetchCustomers(supabaseClient);
+  }, [fetchCustomers]);
 
   const sortedCustomers = React.useMemo(() => 
-    [...customers].sort((a, b) => b.totalSpent - a.totalSpent),
+    [...customers].sort((a, b) => b.total_spent - a.total_spent),
     [customers]
   );
   
@@ -40,7 +46,7 @@ export default function CustomersPage() {
     const lowercasedTerm = searchTerm.toLowerCase();
     return sortedCustomers.filter(customer => 
       customer.name.toLowerCase().includes(lowercasedTerm) ||
-      customer.phone.includes(lowercasedTerm)
+      (customer.phone && customer.phone.includes(lowercasedTerm))
     );
   }, [searchTerm, sortedCustomers]);
 
@@ -51,6 +57,24 @@ export default function CustomersPage() {
           return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
       }
       return name.substring(0, 2).toUpperCase();
+  }
+  
+  if (isLoading) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Lista de Clientes</CardTitle>
+                <CardDescription>
+                  Un listado de todos los clientes que han realizado compras.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex justify-center items-center h-48">
+                    <LoadingSpinner />
+                </div>
+            </CardContent>
+        </Card>
+    );
   }
 
   return (
@@ -100,13 +124,13 @@ export default function CustomersPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {customer.phone}
+                    {customer.phone || 'N/A'}
                   </TableCell>
                   <TableCell>
-                    {customer.orderIds.length}
+                    {customer.order_count}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatCurrency(customer.totalSpent, currency.code)}
+                    {formatCurrency(customer.total_spent, currency.code)}
                   </TableCell>
                 </TableRow>
               )) : (
@@ -128,5 +152,3 @@ export default function CustomersPage() {
     </main>
   );
 }
-
-    

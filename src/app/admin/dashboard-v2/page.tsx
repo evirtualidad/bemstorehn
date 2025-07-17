@@ -3,19 +3,13 @@
 
 import * as React from 'react';
 import {
-  Activity,
   ArrowUpRight,
-  CircleUser,
   CreditCard,
   DollarSign,
-  Menu,
-  Package2,
-  Search,
   Users,
   Archive,
 } from 'lucide-react';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,12 +30,10 @@ import {
 import {
   BarChart,
   Bar,
-  Rectangle,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
 
@@ -54,36 +46,29 @@ import { format, subDays, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import Link from 'next/link';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { supabaseClient } from '@/lib/supabase';
 
 export default function DashboardV2() {
-  const { orders } = useOrdersStore();
-  const { products } = useProductsStore();
-  const { customers } = useCustomersStore();
+  const { orders, fetchOrders, isLoading: isLoadingOrders } = useOrdersStore();
+  const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
+  const { customers, fetchCustomers, isLoading: isLoadingCustomers } = useCustomersStore();
   const { currency } = useCurrencyStore();
-  const [isClient, setIsClient] = React.useState(false);
   
   React.useEffect(() => {
-    setIsClient(true);
-  }, []);
+    fetchOrders(supabaseClient);
+    fetchProducts(supabaseClient);
+    fetchCustomers(supabaseClient);
+  }, [fetchOrders, fetchProducts, fetchCustomers]);
 
   const dashboardData = React.useMemo(() => {
-    if (!isClient) return null;
 
     const nonCancelledOrders = orders.filter((o) => o.status !== 'cancelled' && o.status !== 'pending-approval');
 
-    // Calculate total revenue
     const totalRevenue = nonCancelledOrders.reduce((acc, order) => acc + order.total, 0);
-
-    // Calculate total orders
     const totalOrders = nonCancelledOrders.length;
-
-    // Calculate active products
     const activeProducts = products.filter((p) => p.stock > 0).length;
-
-    // Calculate total customers
     const totalCustomers = customers.length;
     
-    // Calculate sales data for the last 7 days
     const salesLast7Days = Array.from({ length: 7 }, (_, i) => {
         const date = subDays(new Date(), i);
         return {
@@ -95,7 +80,7 @@ export default function DashboardV2() {
     const sevenDaysAgo = startOfDay(subDays(new Date(), 6));
 
     nonCancelledOrders.forEach(order => {
-        const orderDate = new Date(order.date);
+        const orderDate = new Date(order.created_at);
         if (orderDate >= sevenDaysAgo) {
             const dateStr = format(orderDate, 'MMM d', { locale: es });
             const dayData = salesLast7Days.find(d => d.date === dateStr);
@@ -105,13 +90,11 @@ export default function DashboardV2() {
         }
     });
 
-    // Top Selling Products
     const productSales = new Map<string, { product: any; quantity: number; revenue: number }>();
-
     nonCancelledOrders.forEach(order => {
       order.items.forEach(item => {
         const existingProduct = products.find(p => p.id === item.id);
-        if (existingProduct) { // Ensure product exists before processing
+        if (existingProduct) { 
           const entry = productSales.get(item.id);
           if (entry) {
             entry.quantity += item.quantity;
@@ -140,9 +123,11 @@ export default function DashboardV2() {
       recentTransactions: nonCancelledOrders.slice(0, 5),
       topSellingProducts,
     };
-  }, [isClient, orders, products, customers, currency.code]);
+  }, [orders, products, customers, currency.code]);
 
-  if (!isClient || !dashboardData) {
+  const isLoading = isLoadingOrders || isLoadingProducts || isLoadingCustomers;
+
+  if (isLoading || !dashboardData) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingSpinner />
@@ -312,9 +297,9 @@ export default function DashboardV2() {
                 {recentTransactions.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell>
-                      <div className="font-medium">{order.customer.name}</div>
+                      <div className="font-medium">{order.customer_name}</div>
                       <div className="hidden text-sm text-muted-foreground md:inline">
-                        {order.customer.phone}
+                        {order.customer_phone}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -327,7 +312,7 @@ export default function DashboardV2() {
                        >{order.status}</Badge>
                     </TableCell>
                     <TableCell>
-                      {format(new Date(order.date), 'd MMM, yyyy', { locale: es })}
+                      {format(new Date(order.created_at), 'd MMM, yyyy', { locale: es })}
                     </TableCell>
                     <TableCell className="text-right">{formatCurrency(order.total, currency.code)}</TableCell>
                   </TableRow>
