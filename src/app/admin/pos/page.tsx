@@ -435,16 +435,11 @@ function ShippingDialog({
 
   React.useEffect(() => {
     const isNational = selectedShippingOption === 'national';
-    if (isNational) {
-        if (form.getValues('department') === 'Francisco Morazán' || form.getValues('department') === undefined) {
-            form.setValue('department', undefined);
-            form.setValue('municipality', undefined);
-        }
-    } else {
-        form.setValue('department', 'Francisco Morazán');
-        form.setValue('municipality', 'Distrito Central');
-        form.clearErrors('department');
-        form.clearErrors('municipality');
+    if (!isNational) {
+      form.setValue('department', 'Francisco Morazán');
+      form.setValue('municipality', 'Distrito Central');
+      form.clearErrors('department');
+      form.clearErrors('municipality');
     }
   }, [selectedShippingOption, form]);
 

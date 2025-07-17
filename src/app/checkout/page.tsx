@@ -132,19 +132,14 @@ function ShippingDialog({
     const selectedShippingOption = form.watch('shippingOption');
     
     useEffect(() => {
-    const isNational = selectedShippingOption === 'national';
-    if (isNational) {
-        if (form.getValues('department') === 'Francisco Morazán' || form.getValues('department') === undefined) {
-            form.setValue('department', undefined);
-            form.setValue('municipality', undefined);
+        const isNational = selectedShippingOption === 'national';
+        if (!isNational) {
+            form.setValue('department', 'Francisco Morazán');
+            form.setValue('municipality', 'Distrito Central');
+            form.clearErrors('department');
+            form.clearErrors('municipality');
         }
-    } else {
-        form.setValue('department', 'Francisco Morazán');
-        form.setValue('municipality', 'Distrito Central');
-        form.clearErrors('department');
-        form.clearErrors('municipality');
-    }
-  }, [selectedShippingOption, form]);
+    }, [selectedShippingOption, form]);
 
     const handleSave = (values: z.infer<typeof shippingFormSchema>) => {
         const cost = values.shippingOption === 'local' ? shippingLocalCost : shippingNationalCost;
