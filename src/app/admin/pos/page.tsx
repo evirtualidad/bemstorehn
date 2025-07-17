@@ -1160,7 +1160,7 @@ export default function PosPage() {
                     <Separator />
                 </div>
                  <ScrollArea className="flex-1 p-4 bg-background">
-                     <ProductGrid products={filteredProducts} />
+                     <ProductGrid products={filteredProducts} onProductClick={handleProductSelect} />
                 </ScrollArea>
             </main>
         </div>
