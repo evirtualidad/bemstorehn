@@ -955,8 +955,8 @@ export default function PosPage() {
     setShippingCost(cost);
   };
 
-  const handleProductSelect = (product: Product) => {
-    if(product.stock <= 0) {
+  const handleProductSelect = (product: Product): boolean => {
+    if (product.stock <= 0) {
       setTimeout(() => {
         toast({
           title: 'Producto Agotado',
@@ -965,20 +965,23 @@ export default function PosPage() {
           duration: 3000,
         });
       }, 0);
-      return;
+      return false;
     }
-    addToCart(product)
+    addToCart(product);
+    return true;
   };
   
   const handleProductClick = (product: Product) => {
-      handleProductSelect(product);
+    const wasAdded = handleProductSelect(product);
+    if (wasAdded) {
       setTimeout(() => {
         toast({
-            title: 'Producto añadido',
-            description: `${product.name} añadido al pedido.`,
-            duration: 3000,
+          title: 'Producto añadido',
+          description: `${product.name} añadido al pedido.`,
+          duration: 3000,
         });
       }, 0);
+    }
   };
 
   const handleCustomerSelect = (customer: Customer) => {
