@@ -18,7 +18,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { supabaseClient } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -34,11 +33,14 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { useRouter } from 'next/navigation';
+import { getUsers } from '@/actions/get-users';
 
 
-type UserWithRole = User & {
+export type UserWithRole = User & {
     app_metadata: {
-        role: 'admin' | 'cashier';
+        role?: 'admin' | 'cashier';
+        provider?: string;
+        providers?: string[];
     }
 }
 
@@ -57,15 +59,24 @@ export default function UsersPage() {
 
   const fetchUsers = React.useCallback(async () => {
     setIsLoading(true);
-    const { data: { users }, error } = await supabaseClient.auth.admin.listUsers();
-    if (error) {
+    const result = await getUsers();
+    if (result.error) {
       toast({
         title: 'Error al cargar usuarios',
-        description: error.message,
+        description: result.error,
         variant: 'destructive',
       });
+      setUsers([]);
     } else {
-      setUsers(users as UserWithRole[]);
+      // Ensure app_metadata and role exist to prevent runtime errors
+      const sanitizedUsers = result.users.map(u => ({
+          ...u,
+          app_metadata: {
+              ...u.app_metadata,
+              role: u.app_metadata.role || 'cashier', // Default to cashier if no role
+          },
+      }));
+      setUsers(sanitizedUsers);
     }
     setIsLoading(false);
   }, [toast]);
@@ -190,4 +201,3 @@ export default function UsersPage() {
     </main>
   );
 }
-
