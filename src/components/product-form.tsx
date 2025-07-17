@@ -30,6 +30,7 @@ import { Checkbox } from './ui/checkbox';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { Upload, X } from 'lucide-react';
 import Image from 'next/image';
+import { supabaseClient } from '@/lib/supabase';
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
@@ -68,9 +69,15 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
-  const { categories } = useCategoriesStore();
+  const { categories, fetchCategories } = useCategoriesStore();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [preview, setPreview] = React.useState<string | null>(product?.image || null);
+
+  React.useEffect(() => {
+    if (categories.length === 0) {
+      fetchCategories(supabaseClient);
+    }
+  }, [categories.length, fetchCategories]);
 
   const form = useForm<z.infer<typeof productFormSchema>>({
     resolver: zodResolver(productFormSchema),

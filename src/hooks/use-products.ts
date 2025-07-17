@@ -11,7 +11,7 @@ type ProductsState = {
   isLoading: boolean;
   error: string | null;
   fetchProducts: (supabase: SupabaseClient) => Promise<void>;
-  addProduct: (supabase: SupabaseClient, product: Omit<Product, 'id'>) => Promise<Product | null>;
+  addProduct: (supabase: SupabaseClient, product: Omit<Product, 'id' | 'created_at'>) => Promise<Product | null>;
   updateProduct: (supabase: SupabaseClient, product: Product) => Promise<void>;
   deleteProduct: (supabase: SupabaseClient, productId: string) => Promise<void>;
   getProductById: (productId: string) => Product | undefined;
@@ -46,7 +46,14 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
 
   addProduct: async (supabase: SupabaseClient, productData) => {
     try {
-      const { data, error } = await supabase.from('products').insert([productData]).select();
+      const { originalPrice, ...restOfProductData } = productData;
+      
+      const dataToInsert: any = { ...restOfProductData };
+      if (originalPrice) {
+        dataToInsert.originalPrice = originalPrice;
+      }
+
+      const { data, error } = await supabase.from('products').insert([dataToInsert]).select();
       if (error) throw error;
       const newProduct = data[0];
       set((state) => ({ products: [newProduct, ...state.products] }));
@@ -63,7 +70,17 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
 
   updateProduct: async (supabase: SupabaseClient, product) => {
      try {
-      const { data, error } = await supabase.from('products').update(product).eq('id', product.id).select();
+      const { originalPrice, ...restOfProductData } = product;
+
+      const dataToUpdate: any = { ...restOfProductData };
+      if (originalPrice) {
+        dataToUpdate.originalPrice = originalPrice;
+      } else {
+        // Explicitly set to null if it's empty/falsy to clear it in the DB
+        dataToUpdate.originalPrice = null;
+      }
+
+      const { data, error } = await supabase.from('products').update(dataToUpdate).eq('id', product.id).select();
       if (error) throw error;
       set((state) => ({
         products: state.products.map((p) => (p.id === product.id ? data[0] : p)),
