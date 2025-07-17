@@ -49,11 +49,12 @@ export interface Order {
   payment_due_date: string | null;
 }
 
-export type NewOrderData = Omit<Order, 'id' | 'display_id' | 'created_at'>;
+export type NewOrderData = Omit<Order, 'id' | 'display_id' | 'created_at' | 'customer_id'>;
 
 type OrdersState = {
   orders: Order[];
   isLoading: boolean;
+  fetchOrders: () => Promise<void>;
   addOrder: (orderData: NewOrderData) => Promise<Order | null>;
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => Promise<void>;
   approveOrder: (data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => Promise<void>;
@@ -65,6 +66,21 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
   orders: [],
   isLoading: false,
 
+  fetchOrders: async () => {
+    set({ isLoading: true });
+    const { data, error } = await supabaseClient
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        set({ isLoading: false });
+        toast({ title: 'Error al cargar pedidos', description: error.message, variant: 'destructive' });
+    } else {
+        set({ orders: data as Order[], isLoading: false });
+    }
+  },
+
   addOrder: async (orderData) => {
     set({ isLoading: true });
     
@@ -75,9 +91,7 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
             .select()
             .single();
         
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
         const newOrder = data as Order;
 
@@ -200,3 +214,5 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
   },
 }));
 
+// Initialize store data
+useOrdersStore.getState().fetchOrders();
