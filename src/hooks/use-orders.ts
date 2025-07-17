@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
 import { supabaseClient } from '@/lib/supabase';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface Payment {
     date: string;
@@ -56,10 +57,18 @@ type OrdersState = {
   isLoading: boolean;
   fetchOrders: () => Promise<void>;
   addOrder: (order: NewOrderData) => Promise<Order | null>;
+  addOrderToState: (order: NewOrderData) => void;
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => Promise<void>;
   approveOrder: (data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
   getOrderById: (orderId: string) => Order | undefined;
+};
+
+// Function to generate a shorter, human-readable display ID
+const generateDisplayId = () => {
+  const timestamp = new Date().getTime().toString().slice(-6); // Last 6 digits of timestamp
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase(); // 4 random chars
+  return `${random}-${timestamp}`;
 };
 
 export const useOrdersStore = create<OrdersState>((set, get) => ({
@@ -109,6 +118,18 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     }));
     
     return newOrder;
+  },
+
+  addOrderToState: (orderData) => {
+    const newOrder: Order = {
+        ...orderData,
+        id: uuidv4(),
+        display_id: generateDisplayId(),
+        created_at: new Date().toISOString(),
+    };
+    set(produce((state) => {
+        state.orders.unshift(newOrder);
+    }));
   },
 
   addPayment: async (orderId, amount, method) => {

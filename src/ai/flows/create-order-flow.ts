@@ -14,18 +14,6 @@ import { createClient } from '@supabase/supabase-js';
 import type { Order, Address as OrderAddress, Payment } from '@/hooks/use-orders';
 import type { Customer } from '@/hooks/use-customers';
 
-// Ensure Supabase client is initialized with service role for server-side operations
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
-
 
 const ProductSchema = z.object({
   id: z.string(),
@@ -76,6 +64,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderO
 
 // Helper to add or update a customer
 const addOrUpdateCustomer = async (
+  supabaseAdmin: ReturnType<typeof createClient>,
   customerData: { phone?: string; name?: string; address?: OrderAddress }, 
   totalToAdd: number
 ): Promise<string | null> => {
@@ -141,8 +130,21 @@ const createOrderFlow = ai.defineFlow(
     outputSchema: CreateOrderOutputSchema,
   },
   async (input) => {
+    
+    // This initialization is CRITICAL for server-side flows.
+    const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+            auth: {
+            autoRefreshToken: false,
+            persistSession: false
+            }
+        }
+    );
+
     try {
-      const customerId = await addOrUpdateCustomer({
+      const customerId = await addOrUpdateCustomer(supabaseAdmin, {
         name: input.customer.name,
         phone: input.customer.phone,
         address: input.customer.address,
@@ -186,6 +188,7 @@ const createOrderFlow = ai.defineFlow(
         .single();
         
       if (error) {
+        // This will now throw the actual DB error
         throw new Error(`Error al crear pedido en DB: ${error.message}`);
       }
 
@@ -196,8 +199,8 @@ const createOrderFlow = ai.defineFlow(
         success: true,
       };
     } catch (error: any) {
-      console.error("Error creating order in flow:", error.message, error.stack);
-      // Re-throw the error so the client can catch the specific message
+      console.error("[createOrderFlow Error]", error);
+      // Re-throw the error so it can be caught by the client-side caller
       throw error;
     }
   }
