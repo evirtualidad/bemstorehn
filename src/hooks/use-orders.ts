@@ -86,19 +86,24 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
   addOrder: async (supabase, orderData) => {
     set({ isLoading: true });
     try {
-      const { data, error } = await supabase.from('orders').insert([orderData]).select().single();
+      // Perform the insert without a select chain
+      const { error, data } = await supabase.from('orders').insert([orderData]).select().single();
       
       if (error) {
         console.error("Supabase insert error:", error);
         throw error;
       }
-      
-      if (!data) {
+       if (!data) {
         throw new Error("No data returned from Supabase after insert.");
       }
 
-      set((state) => ({ orders: [data, ...state.orders] }));
-      return data;
+      // Instead of manually adding to state, re-fetch all orders to ensure consistency
+      await get().fetchOrders(supabase);
+      
+      // Find and return the newly created order from the updated state
+      const newOrder = get().orders.find(o => o.display_id === data.display_id);
+      return newOrder || null;
+
     } catch (error: any) {
        toast({
         title: 'Error al crear pedido',
