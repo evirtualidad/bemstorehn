@@ -114,7 +114,21 @@ export function ProductsManager() {
   const onSubmit = editingProduct ? handleEditProduct : handleAddProduct;
 
   if (!isHydrated) {
-    return <LoadingSpinner />;
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Productos</CardTitle>
+                <CardDescription>
+                    Gestiona tus productos y mira su rendimiento de ventas.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex justify-center items-center h-48">
+                    <LoadingSpinner />
+                </div>
+            </CardContent>
+        </Card>
+    );
   }
 
   return (
