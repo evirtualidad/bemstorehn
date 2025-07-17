@@ -86,7 +86,7 @@ const checkoutFormSchema = z.object({
     message: 'El teléfono es obligatorio para envíos a domicilio.',
     path: ['phone'],
 }).refine((data) => {
-    if (data.paymentMethod === 'transferencia' && !data.paymentReference) {
+    if (data.paymentMethod === 'transferencia' && (!data.paymentReference || data.paymentReference.trim() === '')) {
         return false;
     }
     return true;
@@ -322,6 +322,10 @@ export default function CheckoutPage() {
     defaultValues: {
       name: '',
       phone: '',
+      deliveryMethod: 'pickup',
+      address: undefined,
+      paymentMethod: 'efectivo',
+      paymentReference: '',
     },
   });
 
