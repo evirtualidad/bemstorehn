@@ -16,84 +16,10 @@ import Image from 'next/image';
 import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { Separator } from './ui/separator';
 import Link from 'next/link';
-import { getRecommendedProducts, type RecommendedProductsOutput } from '@/ai/flows/product-recommendations';
-import { useProductsStore } from '@/hooks/use-products';
-import { ProductCard } from './product-card';
-import { Skeleton } from './ui/skeleton';
-import { Product } from '@/lib/products';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
-import { LoadingSpinner } from './ui/loading-spinner';
 import { cn } from '@/lib/utils';
 import { useSettingsStore } from '@/hooks/use-settings-store';
-
-function RecommendedProducts() {
-  const { items } = useCart();
-  const { products, isHydrated } = useProductsStore();
-  const [recommendations, setRecommendations] = React.useState<RecommendedProductsOutput['recommendations']>([]);
-  const [loading, setLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    async function fetchRecommendations() {
-      if (!isHydrated) return;
-
-      if (items.length === 0) {
-        setRecommendations([]);
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const result = await getRecommendedProducts({
-          productsInCart: items,
-          allProducts: products, // Pass all products, the flow will handle filtering
-        });
-        setRecommendations(result.recommendations || []);
-      } catch (error) {
-        console.error("Error fetching recommendations:", error);
-        setRecommendations([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchRecommendations();
-  }, [items, products, isHydrated]);
-
-  if (!isHydrated) {
-    return null; // Don't show anything until products are loaded
-  }
-
-  if (loading) {
-    return (
-      <div className="p-4 space-y-4">
-        <h3 className="font-semibold text-lg">También te podría interesar...</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-48 w-full" />
-        </div>
-      </div>
-    );
-  }
-
-  if (recommendations.length === 0) return null;
-
-  return (
-    <div className="p-4 space-y-4">
-      <h3 className="font-semibold text-lg">También te podría interesar...</h3>
-      <div className="grid grid-cols-2 gap-4">
-        {recommendations.map(product => (
-          <ProductCard 
-            key={product.id}
-            product={product as Product}
-            className="shadow-none border-none"
-            showDescription={false}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export function CartSheet() {
   const {
@@ -176,10 +102,6 @@ export function CartSheet() {
                       </Button>
                     </div>
                   ))}
-                </div>
-                <Separator />
-                <div className="p-2">
-                    <RecommendedProducts />
                 </div>
               </ScrollArea>
             </div>
