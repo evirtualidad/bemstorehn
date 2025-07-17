@@ -49,13 +49,12 @@ export interface Order {
   payment_due_date: string | null;
 }
 
-export type NewOrderData = Omit<Order, 'id' | 'display_id' | 'created_at' | 'customer_id'>;
+export type NewOrderData = Omit<Order, 'id' | 'display_id' | 'created_at'>;
 
 type OrdersState = {
   orders: Order[];
   isLoading: boolean;
   fetchOrders: () => Promise<void>;
-  addOrder: (orderData: NewOrderData) => Promise<Order | null>;
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => Promise<void>;
   approveOrder: (data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
@@ -80,42 +79,7 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
         set({ orders: data as Order[], isLoading: false });
     }
   },
-
-  addOrder: async (orderData) => {
-    set({ isLoading: true });
-    
-    try {
-        const { data, error } = await supabaseClient
-            .from('orders')
-            .insert([orderData])
-            .select()
-            .single();
-        
-        if (error) throw error;
-
-        const newOrder = data as Order;
-
-        set(produce((state: OrdersState) => {
-            state.orders.unshift(newOrder);
-        }));
-
-        set({ isLoading: false });
-        return newOrder;
-
-    } catch (error: any) {
-        set({ isLoading: false });
-        const errorMessage = error.message || 'Ocurrió un error desconocido al crear el pedido.';
-        console.error("Error creating order:", JSON.stringify(error, null, 2));
-        toast({ 
-            title: 'Error al Crear Pedido', 
-            description: `${errorMessage} Es posible que falten permisos de escritura (RLS) en la tabla 'orders'. Revise la consola del navegador para más detalles.`, 
-            variant: 'destructive',
-            duration: 10000
-        });
-        return null;
-    }
-  },
-
+  
   addPayment: async (orderId, amount, method) => {
      const order = get().orders.find(o => o.id === orderId);
      if (!order) return;

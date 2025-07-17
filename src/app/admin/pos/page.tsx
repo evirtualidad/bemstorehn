@@ -27,7 +27,7 @@ import { useCategoriesStore, type Category as CategoryType } from '@/hooks/use-c
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { useOrdersStore, type Address, type NewOrderData } from '@/hooks/use-orders';
+import { useOrdersStore, type Address } from '@/hooks/use-orders';
 import { useSettingsStore } from '@/hooks/use-settings-store';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
@@ -40,6 +40,7 @@ import { ProductGrid } from '@/components/product-grid';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import type { Session } from '@supabase/supabase-js';
 import { usePosCart, type PosCartItem } from '@/hooks/use-pos-cart';
+import { createOrder, type CreateOrderInput } from '@/ai/flows/create-order-flow';
 
 type SelectedFilter = { type: 'category' | 'offer'; value: string } | null;
 
@@ -868,12 +869,13 @@ export default function PosPage() {
       clearCart,
   } = usePosCart();
   const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
-  const { addOrder, isLoading: isAddingOrder } = useOrdersStore();
+  const { fetchOrders } = useOrdersStore();
   const { customers, fetchCustomers, isLoading: isLoadingCustomers } = useCustomersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isTicketVisible, setIsTicketVisible] = React.useState(false);
   const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = React.useState(false);
@@ -1018,59 +1020,52 @@ export default function PosPage() {
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
     if (cart.length === 0) {
-      toast({
-        title: 'Carrito Vacío',
-        description: 'Añade productos antes de crear un pedido.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Carrito Vacío', description: 'Añade productos antes de crear un pedido.', variant: 'destructive' });
       return;
     }
     
-    const userId = session?.user?.id;
+    setIsSubmitting(true);
 
     try {
-      const orderData: NewOrderData = {
-          user_id: userId,
-          customer_id: null, // We are not linking to customers table on creation anymore
-          customer_name: values.name || 'Consumidor Final',
-          customer_phone: values.phone || 'N/A',
-          customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
-          items: cart.map(({ aiHint, stock, ...rest }) => rest),
-          total: totalWithShipping,
-          shipping_cost: shippingCost,
-          payment_method: values.paymentMethod,
-          payment_due_date: values.paymentDueDate ? values.paymentDueDate.toISOString() : null,
-          payment_reference: values.paymentReference || null,
-          delivery_method: values.deliveryMethod,
-          source: 'pos',
-          status: values.paymentMethod === 'credito' ? 'pending-payment' : 'paid',
-          balance: values.paymentMethod === 'credito' ? totalWithShipping : 0,
-          payments: values.paymentMethod !== 'credito' ? [{
-              amount: totalWithShipping,
-              date: new Date().toISOString(),
-              method: values.paymentMethod,
-              cash_received: values.cashAmount ? parseFloat(values.cashAmount) : null,
-              change_given: change,
-          }] : [],
+      const orderData: CreateOrderInput = {
+        customer: {
+          name: values.name || 'Consumidor Final',
+          phone: values.phone || 'N/A',
+          address: values.deliveryMethod === 'delivery' ? values.address : undefined,
+        },
+        items: cart.map(({ aiHint, ...rest }) => rest), // Remove aiHint from items
+        total: totalWithShipping,
+        shippingCost: shippingCost,
+        paymentMethod: values.paymentMethod,
+        paymentDueDate: values.paymentDueDate ? values.paymentDueDate.toISOString() : undefined,
+        cashAmount: values.cashAmount ? Number(values.cashAmount) : undefined,
+        paymentReference: values.paymentReference || undefined,
+        deliveryMethod: values.deliveryMethod,
       };
       
-      const newOrder = await addOrder(orderData);
+      const result = await createOrder(orderData);
 
-      if (newOrder) {
+      if (result && result.success) {
         toast({
           title: '¡Pedido Creado!',
-          description: `Pedido ${newOrder.display_id} creado con éxito.`,
+          description: `Pedido ${result.orderId} creado con éxito.`,
         });
-
         clearCartAndForm();
         setIsCheckoutOpen(false);
         setIsTicketVisible(false);
+        fetchOrders(); // Refresh orders list
       } else {
-        // The error toast is now handled inside addOrder
+        throw new Error('La creación del pedido falló.');
       }
-    } catch (error) {
-       console.error('Error final en onSubmit del POS:', error);
-       // The toast is already shown in the store, no need to repeat it
+    } catch (error: any) {
+       console.error('Error al crear el pedido:', error);
+       toast({
+        title: 'Error al crear pedido',
+        description: error.message || 'Ocurrió un error inesperado.',
+        variant: 'destructive',
+       });
+    } finally {
+        setIsSubmitting(false);
     }
   }
   
@@ -1174,7 +1169,7 @@ export default function PosPage() {
                         <CheckoutForm 
                             form={form} 
                             onSubmit={onSubmit} 
-                            isSubmitting={isAddingOrder} 
+                            isSubmitting={isSubmitting} 
                             onCancel={() => handleOpenChangeCheckout(false)} 
                             cart={cart}
                             subtotal={subtotal}
@@ -1201,4 +1196,3 @@ export default function PosPage() {
     </div>
   );
 }
-
