@@ -362,26 +362,29 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
     try {
       const newOrderData: NewOrderData = {
-        customer_name: values.name || 'Consumidor Final',
-        customer_phone: values.phone || 'N/A',
+        customer_name: values.name,
+        customer_phone: values.phone,
         customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
-        items: items.map(item => ({ 
-            id: item.id, 
-            name: item.name, 
-            price: item.price, 
-            quantity: item.quantity, 
-            image: item.image 
+        items: items.map(({ aiHint, ...rest }) => ({ 
+            id: rest.id, 
+            name: rest.name, 
+            price: rest.price, 
+            quantity: rest.quantity, 
+            image: rest.image,
+            category: rest.category,
+            description: rest.description,
+            stock: rest.stock,
         })),
         total: total,
         shipping_cost: shippingCost,
         payment_method: values.paymentMethod,
         payment_reference: values.paymentReference || null,
         delivery_method: values.deliveryMethod,
-        status: 'pending-approval',
+        status: 'pending-approval', // Online orders always start as pending approval
         source: 'online-store',
-        balance: 0, 
-        payments: [], 
-        payment_due_date: null,
+        balance: 0, // Will be updated on approval
+        payments: [], // Will be updated on approval
+        payment_due_date: null, // Will be updated on approval
       };
 
       const newOrder = await addOrder(supabaseClient, newOrderData);
@@ -699,5 +702,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-
-    
