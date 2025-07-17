@@ -120,30 +120,36 @@ function ShippingDialog({
     const form = useForm<z.infer<typeof shippingFormSchema>>({
         resolver: zodResolver(shippingFormSchema),
         defaultValues: {
-            shippingOption: (currentAddress as any)?.type || 'local',
-            department: currentAddress?.department || undefined,
-            municipality: currentAddress?.municipality || undefined,
-            colony: currentAddress?.colony || '',
-            exactAddress: currentAddress?.exactAddress || '',
+            shippingOption: 'local',
+            department: undefined,
+            municipality: undefined,
+            colony: '',
+            exactAddress: '',
         }
     });
 
+    useEffect(() => {
+        if (isOpen) {
+            form.reset({
+                shippingOption: (currentAddress as any)?.type || 'local',
+                department: currentAddress?.department,
+                municipality: currentAddress?.municipality,
+                colony: currentAddress?.colony || '',
+                exactAddress: currentAddress?.exactAddress || '',
+            });
+        }
+    }, [isOpen, currentAddress, form]);
+
     const selectedDepartment = form.watch('department');
     const selectedShippingOption = form.watch('shippingOption');
-    
-    useEffect(() => {
-        // Si es un envío local y el departamento está vacío, lo seteamos.
-        if (selectedShippingOption === 'local' && !form.getValues('department')) {
-            form.setValue('department', 'Francisco Morazán');
-            form.setValue('municipality', 'Distrito Central');
-        }
-    }, [selectedShippingOption, form]);
 
     const handleSave = (values: z.infer<typeof shippingFormSchema>) => {
         const cost = values.shippingOption === 'local' ? shippingLocalCost : shippingNationalCost;
+        const finalDepartment = values.shippingOption === 'local' ? 'Francisco Morazán' : values.department!;
+        const finalMunicipality = values.shippingOption === 'local' ? 'Distrito Central' : values.municipality!;
         onSave({
-            department: values.department || 'Francisco Morazán',
-            municipality: values.municipality || 'Distrito Central',
+            department: finalDepartment,
+            municipality: finalMunicipality,
             colony: values.colony,
             exactAddress: values.exactAddress,
         }, cost, values.shippingOption);
