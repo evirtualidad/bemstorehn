@@ -23,22 +23,28 @@ interface OrderConfirmationPageProps {
   };
 }
 
-export default function OrderConfirmationPage({ params: { orderId } }: OrderConfirmationPageProps) {
-  const { getOrderById, isHydrated } = useOrdersStore();
+export default function OrderConfirmationPage({ params }: OrderConfirmationPageProps) {
+  const { orderId } = params;
+  const { getOrderById } = useOrdersStore();
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
   const [order, setOrder] = React.useState<ReturnType<typeof getOrderById>>(undefined);
+  const [isClient, setIsClient] = React.useState(false);
+  
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   React.useEffect(() => {
-    if(isHydrated) {
+    if(isClient) {
         const foundOrder = getOrderById(orderId);
         if (foundOrder) {
             setOrder(foundOrder);
         }
     }
-  }, [isHydrated, getOrderById, orderId]);
+  }, [isClient, getOrderById, orderId]);
 
-  if (!isHydrated) {
+  if (!isClient) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
