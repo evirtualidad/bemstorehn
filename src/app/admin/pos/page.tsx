@@ -1055,13 +1055,13 @@ export default function PosPage() {
         setIsTicketVisible(false);
         fetchOrders(); // Refresh orders list
       } else {
-        throw new Error('La creación del pedido falló.');
+        throw new Error('La creación del pedido falló desde el servidor.');
       }
     } catch (error: any) {
        console.error('Error al crear el pedido:', error);
        toast({
-        title: 'Error al crear pedido',
-        description: error.message || 'Ocurrió un error inesperado.',
+        title: 'Error al Crear Pedido',
+        description: error.message || 'Ocurrió un error inesperado. Revisa la consola para más detalles.',
         variant: 'destructive',
        });
     } finally {

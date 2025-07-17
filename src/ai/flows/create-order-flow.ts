@@ -178,18 +178,8 @@ const createOrderFlow = ai.defineFlow(
 
       const newOrder = data as Order;
       
-      // Update stock for each item
-      for (const item of newOrder.items) {
-          const { error: stockError } = await supabaseClient.rpc('decrease_stock', {
-              product_id: item.id,
-              quantity_to_decrease: item.quantity
-          });
-          if (stockError) {
-              // Note: In a real-world scenario, you'd want to handle this more gracefully,
-              // maybe by trying to revert the order creation or flagging it for manual review.
-              console.error(`Failed to update stock for product ${item.id}:`, stockError.message);
-          }
-      }
+      // Stock is now updated upon APPROVAL, not creation for POS/Online orders.
+      // This was moved to prevent timeouts and for better inventory management.
 
       return {
         orderId: newOrder.display_id,
@@ -197,6 +187,7 @@ const createOrderFlow = ai.defineFlow(
       };
     } catch (error: any) {
       console.error("Error creating order in flow:", error);
+      // We return success:false instead of throwing, so the client can handle it gracefully.
       return {
         orderId: '',
         success: false,
