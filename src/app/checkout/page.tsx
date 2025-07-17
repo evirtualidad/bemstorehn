@@ -359,6 +359,7 @@ export default function CheckoutPage() {
 
     try {
       const newOrderData: NewOrderData = {
+        user_id: null, // Anonymous user from online store
         customer_name: values.name,
         customer_phone: values.phone,
         customer_address: values.deliveryMethod === 'delivery' ? shippingAddress : null,
@@ -384,9 +385,9 @@ export default function CheckoutPage() {
       const newOrder = await addOrder(supabaseClient, newOrderData);
 
       if (newOrder) {
-        items.forEach(item => {
-          decreaseStock(supabaseClient, item.id, item.quantity);
-        });
+        for (const item of items) {
+          await decreaseStock(supabaseClient, item.id, item.quantity);
+        }
 
         if (values.phone && values.name) {
              await addOrUpdateCustomer(supabaseClient, {
