@@ -23,8 +23,7 @@ interface OrderConfirmationPageProps {
   };
 }
 
-export default function OrderConfirmationPage({ params }: OrderConfirmationPageProps) {
-  const { orderId } = params;
+export default function OrderConfirmationPage({ params: { orderId } }: OrderConfirmationPageProps) {
   const { getOrderById } = useOrdersStore();
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
