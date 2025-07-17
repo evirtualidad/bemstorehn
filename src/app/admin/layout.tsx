@@ -16,6 +16,7 @@ import {
   Coins,
   Settings,
   Activity,
+  LogOut,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +30,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -39,6 +40,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ThemeToggle } from '@/components/theme-toggle';
 import { ThemeProvider } from '@/components/theme-provider';
 import { supabaseClient } from '@/lib/supabase';
+import { useAuthStore } from '@/hooks/use-auth-store';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 function CurrencySelector() {
     const { currency, currencies, setCurrency } = useCurrencyStore();
@@ -72,15 +75,29 @@ function AdminLayoutContent({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { orders, fetchOrders } = useOrdersStore();
+  const { session, loading, logout } = useAuthStore();
   
   React.useEffect(() => {
     fetchOrders(supabaseClient);
   }, [fetchOrders]);
+  
+  React.useEffect(() => {
+    if (!loading && !session) {
+      router.push('/login');
+    }
+  }, [session, loading, router]);
+
 
   const pendingApprovalCount = React.useMemo(() => {
     return orders.filter(o => o.status === 'pending-approval').length;
   }, [orders]);
+  
+  const handleLogout = async () => {
+    await logout(supabaseClient);
+    router.push('/login');
+  };
 
   const navItems = [
     { href: '/admin/dashboard', icon: Activity, label: 'Dashboard' },
@@ -143,6 +160,14 @@ function AdminLayoutContent({
     )
   };
 
+  if (loading || !session) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
@@ -204,10 +229,12 @@ function AdminLayoutContent({
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Configuración</DropdownMenuItem>
-              <DropdownMenuItem>Soporte</DropdownMenuItem>
+              <DropdownMenuItem disabled>{session.email}</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Cerrar Sesión</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Cerrar Sesión
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

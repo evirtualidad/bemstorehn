@@ -77,6 +77,7 @@ export function ProductsManager() {
               description: error.message,
               variant: 'destructive',
           });
+          console.error("Upload error:", error)
           return null;
       }
       
