@@ -259,7 +259,6 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
     const [today, setToday] = React.useState<Date | null>(null);
 
     React.useEffect(() => {
-        // Set date only on client-side to avoid hydration mismatch
         setToday(new Date());
     }, []);
 
@@ -340,7 +339,10 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
                                                     mode="single"
                                                     selected={field.value}
                                                     onSelect={field.onChange}
-                                                    disabled={(date) => today ? date < today : true}
+                                                    disabled={(date) => {
+                                                        if (!today) return true; 
+                                                        return date < today;
+                                                    }}
                                                     initialFocus
                                                 />
                                             </PopoverContent>
