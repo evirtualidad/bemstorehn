@@ -91,7 +91,7 @@ const addOrUpdateCustomer = async (
 
     if (findError && findError.code !== 'PGRST116') { // PGRST116 is 'not found'
       console.error('Error finding customer:', findError);
-      throw new Error('No se pudo verificar el cliente.');
+      throw new Error(`No se pudo verificar el cliente: ${findError.message}`);
     }
 
     if (existingCustomer) {
@@ -109,7 +109,7 @@ const addOrUpdateCustomer = async (
       
       if (updateError) {
         console.error('Error updating customer:', updateError);
-        throw new Error('No se pudo actualizar el cliente.');
+        throw new Error(`No se pudo actualizar el cliente: ${updateError.message}`);
       }
       return updatedCustomer.id;
     } else {
@@ -127,7 +127,7 @@ const addOrUpdateCustomer = async (
 
       if (insertError) {
         console.error('Error creating customer:', insertError);
-        throw new Error('No se pudo crear el nuevo cliente.');
+        throw new Error(`No se pudo crear el nuevo cliente: ${insertError.message}`);
       }
       return newCustomer.id;
     }
@@ -191,20 +191,14 @@ const createOrderFlow = ai.defineFlow(
 
       const newOrder = data as Order;
       
-      // Stock is now updated upon APPROVAL, not creation for POS/Online orders.
-      // This was moved to prevent timeouts and for better inventory management.
-
       return {
         orderId: newOrder.display_id,
         success: true,
       };
     } catch (error: any) {
-      console.error("Error creating order in flow:", error);
-      // We return success:false instead of throwing, so the client can handle it gracefully.
-      return {
-        orderId: '',
-        success: false,
-      };
+      console.error("Error creating order in flow:", error.message, error.stack);
+      // Re-throw the error so the client can catch the specific message
+      throw error;
     }
   }
 );
