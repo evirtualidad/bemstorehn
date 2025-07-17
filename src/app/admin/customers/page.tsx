@@ -24,7 +24,6 @@ import { useCurrencyStore } from '@/hooks/use-currency';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
-import { supabaseClient } from '@/lib/supabase';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function CustomersPage() {
@@ -33,7 +32,7 @@ export default function CustomersPage() {
   const [searchTerm, setSearchTerm] = React.useState('');
   
   React.useEffect(() => {
-    fetchCustomers(supabaseClient);
+    fetchCustomers();
   }, [fetchCustomers]);
 
   const sortedCustomers = React.useMemo(() => 

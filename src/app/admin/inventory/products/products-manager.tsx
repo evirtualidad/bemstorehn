@@ -8,8 +8,6 @@ import {
   MoreHorizontal,
   PlusCircle,
 } from 'lucide-react';
-import imageCompression from 'browser-image-compression';
-
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -54,7 +52,6 @@ import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { cn } from '@/lib/utils';
-import { supabaseClient } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
 export function ProductsManager() {
@@ -65,39 +62,18 @@ export function ProductsManager() {
   const { toast } = useToast();
 
   React.useEffect(() => {
-    fetchProducts(supabaseClient);
+    fetchProducts();
   }, [fetchProducts]);
   
   const uploadImage = async (file: File): Promise<string | null> => {
-      const options = {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1080,
-        useWebWorker: true,
-      };
-
-      try {
-        console.log(`Original file size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
-        const compressedFile = await imageCompression(file, options);
-        console.log(`Compressed file size: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`);
-        
-        const fileName = `${Date.now()}-${compressedFile.name}`;
-        const { data, error } = await supabaseClient.storage.from('product-images').upload(fileName, compressedFile);
-        
-        if (error) {
-            throw error;
-        }
-        
-        const { data: { publicUrl } } = supabaseClient.storage.from('product-images').getPublicUrl(data.path);
-        return publicUrl;
-      } catch (error: any) {
-         toast({
-              title: 'Error al subir la imagen',
-              description: error.message || 'La compresión o subida falló.',
-              variant: 'destructive',
-          });
-          console.error("Upload/Compression error:", error)
-          return null;
-      }
+    // Simulate upload by creating a blob URL
+    return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            resolve(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    });
   }
 
   const handleAddProduct = async (values: z.infer<typeof productFormSchema>) => {
@@ -117,7 +93,7 @@ export function ProductsManager() {
       stock: Number(values.stock),
       featured: values.featured,
     };
-    await addProduct(supabaseClient, newProductData);
+    await addProduct(newProductData);
     setIsDialogOpen(false);
   };
   
@@ -133,7 +109,7 @@ export function ProductsManager() {
         imageUrl = values.image;
     }
 
-    await updateProduct(supabaseClient, {
+    await updateProduct({
       ...editingProduct,
       ...values,
       image: imageUrl,
@@ -148,7 +124,7 @@ export function ProductsManager() {
   };
   
   const handleDeleteProduct = async (productId: string) => {
-    await deleteProduct(supabaseClient, productId);
+    await deleteProduct(productId);
   };
   
   const openEditDialog = (product: Product) => {

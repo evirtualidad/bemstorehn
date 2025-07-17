@@ -37,7 +37,6 @@ import { useCustomersStore, type Customer } from '@/hooks/use-customers';
 import { CustomerSearch } from '@/components/customer-search';
 import { paymentMethods } from '@/lib/payment-methods.tsx';
 import { ProductGrid } from '@/components/product-grid';
-import { supabaseClient } from '@/lib/supabase';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import type { Session } from '@supabase/supabase-js';
 import { usePosCart, type PosCartItem } from '@/hooks/use-pos-cart';
@@ -886,9 +885,9 @@ export default function PosPage() {
   const { session } = useAuthStore();
 
   React.useEffect(() => {
-    fetchProducts(supabaseClient);
-    fetchCategories(supabaseClient);
-    fetchCustomers(supabaseClient);
+    fetchProducts();
+    fetchCategories();
+    fetchCustomers();
   }, [fetchProducts, fetchCategories, fetchCustomers]);
 
   const productCategories = React.useMemo(() => [...new Set(products.map((p) => p.category))], [products]);
@@ -984,7 +983,7 @@ export default function PosPage() {
 
   const handleCustomerSelect = (customer: Customer) => {
     form.setValue('name', customer.name);
-    form.setValue('phone', customer.phone);
+    form.setValue('phone', customer.phone || '');
     if(customer.address) {
       form.setValue('address', customer.address as Address);
     }
@@ -1037,18 +1036,11 @@ export default function PosPage() {
       return;
     }
     
-    if (!session?.user?.id) {
-       toast({
-          title: 'Error de autenticación',
-          description: 'No se pudo identificar al usuario. Por favor, inicia sesión de nuevo.',
-          variant: 'destructive',
-        });
-       return;
-    }
+    const userId = session?.user?.id || 'mock-admin-id';
 
     try {
         const orderData: NewOrderData = {
-            user_id: session.user.id,
+            user_id: userId,
             customer_name: values.name || 'Consumidor Final',
             customer_phone: values.phone || 'N/A',
             customer_address: values.deliveryMethod === 'delivery' ? values.address : null,
@@ -1071,15 +1063,15 @@ export default function PosPage() {
             }] : [],
         };
 
-      const newOrder = await addOrder(supabaseClient, orderData);
+      const newOrder = await addOrder(orderData);
 
       if (newOrder) {
         for (const item of cart) {
-            await decreaseStock(supabaseClient, item.id, item.quantity);
+            await decreaseStock(item.id, item.quantity);
         }
         
         if (values.phone) {
-             await addOrUpdateCustomer(supabaseClient, {
+             await addOrUpdateCustomer({
                 phone: values.phone,
                 name: values.name || 'Cliente',
                 address: values.address,

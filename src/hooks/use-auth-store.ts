@@ -2,23 +2,40 @@
 'use client';
 
 import { create } from 'zustand';
-import { SupabaseClient, Session } from '@supabase/supabase-js';
+import type { Session } from '@supabase/supabase-js';
 
 export type UserRole = 'admin' | 'cashier';
+
+// Mock Session for local development
+const mockSession: Session = {
+  access_token: 'mock-access-token',
+  token_type: 'bearer',
+  user: {
+    id: 'mock-admin-id',
+    app_metadata: { provider: 'email', role: 'admin' },
+    user_metadata: { name: 'Admin User' },
+    aud: 'authenticated',
+    created_at: new Date().toISOString(),
+    email: 'admin@example.com',
+  },
+  expires_in: 3600,
+  expires_at: Math.floor(Date.now() / 1000) + 3600,
+  refresh_token: 'mock-refresh-token',
+};
+
 
 type AuthState = {
   session: Session | null;
   role: UserRole | null;
   loading: boolean;
-  login: (supabase: SupabaseClient, email: string, password: string) => Promise<string | null>;
-  logout: (supabase: SupabaseClient) => Promise<void>;
+  login: (email: string, password: string) => Promise<string | null>;
+  logout: () => Promise<void>;
   setSession: (session: Session | null) => void;
   setLoading: (loading: boolean) => void;
 };
 
 const getRoleFromSession = (session: Session | null): UserRole | null => {
   if (!session) return null;
-  // Temporarily default to 'admin' to bootstrap the first user.
   return session.user?.app_metadata?.role || 'admin';
 }
 
@@ -26,29 +43,22 @@ export const useAuthStore = create<AuthState>((set) => ({
   session: null,
   role: null,
   loading: true,
-  login: async (supabase, email, password) => {
+  login: async (email, password) => {
     set({ loading: true });
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) throw error;
-      set({ session: data.session, role: getRoleFromSession(data.session), loading: false });
-      return null;
-    } catch (error: any) {
-      set({ loading: false });
-      // Map common Supabase auth errors to user-friendly messages
-      if (error.message.includes('Invalid login credentials')) {
-        return 'El correo electrónico o la contraseña son incorrectos.';
-      }
-      return error.message || 'Ocurrió un error inesperado.';
+    // Simulate a successful login
+    if (email === 'admin@example.com' && password === 'password') {
+        const session = mockSession;
+        set({ session: session, role: getRoleFromSession(session), loading: false });
+        return Promise.resolve(null);
     }
+    // Simulate a failed login
+    set({ loading: false });
+    return Promise.resolve('El correo electrónico o la contraseña son incorrectos.');
   },
-  logout: async (supabase) => {
+  logout: async () => {
     set({ loading: true });
-    await supabase.auth.signOut();
     set({ session: null, role: null, loading: false });
+    return Promise.resolve();
   },
   setSession: (session) => {
     const role = getRoleFromSession(session);
@@ -57,15 +67,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   setLoading: (loading) => set({ loading }),
 }));
 
-// Initialize auth state on app load
-import { supabaseClient } from '@/lib/supabase';
-
-supabaseClient.auth.getSession().then(({ data: { session } }) => {
-  useAuthStore.getState().setSession(session);
-  useAuthStore.getState().setLoading(false);
-});
-
-supabaseClient.auth.onAuthStateChange((_event, session) => {
-  useAuthStore.getState().setSession(session);
-  // No need to set loading to false here, as it's for background updates
-});
+// Initialize auth state on app load with mock data
+useAuthStore.getState().setSession(mockSession);
+useAuthStore.getState().setLoading(false);

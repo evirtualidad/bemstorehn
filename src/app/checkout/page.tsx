@@ -44,7 +44,6 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCustomersStore } from '@/hooks/use-customers';
-import { supabaseClient } from '@/lib/supabase';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(2, {
@@ -382,15 +381,15 @@ export default function CheckoutPage() {
         payment_due_date: null,
       };
 
-      const newOrder = await addOrder(supabaseClient, newOrderData);
+      const newOrder = await addOrder(newOrderData);
 
       if (newOrder) {
         for (const item of items) {
-          await decreaseStock(supabaseClient, item.id, item.quantity);
+          await decreaseStock(item.id, item.quantity);
         }
 
         if (values.phone && values.name) {
-             await addOrUpdateCustomer(supabaseClient, {
+             await addOrUpdateCustomer({
                 phone: values.phone,
                 name: values.name,
                 address: shippingAddress,

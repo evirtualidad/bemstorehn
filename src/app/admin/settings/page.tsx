@@ -15,8 +15,6 @@ import { Percent, DollarSign, Store, MoreHorizontal, PlusCircle } from 'lucide-r
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useBannersStore, type Banner } from '@/hooks/use-banners';
-import { supabaseClient } from '@/lib/supabase';
-import imageCompression from 'browser-image-compression';
 import { BannerForm, bannerFormSchema } from '@/components/banner-form';
 import {
   Dialog,
@@ -201,34 +199,18 @@ function BannersManager() {
   const { toast } = useToast();
 
   React.useEffect(() => {
-    fetchBanners(supabaseClient);
+    fetchBanners();
   }, [fetchBanners]);
 
   const uploadImage = async (file: File): Promise<string | null> => {
-    const options = {
-      maxSizeMB: 1,
-      maxWidthOrHeight: 1920,
-      useWebWorker: true,
-    };
-
-    try {
-      const compressedFile = await imageCompression(file, options);
-      const fileName = `${Date.now()}-${compressedFile.name}`;
-      const { data, error } = await supabaseClient.storage.from('banner-images').upload(fileName, compressedFile);
-      
-      if (error) throw error;
-      
-      const { data: { publicUrl } } = supabaseClient.storage.from('banner-images').getPublicUrl(data.path);
-      return publicUrl;
-    } catch (error: any) {
-       toast({
-            title: 'Error al subir la imagen',
-            description: error.message || 'La compresión o subida falló.',
-            variant: 'destructive',
-        });
-        console.error("Upload/Compression error:", error)
-        return null;
-    }
+    // Simulate upload by creating a blob URL
+    return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            resolve(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    });
   }
 
   const handleAddBanner = async (values: z.infer<typeof bannerFormSchema>) => {
@@ -247,7 +229,7 @@ function BannersManager() {
       ...(values.aiHint && { aiHint: values.aiHint }),
     };
 
-    await addBanner(supabaseClient, newBannerData);
+    await addBanner(newBannerData);
     setIsDialogOpen(false);
   };
 
@@ -274,14 +256,14 @@ function BannersManager() {
         delete (updatedBannerData as Partial<Banner>).aiHint;
     }
 
-    await updateBanner(supabaseClient, updatedBannerData);
+    await updateBanner(updatedBannerData);
 
     setEditingBanner(null);
     setIsDialogOpen(false);
   };
 
   const handleDeleteBanner = async (bannerId: string) => {
-    await deleteBanner(supabaseClient, bannerId);
+    await deleteBanner(bannerId);
   };
 
   const openEditDialog = (banner: Banner) => {

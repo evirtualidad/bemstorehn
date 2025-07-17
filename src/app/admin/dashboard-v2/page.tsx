@@ -46,7 +46,6 @@ import { format, subDays, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import Link from 'next/link';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { supabaseClient } from '@/lib/supabase';
 
 export default function DashboardV2() {
   const { orders, fetchOrders, isLoading: isLoadingOrders } = useOrdersStore();
@@ -55,9 +54,9 @@ export default function DashboardV2() {
   const { currency } = useCurrencyStore();
   
   React.useEffect(() => {
-    fetchOrders(supabaseClient);
-    fetchProducts(supabaseClient);
-    fetchCustomers(supabaseClient);
+    fetchOrders();
+    fetchProducts();
+    fetchCustomers();
   }, [fetchOrders, fetchProducts, fetchCustomers]);
 
   const dashboardData = React.useMemo(() => {

@@ -52,8 +52,6 @@ import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { supabaseClient } from '@/lib/supabase';
-
 
 const PIE_COLORS = [
   'hsl(var(--chart-1))',
@@ -80,9 +78,9 @@ export default function Dashboard() {
   const [date, setDate] = React.useState<DateRange | undefined>(undefined);
 
   React.useEffect(() => {
-    fetchOrders(supabaseClient);
-    fetchProducts(supabaseClient);
-    fetchCustomers(supabaseClient);
+    fetchOrders();
+    fetchProducts();
+    fetchCustomers();
   }, [fetchOrders, fetchProducts, fetchCustomers]);
 
   const dashboardData = React.useMemo(() => {

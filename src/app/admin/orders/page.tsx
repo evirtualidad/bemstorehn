@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -97,7 +96,6 @@ import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { paymentMethods, paymentMethodIcons, paymentMethodLabels } from '@/lib/payment-methods.tsx';
-import { supabaseClient } from '@/lib/supabase';
 
 const deliveryMethodLabels = {
   pickup: 'Recoger en Tienda',
@@ -265,7 +263,7 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
             }
         }
         
-        approveOrder(supabaseClient, {
+        approveOrder({
             orderId: order.id,
             paymentMethod: values.paymentMethod,
             paymentDueDate: values.paymentDueDate,
@@ -365,9 +363,9 @@ function RejectOrderDialog({ order, children }: { order: Order; children: React.
     const { toast } = useToast();
 
     const handleReject = () => {
-        cancelOrder(supabaseClient, order.id);
+        cancelOrder(order.id);
         order.items.forEach(item => {
-            increaseStock(supabaseClient, item.id, item.quantity);
+            increaseStock(item.id, item.quantity);
         });
         toast({
             title: 'Pedido Rechazado',
@@ -405,10 +403,10 @@ function CancelOrderDialog({ order, children }: { order: Order; children: React.
     const handleCancel = () => {
         if (order.status !== 'cancelled') {
             order.items.forEach(item => {
-                increaseStock(supabaseClient, item.id, item.quantity);
+                increaseStock(item.id, item.quantity);
             });
         }
-        cancelOrder(supabaseClient, order.id);
+        cancelOrder(order.id);
         toast({
             title: 'Pedido Cancelado',
             description: `El pedido ${order.display_id} ha sido cancelado.`,

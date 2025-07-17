@@ -20,7 +20,6 @@ import { useAuthStore } from '@/hooks/use-auth-store';
 import { useRouter } from 'next/navigation';
 import { Loader2, Leaf } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabaseClient } from '@/lib/supabase';
 
 const loginFormSchema = z.object({
   email: z.string().email('Por favor, introduce un correo electrónico válido.'),
@@ -43,7 +42,7 @@ export default function LoginPage() {
 
   const onSubmit = async (values: z.infer<typeof loginFormSchema>) => {
     setIsLoading(true);
-    const error = await login(supabaseClient, values.email, values.password);
+    const error = await login(values.email, values.password);
     setIsLoading(false);
 
     if (error) {

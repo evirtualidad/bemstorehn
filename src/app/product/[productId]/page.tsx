@@ -18,7 +18,6 @@ import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import * as React from 'react';
-import { supabaseClient } from '@/lib/supabase';
 
 interface ProductDetailPageProps {
     params: {
@@ -35,8 +34,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { currency } = useCurrencyStore();
   
   React.useEffect(() => {
-    fetchProducts(supabaseClient);
-    fetchCategories(supabaseClient);
+    fetchProducts();
+    fetchCategories();
   }, [fetchProducts, fetchCategories]);
   
   const product = getProductById(productId);

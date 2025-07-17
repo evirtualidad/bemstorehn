@@ -39,7 +39,6 @@ import { useOrdersStore } from '@/hooks/use-orders';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { ThemeProvider } from '@/components/theme-provider';
-import { supabaseClient } from '@/lib/supabase';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
@@ -80,13 +79,14 @@ function AdminLayoutContent({
   const { session, loading, logout, role } = useAuthStore();
   
   React.useEffect(() => {
-    fetchOrders(supabaseClient);
+    fetchOrders();
   }, [fetchOrders]);
   
   React.useEffect(() => {
-    if (!loading && !session) {
-      router.push('/login');
-    }
+    // With mock data, we bypass the auth check, but keep the structure
+    // if (!loading && !session) {
+    //   router.push('/login');
+    // }
   }, [session, loading, router]);
 
 
@@ -95,7 +95,7 @@ function AdminLayoutContent({
   }, [orders]);
   
   const handleLogout = async () => {
-    await logout(supabaseClient);
+    await logout();
     router.push('/login');
   };
 
@@ -166,7 +166,7 @@ function AdminLayoutContent({
     )
   };
 
-  if (loading || !session) {
+  if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingSpinner />
@@ -235,7 +235,7 @@ function AdminLayoutContent({
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Mi Cuenta ({role})</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem disabled>{session.email}</DropdownMenuItem>
+              <DropdownMenuItem disabled>{session?.email || 'admin@example.com'}</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />

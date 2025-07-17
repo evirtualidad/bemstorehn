@@ -47,7 +47,6 @@ import { useCategoriesStore, type Category } from '@/hooks/use-categories';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { supabaseClient } from '@/lib/supabase';
 
 const categoryFormSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres.'),
@@ -114,18 +113,18 @@ export function CategoriesManager() {
   const [editingCategory, setEditingCategory] = React.useState<Category | null>(null);
 
   React.useEffect(() => {
-    fetchCategories(supabaseClient);
+    fetchCategories();
   }, [fetchCategories]);
 
   const handleAddCategory = async (values: z.infer<typeof categoryFormSchema>) => {
-    await addCategory(supabaseClient, values);
+    await addCategory(values);
     setIsDialogOpen(false);
   };
 
   const handleEditCategory = async (values: z.infer<typeof categoryFormSchema>) => {
     if (!editingCategory) return;
     
-    await updateCategory(supabaseClient, {
+    await updateCategory({
       ...editingCategory,
       ...values,
     });
@@ -135,7 +134,7 @@ export function CategoriesManager() {
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
-    await deleteCategory(supabaseClient, categoryId);
+    await deleteCategory(categoryId);
   };
 
   const openEditDialog = (category: Category) => {

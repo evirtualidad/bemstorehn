@@ -2,8 +2,8 @@
 'use client';
 
 import { create } from 'zustand';
-import { SupabaseClient } from '@supabase/supabase-js';
 import { toast } from './use-toast';
+import { produce } from 'immer';
 
 export interface Banner {
   id: string;
@@ -13,14 +13,39 @@ export interface Banner {
   aiHint?: string;
 }
 
+// Mock Data
+const mockBanners: Banner[] = [
+    {
+        id: 'banner-1',
+        title: 'Nueva Colección de Verano',
+        description: 'Descubre los colores vibrantes y las texturas ligeras de nuestra nueva colección.',
+        image: 'https://placehold.co/1200x600.png',
+        aiHint: 'summer cosmetics',
+    },
+    {
+        id: 'banner-2',
+        title: '20% de Descuento en Skincare',
+        description: 'Cuida tu piel con nuestros productos estrella y obtén un 20% de descuento.',
+        image: 'https://placehold.co/1200x600.png',
+        aiHint: 'skincare sale',
+    },
+    {
+        id: 'banner-3',
+        title: 'Esenciales de Maquillaje',
+        description: 'Todo lo que necesitas para un look perfecto, desde bases hasta labiales.',
+        image: 'https://placehold.co/1200x600.png',
+        aiHint: 'makeup essentials',
+    }
+];
+
 type BannersState = {
   banners: Banner[];
   isLoading: boolean;
   error: string | null;
-  fetchBanners: (supabase: SupabaseClient) => Promise<void>;
-  addBanner: (supabase: SupabaseClient, banner: Omit<Banner, 'id'>) => Promise<void>;
-  updateBanner: (supabase: SupabaseClient, banner: Banner) => Promise<void>;
-  deleteBanner: (supabase: SupabaseClient, bannerId: string) => Promise<void>;
+  fetchBanners: () => Promise<void>;
+  addBanner: (banner: Omit<Banner, 'id'>) => Promise<void>;
+  updateBanner: (banner: Banner) => Promise<void>;
+  deleteBanner: (bannerId: string) => Promise<void>;
 };
 
 export const useBannersStore = create<BannersState>((set) => ({
@@ -28,65 +53,39 @@ export const useBannersStore = create<BannersState>((set) => ({
   isLoading: false,
   error: null,
 
-  fetchBanners: async (supabase: SupabaseClient) => {
+  fetchBanners: async () => {
     set({ isLoading: true });
-    try {
-        const { data, error } = await supabase.from('banners').select('*').order('created_at', { ascending: false });
-        if (error) throw error;
-        set({ banners: data, isLoading: false });
-    } catch (error: any) {
-        set({ error: error.message, isLoading: false });
-        toast({
-            title: 'Error al cargar banners',
-            description: error.message,
-            variant: 'destructive',
-        });
-    }
+    // Simulate API call
+    setTimeout(() => {
+        set({ banners: mockBanners, isLoading: false });
+    }, 500);
   },
 
-  addBanner: async (supabase: SupabaseClient, bannerData) => {
-    try {
-      const { data, error } = await supabase.from('banners').insert([bannerData]).select();
-      if (error) throw error;
-      set((state) => ({ banners: [data[0], ...state.banners] }));
-    } catch (error: any) {
-        toast({
-            title: 'Error al añadir banner',
-            description: error.message,
-            variant: 'destructive',
-        });
-    }
+  addBanner: async (bannerData) => {
+    set(produce((state: BannersState) => {
+        const newBanner: Banner = {
+            id: `banner-${Date.now()}`,
+            ...bannerData,
+        };
+        state.banners.unshift(newBanner);
+    }));
+    toast({ title: 'Banner añadido', description: 'El nuevo banner se ha guardado.' });
   },
 
-  updateBanner: async (supabase: SupabaseClient, banner) => {
-    try {
-        const { data, error } = await supabase.from('banners').update(banner).eq('id', banner.id).select();
-        if (error) throw error;
-        set((state) => ({
-            banners: state.banners.map((b) => (b.id === banner.id ? data[0] : b)),
-        }));
-    } catch (error: any) {
-        toast({
-            title: 'Error al actualizar banner',
-            description: error.message,
-            variant: 'destructive',
-        });
-    }
+  updateBanner: async (banner) => {
+    set(produce((state: BannersState) => {
+        const index = state.banners.findIndex((b) => b.id === banner.id);
+        if (index !== -1) {
+            state.banners[index] = banner;
+        }
+    }));
+    toast({ title: 'Banner actualizado', description: 'Los cambios se han guardado.' });
   },
 
-  deleteBanner: async (supabase: SupabaseClient, bannerId: string) => {
-    try {
-        const { error } = await supabase.from('banners').delete().eq('id', bannerId);
-        if (error) throw error;
-        set((state) => ({
-            banners: state.banners.filter((b) => b.id !== bannerId),
-        }));
-    } catch (error: any) {
-        toast({
-            title: 'Error al eliminar banner',
-            description: error.message,
-            variant: 'destructive',
-        });
-    }
+  deleteBanner: async (bannerId: string) => {
+    set(produce((state: BannersState) => {
+        state.banners = state.banners.filter((b) => b.id !== bannerId);
+    }));
+    toast({ title: 'Banner eliminado', description: 'El banner ha sido eliminado.', variant: 'destructive' });
   },
 }));

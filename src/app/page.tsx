@@ -25,7 +25,6 @@ import { Pause, Play, Instagram, Facebook, ShoppingCart } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { useCart } from '@/hooks/use-cart';
 import { useCurrencyStore } from '@/hooks/use-currency';
-import { supabaseClient } from '@/lib/supabase';
 
 // A custom TikTok icon as lucide-react might not have it.
 const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -171,9 +170,9 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
   
   React.useEffect(() => {
-    fetchProducts(supabaseClient);
-    fetchBanners(supabaseClient);
-    fetchCategories(supabaseClient);
+    fetchProducts();
+    fetchBanners();
+    fetchCategories();
   }, [fetchProducts, fetchBanners, fetchCategories]);
 
   const itemCount = React.useMemo(() => {

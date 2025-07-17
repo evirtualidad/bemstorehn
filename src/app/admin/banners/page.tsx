@@ -1,6 +1,11 @@
 
 'use client';
 
+// NOTE: This component is not directly used as a page anymore,
+// but its logic is now inside `src/app/admin/settings/page.tsx`.
+// It is kept here for reference or future use if banners get their own dedicated page again.
+// This file is updated to use mock data stores.
+
 import * as React from 'react';
 import {
   MoreHorizontal,
@@ -43,14 +48,9 @@ import { useBannersStore, type Banner } from '@/hooks/use-banners';
 import { BannerForm, bannerFormSchema } from '@/components/banner-form';
 import { z } from 'zod';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { supabaseClient } from '@/lib/supabase';
-import imageCompression from 'browser-image-compression';
 import { useToast } from '@/hooks/use-toast';
 
 
-// NOTE: This component is not directly used as a page anymore,
-// but its logic is now inside `src/app/admin/settings/page.tsx`.
-// It is kept here for reference or future use if banners get their own dedicated page again.
 export function BannersManager() {
   const { banners, addBanner, updateBanner, deleteBanner, fetchBanners, isLoading } = useBannersStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
@@ -58,34 +58,18 @@ export function BannersManager() {
   const { toast } = useToast();
 
   React.useEffect(() => {
-    fetchBanners(supabaseClient);
+    fetchBanners();
   }, [fetchBanners]);
 
   const uploadImage = async (file: File): Promise<string | null> => {
-    const options = {
-      maxSizeMB: 1,
-      maxWidthOrHeight: 1920,
-      useWebWorker: true,
-    };
-
-    try {
-      const compressedFile = await imageCompression(file, options);
-      const fileName = `${Date.now()}-${compressedFile.name}`;
-      const { data, error } = await supabaseClient.storage.from('banner-images').upload(fileName, compressedFile);
-      
-      if (error) throw error;
-      
-      const { data: { publicUrl } } = supabaseClient.storage.from('banner-images').getPublicUrl(data.path);
-      return publicUrl;
-    } catch (error: any) {
-       toast({
-            title: 'Error al subir la imagen',
-            description: error.message || 'La compresión o subida falló.',
-            variant: 'destructive',
-        });
-        console.error("Upload/Compression error:", error)
-        return null;
-    }
+    // Simulate upload by creating a blob URL
+    return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            resolve(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    });
   }
 
 
@@ -102,7 +86,7 @@ export function BannersManager() {
       ...values,
       image: imageUrl,
     };
-    await addBanner(supabaseClient, newBannerData);
+    await addBanner(newBannerData);
     setIsDialogOpen(false);
   };
 
@@ -118,7 +102,7 @@ export function BannersManager() {
         imageUrl = values.image;
     }
 
-    await updateBanner(supabaseClient, {
+    await updateBanner({
       ...editingBanner,
       ...values,
       image: imageUrl,
@@ -129,7 +113,7 @@ export function BannersManager() {
   };
 
   const handleDeleteBanner = async (bannerId: string) => {
-    await deleteBanner(supabaseClient, bannerId);
+    await deleteBanner(bannerId);
   };
 
   const openEditDialog = (banner: Banner) => {

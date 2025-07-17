@@ -70,7 +70,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { paymentMethodIcons, paymentMethodLabels } from '@/lib/payment-methods.tsx';
-import { supabaseClient } from '@/lib/supabase';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { useRouter } from 'next/navigation';
 
@@ -243,7 +242,7 @@ function RegisterPaymentDialog({ order, children }: { order: Order, children: Re
             return;
         }
         setError('');
-        addPayment(supabaseClient, order.id, paymentAmount, paymentMethod);
+        addPayment(order.id, paymentAmount, paymentMethod);
         toast({
             title: '¡Pago Registrado!',
             description: `Se registró un pago de ${formatCurrency(paymentAmount, currency.code)} para el pedido ${order.display_id}.`,
