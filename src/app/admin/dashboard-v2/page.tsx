@@ -60,8 +60,8 @@ export default function DashboardV2() {
   const { products } = useProductsStore();
   const { customers } = useCustomersStore();
   const { currency } = useCurrencyStore();
-
   const [isClient, setIsClient] = React.useState(false);
+  
   React.useEffect(() => {
     setIsClient(true);
   }, []);
@@ -69,7 +69,7 @@ export default function DashboardV2() {
   const dashboardData = React.useMemo(() => {
     if (!isClient) return null;
 
-    const nonCancelledOrders = orders.filter((o) => o.status !== 'cancelled');
+    const nonCancelledOrders = orders.filter((o) => o.status !== 'cancelled' && o.status !== 'pending-approval');
 
     // Calculate total revenue
     const totalRevenue = nonCancelledOrders.reduce((acc, order) => acc + order.total, 0);

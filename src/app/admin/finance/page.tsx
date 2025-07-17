@@ -97,7 +97,9 @@ function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCod
         if (!acc[method]) {
             acc[method] = { name: paymentMethodLabels[method], value: 0 };
         }
-        acc[method].value += order.total;
+        if (order.status === 'paid') {
+           acc[method].value += order.total;
+        }
       }
       return acc;
     }, {} as Record<string, {name: string, value: number}>);
@@ -118,7 +120,7 @@ function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCod
       revenueByMethod: Object.values(revenueByMethod),
       salesByMonth: Object.values(salesByMonth),
     };
-  }, [financialOrders]);
+  }, [financialOrders, currencyCode]);
 
   const PIE_COLORS = [
     'hsl(var(--chart-1))',
@@ -315,7 +317,8 @@ function AccountsReceivable({ orders, currencyCode }: { orders: any[], currencyC
     setIsClient(true);
   }, []);
 
-  const creditOrders = orders.filter(o => o.status === 'pending-payment');
+  const creditOrders = React.useMemo(() => orders.filter(o => o.status === 'pending-payment'), [orders]);
+
 
   const getStatus = (dueDate: string) => {
     const days = differenceInDays(new Date(), parseISO(dueDate));
@@ -390,7 +393,8 @@ function AccountsReceivable({ orders, currencyCode }: { orders: any[], currencyC
 }
 
 function Transactions({ orders, currencyCode }: { orders: any[], currencyCode: string }) {
-    const financialOrders = orders.filter(o => o.status !== 'pending-approval' && o.status !== 'cancelled');
+    const financialOrders = React.useMemo(() => orders.filter(o => o.status !== 'pending-approval' && o.status !== 'cancelled'), [orders]);
+
 
     const statusConfig = {
         'pending-payment': { label: 'Pendiente', color: 'bg-amber-100 text-amber-800' },

@@ -66,19 +66,19 @@ const recommendationPrompt = ai.definePrompt({
     Do not recommend products that are already in the cart.
     Only recommend products that are in stock (stock > 0).
 
-    Analyze the categories and types of products in the cart. For example:
-    - If they have skincare, recommend other skincare items that fit into a routine (e.g., if they have a cleanser, recommend a moisturizer or serum).
-    - If they have makeup, suggest complementary items (e.g., if they have foundation, recommend a primer or setting powder).
-    - If they have shampoo, recommend the matching conditioner.
+    Analyze the categories of products in the cart. For example:
+    - If they have 'Skincare' products, recommend other 'Skincare' items that fit into a routine (e.g., if they have a cleanser, recommend a moisturizer or serum).
+    - If they have 'Makeup' products, suggest complementary items (e.g., if they have foundation, recommend a primer or setting powder).
+    - If they have 'Haircare' products, recommend the matching conditioner or a styling product.
 
-    Provide your response in the requested JSON format. Make sure to include the image URL for each recommended product.
+    Provide your response in the requested JSON format. Make sure to include all required fields for each recommended product.
 
-    Here is the full list of available products:
+    This is the full list of available products you can recommend from:
     {{#each allProducts}}
     - ID: {{id}}, Name: {{name}}, Category: {{category}}, Description: {{description}}, Stock: {{stock}}, Image: {{image}}
     {{/each}}
 
-    Here are the items currently in the user's cart:
+    These are the items currently in the user's cart (DO NOT recommend these):
     {{#each productsInCart}}
     - Name: {{name}}, Category: {{category}}
     {{/each}}
@@ -94,16 +94,24 @@ const recommendProductsFlow = ai.defineFlow(
   async (input) => {
     // Filter out products that are already in the cart from the list of all products.
     const productIdsInCart = new Set(input.productsInCart.map(p => p.id));
-    const availableProducts = input.allProducts.filter(p => !productIdsInCart.has(p.id));
+    const availableProducts = input.allProducts.filter(p => !productIdsInCart.has(p.id) && p.stock > 0);
 
     // If there are no available products to recommend, return an empty array.
     if (availableProducts.length === 0) {
       return { recommendations: [] };
     }
+    
+    // To optimize, we can send a smaller, more relevant list of products to the AI.
+    // For example, only products from the same categories as those in the cart, plus some best-sellers.
+    const categoriesInCart = new Set(input.productsInCart.map(p => p.category));
+    const relevantProducts = availableProducts.filter(p => categoriesInCart.has(p.category));
+    
+    // If we have enough relevant products, use them. Otherwise, use all available products.
+    const productListForPrompt = relevantProducts.length >= 3 ? relevantProducts : availableProducts;
 
     const { output } = await recommendationPrompt({
         ...input,
-        allProducts: availableProducts
+        allProducts: productListForPrompt
     });
     return output!;
   }

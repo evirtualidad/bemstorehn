@@ -80,6 +80,7 @@ export default function Dashboard() {
 
   const dashboardData = React.useMemo(() => {
     const { from, to } = date || {};
+    // If no date is selected, we show all-time data.
     const startDate = from ? startOfDay(from) : new Date(0);
     const endDate = to ? endOfDay(to) : new Date();
 
@@ -90,8 +91,10 @@ export default function Dashboard() {
 
     const totalRevenue = filteredOrders.reduce((acc, order) => acc + order.total, 0);
     const totalOrders = filteredOrders.length;
+    
+    // These are not time-filtered as they represent current state
     const activeProducts = products.filter((p) => p.stock > 0).length;
-    const totalCustomers = customers.length; // This is not time-filtered
+    const totalCustomers = customers.length; 
 
     // --- Chart Data Calculations ---
 
