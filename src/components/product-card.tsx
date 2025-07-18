@@ -56,8 +56,7 @@ export function ProductCard({
             className="w-full h-auto object-cover aspect-square"
             data-ai-hint={product.aiHint}
           />
-          <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
-            {isDiscounted && <Badge variant="offer">Oferta</Badge>}
+          <div className="absolute top-3 left-3 flex flex-col gap-2 items-start">
             <Badge 
               className={cn(
                 "w-fit",
@@ -67,6 +66,9 @@ export function ProductCard({
             >
               {stockStatus}
             </Badge>
+          </div>
+          <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+            {isDiscounted && <Badge variant="offer">Oferta</Badge>}
           </div>
         </CardHeader>
         <CardContent className="p-4 flex-grow flex flex-col">
@@ -85,6 +87,14 @@ export function ProductCard({
                         {formatCurrency(product.originalPrice!, currency.code)}
                     </p>
                 )}
+            </div>
+            <div className={cn(
+                "text-xs font-medium mt-1",
+                 product.stock > 10 ? "text-green-600" :
+                 product.stock > 0 ? "text-amber-600" :
+                 "text-destructive"
+            )}>
+              Stock: {product.stock}
             </div>
           </div>
           <Button 
