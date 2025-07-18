@@ -852,8 +852,8 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, isInDialog, onOp
 }
 
 function PosMobileCartButton() {
-    const { totalWithShipping, items } = usePosCart();
     const { currency } = useCurrencyStore();
+    const { totalWithShipping, items } = usePosCart();
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   
     return (
@@ -876,7 +876,7 @@ export default function PosPage() {
   const { setShippingCost, clearCart, items: cartItems, totalWithShipping } = usePosCart();
   const { products, fetchProducts, isLoading: isLoadingProducts, decreaseStock } = useProductsStore();
   const { addOrderToState } = useOrdersStore();
-  const { fetchCustomers, isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
+  const { customers, fetchCustomers, isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
   const { toast } = useToast();
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
