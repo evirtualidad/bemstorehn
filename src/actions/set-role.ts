@@ -1,16 +1,18 @@
 
 'use server';
 
-import 'dotenv/config';
-import { getAuth } from 'firebase-admin/auth';
-import { initFirebaseAdmin } from '@/lib/firebase-admin';
+import { admin } from '@/lib/firebase-admin';
 
 type Role = 'admin' | 'cashier';
 
 export async function setRole(userId: string, role: Role): Promise<{ success: boolean, error?: string }> {
+  if (!admin.apps.length) {
+    const errorMessage = "Firebase Admin SDK no está inicializado. Revisa las variables de entorno del servidor.";
+    console.error(errorMessage);
+    return { success: false, error: errorMessage };
+  }
   try {
-    await initFirebaseAdmin();
-    const auth = getAuth();
+    const auth = admin.auth();
     
     // Set custom user claims
     await auth.setCustomUserClaims(userId, { role });
@@ -19,6 +21,10 @@ export async function setRole(userId: string, role: Role): Promise<{ success: bo
     return { success: true };
   } catch (error: any) {
     console.error(`Error setting role for user ${userId}:`, error);
-    return { success: false, error: error.message || 'An unexpected error occurred.' };
+    let errorMessage = error.message || 'An unexpected error occurred.';
+    if (error.code === 'auth/insufficient-permission' || error.code === 'permission-denied') {
+        errorMessage = 'Permisos insuficientes para establecer roles. Revisa los roles IAM de tu cuenta de servicio.';
+    }
+    return { success: false, error: errorMessage };
   }
 }

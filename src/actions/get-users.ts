@@ -1,9 +1,7 @@
 
 'use server';
 
-import 'dotenv/config';
-import { getAuth } from 'firebase-admin/auth';
-import { initFirebaseAdmin } from '@/lib/firebase-admin';
+import { admin } from '@/lib/firebase-admin';
 
 export interface UserWithRole {
     uid: string;
@@ -20,9 +18,14 @@ export interface UserWithRole {
 
 
 export async function getUsers(): Promise<{ users: UserWithRole[], error?: string }> {
+  if (!admin.apps.length) {
+    const errorMessage = "Firebase Admin SDK no está inicializado. Revisa las variables de entorno del servidor.";
+    console.error(errorMessage);
+    return { users: [], error: errorMessage };
+  }
+
   try {
-    await initFirebaseAdmin();
-    const auth = getAuth();
+    const auth = admin.auth();
     const userRecords = await auth.listUsers();
     
     const users = userRecords.users.map(user => ({
@@ -39,8 +42,8 @@ export async function getUsers(): Promise<{ users: UserWithRole[], error?: strin
   } catch (error: any) {
     console.error("Error fetching users from Firebase Admin:", error);
     let errorMessage = 'An unexpected error occurred.';
-    if (error.code === 'auth/insufficient-permission') {
-        errorMessage = 'Insufficient permissions. Check service account roles.';
+    if (error.code === 'auth/insufficient-permission' || error.code === 'permission-denied') {
+        errorMessage = 'Permisos insuficientes. Revisa los roles IAM de tu cuenta de servicio.';
     } else if (error.message) {
         errorMessage = error.message;
     }
