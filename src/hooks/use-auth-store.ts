@@ -2,13 +2,15 @@
 'use client';
 
 import { create } from 'zustand';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
   type User,
 } from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 export type UserRole = 'admin' | 'cashier';
 
@@ -18,7 +20,7 @@ type AuthState = {
   loading: boolean;
   login: (email: string, password:string) => Promise<string | null>;
   logout: () => Promise<void>;
-  _setUser: (user: User | null) => Promise<void>;
+  _setUserAndRole: (user: User | null) => Promise<void>;
 };
 
 // This function listens to Firebase Auth state changes and updates the store
@@ -28,9 +30,13 @@ const startAuthListener = () => {
     if (authUnsubscribe) authUnsubscribe(); // Prevent multiple listeners
     
     authUnsubscribe = onAuthStateChanged(auth, async (user) => {
-        await useAuthStore.getState()._setUser(user);
+        await useAuthStore.getState()._setUserAndRole(user);
     });
 };
+
+const functions = getFunctions(auth.app);
+const setRoleCallable = httpsCallable(functions, 'setRole');
+
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
@@ -62,16 +68,49 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: null, role: null, loading: false });
   },
 
-  _setUser: async (user: User | null) => {
+  _setUserAndRole: async (user: User | null) => {
     if (user) {
       try {
-        // Force refresh the token to get the latest custom claims.
-        const idTokenResult = await user.getIdTokenResult(true); 
-        const role = (idTokenResult.claims.role as UserRole) || 'cashier'; // Default to 'cashier' if no role claim
-        set({ user, role, loading: false });
+        const userRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userRef);
+        let userRole: UserRole = 'cashier';
+
+        if (userDoc.exists()) {
+          // User exists, get their role
+          userRole = userDoc.data().role || 'cashier';
+        } else {
+          // User does not exist in Firestore, let's create them
+          console.log(`User ${user.email} not found in Firestore. Creating document...`);
+          
+          // --- Special Case for Admin Bootstrap ---
+          // If it's the main admin user, assign the admin role on first login.
+          if (user.email === 'admin@bemstore.hn') {
+            userRole = 'admin';
+          }
+          
+          const newUserDoc = {
+            uid: user.uid,
+            email: user.email,
+            role: userRole,
+            created_at: serverTimestamp(),
+          };
+          
+          await setDoc(userRef, newUserDoc);
+
+          // Also set the custom claim in Firebase Auth for security
+          try {
+            await setRoleCallable({ userId: user.uid, role: userRole });
+          } catch (claimError) {
+             console.error("Failed to set custom claim during bootstrap:", claimError);
+             // The UI will still work based on the Firestore role, but this indicates a functions issue.
+          }
+        }
+        
+        set({ user, role: userRole, loading: false });
+        
       } catch (error) {
-        console.error("Error getting user token/role:", error);
-        // Fallback for safety in case of token errors
+        console.error("Error getting user role from Firestore:", error);
+        // Fallback for safety in case of Firestore errors
         set({ user, role: 'cashier', loading: false });
       }
     } else {
