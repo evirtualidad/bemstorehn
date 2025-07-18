@@ -73,22 +73,26 @@ export function ProductsManager() {
   }
 
   const handleAddProduct = async (values: z.infer<typeof productFormSchema>) => {
-    let imageUrl = `https://placehold.co/400x400.png?text=${values.name.replace(/\s/g, '+')}`;
-    
-    if (values.image && typeof values.image !== 'string') {
-        const uploadedUrl = await uploadImage(values.image);
-        if (!uploadedUrl) return; // Stop if upload fails
-        imageUrl = uploadedUrl;
+    if (!values.image || typeof values.image === 'string') {
+        toast({
+            title: 'Error',
+            description: 'Se requiere un archivo de imagen para crear un producto.',
+            variant: 'destructive',
+        });
+        return;
     }
-    
+
+    const { image, ...restOfValues } = values;
+
     const newProductData = {
-      ...values,
-      image: imageUrl,
-      price: Number(values.price),
-      originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,
-      stock: Number(values.stock),
-      featured: values.featured,
+        ...restOfValues,
+        price: Number(values.price),
+        originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,
+        stock: Number(values.stock),
+        featured: values.featured,
+        imageFile: image,
     };
+    
     await addProduct(newProductData);
     setIsDialogOpen(false);
   };
@@ -97,10 +101,11 @@ export function ProductsManager() {
     if (!editingProduct) return;
     
     let imageUrl = editingProduct.image;
+    let imageFile: File | undefined = undefined;
+
     if (values.image && typeof values.image !== 'string') {
-        const uploadedUrl = await uploadImage(values.image);
-        if (!uploadedUrl) return; // Stop if upload fails
-        imageUrl = uploadedUrl;
+        imageFile = values.image;
+        // The upload and URL generation is handled within the updateProduct hook now
     } else if (typeof values.image === 'string') {
         imageUrl = values.image;
     }
@@ -108,7 +113,8 @@ export function ProductsManager() {
     await updateProduct({
       ...editingProduct,
       ...values,
-      image: imageUrl,
+      image: imageUrl, // Pass original image URL
+      imageFile: imageFile, // Pass new file if it exists
       price: Number(values.price),
       originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,
       stock: Number(values.stock),
