@@ -50,8 +50,9 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
   },
   
   addOrUpdateCustomer: async ({ phone, name, address }) => {
-    if ((!phone || phone.trim() === '') && name.trim().toLowerCase() === 'consumidor final') {
-        return undefined; // Do not create/update "Consumidor Final"
+    // Do not create/update "Consumidor Final" or customers without a phone number
+    if ((!phone || phone.trim() === '') && (name.trim().toLowerCase() === 'consumidor final' || name.trim() === '')) {
+        return undefined; 
     }
 
     let customerId: string | undefined = undefined;
@@ -61,7 +62,7 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
 
         if (existingCustomer) {
             existingCustomer.name = name;
-            existingCustomer.address = address || existingCustomer.address;
+            existingCustomer.address = address || existingCustomer.address; // Update address if provided
             customerId = existingCustomer.id;
         } else {
             const newCustomer: Customer = {

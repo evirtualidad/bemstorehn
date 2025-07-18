@@ -18,7 +18,6 @@ type CartState = {
   taxAmount: number;
   shippingCost: number; 
   totalWithShipping: number;
-  setItems: (items: PosCartItem[]) => void;
   addToCart: (product: Product) => boolean;
   removeFromCart: (productId: string) => void;
   increaseQuantity: (productId: string) => void;
@@ -45,11 +44,7 @@ export const usePosCart = create<CartState>()(
       taxAmount: 0,
       shippingCost: 0,
       totalWithShipping: 0,
-      setItems: (items) => {
-          const { shippingCost } = get();
-          const { total, subtotal, taxAmount, totalWithShipping } = calculateCartTotals(items, shippingCost);
-          set({ items, total, subtotal, taxAmount, totalWithShipping });
-      },
+      
       addToCart: (product) => {
         const { items, shippingCost } = get();
         const existingItem = items.find((item) => item.id === product.id);
@@ -131,19 +126,8 @@ export const usePosCart = create<CartState>()(
       },
     }),
     {
-      name: 'pos-cart-storage', // Different name from the customer cart
+      name: 'bms-pos-cart-v2', // NEW, CLEAN STORAGE KEY
       storage: createJSONStorage(() => localStorage),
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-            const { items, shippingCost } = state;
-            const { total, subtotal, taxAmount, totalWithShipping } = calculateCartTotals(items, shippingCost || 0);
-            state.total = total;
-            state.subtotal = subtotal;
-            state.taxAmount = taxAmount;
-            state.shippingCost = shippingCost || 0;
-            state.totalWithShipping = totalWithShipping;
-        }
-      }
     }
   )
 );

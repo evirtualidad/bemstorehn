@@ -1025,20 +1025,24 @@ export default function PosPage() {
     
     setIsSubmitting(true);
     
+    // Step 1: Handle Customer
     const customerId = await addOrUpdateCustomer({
         name: values.name || 'Consumidor Final',
         phone: values.phone || 'N/A',
         address: values.address,
     });
     
+    // Step 2: Handle purchase update for the customer (locally)
     if (customerId) {
         addPurchaseToCustomer(customerId, totalWithShipping);
     }
     
+    // Step 3: Handle Stock
     for (const item of cart) {
         await decreaseStock(item.id, item.quantity);
     }
 
+    // Step 4: Create Order Object
     const newOrderData: NewOrderData = {
         user_id: session?.user.id || null,
         customer_id: customerId || null,
@@ -1070,8 +1074,10 @@ export default function PosPage() {
         delivery_method: values.deliveryMethod,
     };
     
+    // Step 5: Add order to state
     addOrderToState(newOrderData);
 
+    // Step 6: Finalize
     setTimeout(() => {
         toast({
           title: '¡Pedido Creado!',
