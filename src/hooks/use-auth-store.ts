@@ -2,122 +2,88 @@
 'use client';
 
 import { create } from 'zustand';
-import { auth, db } from '@/lib/firebase';
-import {
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut,
-  type User,
-} from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import type { UserDoc } from './use-users-store';
+import { useUsersStore } from './use-users-store';
 
-export type UserRole = 'admin' | 'cashier';
+export type UserRole = 'admin' | 'cajero';
+
+// This is a simplified user object for the auth store
+// as we don't need the full Firebase User object anymore.
+export interface LocalUser {
+  uid: string;
+  email: string;
+}
 
 type AuthState = {
-  user: User | null;
+  user: LocalUser | null;
   role: UserRole | null;
   loading: boolean;
-  login: (email: string, password:string) => Promise<string | null>;
+  login: (email: string, password: string) => Promise<string | null>;
   logout: () => Promise<void>;
-  _setUserAndRole: (user: User | null) => Promise<void>;
+  initialize: () => void;
 };
 
-// This function listens to Firebase Auth state changes and updates the store
-let authUnsubscribe: (() => void) | null = null;
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      role: null,
+      loading: true, // Start as loading until we check localStorage
+      
+      login: async (email, password) => {
+        set({ loading: true });
+        // Use a timeout to simulate network latency
+        await new Promise(res => setTimeout(res, 300));
 
-const startAuthListener = () => {
-    if (authUnsubscribe) authUnsubscribe(); // Prevent multiple listeners
-    
-    authUnsubscribe = onAuthStateChanged(auth, async (user) => {
-        await useAuthStore.getState()._setUserAndRole(user);
-    });
-};
+        // Get users from our local user store
+        const { users } = useUsersStore.getState();
+        const foundUser = users.find(u => u.email === email && u.password === password);
 
-const functions = getFunctions(auth.app);
-const setRoleCallable = httpsCallable(functions, 'setRole');
-
-
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  role: null,
-  loading: true, // Start as loading until auth state is confirmed
-  
-  login: async (email, password) => {
-    set({ loading: true });
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // The onAuthStateChanged listener will handle setting the user state
-      return null;
-    } catch (error: any) {
-      console.error("Firebase Login Error:", error);
-      set({ loading: false });
-      switch (error.code) {
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-        case 'auth/invalid-credential':
-          return 'Correo o contraseña incorrectos.';
-        default:
-          return 'Ocurrió un error inesperado al iniciar sesión.';
-      }
-    }
-  },
-  
-  logout: async () => {
-    await signOut(auth);
-    set({ user: null, role: null, loading: false });
-  },
-
-  _setUserAndRole: async (user: User | null) => {
-    if (user) {
-      try {
-        const userRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userRef);
-        let userRole: UserRole = 'cashier';
-
-        if (userDoc.exists()) {
-          // User exists, get their role
-          userRole = userDoc.data().role || 'cashier';
-        } else {
-          // User does not exist in Firestore, let's create them
-          console.log(`User ${user.email} not found in Firestore. Creating document...`);
-          
-          // --- Special Case for Admin Bootstrap ---
-          // If it's the main admin user, assign the admin role on first login.
-          if (user.email === 'admin@bemstore.hn') {
-            userRole = 'admin';
-          }
-          
-          const newUserDoc = {
-            uid: user.uid,
-            email: user.email,
-            role: userRole,
-            created_at: serverTimestamp(),
+        if (foundUser) {
+          const localUser: LocalUser = {
+            uid: foundUser.uid,
+            email: foundUser.email,
           };
-          
-          await setDoc(userRef, newUserDoc);
-
-          // Also set the custom claim in Firebase Auth for security
-          try {
-            await setRoleCallable({ userId: user.uid, role: userRole });
-          } catch (claimError) {
-             console.error("Failed to set custom claim during bootstrap:", claimError);
-             // The UI will still work based on the Firestore role, but this indicates a functions issue.
-          }
+          set({ user: localUser, role: foundUser.role, loading: false });
+          return null; // Success
+        } else {
+          set({ loading: false });
+          return 'Correo o contraseña incorrectos.'; // Failure
         }
-        
-        set({ user, role: userRole, loading: false });
-        
-      } catch (error) {
-        console.error("Error getting user role from Firestore:", error);
-        // Fallback for safety in case of Firestore errors
-        set({ user, role: 'cashier', loading: false });
-      }
-    } else {
-      set({ user: null, role: null, loading: false });
-    }
-  },
-}));
+      },
+      
+      logout: async () => {
+        set({ user: null, role: null, loading: false });
+      },
 
-// Initialize listener
-startAuthListener();
+      // This function runs on initial load to check if a user is already logged in
+      initialize: () => {
+        const state = get();
+        // If there's a user in the persisted state, we're not loading anymore.
+        // If not, we're also not loading. This effectively just turns off the
+        // initial loading flag.
+        if (state.user) {
+          set({ loading: false });
+        } else {
+          set({ loading: false });
+        }
+      },
+    }),
+    {
+      name: 'auth-storage', // name of the item in the storage (must be unique)
+      storage: createJSONStorage(() => localStorage),
+      // Only persist user and role. `loading` should be transient.
+      partialize: (state) => ({ user: state.user, role: state.role }),
+      // Custom onRehydrate logic to run after loading from storage
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.initialize();
+        }
+      }
+    }
+  )
+);
+
+// Initialize the store on load
+useAuthStore.getState().initialize();

@@ -10,7 +10,8 @@ import { toast } from './use-toast';
 export interface UserDoc {
     uid: string;
     email: string;
-    role: 'admin' | 'cashier';
+    password?: string; // Should only exist transiently, not stored long-term
+    role: 'admin' | 'cajero';
     created_at: {
         seconds: number;
         nanoseconds: number;
@@ -21,13 +22,15 @@ const initialUsers: UserDoc[] = [
     {
         uid: 'admin_user_id_simulated',
         email: 'admin@bemstore.hn',
+        password: 'password',
         role: 'admin',
         created_at: { seconds: Math.floor(new Date().getTime() / 1000) - 86400, nanoseconds: 0 }
     },
     {
         uid: 'cashier_user_id_simulated',
         email: 'cashier@bemstore.hn',
-        role: 'cashier',
+        password: 'password',
+        role: 'cajero',
         created_at: { seconds: Math.floor(new Date().getTime() / 1000) - 172800, nanoseconds: 0 }
     }
 ];
@@ -35,8 +38,8 @@ const initialUsers: UserDoc[] = [
 type UsersState = {
   users: UserDoc[];
   isLoading: boolean;
-  addUser: (userData: Omit<UserDoc, 'uid' | 'created_at' | 'password'>) => void;
-  updateUserRole: (uid: string, newRole: 'admin' | 'cashier') => void;
+  addUser: (userData: Omit<UserDoc, 'uid' | 'created_at'>) => void;
+  updateUserRole: (uid: string, newRole: 'admin' | 'cajero') => void;
   deleteUser: (uid: string) => void;
 };
 
@@ -50,6 +53,7 @@ export const useUsersStore = create<UsersState>()(
         const newUser: UserDoc = {
           uid: uuidv4(),
           email: userData.email,
+          password: userData.password,
           role: userData.role,
           created_at: {
             seconds: Math.floor(new Date().getTime() / 1000),
@@ -84,6 +88,14 @@ export const useUsersStore = create<UsersState>()(
     {
       name: 'users-storage',
       storage: createJSONStorage(() => localStorage),
+      // Don't persist passwords in local storage
+      partialize: (state) => ({
+        ...state,
+        users: state.users.map(user => {
+          const { password, ...rest } = user;
+          return rest;
+        })
+      }),
     }
   )
 );

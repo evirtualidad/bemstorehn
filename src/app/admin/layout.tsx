@@ -96,13 +96,13 @@ function AdminLayoutContent({
   };
 
   const allNavItems = [
-    { href: '/admin/dashboard', icon: Activity, label: 'Dashboard', roles: ['admin', 'cashier'] },
-    { href: '/admin/pos', icon: Tablet, label: 'POS', roles: ['admin', 'cashier'] },
-    { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: pendingApprovalCount > 0 ? pendingApprovalCount : null, roles: ['admin', 'cashier'] },
+    { href: '/admin/dashboard', icon: Activity, label: 'Dashboard', roles: ['admin', 'cajero'] },
+    { href: '/admin/pos', icon: Tablet, label: 'POS', roles: ['admin', 'cajero'] },
+    { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: pendingApprovalCount > 0 ? pendingApprovalCount : null, roles: ['admin', 'cajero'] },
     { href: '/admin/inventory', icon: Archive, label: 'Inventario', roles: ['admin'] },
     { href: '/admin/finance', icon: Coins, label: 'Finanzas', roles: ['admin'] },
-    { href: '/admin/customers', icon: Users, label: 'Clientes', roles: ['admin', 'cashier'] },
-    { href: '/admin/users', icon: CircleUser, label: 'Usuarios', roles: ['admin', 'cashier'] },
+    { href: '/admin/customers', icon: Users, label: 'Clientes', roles: ['admin', 'cajero'] },
+    { href: '/admin/users', icon: CircleUser, label: 'Usuarios', roles: ['admin'] },
     { href: '/admin/settings', icon: Settings, label: 'Ajustes', roles: ['admin'] },
   ];
 

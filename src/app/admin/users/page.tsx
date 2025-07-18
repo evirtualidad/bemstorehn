@@ -80,7 +80,7 @@ import { useUsersStore, type UserDoc } from '@/hooks/use-users-store';
 const userFormSchema = z.object({
   email: z.string().email({ message: 'Por favor, ingresa un correo válido.' }),
   password: z.string().min(6, { message: 'La contraseña debe tener al menos 6 caracteres.' }),
-  role: z.enum(['admin', 'cashier'], { required_error: 'Debes seleccionar un rol.' }),
+  role: z.enum(['admin', 'cajero'], { required_error: 'Debes seleccionar un rol.' }),
 });
 
 function CreateUserDialog() {
@@ -94,7 +94,7 @@ function CreateUserDialog() {
     defaultValues: {
       email: '',
       password: '',
-      role: 'cashier',
+      role: 'cajero',
     },
   });
 
@@ -106,8 +106,8 @@ function CreateUserDialog() {
 
     addUser({
         email: values.email,
+        password: values.password,
         role: values.role,
-        // password is not stored
     });
 
     setIsSubmitting(false);
@@ -172,7 +172,7 @@ function CreateUserDialog() {
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="cashier">Cajero</SelectItem>
+                      <SelectItem value="cajero">Cajero</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -199,12 +199,12 @@ export default function UsersPage() {
   const { toast } = useToast();
   const { role: adminRole, user: currentUser } = useAuthStore();
 
-  const handleRoleChange = async (uid: string, newRole: 'admin' | 'cashier') => {
+  const handleRoleChange = async (uid: string, newRole: 'admin' | 'cajero') => {
     updateUserRole(uid, newRole);
     toast({ title: '¡Rol actualizado!', description: `El rol del usuario ha sido cambiado a ${newRole}.`});
   };
 
-  const isCurrentUser = (uid: string) => currentUser?.uid === uid || (currentUser?.email === 'admin@bemstore.hn' && uid === 'admin_user_id_simulated');
+  const isCurrentUser = (uid: string) => currentUser?.uid === uid;
 
   if (isLoading || !adminRole) {
     return (
@@ -253,8 +253,8 @@ export default function UsersPage() {
                   </TableCell>
                   <TableCell>
                     <Select
-                        value={user.role || 'cashier'}
-                        onValueChange={(newRole: 'admin' | 'cashier') => handleRoleChange(user.uid, newRole)}
+                        value={user.role || 'cajero'}
+                        onValueChange={(newRole: 'admin' | 'cajero') => handleRoleChange(user.uid, newRole)}
                         disabled={adminRole !== 'admin' || isCurrentUser(user.uid)}
                     >
                         <SelectTrigger className="w-[120px]">
@@ -264,7 +264,7 @@ export default function UsersPage() {
                             <SelectItem value="admin">
                                 <Badge variant="destructive">Admin</Badge>
                             </SelectItem>
-                            <SelectItem value="cashier">
+                            <SelectItem value="cajero">
                                 <Badge variant="secondary">Cajero</Badge>
                             </SelectItem>
                         </SelectContent>
