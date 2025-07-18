@@ -39,6 +39,7 @@ import { paymentMethods } from '@/lib/payment-methods.tsx';
 import { usePosCart } from '@/hooks/use-pos-cart';
 import { v4 as uuidv4 } from 'uuid';
 import { ProductGrid } from '@/components/product-grid';
+import { useAuthStore } from '@/hooks/use-auth-store';
 
 type SelectedFilter = { type: 'category' | 'offer'; value: string } | null;
 
@@ -851,10 +852,7 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, isInDialog, onOp
 }
 
 function PosMobileCartButton() {
-    const { totalWithShipping, items } = usePosCart(state => ({ 
-        totalWithShipping: state.totalWithShipping,
-        items: state.items
-    }));
+    const { totalWithShipping, items } = usePosCart();
     const { currency } = useCurrencyStore();
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   
@@ -875,11 +873,7 @@ function PosMobileCartButton() {
 }
 
 export default function PosPage() {
-  const setShippingCost = usePosCart(state => state.setShippingCost);
-  const clearCart = usePosCart(state => state.clearCart);
-  const cartItems = usePosCart(state => state.items);
-  const totalWithShipping = usePosCart(state => state.totalWithShipping);
-  
+  const { setShippingCost, clearCart, items: cartItems, totalWithShipping } = usePosCart();
   const { products, fetchProducts, isLoading: isLoadingProducts, decreaseStock } = useProductsStore();
   const { addOrderToState } = useOrdersStore();
   const { fetchCustomers, isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
@@ -891,6 +885,7 @@ export default function PosPage() {
   const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = React.useState(false);
   const { session } = useAuthStore();
+  const { currency } = useCurrencyStore();
 
   React.useEffect(() => {
     fetchProducts();
