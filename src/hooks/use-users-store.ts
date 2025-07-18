@@ -88,14 +88,6 @@ export const useUsersStore = create<UsersState>()(
     {
       name: 'users-storage',
       storage: createJSONStorage(() => localStorage),
-      // Don't persist passwords in local storage
-      partialize: (state) => ({
-        ...state,
-        users: state.users.map(user => {
-          const { password, ...rest } = user;
-          return rest;
-        })
-      }),
     }
   )
 );
