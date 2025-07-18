@@ -8,8 +8,6 @@ import { useUsersStore } from './use-users-store';
 
 export type UserRole = 'admin' | 'cajero';
 
-// This is a simplified user object for the auth store
-// as we don't need the full Firebase User object anymore.
 export interface LocalUser {
   uid: string;
   email: string;
@@ -21,7 +19,7 @@ type AuthState = {
   loading: boolean;
   login: (email: string, password: string) => Promise<string | null>;
   logout: () => Promise<void>;
-  initializeAuth: () => void;
+  _setLoading: (loading: boolean) => void;
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -29,15 +27,18 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       role: null,
-      loading: true, // Start as loading until we check localStorage
+      loading: true, 
       
+      _setLoading: (loading: boolean) => set({ loading }),
+
       login: async (email, password) => {
         set({ loading: true });
+        
         // Use a timeout to simulate network latency
-        await new Promise(res => setTimeout(res, 300));
+        await new Promise(res => setTimeout(res, 250));
 
         // Get the most up-to-date users list directly from the other store
-        const { users } = useUsersStore.getState();
+        const users = useUsersStore.getState().users;
         const foundUser = users.find(u => u.email === email && u.password === password);
 
         if (foundUser) {
@@ -56,34 +57,19 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         set({ user: null, role: null, loading: false });
       },
-
-      // This function runs on initial load to check if a user is already logged in
-      initializeAuth: () => {
-        const state = get();
-        // If there's a user in the persisted state, we're not loading anymore.
-        // If not, we're also not loading. This effectively just turns off the
-        // initial loading flag.
-        if (state.user) {
-          set({ loading: false });
-        } else {
-          set({ loading: false });
-        }
-      },
     }),
     {
-      name: 'auth-storage', // name of the item in the storage (must be unique)
+      name: 'auth-storage',
       storage: createJSONStorage(() => localStorage),
-      // Only persist user and role. `loading` should be transient.
       partialize: (state) => ({ user: state.user, role: state.role }),
-      // Custom onRehydrate logic to run after loading from storage
+      // This is called when the store is hydrated from localStorage
       onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.initializeAuth();
-        }
+        // Once hydration is done, we are no longer in a loading state.
+        state?._setLoading(false);
       }
     }
   )
 );
 
-// Initialize the store on load
-useAuthStore.getState().initializeAuth();
+// This ensures the loading state is correctly set on initial load, even if there's nothing in storage.
+useAuthStore.getState()._setLoading(false);
