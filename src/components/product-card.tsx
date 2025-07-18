@@ -43,17 +43,17 @@ export function ProductCard({
 
   const cardContent = (
       <Card className={cn(
-          "flex flex-col overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 h-full", 
+          "flex flex-col overflow-hidden h-full", 
           isDiscounted && "border-offer",
           className
       )}>
-        <CardHeader className="p-0 border-b relative">
+        <CardHeader className="p-0 border-b relative overflow-hidden">
           <Image
             src={product.image || 'https://placehold.co/400x400.png'}
             alt={product.name}
             width={400}
             height={400}
-            className="w-full h-auto object-cover aspect-square"
+            className="w-full h-auto object-cover aspect-square transition-transform duration-300 ease-in-out group-hover:scale-105"
             data-ai-hint={product.aiHint}
           />
           <div className="absolute top-3 left-3 flex flex-col gap-2 items-start">
