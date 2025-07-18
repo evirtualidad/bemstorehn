@@ -872,6 +872,7 @@ export default function PosPage() {
   const { addOrderToState } = useOrdersStore();
   const { fetchCustomers, isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
+  const { currency } = useCurrencyStore();
   const { toast } = useToast();
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -950,23 +951,10 @@ export default function PosPage() {
     setShippingCost(cost);
   };
 
-  const handleProductSearchSelect = (product: Product): void => {
-    handleProductClick(product);
+  const handleProductClick = (product: Product): void => {
+    addToCart(product);
   };
   
-  const handleProductClick = (product: Product) => {
-    const wasAdded = addToCart(product);
-    if (wasAdded) {
-      setTimeout(() => {
-        toast({
-          title: 'Producto añadido',
-          description: `${product.name} añadido al pedido.`,
-          duration: 3000,
-        });
-      }, 0);
-    }
-  };
-
   const handleCustomerSelect = (customer: Customer | null) => {
     form.setValue('address', undefined);
     setShippingCost(0);
@@ -1092,7 +1080,7 @@ export default function PosPage() {
             <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20 flex-shrink-0">
                 <h1 className="text-xl font-bold flex-1 whitespace-nowrap">POS</h1>
                  <div className="w-full sm:w-auto sm:flex-initial">
-                    <ProductSearch onProductSelect={handleProductSearchSelect} />
+                    <ProductSearch onProductSelect={handleProductClick} />
                  </div>
             </header>
             <main className="flex-1 flex flex-col">
@@ -1198,5 +1186,3 @@ export default function PosPage() {
     </div>
   );
 }
-
-    
