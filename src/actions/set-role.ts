@@ -1,31 +1,17 @@
 
 'use server';
 
-import 'dotenv/config';
-import * as admin from 'firebase-admin';
-
-if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-    });
-  } catch (error: any) {
-    console.error('Error initializing Firebase Admin SDK in set-role:', error.message);
-  }
-}
+import { admin } from '@/lib/firebase-admin';
 
 type Role = 'admin' | 'cashier';
 
 export async function setRole(userId: string, role: Role): Promise<{ success: boolean, error?: string }> {
-  if (!admin.apps.length) {
+  if (!admin) {
     const errorMessage = "Firebase Admin SDK no está inicializado. Revisa las variables de entorno del servidor.";
     console.error(errorMessage);
     return { success: false, error: errorMessage };
   }
+
   try {
     const auth = admin.auth();
     

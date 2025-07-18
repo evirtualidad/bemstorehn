@@ -1,22 +1,8 @@
 
 'use server';
 
-import 'dotenv/config';
-import * as admin from 'firebase-admin';
-
-if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-    });
-  } catch (error: any) {
-    console.error('Error initializing Firebase Admin SDK in get-users:', error.message);
-  }
-}
+import { admin } from '@/lib/firebase-admin';
+import type { UserRecord } from 'firebase-admin/auth';
 
 export interface UserWithRole {
     uid: string;
@@ -32,7 +18,7 @@ export interface UserWithRole {
 }
 
 export async function getUsers(): Promise<{ users: UserWithRole[], error?: string }> {
-  if (!admin.apps.length) {
+  if (!admin) {
     const errorMessage = "Firebase Admin SDK no está inicializado. Revisa las variables de entorno del servidor.";
     console.error(errorMessage);
     return { users: [], error: errorMessage };
@@ -42,7 +28,7 @@ export async function getUsers(): Promise<{ users: UserWithRole[], error?: strin
     const auth = admin.auth();
     const userRecords = await auth.listUsers();
     
-    const users = userRecords.users.map(user => ({
+    const users = userRecords.users.map((user: UserRecord) => ({
       uid: user.uid,
       email: user.email,
       metadata: {
@@ -53,8 +39,7 @@ export async function getUsers(): Promise<{ users: UserWithRole[], error?: strin
     }));
     
     return { users };
-  } catch (error: any)
-{
+  } catch (error: any) {
     console.error("Error fetching users from Firebase Admin:", error);
     let errorMessage = 'An unexpected error occurred.';
     if (error.code === 'auth/insufficient-permission' || error.code === 'permission-denied') {
