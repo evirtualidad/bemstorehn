@@ -77,7 +77,7 @@ export function ProductsManager() {
     const newProductData = {
         ...restOfValues,
         price: Number(values.price),
-        originalPrice: values.originalPrice ? Number(values.originalPrice) : null,
+        originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,
         stock: Number(values.stock),
         featured: values.featured,
         aiHint: values.aiHint,
@@ -112,7 +112,7 @@ export function ProductsManager() {
       image: imageUrl, // Pass original or placeholder image URL
       imageFile: imageFile, // Pass new file if it exists
       price: Number(values.price),
-      originalPrice: values.originalPrice ? Number(values.originalPrice) : null,
+      originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,
       stock: Number(values.stock),
       featured: values.featured,
     } as any);

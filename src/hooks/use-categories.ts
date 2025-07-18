@@ -4,8 +4,7 @@
 import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface Category {
   id: string; // Firestore document ID
@@ -13,11 +12,15 @@ export interface Category {
   label: string; // The display label
 }
 
+const initialCategories: Category[] = [
+    { id: 'cat_1', name: 'skincare', label: 'Cuidado de la Piel' },
+    { id: 'cat_2', name: 'makeup', label: 'Maquillaje' },
+    { id: 'cat_3', name: 'haircare', label: 'Cuidado del Cabello' },
+];
+
 type CategoriesState = {
   categories: Category[];
   isLoading: boolean;
-  error: string | null;
-  fetchCategories: () => () => void;
   addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
   updateCategory: (category: Category) => Promise<void>;
   deleteCategory: (categoryId: string) => Promise<void>;
@@ -27,24 +30,9 @@ type CategoriesState = {
 
 export const useCategoriesStore = create<CategoriesState>()(
     (set, get) => ({
-      categories: [],
-      isLoading: true,
-      error: null,
+      categories: initialCategories,
+      isLoading: false,
       
-      fetchCategories: () => {
-        set({ isLoading: true });
-        const q = query(collection(db, 'categories'), orderBy('label'));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
-            set({ categories, isLoading: false, error: null });
-        }, (error) => {
-            console.error("Firebase Error: ", error);
-            set({ error: "No se pudieron cargar las categorías.", isLoading: false });
-            toast({ title: 'Error de Red', description: 'No se pudieron cargar las categorías.', variant: 'destructive'});
-        });
-        return unsubscribe;
-      },
-
       getCategoryById: (categoryId: string) => {
         return get().categories.find((c) => c.id === categoryId);
       },
@@ -54,23 +42,28 @@ export const useCategoriesStore = create<CategoriesState>()(
       },
 
       addCategory: async (categoryData) => {
-        await addDoc(collection(db, 'categories'), { ...categoryData, created_at: serverTimestamp() });
+        const newCategory = { ...categoryData, id: uuidv4() };
+        set(produce(state => {
+            state.categories.push(newCategory);
+        }));
         toast({ title: 'Categoría añadida' });
       },
 
       updateCategory: async (category) => {
-        const { id, ...data } = category;
-        const docRef = doc(db, 'categories', id);
-        await updateDoc(docRef, data);
+        set(produce(state => {
+            const index = state.categories.findIndex(c => c.id === category.id);
+            if (index !== -1) {
+                state.categories[index] = category;
+            }
+        }));
         toast({ title: 'Categoría actualizada' });
       },
 
       deleteCategory: async (categoryId: string) => {
-        await deleteDoc(doc(db, 'categories', categoryId));
+        set(produce(state => {
+            state.categories = state.categories.filter(c => c.id !== categoryId);
+        }));
         toast({ title: 'Categoría eliminada' });
       },
     })
 );
-
-// Initialize the store by fetching data
-useCategoriesStore.getState().fetchCategories();

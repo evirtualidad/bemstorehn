@@ -4,12 +4,12 @@
 import { create } from 'zustand';
 import type { Address } from './use-orders';
 import { produce } from 'immer';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, writeBatch, serverTimestamp, increment } from 'firebase/firestore';
+import { v4 as uuidv4 } from 'uuid';
+import { subDays } from 'date-fns';
 
 export interface Customer {
-  id: string; // Firestore document ID
-  created_at: any; // Firestore timestamp
+  id: string;
+  created_at: any;
   name: string;
   phone: string;
   address: Address | null;
@@ -17,83 +17,99 @@ export interface Customer {
   order_count: number;
 }
 
+const initialCustomers: Customer[] = [
+    {
+        id: 'cust_1',
+        name: 'Ana García',
+        phone: '9988-7766',
+        address: { department: 'Francisco Morazán', municipality: 'Distrito Central', colony: 'Col. Kennedy', exactAddress: 'Bloque 5, Casa 20' },
+        total_spent: 1520.50,
+        order_count: 3,
+        created_at: subDays(new Date(), 30).toISOString(),
+    },
+    {
+        id: 'cust_2',
+        name: 'Carlos Rivera',
+        phone: '3322-1100',
+        address: { department: 'Cortés', municipality: 'San Pedro Sula', colony: 'Res. Los Alpes', exactAddress: 'Circuito 5, Casa 12' },
+        total_spent: 890.00,
+        order_count: 2,
+        created_at: subDays(new Date(), 60).toISOString(),
+    },
+     {
+        id: 'cust_3',
+        name: 'Sofía Martínez',
+        phone: '8787-9090',
+        address: null,
+        total_spent: 350.00,
+        order_count: 1,
+        created_at: subDays(new Date(), 15).toISOString(),
+    }
+];
+
 type CustomersState = {
   customers: Customer[];
   isLoading: boolean;
-  fetchCustomers: () => () => void;
   addOrUpdateCustomer: (
     data: {
       phone?: string;
       name: string;
       address?: Address | null;
     }
-  ) => Promise<string | null>; // Returns customer Firestore ID or null
+  ) => Promise<string | null>; // Returns customer ID or null
   addPurchaseToCustomer: (customerId: string, amount: number) => Promise<void>;
   getCustomerById: (id: string) => Customer | undefined;
 };
 
 export const useCustomersStore = create<CustomersState>()(
     (set, get) => ({
-      customers: [],
-      isLoading: true,
-
-      fetchCustomers: () => {
-        set({ isLoading: true });
-        const q = query(collection(db, 'customers'), where('order_count', '>', 0));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const customers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer));
-            set({ customers, isLoading: false });
-        }, (error) => {
-            console.error("Firebase Error fetching customers: ", error);
-            set({ isLoading: false });
-        });
-        return unsubscribe;
-      },
+      customers: initialCustomers,
+      isLoading: false,
 
       addOrUpdateCustomer: async ({ phone, name, address }) => {
-        // Do not create a record for "Consumidor Final" without a phone number
         if ((!phone || phone.trim() === '') && (name.trim().toLowerCase() === 'consumidor final' || name.trim() === '')) {
             return null; 
         }
 
-        const customersRef = collection(db, "customers");
+        const existingCustomer = phone ? get().customers.find(c => c.phone === phone) : null;
         
-        // Find existing customer by phone number if provided
-        if (phone && phone.trim() !== '') {
-            const q = query(customersRef, where("phone", "==", phone));
-            const querySnapshot = await getDocs(q);
-
-            if (!querySnapshot.empty) {
-                // Update existing customer
-                const customerDoc = querySnapshot.docs[0];
-                await updateDoc(doc(db, 'customers', customerDoc.id), {
-                    name: name,
-                    ...(address && { address }),
-                });
-                return customerDoc.id;
-            }
+        if (existingCustomer) {
+            set(produce(state => {
+                const customer = state.customers.find(c => c.id === existingCustomer.id);
+                if (customer) {
+                    customer.name = name;
+                    if (address) {
+                        customer.address = address;
+                    }
+                }
+            }));
+            return existingCustomer.id;
+        } else {
+            const newCustomer: Customer = {
+                id: uuidv4(),
+                name,
+                phone: phone || '',
+                address: address || null,
+                total_spent: 0,
+                order_count: 0,
+                created_at: new Date().toISOString(),
+            };
+            set(produce(state => {
+                state.customers.push(newCustomer);
+            }));
+            return newCustomer.id;
         }
-        
-        // If no customer found or no phone provided, create a new one
-        const newCustomerData = {
-            name,
-            phone: phone || '',
-            address: address || null,
-            total_spent: 0,
-            order_count: 0,
-            created_at: serverTimestamp(),
-        };
-        const docRef = await addDoc(customersRef, newCustomerData);
-        return docRef.id;
       },
       
       addPurchaseToCustomer: async (customerId, amount) => {
         if (!customerId) return;
-        const customerRef = doc(db, 'customers', customerId);
-        await updateDoc(customerRef, {
-            total_spent: increment(amount),
-            order_count: increment(1)
-        });
+        set(produce(state => {
+            const customer = state.customers.find(c => c.id === customerId);
+            if (customer) {
+                customer.total_spent += amount;
+                customer.order_count += 1;
+            }
+        }));
       },
 
       getCustomerById: (id) => {
@@ -101,6 +117,3 @@ export const useCustomersStore = create<CustomersState>()(
       },
     })
 );
-
-// Initialize store
-useCustomersStore.getState().fetchCustomers();
