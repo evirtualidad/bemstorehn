@@ -20,7 +20,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -30,16 +29,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { setRole } from '@/actions/set-role';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { useRouter } from 'next/navigation';
-import { getUsers, type UserWithRole } from '@/actions/get-users';
-import { createUser } from '@/actions/create-user';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Loader2, AlertTriangle } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -59,14 +55,39 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { auth, db } from '@/lib/firebase';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 
+
+// --- User Type Definition ---
+export interface UserWithRole {
+    uid: string;
+    email?: string;
+    metadata: {
+        creationTime?: string;
+        lastSignInTime?: string;
+    };
+    customClaims?: {
+        [key: string]: any;
+        role?: 'admin' | 'cashier';
+    };
+}
+
+// --- Firebase Functions Callables ---
+const functions = getFunctions(auth.app);
+const createUserCallable = httpsCallable(functions, 'createUser');
+const setRoleCallable = httpsCallable(functions, 'setRole');
+const listUsersCallable = httpsCallable(functions, 'listUsers');
+
+// --- Create User Dialog ---
 const userFormSchema = z.object({
   email: z.string().email({ message: 'Por favor, ingresa un correo válido.' }),
   password: z.string().min(6, { message: 'La contraseña debe tener al menos 6 caracteres.' }),
   role: z.enum(['admin', 'cashier'], { required_error: 'Debes seleccionar un rol.' }),
 });
 
-function CreateUserDialog({ onUserCreated, disabled }: { onUserCreated: () => void, disabled: boolean }) {
+function CreateUserDialog({ onUserCreated }: { onUserCreated: () => void }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const { toast } = useToast();
@@ -82,30 +103,34 @@ function CreateUserDialog({ onUserCreated, disabled }: { onUserCreated: () => vo
 
   const onSubmit = async (values: z.infer<typeof userFormSchema>) => {
     setIsSubmitting(true);
-    const result = await createUser(values.email, values.password, values.role);
-    setIsSubmitting(false);
-
-    if (result.success) {
-      toast({
-        title: '¡Usuario Creado!',
-        description: `El usuario ${values.email} ha sido creado exitosamente.`,
-      });
-      setIsOpen(false);
-      onUserCreated();
-      form.reset();
-    } else {
-      toast({
-        title: 'Error al Crear Usuario',
-        description: result.error,
-        variant: 'destructive',
-      });
+    try {
+      const result = await createUserCallable(values);
+      if ((result.data as any).success) {
+        toast({
+            title: '¡Usuario Creado!',
+            description: `El usuario ${values.email} ha sido creado exitosamente.`,
+        });
+        setIsOpen(false);
+        onUserCreated();
+        form.reset();
+      } else {
+        throw new Error((result.data as any).error || 'Error desconocido');
+      }
+    } catch(error: any) {
+        toast({
+            title: 'Error al Crear Usuario',
+            description: error.message,
+            variant: 'destructive',
+        });
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="ml-auto gap-1" disabled={disabled}>
+        <Button size="sm" className="ml-auto gap-1">
           <PlusCircle className="h-3.5 w-3.5" />
           Crear Usuario
         </Button>
@@ -180,63 +205,64 @@ function CreateUserDialog({ onUserCreated, disabled }: { onUserCreated: () => vo
   );
 }
 
-
+// --- Main Page Component ---
 export default function UsersPage() {
   const [users, setUsers] = React.useState<UserWithRole[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [adminError, setAdminError] = React.useState<string | null>(null);
   const { toast } = useToast();
   const { role: adminRole } = useAuthStore();
   const router = useRouter();
 
   const fetchUsers = React.useCallback(async () => {
     setIsLoading(true);
-    const result = await getUsers();
-    if (result.error) {
-      setAdminError(result.error);
+    try {
+      const result = await listUsersCallable();
+      const data = result.data as { users: UserWithRole[], error?: string };
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      setUsers(data.users || []);
+    } catch(error: any) {
+      toast({ title: 'Error al Cargar Usuarios', description: error.message, variant: 'destructive' });
       setUsers([]);
-    } else {
-      const sanitizedUsers = result.users.map(u => ({
-        ...u,
-        customClaims: {
-          ...u.customClaims,
-          role: u.customClaims?.role || 'cashier',
-        },
-      }));
-      setUsers(sanitizedUsers);
-      setAdminError(null);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, [toast]);
 
   React.useEffect(() => {
-    if (adminRole && !['admin', 'cashier'].includes(adminRole)) {
-      router.replace('/admin/dashboard');
-    } else if (adminRole) {
-      fetchUsers();
+    if (adminRole) { // Only fetch if role is determined
+        if (adminRole === 'admin') {
+            fetchUsers();
+        } else {
+             // If not an admin, they can only see a list of users, but not modify them.
+             // We can listen to a public `users_basic_info` collection for example
+             const q = query(collection(db, 'users_public'));
+             const unsubscribe = onSnapshot(q, (snapshot) => {
+                 const publicUsers = snapshot.docs.map(doc => doc.data() as UserWithRole);
+                 setUsers(publicUsers);
+                 setIsLoading(false);
+             });
+             return () => unsubscribe();
+        }
     }
-  }, [adminRole, router, fetchUsers]);
+  }, [adminRole, fetchUsers]);
 
   const handleRoleChange = async (userId: string, newRole: 'admin' | 'cashier') => {
     const originalUsers = [...users];
     
     setUsers(currentUsers => currentUsers.map(u => u.uid === userId ? { ...u, customClaims: { ...u.customClaims, role: newRole } } : u));
     
-    const { success, error } = await setRole(userId, newRole);
-
-    if (!success) {
-      setUsers(originalUsers);
-      toast({
-        title: 'Error al cambiar el rol',
-        description: error || 'Ocurrió un error inesperado.',
-        variant: 'destructive',
-      });
-    } else {
-       toast({
-        title: '¡Rol actualizado!',
-        description: `El rol del usuario ha sido cambiado a ${newRole}.`,
-      });
-      await fetchUsers(); // Re-fetch to ensure data consistency
+    try {
+        const result = await setRoleCallable({ userId, role: newRole });
+        if (!(result.data as any).success) {
+            throw new Error((result.data as any).error || 'Error desconocido');
+        }
+        toast({ title: '¡Rol actualizado!', description: `El rol del usuario ha sido cambiado a ${newRole}.`});
+        await fetchUsers(); // Re-fetch to ensure data consistency
+    } catch(error: any) {
+        setUsers(originalUsers);
+        toast({ title: 'Error al cambiar el rol', description: error.message, variant: 'destructive'});
     }
   };
 
@@ -252,18 +278,8 @@ export default function UsersPage() {
     <main className="grid flex-1 items-start gap-4">
       <div className="flex items-center">
         <h1 className="text-2xl font-bold">Usuarios</h1>
-        {adminRole === 'admin' && <CreateUserDialog onUserCreated={fetchUsers} disabled={!!adminError} />}
+        {adminRole === 'admin' && <CreateUserDialog onUserCreated={fetchUsers} />}
       </div>
-
-      {adminError && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error de Configuración del Administrador</AlertTitle>
-          <AlertDescription>
-             {adminError} No se pueden gestionar usuarios. Por favor, completa las credenciales en el archivo <strong>src/lib/serviceAccountKey.ts</strong> y reinicia el servidor.
-          </AlertDescription>
-        </Alert>
-      )}
 
       <Card>
         <CardHeader>
@@ -298,9 +314,9 @@ export default function UsersPage() {
                   </TableCell>
                   <TableCell>
                     <Select
-                        value={user.customClaims?.role}
+                        value={user.customClaims?.role || 'cashier'}
                         onValueChange={(newRole: 'admin' | 'cashier') => handleRoleChange(user.uid, newRole)}
-                        disabled={adminRole !== 'admin' || !!adminError}
+                        disabled={adminRole !== 'admin'}
                     >
                         <SelectTrigger className="w-[120px]">
                             <SelectValue placeholder="Seleccionar rol" />

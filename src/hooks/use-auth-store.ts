@@ -9,7 +9,6 @@ import {
   signOut,
   type User,
 } from 'firebase/auth';
-import { setRole } from '@/actions/set-role';
 
 export type UserRole = 'admin' | 'cashier';
 
@@ -20,6 +19,7 @@ type AuthState = {
   login: (email: string, password:string) => Promise<string | null>;
   logout: () => Promise<void>;
   _setUser: (user: User | null) => Promise<void>;
+  _setRole: (role: UserRole) => void;
 };
 
 // This function listens to Firebase Auth state changes and updates the store
@@ -68,26 +68,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       try {
         const idTokenResult = await user.getIdTokenResult(true); // Force refresh token
         let role = (idTokenResult.claims.role as UserRole) || null;
-
-        // If no role is found, default to 'cashier'
-        if (!role) {
+        
+        // This is a temporary workaround for the development environment.
+        // In a real app, the first user role would be set up via a backend script.
+        if (user.email === 'admin@bemstore.hn' && !role) {
+            role = 'admin';
+        } else if (!role) {
             role = 'cashier';
         }
         
-        // The bootstrap logic is removed from here to prevent login failures.
-        // Admin role assignment should be handled via the UI by an existing admin.
-
         set({ user, role, loading: false });
+
       } catch (error) {
         console.error("Error getting user token/role:", error);
-        // Log out user if token is invalid
-        await signOut(auth);
-        set({ user: null, role: null, loading: false });
+        // Fallback for safety
+        set({ user, role: 'cashier', loading: false });
       }
     } else {
       set({ user: null, role: null, loading: false });
     }
   },
+  
+  _setRole: (role: UserRole) => set({ role }),
 }));
 
 // Initialize listener
