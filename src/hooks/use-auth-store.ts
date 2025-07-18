@@ -33,9 +33,7 @@ export const useAuthStore = create<AuthState>()(
       _setLoading: (loading: boolean) => set({ loading }),
 
       login: async (email: string, password: string) => {
-        // We no longer need a complex hydration wait. 
-        // Zustand's persist middleware ensures the store is hydrated on access.
-        // We can directly get the state from the users store.
+        // This is now simple and direct. It gets the current state from the users store.
         const users = useUsersStore.getState().users;
         const foundUser = users.find(u => u.email === email && u.password === password);
 
@@ -47,6 +45,7 @@ export const useAuthStore = create<AuthState>()(
           set({ user: localUser, role: foundUser.role, loading: false });
           return null; // Success
         } else {
+          set({ loading: false });
           return 'Correo o contraseña incorrectos.'; // Failure
         }
       },
@@ -60,6 +59,7 @@ export const useAuthStore = create<AuthState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ user: state.user, role: state.role }),
       onRehydrateStorage: () => (state) => {
+        // When the auth store is rehydrated, set loading to false.
         if (state) {
             state._setLoading(false);
         }
@@ -68,5 +68,7 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// This ensures the loading state is correctly set on initial load
-useAuthStore.getState()._setLoading(false);
+// This ensures the loading state is correctly set on initial client-side load
+if (typeof window !== 'undefined') {
+    useAuthStore.getState()._setLoading(false);
+}
