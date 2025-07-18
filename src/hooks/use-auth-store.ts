@@ -22,6 +22,15 @@ type AuthState = {
   _setLoading: (loading: boolean) => void;
 };
 
+// This is a helper to wait for the user store to be hydrated
+const usersStoreReady = new Promise<void>((resolve) => {
+  const unsubscribe = useUsersStore.persist.onFinishHydration(() => {
+    resolve();
+    unsubscribe();
+  });
+});
+
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -34,8 +43,8 @@ export const useAuthStore = create<AuthState>()(
       login: async (email, password) => {
         set({ loading: true });
         
-        // Use a timeout to simulate network latency
-        await new Promise(res => setTimeout(res, 250));
+        // Wait for the users store to be fully loaded from localStorage
+        await usersStoreReady;
 
         // Get the most up-to-date users list directly from the other store
         const users = useUsersStore.getState().users;
@@ -62,14 +71,12 @@ export const useAuthStore = create<AuthState>()(
       name: 'auth-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ user: state.user, role: state.role }),
-      // This is called when the store is hydrated from localStorage
       onRehydrateStorage: () => (state) => {
-        // Once hydration is done, we are no longer in a loading state.
         state?._setLoading(false);
       }
     }
   )
 );
 
-// This ensures the loading state is correctly set on initial load, even if there's nothing in storage.
+// This ensures the loading state is correctly set on initial load
 useAuthStore.getState()._setLoading(false);
