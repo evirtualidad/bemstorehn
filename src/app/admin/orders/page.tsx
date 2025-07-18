@@ -148,7 +148,7 @@ function OrderDetailsDialog({ order, isOpen, onOpenChange }: { order: Order | nu
                 <DialogHeader>
                     <DialogTitle>Detalles del Pedido: {order.display_id}</DialogTitle>
                     <DialogDescription>
-                        {format(parseISO(order.created_at), "d 'de' MMMM, yyyy 'a las' HH:mm", { locale: es })}
+                        {order.created_at ? format(parseISO(order.created_at), "d 'de' MMMM, yyyy 'a las' HH:mm", { locale: es }) : 'Fecha no disponible'}
                     </DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="max-h-[70vh] -mx-6">
@@ -488,12 +488,16 @@ export default function OrdersPage() {
   const [deliveryMethodFilter, setDeliveryMethodFilter] = React.useState<string[]>([]);
 
 
-  const sortedOrders = [...orders].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const sortedOrders = [...orders].sort((a, b) => {
+    if (!a.created_at || !b.created_at) return 0;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
 
   const filteredOrders = React.useMemo(() => {
     return sortedOrders.filter(order => {
       // Date filter
       if (dateRange?.from && dateRange?.to) {
+        if (!order.created_at) return false;
         const orderDate = parseISO(order.created_at);
         if (!isWithinInterval(orderDate, { start: startOfDay(dateRange.from), end: endOfDay(dateRange.to) })) {
           return false;
@@ -696,7 +700,7 @@ export default function OrdersPage() {
                         <span className="hidden sm:inline">{deliveryMethodLabels[order.delivery_method || 'pickup']}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{format(parseISO(order.created_at), 'd MMM, yyyy')}</TableCell>
+                    <TableCell>{order.created_at ? format(parseISO(order.created_at), 'd MMM, yyyy') : 'N/A'}</TableCell>
                     <TableCell>
                         <div className="flex items-center gap-2">
                             {paymentMethodIcons[order.payment_method as keyof typeof paymentMethodIcons]}
@@ -777,5 +781,3 @@ export default function OrdersPage() {
     </main>
   );
 }
-
-    
