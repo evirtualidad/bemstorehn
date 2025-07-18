@@ -26,7 +26,7 @@ import { useCategoriesStore, type Category as CategoryType } from '@/hooks/use-c
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { useOrdersStore, type Address, type NewOrderData } from '@/hooks/use-orders';
+import { useOrdersStore, type Address, type NewOrderData, type Order } from '@/hooks/use-orders';
 import { useSettingsStore } from '@/hooks/use-settings-store';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
@@ -864,13 +864,60 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, isInDialog, onOp
     )
 }
 
+function OrderSuccessDialog({
+    isOpen,
+    onOpenChange,
+    orderData,
+}: {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+    orderData: { displayId: string; total: number; change: number } | null;
+}) {
+    const { currency } = useCurrencyStore();
+
+    if (!orderData) return null;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader className="items-center text-center">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                        <CheckCircle className="h-8 w-8 text-green-600" />
+                    </div>
+                    <DialogTitle className="text-2xl pt-4">¡Pedido Creado con Éxito!</DialogTitle>
+                </DialogHeader>
+                <div className="py-4 text-center space-y-4">
+                    <p className="text-lg">
+                        Pedido No:{" "}
+                        <span className="font-bold text-primary">{orderData.displayId}</span>
+                    </p>
+                    <div className="text-4xl font-bold tracking-tight">
+                        {formatCurrency(orderData.total, currency.code)}
+                    </div>
+                    {orderData.change > 0 && (
+                        <p className="text-lg text-muted-foreground">
+                            Cambio a devolver:{" "}
+                            <span className="font-bold text-foreground">{formatCurrency(orderData.change, currency.code)}</span>
+                        </p>
+                    )}
+                </div>
+                <DialogFooter>
+                    <Button className="w-full" size="lg" onClick={() => onOpenChange(false)}>
+                        Nuevo Pedido
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 export default function PosPage() {
   const products = useProductsStore(state => state.products);
   const isLoadingProducts = useProductsStore(state => state.isLoading);
   const decreaseStock = useProductsStore(state => state.decreaseStock);
 
   const { setShippingCost, clearCart, items: cartItems, totalWithShipping } = usePosCart();
-  const { addOrderToState } = useOrdersStore();
+  const { addOrderToState, getOrderById } = useOrdersStore();
   const { isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
   const categories = useCategoriesStore(state => state.categories);
   const isLoadingCategories = useCategoriesStore(state => state.isLoading);
@@ -880,6 +927,8 @@ export default function PosPage() {
   const [isTicketVisible, setIsTicketVisible] = React.useState(false);
   const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = React.useState(false);
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = React.useState(false);
+  const [lastOrderInfo, setLastOrderInfo] = React.useState<{displayId: string, total: number, change: number} | null>(null);
   const { user } = useAuthStore();
   
   const hasOfferProducts = React.useMemo(() => products.some(p => p.originalPrice && p.originalPrice > p.price), [products]);
@@ -957,6 +1006,11 @@ export default function PosPage() {
     clearCart();
     form.reset({ name: '', phone: '', deliveryMethod: 'pickup', address: undefined, paymentMethod: 'efectivo', paymentDueDate: undefined, cashAmount: '', paymentReference: '' });
   }
+  
+  const handleSuccessDialogClose = () => {
+    setIsSuccessDialogOpen(false);
+    clearCartAndForm();
+  }
 
   const handleOpenChangeCheckout = (open: boolean) => {
     if (!open && !isSubmitting) {
@@ -977,7 +1031,6 @@ export default function PosPage() {
       paymentDueDate: undefined,
     });
     setIsCheckoutOpen(false);
-    clearCartAndForm();
   };
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
@@ -1044,16 +1097,21 @@ export default function PosPage() {
         delivery_method: values.deliveryMethod,
     };
     
-    await addOrderToState(newOrderData);
+    const newOrderId = await addOrderToState(newOrderData);
+    const newOrder = getOrderById(newOrderId);
+    
+    if(newOrder) {
+        setLastOrderInfo({
+            displayId: newOrder.display_id,
+            total: newOrder.total,
+            change: change
+        });
+    }
 
-    toast({
-      title: '¡Pedido Creado!',
-      description: 'El pedido se ha añadido al sistema.',
-    });
-    clearCartAndForm();
     setIsCheckoutOpen(false);
     setIsTicketVisible(false);
     setIsSubmitting(false);
+    setIsSuccessDialogOpen(true);
   }
   
   const isLoading = isLoadingProducts || isLoadingCategories || isLoadingCustomers;
@@ -1142,6 +1200,12 @@ export default function PosPage() {
           onOpenChange={setIsShippingDialogOpen}
           onSave={handleSaveShippingInfo}
           currentAddress={form.getValues('address')}
+        />
+
+        <OrderSuccessDialog
+            isOpen={isSuccessDialogOpen}
+            onOpenChange={handleSuccessDialogClose}
+            orderData={lastOrderInfo}
         />
     </div>
   );
