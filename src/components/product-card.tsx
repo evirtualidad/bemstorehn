@@ -64,7 +64,7 @@ export function ProductCard({
                 stockStatus === "Poco Stock" && "bg-amber-500 text-white"
               )}
             >
-              {stockStatus}
+              {stockStatus}: {product.stock}
             </Badge>
           </div>
           <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
@@ -77,34 +77,28 @@ export function ProductCard({
           {showDescription && product.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{product.description}</p>}
         </CardContent>
         <CardFooter className="p-4 pt-0 flex flex-col items-start gap-3 mt-auto">
-          <div className="flex flex-col items-start w-full">
-            <div className="flex items-baseline gap-2">
-                <p className={cn("font-bold text-foreground", isDiscounted ? "text-xl text-offer" : "text-xl")}>
-                    {formatCurrency(product.price, currency.code)}
-                </p>
-                {isDiscounted && (
-                    <p className="text-md text-muted-foreground line-through">
-                        {formatCurrency(product.originalPrice!, currency.code)}
-                    </p>
-                )}
-            </div>
-            <div className={cn(
-                "text-xs font-medium mt-1",
-                 product.stock > 10 ? "text-green-600" :
-                 product.stock > 0 ? "text-amber-600" :
-                 "text-destructive"
-            )}>
-              Stock: {product.stock}
-            </div>
-          </div>
           <Button 
             variant="outline" 
             className="w-full"
             disabled={product.stock <= 0}
             onClick={handleButtonClick}
           >
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            Añadir al Carrito
+            <div className="flex items-center justify-between w-full">
+                <div className='flex items-center gap-2'>
+                    <ShoppingCart className="h-4 w-4" />
+                    <span>Añadir</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                    <span className={cn("font-bold", isDiscounted && "text-offer")}>
+                        {formatCurrency(product.price, currency.code)}
+                    </span>
+                    {isDiscounted && (
+                        <span className="text-xs text-muted-foreground line-through">
+                            {formatCurrency(product.originalPrice!, currency.code)}
+                        </span>
+                    )}
+                </div>
+            </div>
           </Button>
         </CardFooter>
       </Card>
