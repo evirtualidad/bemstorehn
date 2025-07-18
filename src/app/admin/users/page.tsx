@@ -33,8 +33,8 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import { useAuthStore } from '@/hooks/use-auth-store';
-import { Button } from '@/components/ui/button';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { PlusCircle, Loader2, MoreHorizontal } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -53,8 +53,27 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { v4 as uuidv4 } from 'uuid';
+import { cn } from '@/lib/utils';
 
 
 // --- User Type Definition ---
@@ -228,6 +247,12 @@ export default function UsersPage() {
     toast({ title: '¡Rol actualizado!', description: `El rol del usuario ha sido cambiado a ${newRole} (simulado).`});
   };
 
+  const handleDeleteUser = (uid: string) => {
+    setUsers(currentUsers => currentUsers.filter(u => u.uid !== uid));
+    toast({ title: '¡Usuario eliminado!', variant: 'destructive' });
+  };
+
+
   const isCurrentUser = (uid: string) => currentUser?.uid === uid || (currentUser?.email === 'admin@bemstore.hn' && uid === 'admin_user_id');
 
   if (isLoading || !adminRole) {
@@ -261,6 +286,9 @@ export default function UsersPage() {
                 <TableHead>Email</TableHead>
                 <TableHead>Fecha de Registro</TableHead>
                 <TableHead>Rol</TableHead>
+                <TableHead>
+                    <span className="sr-only">Acciones</span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -290,6 +318,53 @@ export default function UsersPage() {
                             </SelectItem>
                         </SelectContent>
                     </Select>
+                  </TableCell>
+                  <TableCell>
+                    {!isCurrentUser(user.uid) && adminRole === 'admin' ? (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                aria-haspopup="true"
+                                size="icon"
+                                variant="ghost"
+                                >
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Alternar menú</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <div className={cn(
+                                            "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                                            "text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                        )}>
+                                            Eliminar
+                                        </div>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Esta acción no se puede deshacer. Se eliminará permanentemente al usuario
+                                            <span className='font-bold'> {user.email}</span>.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={() => handleDeleteUser(user.uid)}
+                                            className={cn(buttonVariants({ variant: 'destructive' }))}
+                                        >
+                                            Sí, eliminar usuario
+                                        </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    ) : null}
                   </TableCell>
                 </TableRow>
               ))}
