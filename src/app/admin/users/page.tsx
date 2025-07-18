@@ -56,7 +56,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { auth, db } from '@/lib/firebase';
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import { collection, onSnapshot, query, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 
 // --- User Type Definition ---
@@ -71,6 +71,7 @@ export interface UserDoc {
 }
 
 // --- Firebase Functions Callables ---
+// These are now only used for actions requiring special permissions (creating a user in Auth, setting claims)
 const functions = getFunctions(auth.app);
 const createUserCallable = httpsCallable(functions, 'createUser');
 const setRoleCallable = httpsCallable(functions, 'setRole');
@@ -112,9 +113,10 @@ function CreateUserDialog({ onUserCreated }: { onUserCreated: () => void }) {
         throw new Error((result.data as any).error || 'Error desconocido');
       }
     } catch(error: any) {
+        console.error("Error creating user via function:", error);
         toast({
             title: 'Error al Crear Usuario',
-            description: error.message,
+            description: error.message || 'Ocurrió un error en el servidor.',
             variant: 'destructive',
         });
     } finally {
@@ -236,12 +238,19 @@ export default function UsersPage() {
     setUsers(currentUsers => currentUsers.map(u => u.uid === uid ? { ...u, role: newRole } : u));
     
     try {
+        // First, update the role in the Firestore document
+        const userRef = doc(db, 'users', uid);
+        await updateDoc(userRef, { role: newRole });
+        
+        // Then, call the cloud function to update the custom claim
         const result = await setRoleCallable({ userId: uid, role: newRole });
+        
         if (!(result.data as any).success) {
             throw new Error((result.data as any).error || 'Error desconocido al cambiar el rol.');
         }
+        
         toast({ title: '¡Rol actualizado!', description: `El rol del usuario ha sido cambiado a ${newRole}.`});
-        // No need to re-fetch, the listener will update if needed, but the optimistic update is usually enough
+        
     } catch(error: any) {
         // Revert UI on error
         setUsers(originalUsers);
