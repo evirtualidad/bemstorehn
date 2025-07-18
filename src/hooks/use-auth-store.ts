@@ -36,7 +36,7 @@ export const useAuthStore = create<AuthState>()(
         // Use a timeout to simulate network latency
         await new Promise(res => setTimeout(res, 300));
 
-        // Get users from our local user store
+        // Get the most up-to-date users list directly from the other store
         const { users } = useUsersStore.getState();
         const foundUser = users.find(u => u.email === email && u.password === password);
 
