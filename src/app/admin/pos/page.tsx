@@ -38,6 +38,7 @@ import { paymentMethods } from '@/lib/payment-methods.tsx';
 import { usePosCart } from '@/hooks/use-pos-cart';
 import { ProductGrid } from '@/components/product-grid';
 import { useAuthStore } from '@/hooks/use-auth-store';
+import { db } from '@/lib/firebase';
 
 type SelectedFilter = { type: 'category' | 'offer'; value: string } | null;
 
@@ -865,11 +866,17 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, isInDialog, onOp
 }
 
 export default function PosPage() {
-  const { products, isLoading: isLoadingProducts, decreaseStock } = useProductsStore();
+  const { products, isLoading: isLoadingProducts, decreaseStock, fetchProducts } = useProductsStore(state => ({
+    products: state.products,
+    isLoading: state.isLoading,
+    decreaseStock: state.decreaseStock,
+    fetchProducts: state.fetchProducts
+  }));
+
   const { setShippingCost, clearCart, items: cartItems, totalWithShipping } = usePosCart();
   const { addOrderToState } = useOrdersStore();
-  const { isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
-  const { categories, isLoading: isLoadingCategories } = useCategoriesStore();
+  const { isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer, fetchCustomers } = useCustomersStore();
+  const { categories, isLoading: isLoadingCategories, fetchCategories } = useCategoriesStore();
   const { toast } = useToast();
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -878,6 +885,19 @@ export default function PosPage() {
   const [isShippingDialogOpen, setIsShippingDialogOpen] = React.useState(false);
   const { session } = useAuthStore();
   const { currency } = useCurrencyStore();
+  
+  React.useEffect(() => {
+    if (db) {
+        const unsubProducts = fetchProducts();
+        const unsubCategories = fetchCategories();
+        const unsubCustomers = fetchCustomers();
+        return () => {
+            unsubProducts();
+            unsubCategories();
+            unsubCustomers();
+        };
+    }
+  }, [fetchProducts, fetchCategories, fetchCustomers]);
 
   const hasOfferProducts = React.useMemo(() => products.some(p => p.originalPrice && p.originalPrice > p.price), [products]);
   
@@ -956,14 +976,27 @@ export default function PosPage() {
   }
 
   const handleOpenChangeCheckout = (open: boolean) => {
-    if (!open) {
-      // Don't clear cart or form on simple close, only on explicit cancel/submit
+    if (!open && !isSubmitting) {
+        // Only clear/reset if the dialog is closed without submitting.
+        // But let's not clear the cart, just the form state.
+        // handleCancelCheckout();
     }
     setIsCheckoutOpen(open);
   };
   
   const handleCancelCheckout = () => {
-    clearCartAndForm();
+    // This only clears the form, not the cart.
+    form.reset({
+      name: '',
+      phone: '',
+      deliveryMethod: 'pickup',
+      address: undefined,
+      paymentMethod: 'efectivo',
+      cashAmount: '',
+      paymentReference: '',
+      paymentDueDate: undefined,
+    });
+    // The cart is explicitly preserved.
     setIsCheckoutOpen(false);
   };
 
@@ -992,10 +1025,9 @@ export default function PosPage() {
         decreaseStock(item.id, item.quantity);
     }
 
-    const { cashAmount } = form.getValues();
     let change = 0;
-    if (values.paymentMethod === 'efectivo' && cashAmount) {
-        const cash = parseFloat(cashAmount);
+    if (values.paymentMethod === 'efectivo' && values.cashAmount) {
+        const cash = parseFloat(values.cashAmount);
         if (!isNaN(cash) && cash > totalWithShipping) {
             change = cash - totalWithShipping;
         }

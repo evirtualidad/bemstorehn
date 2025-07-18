@@ -41,6 +41,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { ThemeProvider } from '@/components/theme-provider';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { db } from '@/lib/firebase';
 
 function CurrencySelector() {
     const { currency, currencies, setCurrency } = useCurrencyStore();
@@ -75,7 +76,8 @@ function AdminLayoutContent({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { orders } = useOrdersStore();
+  const orders = useOrdersStore(state => state.orders);
+  const fetchOrders = useOrdersStore(state => state.fetchOrders);
   const { session, loading, logout, role } = useAuthStore();
   
   React.useEffect(() => {
@@ -84,6 +86,14 @@ function AdminLayoutContent({
     //   router.push('/login');
     // }
   }, [session, loading, router]);
+
+  React.useEffect(() => {
+    // If we're using Firebase, fetch the orders
+    if (db) {
+        const unsubscribe = fetchOrders();
+        return () => unsubscribe();
+    }
+  }, [fetchOrders]);
 
 
   const pendingApprovalCount = React.useMemo(() => {

@@ -2,7 +2,7 @@
 'use client';
 
 import { create } from 'zustand';
-import { auth, db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -14,7 +14,7 @@ import type { Session } from '@supabase/supabase-js'; // Keep for type compat un
 export type UserRole = 'admin' | 'cashier';
 
 type AuthState = {
-  session: Session | null; // Keep for now for type compatibility in components
+  session: Session | null;
   user: User | null;
   role: UserRole | null;
   loading: boolean;
@@ -27,19 +27,54 @@ type AuthState = {
 let authUnsubscribe: (() => void) | null = null;
 
 const startAuthListener = () => {
-    if (authUnsubscribe) return; // Listener already active
+    if (!auth || authUnsubscribe) return;
     
     authUnsubscribe = onAuthStateChanged(auth, async (user) => {
         useAuthStore.getState()._setUser(user);
     });
 };
 
+const mockUsers = {
+    'admin@example.com': { role: 'admin' },
+    'cashier@example.com': { role: 'cashier' },
+};
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   user: null,
   role: null,
-  loading: true, // Start with loading true
+  loading: !auth, // Set loading to false immediately if not using Firebase
+  
   login: async (email, password) => {
+    if (!auth) {
+        console.log("SIMULATION: Firebase not configured, using mock login.");
+        set({ loading: true });
+        return new Promise(resolve => {
+            setTimeout(() => {
+                if (mockUsers[email as keyof typeof mockUsers]) {
+                    const role = mockUsers[email as keyof typeof mockUsers].role as UserRole;
+                     const mockUser = {
+                        uid: `mock_${role}`,
+                        email: email,
+                    } as User;
+                     const mockSession: Session = {
+                        access_token: 'mock_token',
+                        user: {
+                            id: mockUser.uid,
+                            email: mockUser.email,
+                            app_metadata: { role },
+                        } as any,
+                    } as any;
+                    set({ session: mockSession, user: mockUser, role: role, loading: false });
+                    resolve(null);
+                } else {
+                    set({ loading: false });
+                    resolve('Correo o contraseña incorrectos.');
+                }
+            }, 500);
+        });
+    }
+
     set({ loading: true });
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -58,24 +93,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     }
   },
+  
   logout: async () => {
-    await signOut(auth);
+    if (auth) {
+       await signOut(auth);
+    }
+    // For both firebase and mock, we clear the state
     set({ session: null, user: null, role: null, loading: false });
   },
+
   _setUser: async (user: User | null) => {
     if (user) {
-      // Get custom claims for role
       const idTokenResult = await user.getIdTokenResult(true);
       const role = (idTokenResult.claims.role as UserRole) || 'cashier';
       
-      // We create a mock session object for component compatibility for now
       const mockSession: Session = {
           access_token: await user.getIdToken(),
           user: {
               id: user.uid,
               email: user.email,
               app_metadata: { role },
-          } as any, // Cast to any to satisfy Supabase User type temporarily
+          } as any,
       } as any;
 
       set({ session: mockSession, user, role, loading: false });
@@ -85,5 +123,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 }));
 
-// Initialize the auth listener when the app loads
-startAuthListener();
+// Initialize listeners
+if (auth) {
+    startAuthListener();
+} else {
+    // If not using Firebase, set a default mock user so the admin panel is accessible
+    useAuthStore.getState().login('admin@example.com', 'password');
+}
