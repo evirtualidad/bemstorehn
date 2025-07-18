@@ -10,9 +10,22 @@ import {
 import Autoplay from 'embla-carousel-autoplay';
 import { ProductGridHomepage } from './product-grid-homepage';
 import { Product } from '@/lib/products';
+import { useCart } from '@/hooks/use-cart';
+import { useToast } from '@/hooks/use-toast';
 
 export function FeaturedProductsCarousel({ products }: { products: Product[] }) {
     if (products.length === 0) return null;
+
+    const addToCart = useCart.getState().addToCart;
+    const { toast } = useToast();
+    
+    const handleAddToCart = (product: Product) => {
+        addToCart(product);
+        toast({
+          title: "Añadido al carrito",
+          description: `${product.name} ha sido añadido a tu carrito.`,
+        });
+    };
 
     const autoplayPlugin = React.useRef(
         Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })
@@ -33,7 +46,7 @@ export function FeaturedProductsCarousel({ products }: { products: Product[] }) 
                     <CarouselContent>
                         {products.map((product) => (
                             <CarouselItem key={product.id} className="basis-1/2 md:basis-1/3 lg:basis-1/4">
-                                <ProductGridHomepage.Card product={product} />
+                                <ProductGridHomepage.Card product={product} onAddToCart={handleAddToCart} />
                             </CarouselItem>
                         ))}
                     </CarouselContent>
