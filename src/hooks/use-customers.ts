@@ -27,7 +27,7 @@ type CustomersState = {
       name: string;
       address?: Address | null;
     }
-  ) => Promise<string | null>; // Returns customer ID or null
+  ) => Promise<string | null>; // Returns customer Firestore ID or null
   addPurchaseToCustomer: (customerId: string, amount: number) => Promise<void>;
   getCustomerById: (id: string) => Customer | undefined;
 };
@@ -51,36 +51,44 @@ export const useCustomersStore = create<CustomersState>()(
       },
 
       addOrUpdateCustomer: async ({ phone, name, address }) => {
+        // Do not create a record for "Consumidor Final" without a phone number
         if ((!phone || phone.trim() === '') && (name.trim().toLowerCase() === 'consumidor final' || name.trim() === '')) {
-            return null; // Don't create a record for "Consumidor Final"
+            return null; 
         }
 
         const customersRef = collection(db, "customers");
-        const q = query(customersRef, where("phone", "==", phone));
-        const querySnapshot = await getDocs(q);
+        
+        // Find existing customer by phone number if provided
+        if (phone && phone.trim() !== '') {
+            const q = query(customersRef, where("phone", "==", phone));
+            const querySnapshot = await getDocs(q);
 
-        if (!querySnapshot.empty) {
-            const customerDoc = querySnapshot.docs[0];
-            await updateDoc(doc(db, 'customers', customerDoc.id), {
-                name: name,
-                ...(address && { address }),
-            });
-            return customerDoc.id;
-        } else {
-            const newCustomerData = {
-                name,
-                phone: phone || '',
-                address: address || null,
-                total_spent: 0,
-                order_count: 0,
-                created_at: serverTimestamp(),
-            };
-            const docRef = await addDoc(collection(db, "customers"), newCustomerData);
-            return docRef.id;
+            if (!querySnapshot.empty) {
+                // Update existing customer
+                const customerDoc = querySnapshot.docs[0];
+                await updateDoc(doc(db, 'customers', customerDoc.id), {
+                    name: name,
+                    ...(address && { address }),
+                });
+                return customerDoc.id;
+            }
         }
+        
+        // If no customer found or no phone provided, create a new one
+        const newCustomerData = {
+            name,
+            phone: phone || '',
+            address: address || null,
+            total_spent: 0,
+            order_count: 0,
+            created_at: serverTimestamp(),
+        };
+        const docRef = await addDoc(customersRef, newCustomerData);
+        return docRef.id;
       },
       
       addPurchaseToCustomer: async (customerId, amount) => {
+        if (!customerId) return;
         const customerRef = doc(db, 'customers', customerId);
         await updateDoc(customerRef, {
             total_spent: increment(amount),
