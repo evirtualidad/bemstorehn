@@ -23,7 +23,7 @@ type AuthState = {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       role: null,
       loading: true,
@@ -31,7 +31,10 @@ export const useAuthStore = create<AuthState>()(
       _initialize: () => {
         // This function is called once the app is mounted on the client
         // to signify that persisted state is loaded and we can stop the initial loading state.
-        set({ loading: false });
+        // It now also waits for the user store to be hydrated.
+        useUsersStore.persist.onFinishHydration(() => {
+          set({ loading: false });
+        });
       },
 
       login: async (email, password) => {
@@ -58,11 +61,9 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => localStorage),
-      onRehydrateStorage: () => (state) => {
+       onRehydrateStorage: () => (state) => {
         if (state) {
-            // When rehydrating, set loading to false.
-            // But we use _initialize for more explicit control.
-            state.loading = false;
+          state._initialize();
         }
       }
     }
