@@ -122,7 +122,7 @@ export default function CustomersPage() {
                     {customer.phone || 'N/A'}
                   </TableCell>
                   <TableCell>
-                    {customer.order_count}
+                    {customer.order_count || 0}
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     {formatCurrency(customer.total_spent, currency.code)}
