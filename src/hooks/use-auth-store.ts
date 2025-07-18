@@ -19,7 +19,6 @@ type AuthState = {
   login: (email: string, password:string) => Promise<string | null>;
   logout: () => Promise<void>;
   _setUser: (user: User | null) => Promise<void>;
-  _setRole: (role: UserRole) => void;
 };
 
 // This function listens to Firebase Auth state changes and updates the store
@@ -33,7 +32,7 @@ const startAuthListener = () => {
     });
 };
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   role: null,
   loading: true, // Start as loading until auth state is confirmed
@@ -66,30 +65,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   _setUser: async (user: User | null) => {
     if (user) {
       try {
-        const idTokenResult = await user.getIdTokenResult(true); // Force refresh token
-        let role = (idTokenResult.claims.role as UserRole) || null;
-        
-        // This is a temporary workaround for the development environment.
-        // In a real app, the first user role would be set up via a backend script.
-        if (user.email === 'admin@bemstore.hn' && !role) {
-            role = 'admin';
-        } else if (!role) {
-            role = 'cashier';
-        }
-        
+        // Force refresh the token to get the latest custom claims.
+        const idTokenResult = await user.getIdTokenResult(true); 
+        const role = (idTokenResult.claims.role as UserRole) || 'cashier'; // Default to 'cashier' if no role claim
         set({ user, role, loading: false });
-
       } catch (error) {
         console.error("Error getting user token/role:", error);
-        // Fallback for safety
+        // Fallback for safety in case of token errors
         set({ user, role: 'cashier', loading: false });
       }
     } else {
       set({ user: null, role: null, loading: false });
     }
   },
-  
-  _setRole: (role: UserRole) => set({ role }),
 }));
 
 // Initialize listener

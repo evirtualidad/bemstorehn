@@ -1,3 +1,3 @@
-// This file is no longer needed as role setting logic is simplified
-// and will be handled directly in the component for this context.
+// This file is no longer needed as role changes are now handled by a Firebase Function
+// and the UI interacts with it directly.
 // It is kept empty to signify its removal from the logic flow.

@@ -1,3 +1,3 @@
-// This file is no longer needed as user creation logic is simplified
-// and will be handled directly in the component for this context.
+// This file is no longer needed as user creation is now handled by a Firebase Function
+// and the UI interacts with it directly.
 // It is kept empty to signify its removal from the logic flow.

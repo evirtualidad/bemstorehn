@@ -1,3 +1,3 @@
-// This file is no longer needed as user fetching logic is simplified
-// and will be handled directly in the component for this context.
+// This file is no longer needed as user data is now fetched directly
+// from the 'users' collection in Firestore by the client.
 // It is kept empty to signify its removal from the logic flow.

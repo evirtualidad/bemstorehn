@@ -1,3 +1,4 @@
-// This file is no longer needed as we are removing the dependency on the Admin SDK
-// to resolve persistent initialization issues in this development environment.
+// This file is no longer needed as user management is now handled by Firebase Functions
+// which contain their own Admin SDK initialization logic. Client-side code does not
+// need to interact with the Admin SDK directly.
 // It is kept empty to signify its removal from the logic flow.

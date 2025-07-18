@@ -33,7 +33,6 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import { useAuthStore } from '@/hooks/use-auth-store';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import {
@@ -61,16 +60,13 @@ import { collection, onSnapshot, query } from 'firebase/firestore';
 
 
 // --- User Type Definition ---
-export interface UserWithRole {
+export interface UserDoc {
     uid: string;
-    email?: string;
-    metadata: {
-        creationTime?: string;
-        lastSignInTime?: string;
-    };
-    customClaims?: {
-        [key: string]: any;
-        role?: 'admin' | 'cashier';
+    email: string;
+    role: 'admin' | 'cashier';
+    created_at: {
+        seconds: number;
+        nanoseconds: number;
     };
 }
 
@@ -78,7 +74,6 @@ export interface UserWithRole {
 const functions = getFunctions(auth.app);
 const createUserCallable = httpsCallable(functions, 'createUser');
 const setRoleCallable = httpsCallable(functions, 'setRole');
-const listUsersCallable = httpsCallable(functions, 'listUsers');
 
 // --- Create User Dialog ---
 const userFormSchema = z.object({
@@ -207,64 +202,54 @@ function CreateUserDialog({ onUserCreated }: { onUserCreated: () => void }) {
 
 // --- Main Page Component ---
 export default function UsersPage() {
-  const [users, setUsers] = React.useState<UserWithRole[]>([]);
+  const [users, setUsers] = React.useState<UserDoc[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const { toast } = useToast();
-  const { role: adminRole } = useAuthStore();
-  const router = useRouter();
+  const { role: adminRole, user: currentUser } = useAuthStore();
 
-  const fetchUsers = React.useCallback(async () => {
+  const fetchUsers = React.useCallback(() => {
     setIsLoading(true);
-    try {
-      const result = await listUsersCallable();
-      const data = result.data as { users: UserWithRole[], error?: string };
-      if (data.error) {
-        throw new Error(data.error);
-      }
-      setUsers(data.users || []);
-    } catch(error: any) {
-      toast({ title: 'Error al Cargar Usuarios', description: error.message, variant: 'destructive' });
-      setUsers([]);
-    } finally {
-      setIsLoading(false);
-    }
+    const q = query(collection(db, 'users'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const userDocs = snapshot.docs.map(doc => doc.data() as UserDoc);
+        setUsers(userDocs);
+        setIsLoading(false);
+    }, (error) => {
+        console.error("Error fetching users from Firestore:", error);
+        toast({ title: 'Error al Cargar Usuarios', description: "No se pudieron obtener los datos de Firestore.", variant: 'destructive' });
+        setUsers([]);
+        setIsLoading(false);
+    });
+
+    return unsubscribe;
   }, [toast]);
 
   React.useEffect(() => {
-    if (adminRole) { // Only fetch if role is determined
-        if (adminRole === 'admin') {
-            fetchUsers();
-        } else {
-             // If not an admin, they can only see a list of users, but not modify them.
-             // We can listen to a public `users_basic_info` collection for example
-             const q = query(collection(db, 'users_public'));
-             const unsubscribe = onSnapshot(q, (snapshot) => {
-                 const publicUsers = snapshot.docs.map(doc => doc.data() as UserWithRole);
-                 setUsers(publicUsers);
-                 setIsLoading(false);
-             });
-             return () => unsubscribe();
-        }
-    }
-  }, [adminRole, fetchUsers]);
+    const unsubscribe = fetchUsers();
+    return () => unsubscribe();
+  }, [fetchUsers]);
 
-  const handleRoleChange = async (userId: string, newRole: 'admin' | 'cashier') => {
+  const handleRoleChange = async (uid: string, newRole: 'admin' | 'cashier') => {
     const originalUsers = [...users];
     
-    setUsers(currentUsers => currentUsers.map(u => u.uid === userId ? { ...u, customClaims: { ...u.customClaims, role: newRole } } : u));
+    // Optimistic UI update
+    setUsers(currentUsers => currentUsers.map(u => u.uid === uid ? { ...u, role: newRole } : u));
     
     try {
-        const result = await setRoleCallable({ userId, role: newRole });
+        const result = await setRoleCallable({ userId: uid, role: newRole });
         if (!(result.data as any).success) {
-            throw new Error((result.data as any).error || 'Error desconocido');
+            throw new Error((result.data as any).error || 'Error desconocido al cambiar el rol.');
         }
         toast({ title: '¡Rol actualizado!', description: `El rol del usuario ha sido cambiado a ${newRole}.`});
-        await fetchUsers(); // Re-fetch to ensure data consistency
+        // No need to re-fetch, the listener will update if needed, but the optimistic update is usually enough
     } catch(error: any) {
+        // Revert UI on error
         setUsers(originalUsers);
         toast({ title: 'Error al cambiar el rol', description: error.message, variant: 'destructive'});
     }
   };
+
+  const isCurrentUser = (uid: string) => currentUser?.uid === uid;
 
   if (isLoading || !adminRole) {
     return (
@@ -278,7 +263,7 @@ export default function UsersPage() {
     <main className="grid flex-1 items-start gap-4">
       <div className="flex items-center">
         <h1 className="text-2xl font-bold">Usuarios</h1>
-        {adminRole === 'admin' && <CreateUserDialog onUserCreated={fetchUsers} />}
+        {adminRole === 'admin' && <CreateUserDialog onUserCreated={() => {}} />}
       </div>
 
       <Card>
@@ -296,7 +281,6 @@ export default function UsersPage() {
               <TableRow>
                 <TableHead>Email</TableHead>
                 <TableHead>Fecha de Registro</TableHead>
-                <TableHead>Último Inicio de Sesión</TableHead>
                 <TableHead>Rol</TableHead>
               </TableRow>
             </TableHeader>
@@ -307,16 +291,13 @@ export default function UsersPage() {
                     <div className="font-medium">{user.email}</div>
                   </TableCell>
                   <TableCell>
-                    {user.metadata?.creationTime ? format(new Date(user.metadata.creationTime), 'd MMM, yyyy', { locale: es }) : 'N/A'}
-                  </TableCell>
-                   <TableCell>
-                    {user.metadata?.lastSignInTime ? format(new Date(user.metadata.lastSignInTime), 'd MMM, yyyy HH:mm', { locale: es }) : 'Nunca'}
+                    {user.created_at ? format(new Date(user.created_at.seconds * 1000), 'd MMM, yyyy', { locale: es }) : 'N/A'}
                   </TableCell>
                   <TableCell>
                     <Select
-                        value={user.customClaims?.role || 'cashier'}
+                        value={user.role || 'cashier'}
                         onValueChange={(newRole: 'admin' | 'cashier') => handleRoleChange(user.uid, newRole)}
-                        disabled={adminRole !== 'admin'}
+                        disabled={adminRole !== 'admin' || isCurrentUser(user.uid)}
                     >
                         <SelectTrigger className="w-[120px]">
                             <SelectValue placeholder="Seleccionar rol" />
