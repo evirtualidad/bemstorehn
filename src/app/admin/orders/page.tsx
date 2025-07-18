@@ -254,7 +254,7 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
         resolver: zodResolver(orderApprovalFormSchema),
         defaultValues: {
             paymentMethod: order.payment_method || 'tarjeta',
-            paymentReference: order.payment_reference || '',
+            paymentReference: '',
         },
     });
 
