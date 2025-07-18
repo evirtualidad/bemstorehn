@@ -22,6 +22,24 @@ type AuthState = {
   _setLoading: (loading: boolean) => void;
 };
 
+// Helper function to wait for hydration
+const waitForHydration = () => {
+    return new Promise<void>(resolve => {
+        const unsubscribe = useUsersStore.subscribe(state => {
+            if (state._hasHydrated) {
+                resolve();
+                unsubscribe();
+            }
+        });
+
+        // Resolve immediately if already hydrated
+        if (useUsersStore.getState()._hasHydrated) {
+            resolve();
+            unsubscribe();
+        }
+    });
+};
+
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -33,7 +51,8 @@ export const useAuthStore = create<AuthState>()(
       _setLoading: (loading: boolean) => set({ loading }),
 
       login: async (email: string, password: string) => {
-        // This is now simple and direct. It gets the current state from the users store.
+        await waitForHydration();
+
         const users = useUsersStore.getState().users;
         const foundUser = users.find(u => u.email === email && u.password === password);
 
@@ -59,7 +78,6 @@ export const useAuthStore = create<AuthState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ user: state.user, role: state.role }),
       onRehydrateStorage: () => (state) => {
-        // When the auth store is rehydrated, set loading to false.
         if (state) {
             state._setLoading(false);
         }
@@ -68,7 +86,6 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// This ensures the loading state is correctly set on initial client-side load
 if (typeof window !== 'undefined') {
     useAuthStore.getState()._setLoading(false);
 }

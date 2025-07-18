@@ -10,7 +10,7 @@ import { toast } from './use-toast';
 export interface UserDoc {
     uid: string;
     email: string;
-    password?: string; // Should only exist transiently, not stored long-term
+    password?: string;
     role: 'admin' | 'cajero';
     created_at: {
         seconds: number;
@@ -38,6 +38,8 @@ const initialUsers: UserDoc[] = [
 type UsersState = {
   users: UserDoc[];
   isLoading: boolean;
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
   addUser: (userData: Omit<UserDoc, 'uid' | 'created_at'>) => void;
   updateUserRole: (uid: string, newRole: 'admin' | 'cajero') => void;
   deleteUser: (uid: string) => void;
@@ -48,6 +50,13 @@ export const useUsersStore = create<UsersState>()(
     (set) => ({
       users: initialUsers,
       isLoading: false,
+      _hasHydrated: false,
+
+      setHasHydrated: (state) => {
+        set({
+          _hasHydrated: state
+        });
+      },
 
       addUser: (userData) => {
         const newUser: UserDoc = {
@@ -88,6 +97,11 @@ export const useUsersStore = create<UsersState>()(
     {
       name: 'users-storage',
       storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+            state.setHasHydrated(true);
+        }
+      },
     }
   )
 );
