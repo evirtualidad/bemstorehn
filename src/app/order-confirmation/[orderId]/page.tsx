@@ -16,13 +16,15 @@ import { formatCurrency } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import { useSettingsStore } from '@/hooks/use-settings-store';
+import { useCustomersStore } from '@/hooks/use-customers';
 
 export default function OrderConfirmationPage({ params }: { params: Promise<{ orderId: string }> }) {
-  const { orderId } = React.use(params);
-  const { getOrderById } = useOrdersStore();
+  // In mock mode, the orderId from the URL will correspond to the customerId
+  const { orderId: customerId } = React.use(params);
+  const { orders } = useOrdersStore();
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
-  const [order, setOrder] = React.useState<ReturnType<typeof getOrderById>>(undefined);
+  const [order, setOrder] = React.useState<ReturnType<typeof useOrdersStore.getState.getOrderById>>(undefined);
   const [isClient, setIsClient] = React.useState(false);
   
   React.useEffect(() => {
@@ -31,12 +33,16 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ or
 
   React.useEffect(() => {
     if(isClient) {
-        const foundOrder = getOrderById(orderId);
-        if (foundOrder) {
-            setOrder(foundOrder);
+        // Find the most recent order for the given customer ID
+        const customerOrders = orders
+            .filter(o => o.customer_id === customerId)
+            .sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        
+        if (customerOrders.length > 0) {
+            setOrder(customerOrders[0]);
         }
     }
-  }, [isClient, getOrderById, orderId]);
+  }, [isClient, orders, customerId]);
 
   if (!isClient) {
     return (
@@ -54,7 +60,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ or
             <main className="flex-grow container mx-auto px-4 py-16 flex items-center justify-center text-center">
                 <div>
                     <h1 className="text-4xl font-bold mb-4">Pedido no encontrado</h1>
-                    <p className="text-muted-foreground mb-8">No pudimos encontrar los detalles para el pedido con ID: {orderId}</p>
+                    <p className="text-muted-foreground mb-8">No pudimos encontrar los detalles para tu pedido. Esto puede suceder en modo de simulación.</p>
                     <Button asChild><Link href="/">Volver a la tienda</Link></Button>
                 </div>
             </main>

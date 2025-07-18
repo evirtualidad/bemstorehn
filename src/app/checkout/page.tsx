@@ -43,6 +43,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCustomersStore } from '@/hooks/use-customers';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(2, {
@@ -295,7 +296,8 @@ function ShippingDialog({
 
 export default function CheckoutPage() {
   const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart } = useCart();
-  const { addOrder } = useOrdersStore();
+  const { addOrderToState } = useOrdersStore();
+  const { addOrUpdateCustomer } = useCustomersStore();
   const { taxRate, pickupAddress } = useSettingsStore();
   const { toast } = useToast();
   const router = useRouter();
@@ -351,51 +353,52 @@ export default function CheckoutPage() {
         return;
     }
     setIsSubmitting(true);
+    
+    console.warn("MODO SIMULADO: La creación de pedidos está simulada y solo afecta el estado local.");
 
-    try {
-      const newOrderData: NewOrderData = {
-        user_id: null, // Anonymous user from online store
-        customer_id: null, // We are not linking to customers table on creation anymore
-        customer_name: values.name,
-        customer_phone: values.phone,
-        customer_address: values.deliveryMethod === 'delivery' ? shippingAddress : null,
-        items: items.map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.image,
-        })),
-        total: total,
-        shipping_cost: shippingCost,
-        payment_method: values.paymentMethod,
-        payment_reference: values.paymentReference || null,
-        delivery_method: values.deliveryMethod,
-        status: 'pending-approval',
-        source: 'online-store',
-        balance: total,
-        payments: [],
-        payment_due_date: null,
-      };
+    const customerId = await addOrUpdateCustomer({
+        name: values.name,
+        phone: values.phone,
+        address: shippingAddress,
+        total_to_add: total,
+    });
 
-      const newOrder = await addOrder(newOrderData);
+    const newOrderData: NewOrderData = {
+      user_id: null, // Anonymous user from online store
+      customer_id: customerId || null,
+      customer_name: values.name,
+      customer_phone: values.phone,
+      customer_address: values.deliveryMethod === 'delivery' ? shippingAddress : null,
+      items: items.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.image,
+      })),
+      total: total,
+      shipping_cost: shippingCost,
+      payment_method: values.paymentMethod,
+      payment_reference: values.paymentReference || null,
+      delivery_method: values.deliveryMethod,
+      status: 'pending-approval',
+      source: 'online-store',
+      balance: total,
+      payments: [],
+      payment_due_date: null,
+    };
+    
+    addOrderToState(newOrderData);
 
-      if (newOrder) {
+    setTimeout(() => {
         toast({
-          title: '¡Pedido Recibido!',
+          title: '¡Pedido Recibido! (Simulado)',
           description: 'Gracias por tu compra. Tu pedido está siendo procesado.',
         });
         clearCart();
-        router.push(`/order-confirmation/${newOrder.display_id}`);
-      } else {
-        // Error toast is handled inside addOrder
-      }
-    } catch (error) {
-        console.error('Error final en onSubmit de checkout:', error);
-        // Toast is handled in store
-    } finally {
+        router.push(`/order-confirmation/${newOrderData.customer_id || 'mock-id'}`);
         setIsSubmitting(false);
-    }
+    }, 500);
   }
 
   if (items.length === 0 && !isSubmitting) {

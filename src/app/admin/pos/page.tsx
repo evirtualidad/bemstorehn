@@ -41,8 +41,6 @@ import { useAuthStore } from '@/hooks/use-auth-store';
 import type { Session } from '@supabase/supabase-js';
 import { usePosCart, type PosCartItem } from '@/hooks/use-pos-cart';
 import { v4 as uuidv4 } from 'uuid';
-import { createOrder } from '@/ai/flows/create-order-flow';
-import type { CreateOrderInput } from '@/ai/schemas';
 
 type SelectedFilter = { type: 'category' | 'offer'; value: string } | null;
 
@@ -870,9 +868,9 @@ export default function PosPage() {
       decreaseQuantity,
       clearCart,
   } = usePosCart();
-  const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
+  const { products, fetchProducts, isLoading: isLoadingProducts, decreaseStock } = useProductsStore();
   const { addOrderToState, fetchOrders } = useOrdersStore();
-  const { customers, fetchCustomers, isLoading: isLoadingCustomers } = useCustomersStore();
+  const { customers, fetchCustomers, isLoading: isLoadingCustomers, addOrUpdateCustomer } = useCustomersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
@@ -1028,12 +1026,22 @@ export default function PosPage() {
     
     setIsSubmitting(true);
     
-    // SIMULATION MODE
-    console.warn("MODO SIMULADO: La creación de pedidos está simulada. Los datos no se guardan en la base de datos.");
+    console.warn("MODO SIMULADO: La creación de pedidos está simulada y solo afecta el estado local.");
+
+    const customerId = await addOrUpdateCustomer({
+        name: values.name || 'Consumidor Final',
+        phone: values.phone || 'N/A',
+        address: values.address,
+        total_to_add: totalWithShipping
+    });
+    
+    for (const item of cart) {
+        await decreaseStock(item.id, item.quantity);
+    }
 
     const newOrderData: NewOrderData = {
         user_id: session?.user.id || null,
-        customer_id: null,
+        customer_id: customerId || null,
         customer_name: values.name || 'Consumidor Final',
         customer_phone: values.phone || 'N/A',
         customer_address: values.address || null,
@@ -1073,6 +1081,7 @@ export default function PosPage() {
         setIsCheckoutOpen(false);
         setIsTicketVisible(false);
         setIsSubmitting(false);
+        fetchProducts(); // Refresh product list to show updated stock
     }, 500);
   }
   

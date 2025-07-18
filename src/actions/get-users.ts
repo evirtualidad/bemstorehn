@@ -1,7 +1,6 @@
 
 'use server';
 
-import { supabaseClient } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 
 export type UserWithRole = User & {
@@ -12,36 +11,35 @@ export type UserWithRole = User & {
     }
 }
 
-export async function getUsers(): Promise<{ users: UserWithRole[], error?: string }> {
-  // NOTE: This can only be called from a server component or a server action
-  // for it to have the necessary service_role permissions.
-  // We are creating a temporary admin client here for this action.
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+const mockUsers: UserWithRole[] = [
     {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
-  );
-
-  const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
-  
-  if (error) {
-    console.error('Error fetching users:', error.message);
-    return { users: [], error: error.message };
-  }
-
-  // Cast users to UserWithRole, ensuring app_metadata exists
-  const usersWithRoles: UserWithRole[] = users.map(user => ({
-    ...user,
-    app_metadata: {
-      ...user.app_metadata,
-      role: user.app_metadata.role || 'cashier', // Default to cashier if no role
+        id: 'user_admin_mock',
+        email: 'admin@example.com',
+        created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        last_sign_in_at: new Date().toISOString(),
+        app_metadata: { role: 'admin', provider: 'email', providers: ['email'] },
+        user_metadata: {},
+        aud: 'authenticated',
+        identities: [],
+        phone: ''
     },
-  }));
+    {
+        id: 'user_cashier_mock',
+        email: 'cashier@example.com',
+        created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+        last_sign_in_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        app_metadata: { role: 'cashier', provider: 'email', providers: ['email'] },
+        user_metadata: {},
+        aud: 'authenticated',
+        identities: [],
+        phone: ''
+    }
+];
 
-  return { users: usersWithRoles };
+export async function getUsers(): Promise<{ users: UserWithRole[], error?: string }> {
+  console.log("SIMULATION: Fetching mock users.");
+  // Simulate network delay
+  await new Promise(res => setTimeout(res, 500));
+  
+  return { users: mockUsers };
 }

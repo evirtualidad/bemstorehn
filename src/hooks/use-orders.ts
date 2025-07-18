@@ -4,8 +4,8 @@
 import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
-import { supabaseClient } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import type { Product } from '@/lib/products';
 
 export interface Payment {
     date: string;
@@ -70,23 +70,87 @@ const generateDisplayId = () => {
   return `${random}-${timestamp}`;
 };
 
+const mockOrders: Order[] = [
+    {
+        id: 'ord_1',
+        display_id: 'RNDM-123456',
+        created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        user_id: 'user_1',
+        customer_id: 'cust_1',
+        customer_name: 'Elena Rodriguez',
+        customer_phone: '9876-5432',
+        customer_address: { department: 'Francisco Morazán', municipality: 'Distrito Central', colony: 'Lomas del Guijarro', exactAddress: 'Casa #123, Calle Principal' },
+        items: [{ id: 'prod_001', name: 'Glow Serum', price: 35.00, quantity: 2, image: 'https://placehold.co/400x400.png' }],
+        total: 70.00,
+        shipping_cost: 0,
+        balance: 0,
+        payments: [{ date: new Date().toISOString(), amount: 70.00, method: 'tarjeta' }],
+        payment_method: 'tarjeta',
+        payment_reference: '12345',
+        status: 'paid',
+        source: 'online-store',
+        delivery_method: 'delivery',
+        payment_due_date: null,
+    },
+    {
+        id: 'ord_2',
+        display_id: 'ABCD-654321',
+        created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        user_id: 'user_2',
+        customer_id: 'cust_2',
+        customer_name: 'Carlos Gomez',
+        customer_phone: '3322-1100',
+        customer_address: null,
+        items: [
+            { id: 'prod_003', name: 'Velvet Matte Lipstick', price: 24.00, quantity: 1, image: 'https://placehold.co/400x400.png' },
+            { id: 'prod_008', name: 'Waterproof Mascara', price: 26.00, quantity: 1, image: 'https://placehold.co/400x400.png' },
+        ],
+        total: 50.00,
+        shipping_cost: 0,
+        balance: 50.00,
+        payments: [],
+        payment_method: 'credito',
+        payment_reference: null,
+        status: 'pending-payment',
+        source: 'pos',
+        delivery_method: 'pickup',
+        payment_due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+     {
+        id: 'ord_3',
+        display_id: 'WXYZ-987654',
+        created_at: new Date().toISOString(),
+        user_id: null,
+        customer_id: 'cust_3',
+        customer_name: 'Ana Martinez',
+        customer_phone: '8877-6655',
+        customer_address: { department: 'Cortés', municipality: 'San Pedro Sula', colony: 'Col. Jardines del Valle', exactAddress: 'Bloque 5, Casa 10' },
+        items: [
+            { id: 'prod_007', name: 'Purifying Clay Mask', price: 28.00, quantity: 1, image: 'https://placehold.co/400x400.png' },
+        ],
+        total: 28.00,
+        shipping_cost: 150,
+        balance: 28.00,
+        payments: [],
+        payment_method: 'transferencia',
+        payment_reference: null,
+        status: 'pending-approval',
+        source: 'online-store',
+        delivery_method: 'delivery',
+        payment_due_date: null,
+    },
+];
+
 export const useOrdersStore = create<OrdersState>((set, get) => ({
   orders: [],
   isLoading: false,
 
   fetchOrders: async () => {
     set({ isLoading: true });
-    const { data, error } = await supabaseClient
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        set({ isLoading: false });
-        toast({ title: 'Error al cargar pedidos', description: error.message, variant: 'destructive' });
-    } else {
-        set({ orders: data as Order[], isLoading: false });
-    }
+    // Simulate network delay
+    setTimeout(() => {
+        set({ orders: mockOrders, isLoading: false });
+    }, 500);
   },
 
   addOrderToState: (orderData) => {
@@ -108,90 +172,46 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
      const newBalance = order.balance - amount;
      const newStatus = newBalance <= 0 ? 'paid' : order.status;
      const newPayment: Payment = { amount, method, date: new Date().toISOString() };
-     const updatedPayments = [...order.payments, newPayment];
      
-     const { data, error } = await supabaseClient
-        .from('orders')
-        .update({
-            balance: newBalance,
-            status: newStatus,
-            payments: updatedPayments,
-        })
-        .eq('id', orderId)
-        .select()
-        .single();
-    
-    if (error) {
-        toast({ title: 'Error', description: 'No se pudo registrar el pago.', variant: 'destructive' });
-    } else {
-        set(produce((state: OrdersState) => {
-            const index = state.orders.findIndex(o => o.id === orderId);
-            if (index !== -1) {
-                state.orders[index] = data as Order;
-            }
-        }));
-        toast({ title: 'Pago Registrado', description: 'El pago se registró con éxito.' });
-    }
+     set(produce((state: OrdersState) => {
+        const orderToUpdate = state.orders.find(o => o.id === orderId);
+        if(orderToUpdate) {
+            orderToUpdate.balance = newBalance;
+            orderToUpdate.status = newStatus;
+            orderToUpdate.payments.push(newPayment);
+        }
+    }));
+    toast({ title: 'Pago Registrado', description: 'El pago se registró con éxito (Simulado).' });
   },
 
   approveOrder: async ({ orderId, paymentMethod, paymentDueDate, paymentReference }) => {
-    const order = get().orders.find(o => o.id === orderId);
-    if (!order) return;
-
-    let updateData: Partial<Order> = {
-        payment_method: paymentMethod,
-        payment_due_date: paymentDueDate ? paymentDueDate.toISOString() : order.payment_due_date,
-        payment_reference: paymentReference || order.payment_reference,
-    };
-    
-    if (paymentMethod === 'credito') {
-        updateData.status = 'pending-payment';
-        updateData.balance = order.total;
-    } else {
-        updateData.status = 'paid';
-        updateData.balance = 0;
-        updateData.payments = [{ amount: order.total, date: new Date().toISOString(), method: paymentMethod }];
-    }
-
-    const { data, error } = await supabaseClient
-        .from('orders')
-        .update(updateData)
-        .eq('id', orderId)
-        .select()
-        .single();
-
-    if (error) {
-        toast({ title: 'Error', description: 'No se pudo aprobar el pedido.', variant: 'destructive' });
-    } else {
-        set(produce((state: OrdersState) => {
-            const index = state.orders.findIndex(o => o.id === orderId);
-            if (index !== -1) {
-                state.orders[index] = data as Order;
+    set(produce((state: OrdersState) => {
+        const order = state.orders.find(o => o.id === orderId);
+        if (order) {
+            order.payment_method = paymentMethod;
+            order.payment_due_date = paymentDueDate ? paymentDueDate.toISOString() : null;
+            order.payment_reference = paymentReference || null;
+            if (paymentMethod === 'credito') {
+                order.status = 'pending-payment';
+                order.balance = order.total;
+            } else {
+                order.status = 'paid';
+                order.balance = 0;
+                order.payments = [{ amount: order.total, date: new Date().toISOString(), method: paymentMethod }];
             }
-        }));
-        toast({ title: 'Pedido Aprobado', description: 'El pedido ha sido facturado.' });
-    }
+        }
+    }));
+    toast({ title: 'Pedido Aprobado (Simulado)', description: 'El pedido ha sido facturado.' });
   },
 
   cancelOrder: async (orderId: string) => {
-    const { data, error } = await supabaseClient
-        .from('orders')
-        .update({ status: 'cancelled' })
-        .eq('id', orderId)
-        .select()
-        .single();
-
-    if (error) {
-        toast({ title: 'Error', description: 'No se pudo cancelar el pedido.', variant: 'destructive' });
-    } else {
-        set(produce((state: OrdersState) => {
-            const index = state.orders.findIndex(o => o.id === orderId);
-            if (index !== -1) {
-                state.orders[index] = data as Order;
-            }
-        }));
-        toast({ title: 'Pedido Cancelado' });
-    }
+    set(produce((state: OrdersState) => {
+        const order = state.orders.find(o => o.id === orderId);
+        if (order) {
+            order.status = 'cancelled';
+        }
+    }));
+    toast({ title: 'Pedido Cancelado (Simulado)' });
   },
 
   getOrderById: (orderId: string) => {

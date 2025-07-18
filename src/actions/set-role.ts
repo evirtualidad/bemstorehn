@@ -1,33 +1,19 @@
 
 'use server';
 
-import { supabaseClient } from '@/lib/supabase';
-
 type Role = 'admin' | 'cashier';
 
 export async function setRole(userId: string, role: Role): Promise<{ success: boolean, error?: string }> {
-  // NOTE: This can only be called from a server component or a server action
-  // for it to have the necessary service_role permissions.
-  // We are creating a temporary admin client here for this action.
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
-  );
+  console.log(`SIMULATION: Setting role for user ${userId} to ${role}`);
+  // In a real app, you would update the user's metadata in your auth provider.
+  // Here, we just simulate a successful operation.
   
-  const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
-    userId,
-    { app_metadata: { role: role } }
-  );
+  // Simulate network delay
+  await new Promise(res => setTimeout(res, 300));
 
-  if (error) {
-    console.error('Error setting role:', error.message);
-    return { success: false, error: error.message };
+  // Simulate potential failure
+  if (userId === 'fail_case') {
+    return { success: false, error: 'Simulated failure to update role.' };
   }
 
   return { success: true };

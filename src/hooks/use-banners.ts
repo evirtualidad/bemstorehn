@@ -4,18 +4,43 @@
 import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
-import { supabaseClient } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
-import imageCompression from 'browser-image-compression';
 
 export interface Banner {
-  id: string; // uuid from supabase
+  id: string; // uuid
   created_at?: string;
   title: string;
   description: string;
-  image: string; // url from supabase storage
+  image: string; // url
   aiHint?: string;
 }
+
+const mockBanners: Banner[] = [
+    {
+        id: 'banner_1',
+        created_at: new Date().toISOString(),
+        title: 'Colección Esencial de Verano',
+        description: 'Descubre nuestros productos más vendidos para un look fresco y radiante.',
+        image: 'https://placehold.co/1200x600.png',
+        aiHint: 'summer cosmetics'
+    },
+    {
+        id: 'banner_2',
+        created_at: new Date().toISOString(),
+        title: '20% de Descuento en Skincare',
+        description: 'Cuida tu piel con nuestras mejores ofertas de la temporada.',
+        image: 'https://placehold.co/1200x600.png',
+        aiHint: 'skincare products'
+    },
+    {
+        id: 'banner_3',
+        created_at: new Date().toISOString(),
+        title: 'Nuevos Tonos de Labiales',
+        description: 'Colores vibrantes y de larga duración para cualquier ocasión.',
+        image: 'https://placehold.co/1200x600.png',
+        aiHint: 'lipstick collection'
+    }
+];
 
 type BannersState = {
   banners: Banner[];
@@ -27,34 +52,6 @@ type BannersState = {
   deleteBanner: (bannerId: string) => Promise<void>;
 };
 
-const BUCKET_NAME = 'banners';
-
-const uploadBannerImage = async (file: File): Promise<string> => {
-    const fileName = `${uuidv4()}-${file.name}`;
-    const filePath = `${fileName}`;
-
-    const compressionOptions = {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-    };
-    const compressedFile = await imageCompression(file, compressionOptions);
-
-    const { data, error } = await supabaseClient.storage
-        .from(BUCKET_NAME)
-        .upload(filePath, compressedFile);
-
-    if (error) {
-        throw new Error(`Error uploading image: ${error.message}`);
-    }
-
-    const { data: { publicUrl } } = supabaseClient.storage
-        .from(BUCKET_NAME)
-        .getPublicUrl(data.path);
-
-    return publicUrl;
-};
-
 export const useBannersStore = create<BannersState>((set, get) => ({
   banners: [],
   isLoading: false,
@@ -62,101 +59,54 @@ export const useBannersStore = create<BannersState>((set, get) => ({
 
   fetchBanners: async () => {
     set({ isLoading: true });
-    const { data, error } = await supabaseClient
-        .from('banners')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        set({ error: error.message, isLoading: false });
-        toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-        set({ banners: data as Banner[], isLoading: false });
-    }
+    // Simulate network delay
+    setTimeout(() => {
+        set({ banners: mockBanners, isLoading: false });
+    }, 500);
   },
 
   addBanner: async (bannerData) => {
-    set({ isLoading: true });
-    try {
-        let imageUrl = '';
-        if (bannerData.image instanceof File) {
-            imageUrl = await uploadBannerImage(bannerData.image);
-        }
-
-        const { image, ...restOfData } = bannerData;
-
-        const { data, error } = await supabaseClient
-            .from('banners')
-            .insert([{ ...restOfData, image: imageUrl }])
-            .select()
-            .single();
-
-        if (error) throw error;
-        
-        set(produce((state: BannersState) => {
-            state.banners.unshift(data as Banner);
-        }));
-
-        toast({ title: 'Banner añadido', description: 'El nuevo banner se ha guardado.' });
-    } catch (error: any) {
-        toast({ title: 'Error al añadir banner', description: error.message, variant: 'destructive' });
-    } finally {
-        set({ isLoading: false });
+    let imageUrl = '';
+    if (bannerData.image instanceof File) {
+        imageUrl = URL.createObjectURL(bannerData.image);
+    } else {
+        imageUrl = bannerData.image; // It's a placeholder string
     }
+    
+    const newBanner = {
+        ...bannerData,
+        id: uuidv4(),
+        created_at: new Date().toISOString(),
+        image: imageUrl
+    };
+
+    set(produce((state: BannersState) => {
+        state.banners.unshift(newBanner);
+    }));
+    toast({ title: 'Banner añadido (Simulado)', description: 'El nuevo banner se ha guardado.' });
   },
 
   updateBanner: async (banner) => {
-     set({ isLoading: true });
-    try {
-        let imageUrl = banner.image as string;
-        if (banner.image instanceof File) {
-            imageUrl = await uploadBannerImage(banner.image);
-        }
-
-        const { image, ...restOfData } = banner;
-
-        const { data, error } = await supabaseClient
-            .from('banners')
-            .update({ ...restOfData, image: imageUrl })
-            .eq('id', banner.id)
-            .select()
-            .single();
-        
-        if (error) throw error;
-
-        set(produce((state: BannersState) => {
-            const index = state.banners.findIndex((b) => b.id === banner.id);
-            if (index !== -1) {
-                state.banners[index] = data as Banner;
-            }
-        }));
-
-        toast({ title: 'Banner actualizado', description: 'Los cambios se han guardado.' });
-    } catch (error: any) {
-        toast({ title: 'Error al actualizar banner', description: error.message, variant: 'destructive' });
-    } finally {
-        set({ isLoading: false });
+    let imageUrl = banner.image as string;
+    if (banner.image instanceof File) {
+      imageUrl = URL.createObjectURL(banner.image);
     }
+
+    set(produce((state: BannersState) => {
+        const index = state.banners.findIndex((b) => b.id === banner.id);
+        if (index !== -1) {
+            state.banners[index] = { ...banner, image: imageUrl, created_at: state.banners[index].created_at };
+        }
+    }));
+    toast({ title: 'Banner actualizado (Simulado)', description: 'Los cambios se han guardado.' });
   },
 
   deleteBanner: async (bannerId: string) => {
-    const originalBanners = get().banners;
-    
-    // Optimistic delete
     set(produce((state: BannersState) => {
         state.banners = state.banners.filter((b) => b.id !== bannerId);
     }));
-
-    const { error } = await supabaseClient
-        .from('banners')
-        .delete()
-        .eq('id', bannerId);
-
-    if (error) {
-        set({ banners: originalBanners });
-        toast({ title: 'Error al eliminar', description: error.message, variant: 'destructive' });
-    } else {
-        toast({ title: 'Banner eliminado', description: 'El banner ha sido eliminado.' });
-    }
+    toast({ title: 'Banner eliminado (Simulado)', description: 'El banner ha sido eliminado.' });
   },
 }));
+
+useBannersStore.getState().fetchBanners();

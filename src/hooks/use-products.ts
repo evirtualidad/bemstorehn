@@ -5,9 +5,8 @@ import { create } from 'zustand';
 import type { Product } from '@/lib/products';
 import { toast } from './use-toast';
 import { produce } from 'immer';
-import { supabaseClient } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
-import imageCompression from 'browser-image-compression';
+import { products as mockProducts } from '@/lib/products';
 
 type ProductsState = {
   products: Product[];
@@ -22,34 +21,6 @@ type ProductsState = {
   increaseStock: (productId: string, quantity: number) => Promise<void>;
 };
 
-const BUCKET_NAME = 'products';
-
-const uploadProductImage = async (file: File): Promise<string> => {
-    const fileName = `${uuidv4()}-${file.name}`;
-    const filePath = `${fileName}`;
-
-    const compressionOptions = {
-        maxSizeMB: 0.5,
-        maxWidthOrHeight: 800,
-        useWebWorker: true,
-    };
-    const compressedFile = await imageCompression(file, compressionOptions);
-
-    const { data, error } = await supabaseClient.storage
-        .from(BUCKET_NAME)
-        .upload(filePath, compressedFile);
-
-    if (error) {
-        throw new Error(`Error uploading image: ${error.message}`);
-    }
-
-    const { data: { publicUrl } } = supabaseClient.storage
-        .from(BUCKET_NAME)
-        .getPublicUrl(data.path);
-
-    return publicUrl;
-};
-
 export const useProductsStore = create<ProductsState>((set, get) => ({
   products: [],
   isLoading: false,
@@ -57,17 +28,10 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   
   fetchProducts: async () => {
     set({ isLoading: true });
-    const { data, error } = await supabaseClient
-        .from('products')
-        .select('*')
-        .order('name', { ascending: true });
-
-    if (error) {
-        set({ error: error.message, isLoading: false });
-        toast({ title: 'Error', description: 'No se pudieron cargar los productos.', variant: 'destructive' });
-    } else {
-        set({ products: data as Product[], isLoading: false });
-    }
+    // Simulate network delay
+    setTimeout(() => {
+        set({ products: mockProducts, isLoading: false });
+    }, 500);
   },
 
   getProductById: (productId: string) => {
@@ -75,138 +39,70 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   },
 
   addProduct: async (productData) => {
-    set({ isLoading: true });
-    try {
-        let imageUrl = '';
-        if (productData.image instanceof File) {
-            imageUrl = await uploadProductImage(productData.image);
-        }
-
-        const { image, ...restOfData } = productData;
-
-        const { data, error } = await supabaseClient
-            .from('products')
-            .insert([{ ...restOfData, image: imageUrl }])
-            .select()
-            .single();
-        
-        if (error) throw error;
-        
-        const newProduct = data as Product;
-        set(produce((state: ProductsState) => {
-            state.products.unshift(newProduct);
-        }));
-        toast({ title: 'Producto añadido', description: `${newProduct.name} ha sido añadido.` });
-        return newProduct;
-    } catch (error: any) {
-        toast({ title: 'Error al añadir producto', description: error.message, variant: 'destructive' });
-        return null;
-    } finally {
-        set({ isLoading: false });
+    let imageUrl = '';
+    if (productData.image instanceof File) {
+        // Create a temporary local URL for the image
+        imageUrl = URL.createObjectURL(productData.image);
+    } else {
+        imageUrl = productData.image; // It's already a placeholder URL
     }
+    
+    const newProduct: Product = {
+      ...productData,
+      id: uuidv4(),
+      image: imageUrl,
+    };
+    
+    set(produce((state: ProductsState) => {
+        state.products.unshift(newProduct);
+    }));
+    toast({ title: 'Producto añadido (Simulado)', description: `${newProduct.name} ha sido añadido.` });
+    return newProduct;
   },
 
   updateProduct: async (product) => {
-    set({ isLoading: true });
-    try {
-        let imageUrl = product.image as string;
-        if (product.image instanceof File) {
-            imageUrl = await uploadProductImage(product.image);
+     let imageUrl = product.image as string;
+      if (product.image instanceof File) {
+          imageUrl = URL.createObjectURL(product.image);
+      }
+
+    set(produce((state: ProductsState) => {
+        const index = state.products.findIndex((p) => p.id === product.id);
+        if (index !== -1) {
+            state.products[index] = { ...product, image: imageUrl };
         }
-
-        const { image, ...restOfData } = product;
-
-        const { data, error } = await supabaseClient
-            .from('products')
-            .update({ ...restOfData, image: imageUrl })
-            .eq('id', product.id)
-            .select()
-            .single();
-
-        if (error) throw error;
-        
-        const updatedProduct = data as Product;
-        set(produce((state: ProductsState) => {
-            const index = state.products.findIndex((p) => p.id === product.id);
-            if (index !== -1) {
-                state.products[index] = updatedProduct;
-            }
-        }));
-        toast({ title: 'Producto actualizado', description: `Los cambios en ${product.name} han sido guardados.` });
-    } catch (error: any) {
-        toast({ title: 'Error al actualizar producto', description: error.message, variant: 'destructive' });
-    } finally {
-        set({ isLoading: false });
-    }
+    }));
+    toast({ title: 'Producto actualizado (Simulado)', description: `Los cambios en ${product.name} han sido guardados.` });
   },
 
   deleteProduct: async (productId: string) => {
-    const originalProducts = get().products;
     set(produce((state: ProductsState) => {
         state.products = state.products.filter((p) => p.id !== productId);
     }));
-
-    const { error } = await supabaseClient
-        .from('products')
-        .delete()
-        .eq('id', productId);
-
-    if (error) {
-        set({ products: originalProducts });
-        toast({ title: 'Error al eliminar', description: error.message, variant: 'destructive' });
-    } else {
-        toast({ title: 'Producto eliminado', variant: 'destructive' });
-    }
+    toast({ title: 'Producto eliminado (Simulado)', variant: 'destructive' });
   },
 
   decreaseStock: async (productId: string, quantity: number) => {
-    const product = get().products.find(p => p.id === productId);
-    if (!product) {
-      throw new Error(`Producto con ID ${productId} no encontrado.`);
-    }
-
-    const newStock = product.stock - quantity;
-    if (newStock < 0) {
-      throw new Error(`Stock insuficiente para el producto ${product.name}.`);
-    }
-    
-    const { error } = await supabaseClient
-        .from('products')
-        .update({ stock: newStock })
-        .eq('id', productId);
-
-    if (error) {
-        throw new Error(`Error al actualizar stock para ${product.name}: ${error.message}`);
-    }
-    
     set(produce((state: ProductsState) => {
-        const p = state.products.find(p => p.id === productId);
-        if (p) p.stock = newStock;
+        const product = state.products.find(p => p.id === productId);
+        if (product) {
+            if(product.stock >= quantity) {
+                product.stock -= quantity;
+            } else {
+                 console.error(`Stock insuficiente para ${product.name}`);
+            }
+        }
     }));
   },
 
   increaseStock: async (productId: string, quantity: number) => {
-     const product = get().products.find(p => p.id === productId);
-    if (!product) {
-       throw new Error(`Producto con ID ${productId} no encontrado.`);
-    }
-
-    const newStock = product.stock + quantity;
-    
-    const { error } = await supabaseClient
-        .from('products')
-        .update({ stock: newStock })
-        .eq('id', productId);
-    
-     if (error) {
-        throw new Error(`Error al actualizar stock para ${product.name}: ${error.message}`);
-    }
-
     set(produce((state: ProductsState) => {
-        const p = state.products.find(p => p.id === productId);
-        if (p) p.stock = newStock;
+        const product = state.products.find(p => p.id === productId);
+        if (product) {
+            product.stock += quantity;
+        }
     }));
   },
 }));
 
-    
+useProductsStore.getState().fetchProducts();
