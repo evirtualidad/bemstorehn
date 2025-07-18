@@ -107,6 +107,7 @@ function FinancialSummary({ orders, currencyCode }: { orders: any[], currencyCod
     }, {} as Record<string, {name: string, value: number}>);
     
     const salesByMonth = financialOrders.reduce((acc, order) => {
+        if (!order.created_at) return acc;
         const month = format(parseISO(order.created_at), 'MMM', { locale: es });
         if(!acc[month]){
             acc[month] = { name: month, Ingresos: 0 };
@@ -442,7 +443,7 @@ function Transactions({ orders, currencyCode }: { orders: any[], currencyCode: s
                                         {statusInfo.label}
                                     </Badge>
                                 </TableCell>
-                                <TableCell>{format(parseISO(order.created_at), 'd MMM, yyyy')}</TableCell>
+                                <TableCell>{order.created_at ? format(parseISO(order.created_at), 'd MMM, yyyy') : 'N/A'}</TableCell>
                                 <TableCell className="text-right">{formatCurrency(order.total, currencyCode)}</TableCell>
                             </TableRow>
                         )
