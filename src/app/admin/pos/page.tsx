@@ -872,7 +872,6 @@ export default function PosPage() {
   const { addOrderToState } = useOrdersStore();
   const { fetchCustomers, isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
-  const { currency } = useCurrencyStore();
   const { toast } = useToast();
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -952,16 +951,7 @@ export default function PosPage() {
   };
 
   const handleProductSearchSelect = (product: Product): void => {
-    const wasAdded = addToCart(product);
-     if (wasAdded) {
-      setTimeout(() => {
-        toast({
-          title: 'Producto añadido',
-          description: `${product.name} añadido al pedido.`,
-          duration: 3000,
-        });
-      }, 0);
-    }
+    handleProductClick(product);
   };
   
   const handleProductClick = (product: Product) => {
@@ -994,9 +984,6 @@ export default function PosPage() {
   };
 
   const updateQuantity = (productId: string, amount: number) => {
-    const itemToUpdate = cart.find(item => item.id === productId);
-    if (!itemToUpdate) return;
-    
     if (amount > 0) {
         increaseQuantity(productId)
     } else {
@@ -1211,3 +1198,5 @@ export default function PosPage() {
     </div>
   );
 }
+
+    
