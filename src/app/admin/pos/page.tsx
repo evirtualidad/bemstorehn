@@ -248,15 +248,12 @@ function TicketView({
 }
 
 function MobileTicketView({
-  isVisible,
   onCheckout,
   onClose,
 }: {
-  isVisible: boolean;
   onCheckout: () => void;
   onClose: () => void;
 }) {
-  if (!isVisible) return null;
   const { 
     items: cart,
     subtotal,
@@ -1165,14 +1162,15 @@ export default function PosPage() {
             }}
         />
         
-        <MobileTicketView
-            isVisible={isTicketVisible}
-            onCheckout={() => {
-                setIsCheckoutOpen(true)
-                setIsTicketVisible(false)
-            }}
-            onClose={() => setIsTicketVisible(false)}
-        />
+        {isTicketVisible && (
+            <MobileTicketView
+                onCheckout={() => {
+                    setIsCheckoutOpen(true);
+                    setIsTicketVisible(false);
+                }}
+                onClose={() => setIsTicketVisible(false)}
+            />
+        )}
 
         <Dialog open={isCheckoutOpen} onOpenChange={handleOpenChangeCheckout}>
             <DialogContent className="sm:max-w-lg">
