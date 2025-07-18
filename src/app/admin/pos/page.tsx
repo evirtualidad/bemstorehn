@@ -38,8 +38,7 @@ import { CustomerSearch } from '@/components/customer-search';
 import { paymentMethods } from '@/lib/payment-methods.tsx';
 import { ProductGrid } from '@/components/product-grid';
 import { useAuthStore } from '@/hooks/use-auth-store';
-import type { Session } from '@supabase/supabase-js';
-import { usePosCart, type PosCartItem } from '@/hooks/use-pos-cart';
+import { usePosCart } from '@/hooks/use-pos-cart';
 import { v4 as uuidv4 } from 'uuid';
 
 type SelectedFilter = { type: 'category' | 'offer'; value: string } | null;
@@ -934,8 +933,15 @@ export default function PosPage() {
     setShippingCost(cost);
   };
 
-  const handleProductClick = (product: Product): void => {
-    addToCart(product);
+  const handleAddToCart = (product: Product) => {
+    const success = addToCart(product);
+    if (!success) {
+      toast({
+        title: 'No se pudo añadir el producto',
+        description: `El stock para "${product.name}" es insuficiente.`,
+        variant: 'destructive',
+      });
+    }
   };
   
   const handleCustomerSelect = (customer: Customer | null) => {
@@ -1070,7 +1076,7 @@ export default function PosPage() {
             <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20 flex-shrink-0">
                 <h1 className="text-xl font-bold flex-1 whitespace-nowrap">POS</h1>
                  <div className="w-full sm:w-auto sm:flex-initial">
-                    <ProductSearch onProductSelect={handleProductClick} />
+                    <ProductSearch onProductSelect={handleAddToCart} />
                  </div>
             </header>
             <main className="flex-1 flex flex-col">
@@ -1084,7 +1090,7 @@ export default function PosPage() {
                     <Separator />
                 </div>
                  <ScrollArea className="flex-1 p-4 bg-background">
-                     <ProductGrid products={filteredProducts} onProductClick={handleProductClick} />
+                     <ProductGrid products={filteredProducts} onAddToCart={handleAddToCart} />
                 </ScrollArea>
             </main>
         </div>
@@ -1151,4 +1157,3 @@ export default function PosPage() {
     </div>
   );
 }
-

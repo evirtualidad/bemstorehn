@@ -8,34 +8,35 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
-import { useCart } from '@/hooks/use-cart';
-import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
 
 interface ProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
   product: Product;
+  onAddToCart: (product: Product) => void;
   showDescription?: boolean;
-  onProductClick?: (product: Product) => void;
+  useLink?: boolean;
 }
 
-export function ProductCard({ product, className, showDescription = true, onProductClick, ...props }: ProductCardProps) {
+export function ProductCard({ 
+  product, 
+  className, 
+  onAddToCart,
+  showDescription = true,
+  useLink = true, // By default, wrap in a link. For POS, we'll set this to false.
+  ...props 
+}: ProductCardProps) {
   const { getCategoryByName } = useCategoriesStore();
   const stockStatus = product.stock <= 0 ? "Agotado" : product.stock < 10 ? "Poco Stock" : "En Stock";
-  const { addToCart } = useCart();
-  const { toast } = useToast();
   const { currency } = useCurrencyStore();
   
   const isDiscounted = product.originalPrice && product.originalPrice > product.price;
 
-  const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    e.preventDefault(); // Prevent link navigation when clicking the button
-    addToCart(product);
-    toast({
-      title: "Añadido al carrito",
-      description: `${product.name} ha sido añadido a tu carrito.`,
-    });
+  const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    e.preventDefault(); // Prevent link navigation if inside a Link
+    e.stopPropagation(); // Prevent card's onClick if it has one
+    onAddToCart(product);
   }
 
   const category = getCategoryByName(product.category);
@@ -90,7 +91,7 @@ export function ProductCard({ product, className, showDescription = true, onProd
             variant="outline" 
             className="w-full"
             disabled={product.stock <= 0}
-            onClick={handleAddToCart}
+            onClick={handleButtonClick}
           >
             <ShoppingCart className="mr-2 h-4 w-4" />
             Añadir al Carrito
@@ -99,19 +100,16 @@ export function ProductCard({ product, className, showDescription = true, onProd
       </Card>
   );
 
-  if (onProductClick) {
-    return (
-      <div {...props} onClick={() => onProductClick(product)} className="cursor-pointer group block h-full">
-        {cardContent}
-      </div>
-    )
-  }
+  const Wrapper = useLink 
+    ? ({ children }: { children: React.ReactNode }) => <Link href={`/product/${product.id}`} className="group block h-full">{children}</Link>
+    : ({ children }: { children: React.ReactNode }) => <div className="group block h-full cursor-pointer" onClick={() => onAddToCart(product)}>{children}</div>;
+
 
   return (
     <div {...props}>
-      <Link href={`/product/${product.id}`} className="group block h-full">
+      <Wrapper>
         {cardContent}
-      </Link>
+      </Wrapper>
     </div>
   );
 }

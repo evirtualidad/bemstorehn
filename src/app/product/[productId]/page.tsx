@@ -69,6 +69,14 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     });
   }
 
+  const handleRelatedAddToCart = (product: Product) => {
+    addToCart(product);
+    toast({
+      title: "Añadido al carrito",
+      description: `${product.name} ha sido añadido a tu carrito.`,
+    });
+  }
+
   const relatedProducts = products
     .filter(p => p.category === product.category && p.id !== product.id)
     .slice(0, 4);
@@ -139,7 +147,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 md:mb-14">También te podría interesar</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
               {relatedProducts.map(related => (
-                <ProductCard key={related.id} product={related as Product} />
+                <ProductCard key={related.id} product={related as Product} onAddToCart={handleRelatedAddToCart} />
               ))}
             </div>
           </div>

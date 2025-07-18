@@ -2,12 +2,12 @@
 import type { Product } from '@/lib/products';
 import { ProductCard } from './product-card';
 
-interface ProductGridProps {
+interface ProductGridHomepageProps {
   products: Product[];
   onAddToCart: (product: Product) => void;
 }
 
-export function ProductGrid({ products, onAddToCart }: ProductGridProps) {
+export function ProductGridHomepage({ products, onAddToCart }: ProductGridHomepageProps) {
   if (products.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-10">
@@ -23,7 +23,6 @@ export function ProductGrid({ products, onAddToCart }: ProductGridProps) {
           key={product.id} 
           product={product} 
           onAddToCart={onAddToCart}
-          useLink={false} // For POS, card click adds to cart, button does too. No linking.
         />
       ))}
     </div>
