@@ -78,6 +78,9 @@ export const useProductsStore = create<ProductsState>()(
             if (newProductDataForDb.originalPrice === null || newProductDataForDb.originalPrice === undefined) {
               delete (newProductDataForDb as any).originalPrice;
             }
+            if (newProductDataForDb.imagePath === undefined) {
+              delete (newProductDataForDb as any).imagePath;
+            }
 
             const docRef = await addDoc(collection(db, 'products'), newProductDataForDb);
             
@@ -116,6 +119,9 @@ export const useProductsStore = create<ProductsState>()(
             }
             if (!dataToUpdate.aiHint) {
               delete (dataToUpdate as Partial<typeof dataToUpdate>).aiHint;
+            }
+            if (dataToUpdate.imagePath === undefined) {
+              delete (dataToUpdate as any).imagePath;
             }
 
             await updateDoc(docRef, dataToUpdate);
