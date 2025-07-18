@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface Banner {
   id: string; // uuid
@@ -46,67 +47,64 @@ type BannersState = {
   banners: Banner[];
   isLoading: boolean;
   error: string | null;
-  fetchBanners: () => Promise<void>;
   addBanner: (banner: Omit<Banner, 'id' | 'created_at' | 'image'> & { image: File | string }) => Promise<void>;
   updateBanner: (banner: Omit<Banner, 'created_at'> & { image: File | string }) => Promise<void>;
   deleteBanner: (bannerId: string) => Promise<void>;
 };
 
-export const useBannersStore = create<BannersState>((set, get) => ({
-  banners: [],
-  isLoading: false,
-  error: null,
+export const useBannersStore = create<BannersState>()(
+  persist(
+    (set, get) => ({
+      banners: mockBanners,
+      isLoading: false,
+      error: null,
 
-  fetchBanners: async () => {
-    set({ isLoading: true });
-    // Simulate network delay
-    setTimeout(() => {
-        set({ banners: mockBanners, isLoading: false });
-    }, 500);
-  },
-
-  addBanner: async (bannerData) => {
-    let imageUrl = '';
-    if (bannerData.image instanceof File) {
-        imageUrl = URL.createObjectURL(bannerData.image);
-    } else {
-        imageUrl = bannerData.image; // It's a placeholder string
-    }
-    
-    const newBanner = {
-        ...bannerData,
-        id: uuidv4(),
-        created_at: new Date().toISOString(),
-        image: imageUrl
-    };
-
-    set(produce((state: BannersState) => {
-        state.banners.unshift(newBanner);
-    }));
-    toast({ title: 'Banner añadido (Simulado)', description: 'El nuevo banner se ha guardado.' });
-  },
-
-  updateBanner: async (banner) => {
-    let imageUrl = banner.image as string;
-    if (banner.image instanceof File) {
-      imageUrl = URL.createObjectURL(banner.image);
-    }
-
-    set(produce((state: BannersState) => {
-        const index = state.banners.findIndex((b) => b.id === banner.id);
-        if (index !== -1) {
-            state.banners[index] = { ...banner, image: imageUrl, created_at: state.banners[index].created_at };
+      addBanner: async (bannerData) => {
+        let imageUrl = '';
+        if (bannerData.image instanceof File) {
+            imageUrl = URL.createObjectURL(bannerData.image);
+        } else {
+            imageUrl = bannerData.image; // It's a placeholder string
         }
-    }));
-    toast({ title: 'Banner actualizado (Simulado)', description: 'Los cambios se han guardado.' });
-  },
+        
+        const newBanner = {
+            ...bannerData,
+            id: uuidv4(),
+            created_at: new Date().toISOString(),
+            image: imageUrl
+        };
 
-  deleteBanner: async (bannerId: string) => {
-    set(produce((state: BannersState) => {
-        state.banners = state.banners.filter((b) => b.id !== bannerId);
-    }));
-    toast({ title: 'Banner eliminado (Simulado)', description: 'El banner ha sido eliminado.' });
-  },
-}));
+        set(produce((state: BannersState) => {
+            state.banners.unshift(newBanner);
+        }));
+        toast({ title: 'Banner añadido', description: 'El nuevo banner se ha guardado.' });
+      },
 
-useBannersStore.getState().fetchBanners();
+      updateBanner: async (banner) => {
+        let imageUrl = banner.image as string;
+        if (banner.image instanceof File) {
+          imageUrl = URL.createObjectURL(banner.image);
+        }
+
+        set(produce((state: BannersState) => {
+            const index = state.banners.findIndex((b) => b.id === banner.id);
+            if (index !== -1) {
+                state.banners[index] = { ...banner, image: imageUrl, created_at: state.banners[index].created_at };
+            }
+        }));
+        toast({ title: 'Banner actualizado', description: 'Los cambios se han guardado.' });
+      },
+
+      deleteBanner: async (bannerId: string) => {
+        set(produce((state: BannersState) => {
+            state.banners = state.banners.filter((b) => b.id !== bannerId);
+        }));
+        toast({ title: 'Banner eliminado', description: 'El banner ha sido eliminado.' });
+      },
+    }),
+    {
+      name: 'banners-storage-v2',
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
+);

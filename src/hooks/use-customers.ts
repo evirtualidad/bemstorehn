@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import type { Address } from './use-orders';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface Customer {
   id: string; // uuid
@@ -25,7 +26,6 @@ const mockCustomers: Customer[] = [
 type CustomersState = {
   customers: Customer[];
   isLoading: boolean;
-  fetchCustomers: () => Promise<void>;
   addOrUpdateCustomer: (
     data: {
       phone: string;
@@ -37,63 +37,61 @@ type CustomersState = {
   getCustomerById: (id: string) => Customer | undefined;
 };
 
-export const useCustomersStore = create<CustomersState>((set, get) => ({
-  customers: [],
-  isLoading: false,
-  fetchCustomers: async () => {
-    set({ isLoading: true });
-    // Simulate network delay
-    setTimeout(() => {
-        set({ customers: mockCustomers, isLoading: false });
-    }, 500);
-  },
-  
-  addOrUpdateCustomer: async ({ phone, name, address }) => {
-    // Do not create/update "Consumidor Final" or customers without a phone number
-    if ((!phone || phone.trim() === '') && (name.trim().toLowerCase() === 'consumidor final' || name.trim() === '')) {
-        return undefined; 
-    }
+export const useCustomersStore = create<CustomersState>()(
+  persist(
+    (set, get) => ({
+      customers: mockCustomers,
+      isLoading: false,
 
-    let customerId: string | undefined = undefined;
-
-    set(produce((state: CustomersState) => {
-        const existingCustomer = state.customers.find(c => c.phone && c.phone.trim() !== '' && c.phone === phone);
-
-        if (existingCustomer) {
-            existingCustomer.name = name;
-            existingCustomer.address = address || existingCustomer.address; // Update address if provided
-            customerId = existingCustomer.id;
-        } else {
-            const newCustomer: Customer = {
-                id: uuidv4(),
-                created_at: new Date().toISOString(),
-                phone: phone || '',
-                name,
-                address: address || null,
-                total_spent: 0,
-                order_count: 0,
-            };
-            state.customers.push(newCustomer);
-            customerId = newCustomer.id;
+      addOrUpdateCustomer: async ({ phone, name, address }) => {
+        if ((!phone || phone.trim() === '') && (name.trim().toLowerCase() === 'consumidor final' || name.trim() === '')) {
+            return undefined; 
         }
-    }));
-    
-    return customerId;
-  },
-  
-  addPurchaseToCustomer: (customerId, amount) => {
-    set(produce((state: CustomersState) => {
-      const customer = state.customers.find(c => c.id === customerId);
-      if (customer) {
-        customer.total_spent += amount;
-        customer.order_count += 1;
-      }
-    }));
-  },
 
-  getCustomerById: (id) => {
-    return get().customers.find((c) => c.id === id);
-  },
-}));
+        let customerId: string | undefined = undefined;
 
-useCustomersStore.getState().fetchCustomers();
+        set(produce((state: CustomersState) => {
+            const existingCustomer = state.customers.find(c => c.phone && c.phone.trim() !== '' && c.phone === phone);
+
+            if (existingCustomer) {
+                existingCustomer.name = name;
+                existingCustomer.address = address || existingCustomer.address;
+                customerId = existingCustomer.id;
+            } else {
+                const newCustomer: Customer = {
+                    id: uuidv4(),
+                    created_at: new Date().toISOString(),
+                    phone: phone || '',
+                    name,
+                    address: address || null,
+                    total_spent: 0,
+                    order_count: 0,
+                };
+                state.customers.push(newCustomer);
+                customerId = newCustomer.id;
+            }
+        }));
+        
+        return customerId;
+      },
+      
+      addPurchaseToCustomer: (customerId, amount) => {
+        set(produce((state: CustomersState) => {
+          const customer = state.customers.find(c => c.id === customerId);
+          if (customer) {
+            customer.total_spent += amount;
+            customer.order_count += 1;
+          }
+        }));
+      },
+
+      getCustomerById: (id) => {
+        return get().customers.find((c) => c.id === id);
+      },
+    }),
+    {
+      name: 'customers-storage-v2',
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
+);

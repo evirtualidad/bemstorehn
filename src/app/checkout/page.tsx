@@ -396,7 +396,7 @@ export default function CheckoutPage() {
           description: 'Gracias por tu compra. Tu pedido está siendo procesado.',
         });
         clearCart();
-        router.push(`/order-confirmation/${newOrderData.customer_id || 'mock-id'}`);
+        router.push(`/order-confirmation/${newOrderData.id}`);
         setIsSubmitting(false);
     }, 500);
   }

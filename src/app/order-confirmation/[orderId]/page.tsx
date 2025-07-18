@@ -18,10 +18,9 @@ import Image from 'next/image';
 import { useSettingsStore } from '@/hooks/use-settings-store';
 import { useCustomersStore } from '@/hooks/use-customers';
 
-export default function OrderConfirmationPage({ params }: { params: Promise<{ orderId: string }> }) {
-  // In mock mode, the orderId from the URL will correspond to the customerId
-  const { orderId: customerId } = React.use(params);
-  const { orders } = useOrdersStore();
+export default function OrderConfirmationPage({ params }: { params: { orderId: string } }) {
+  const { orderId } = params;
+  const { getOrderById } = useOrdersStore();
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
   const [order, setOrder] = React.useState<ReturnType<typeof useOrdersStore.getState.getOrderById>>(undefined);
@@ -29,20 +28,10 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ or
   
   React.useEffect(() => {
     setIsClient(true);
-  }, []);
+    const foundOrder = getOrderById(orderId);
+    setOrder(foundOrder);
+  }, [isClient, orderId, getOrderById]);
 
-  React.useEffect(() => {
-    if(isClient) {
-        // Find the most recent order for the given customer ID
-        const customerOrders = orders
-            .filter(o => o.customer_id === customerId)
-            .sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        
-        if (customerOrders.length > 0) {
-            setOrder(customerOrders[0]);
-        }
-    }
-  }, [isClient, orders, customerId]);
 
   if (!isClient) {
     return (

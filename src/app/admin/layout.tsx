@@ -75,12 +75,8 @@ function AdminLayoutContent({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { orders, fetchOrders } = useOrdersStore();
+  const { orders } = useOrdersStore();
   const { session, loading, logout, role } = useAuthStore();
-  
-  React.useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
   
   React.useEffect(() => {
     // With mock data, we bypass the auth check, but keep the structure

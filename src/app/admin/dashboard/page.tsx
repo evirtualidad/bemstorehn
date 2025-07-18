@@ -69,19 +69,18 @@ const statusLabels: { [key: string]: string } = {
 };
 
 export default function Dashboard() {
-  const { orders, fetchOrders, isLoading: isLoadingOrders } = useOrdersStore();
-  const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
-  const { customers, fetchCustomers, isLoading: isLoadingCustomers } = useCustomersStore();
-  const { categories, isLoading: isLoadingCategories } = useCategoriesStore(); // Assuming categories are fetched elsewhere, e.g. layout
+  const { orders } = useOrdersStore();
+  const { products } = useProductsStore();
+  const { customers } = useCustomersStore();
+  const { categories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
+  const [isClient, setIsClient] = React.useState(false);
   
   const [date, setDate] = React.useState<DateRange | undefined>(undefined);
 
   React.useEffect(() => {
-    fetchOrders();
-    fetchProducts();
-    fetchCustomers();
-  }, [fetchOrders, fetchProducts, fetchCustomers]);
+    setIsClient(true);
+  }, []);
 
   const dashboardData = React.useMemo(() => {
     const { from, to } = date || {};
@@ -189,16 +188,15 @@ export default function Dashboard() {
       salesByCategoryData,
     };
   }, [orders, products, customers, categories, date]);
-
-  const isLoading = isLoadingOrders || isLoadingProducts || isLoadingCustomers || isLoadingCategories;
-
-  if (isLoading) {
+  
+  if (!isClient) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
         <LoadingSpinner />
       </div>
     );
   }
+
 
   const {
     totalRevenue,
