@@ -13,11 +13,11 @@ export type PosCartItem = {
 
 type CartState = {
   items: PosCartItem[];
-  total: number; // Items total
+  total: number; // Items total (pre-shipping/tax)
   subtotal: number;
   taxAmount: number;
   shippingCost: number; 
-  totalWithShipping: number; // Items total + shipping
+  totalWithShipping: number; // Final total
   addToCart: (product: Product) => boolean;
   removeFromCart: (productId: string) => void;
   increaseQuantity: (productId: string) => void;
@@ -26,23 +26,21 @@ type CartState = {
   setShippingCost: (cost: number) => void;
 };
 
-// This function is now defined outside the hook to avoid closure issues.
-// It takes taxRate as a direct argument.
-const calculatePosCartTotals = (items: PosCartItem[], shippingCost: number, taxRate: number) => {
-  const itemsTotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const totalWithShipping = itemsTotal + shippingCost;
-  const subtotal = totalWithShipping / (1 + taxRate);
-  const taxAmount = totalWithShipping - subtotal;
-  return { total: itemsTotal, subtotal, taxAmount, totalWithShipping };
-};
-
 export const usePosCart = create<CartState>()(
   persist(
     (set, get) => {
-      // Function to recalculate and set the state
-      const reCalculateAndSetState = (items: PosCartItem[], shippingCost: number) => {
+      // Helper function defined inside the hook's scope to ensure isolation.
+      const calculatePosCartTotals = (items: PosCartItem[], shippingCost: number) => {
         const taxRate = useSettingsStore.getState().taxRate;
-        const totals = calculatePosCartTotals(items, shippingCost, taxRate);
+        const itemsTotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+        const totalWithShipping = itemsTotal + shippingCost;
+        const subtotal = totalWithShipping / (1 + taxRate);
+        const taxAmount = totalWithShipping - subtotal;
+        return { total: itemsTotal, subtotal, taxAmount, totalWithShipping };
+      };
+
+      const reCalculateAndSetState = (items: PosCartItem[], shippingCost: number) => {
+        const totals = calculatePosCartTotals(items, shippingCost);
         set({ items, ...totals, shippingCost });
       };
 
@@ -135,7 +133,7 @@ export const usePosCart = create<CartState>()(
       }
     },
     {
-      name: 'pos-cart-v2', // New, isolated storage key
+      name: 'pos-cart-v2', // Unique key for the POS cart
       storage: createJSONStorage(() => localStorage),
     }
   )
