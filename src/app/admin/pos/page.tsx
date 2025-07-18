@@ -1025,59 +1025,55 @@ export default function PosPage() {
       toast({ title: 'Carrito Vacío', description: 'Añade productos antes de crear un pedido.', variant: 'destructive' });
       return;
     }
-
+    
     setIsSubmitting(true);
+    
+    // SIMULATION MODE
+    console.warn("MODO SIMULADO: La creación de pedidos está simulada. Los datos no se guardan en la base de datos.");
 
-    const orderInput: CreateOrderInput = {
-      customer: {
-        name: values.name,
-        phone: values.phone,
-        address: values.address
-      },
-      items: cart.map(item => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        image: item.image,
-        category: item.category,
-        description: item.description,
-        stock: item.stock,
-      })),
-      total: totalWithShipping,
-      shippingCost,
-      paymentMethod: values.paymentMethod,
-      deliveryMethod: values.deliveryMethod,
-      paymentDueDate: values.paymentDueDate?.toISOString(),
-      cashAmount: values.cashAmount ? Number(values.cashAmount) : undefined,
-      paymentReference: values.paymentReference,
+    const newOrderData: NewOrderData = {
+        user_id: session?.user.id || null,
+        customer_id: null,
+        customer_name: values.name || 'Consumidor Final',
+        customer_phone: values.phone || 'N/A',
+        customer_address: values.address || null,
+        items: cart.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.image,
+        })),
+        total: totalWithShipping,
+        shipping_cost: shippingCost,
+        payment_method: values.paymentMethod,
+        payment_due_date: values.paymentDueDate?.toISOString() || null,
+        payment_reference: values.paymentReference || null,
+        balance: values.paymentMethod === 'credito' ? totalWithShipping : 0,
+        payments: values.paymentMethod !== 'credito' ? [{
+            amount: totalWithShipping,
+            method: values.paymentMethod,
+            date: new Date().toISOString(),
+            cash_received: values.cashAmount ? Number(values.cashAmount) : undefined,
+            change_given: change > 0 ? change : undefined,
+        }] : [],
+        status: values.paymentMethod === 'credito' ? 'pending-payment' : 'paid',
+        source: 'pos',
+        delivery_method: values.deliveryMethod,
     };
     
-    try {
-      const result = await createOrder(orderInput);
+    addOrderToState(newOrderData);
 
-      if (result && result.success) {
+    setTimeout(() => {
         toast({
-          title: '¡Pedido Creado!',
-          description: `El pedido ${result.orderId} se ha creado con éxito.`,
+          title: '¡Pedido Creado (Simulado)!',
+          description: 'El pedido se ha añadido localmente.',
         });
         clearCartAndForm();
         setIsCheckoutOpen(false);
         setIsTicketVisible(false);
-        fetchOrders(); // Refresh orders list
-      } else {
-        throw new Error('La creación del pedido falló desde el servidor.');
-      }
-    } catch (error: any) {
-       console.error('Error al crear el pedido:', error);
-       toast({
-         title: 'Error al Crear Pedido',
-         description: error.message || 'Ocurrió un error inesperado al contactar al servidor.',
-         variant: 'destructive',
-       });
-    } finally {
-      setIsSubmitting(false);
-    }
+        setIsSubmitting(false);
+    }, 500);
   }
   
   const isLoading = isLoadingProducts || isLoadingCategories || isLoadingCustomers;
