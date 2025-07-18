@@ -2,15 +2,12 @@
 'use server';
 
 import * as admin from 'firebase-admin';
+import serviceAccount from '@/lib/serviceAccountKey.json';
 
 if (!admin.apps.length) {
   try {
     admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      }),
+      credential: admin.credential.cert(serviceAccount),
     });
   } catch (error: any) {
     console.error('Error initializing Firebase Admin SDK in get-users:', error.message);
@@ -52,7 +49,8 @@ export async function getUsers(): Promise<{ users: UserWithRole[], error?: strin
     }));
     
     return { users };
-  } catch (error: any) {
+  } catch (error: any)
+{
     console.error("Error fetching users from Firebase Admin:", error);
     let errorMessage = 'An unexpected error occurred.';
     if (error.code === 'auth/insufficient-permission' || error.code === 'permission-denied') {
