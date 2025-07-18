@@ -28,11 +28,11 @@ type CustomersState = {
   isLoading: boolean;
   addOrUpdateCustomer: (
     data: {
-      phone: string;
+      phone?: string;
       name: string;
       address?: Address | null;
     }
-  ) => Promise<string | undefined>; // Returns customer ID
+  ) => Promise<string | null>; // Returns customer ID or null
   addPurchaseToCustomer: (customerId: string, amount: number) => void;
   getCustomerById: (id: string) => Customer | undefined;
 };
@@ -45,11 +45,11 @@ export const useCustomersStore = create<CustomersState>()(
 
       addOrUpdateCustomer: async ({ phone, name, address }) => {
         if ((!phone || phone.trim() === '') && (name.trim().toLowerCase() === 'consumidor final' || name.trim() === '')) {
-            return undefined; 
+            return null;
         }
 
-        let customerId: string | undefined = undefined;
-
+        let customerId: string | null = null;
+        
         set(produce((state: CustomersState) => {
             const existingCustomer = state.customers.find(c => c.phone && c.phone.trim() !== '' && c.phone === phone);
 

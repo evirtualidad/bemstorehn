@@ -56,7 +56,7 @@ export type NewOrderData = Omit<Order, 'id' | 'display_id' | 'created_at'>;
 type OrdersState = {
   orders: Order[];
   isLoading: boolean;
-  addOrderToState: (order: NewOrderData) => void;
+  addOrderToState: (order: NewOrderData) => Order;
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => Promise<void>;
   approveOrder: (data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
@@ -157,6 +157,7 @@ export const useOrdersStore = create<OrdersState>()(
         set(produce((state) => {
             state.orders.unshift(newOrder);
         }));
+        return newOrder;
       },
 
       addPayment: async (orderId, amount, method) => {

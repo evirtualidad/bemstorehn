@@ -47,8 +47,8 @@ type BannersState = {
   banners: Banner[];
   isLoading: boolean;
   error: string | null;
-  addBanner: (banner: Omit<Banner, 'id' | 'created_at' | 'image'> & { image: File | string }) => Promise<void>;
-  updateBanner: (banner: Omit<Banner, 'created_at'> & { image: File | string }) => Promise<void>;
+  addBanner: (banner: Omit<Banner, 'id' | 'created_at'>) => Promise<void>;
+  updateBanner: (banner: Banner) => Promise<void>;
   deleteBanner: (bannerId: string) => Promise<void>;
 };
 
@@ -60,18 +60,10 @@ export const useBannersStore = create<BannersState>()(
       error: null,
 
       addBanner: async (bannerData) => {
-        let imageUrl = '';
-        if (bannerData.image instanceof File) {
-            imageUrl = URL.createObjectURL(bannerData.image);
-        } else {
-            imageUrl = bannerData.image; // It's a placeholder string
-        }
-        
         const newBanner = {
             ...bannerData,
             id: uuidv4(),
             created_at: new Date().toISOString(),
-            image: imageUrl
         };
 
         set(produce((state: BannersState) => {
@@ -81,15 +73,10 @@ export const useBannersStore = create<BannersState>()(
       },
 
       updateBanner: async (banner) => {
-        let imageUrl = banner.image as string;
-        if (banner.image instanceof File) {
-          imageUrl = URL.createObjectURL(banner.image);
-        }
-
         set(produce((state: BannersState) => {
             const index = state.banners.findIndex((b) => b.id === banner.id);
             if (index !== -1) {
-                state.banners[index] = { ...banner, image: imageUrl, created_at: state.banners[index].created_at };
+                state.banners[index] = { ...state.banners[index], ...banner };
             }
         }));
         toast({ title: 'Banner actualizado', description: 'Los cambios se han guardado.' });

@@ -13,7 +13,6 @@ import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
-import { ProductCard } from '@/components/product-card';
 import { Product } from '@/lib/products';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
@@ -29,16 +28,11 @@ interface ProductDetailPageProps {
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { productId } = React.use(params);
-  const { getProductById, products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
-  const { getCategoryByName, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
+  const { getProductById, products, isLoading: isLoadingProducts } = useProductsStore();
+  const { getCategoryByName, isLoading: isLoadingCategories } = useCategoriesStore();
   const addToCart = useCart.getState().addToCart;
   const { toast } = useToast();
   const { currency } = useCurrencyStore();
-  
-  React.useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, [fetchProducts, fetchCategories]);
   
   const product = getProductById(productId);
   const isLoading = isLoadingProducts || isLoadingCategories;

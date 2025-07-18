@@ -7,12 +7,6 @@ import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useProductsStore } from '@/hooks/use-products';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-} from '@/components/ui/carousel';
-import Autoplay from 'embla-carousel-autoplay';
 import * as React from 'react';
 import { useBannersStore, Banner } from '@/hooks/use-banners';
 import { useCategoriesStore } from '@/hooks/use-categories';
@@ -23,6 +17,7 @@ import { cn, formatCurrency } from '@/lib/utils';
 import { useCart } from '@/hooks/use-cart';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { ProductGridHomepage } from '@/components/product-grid-homepage';
+import { FeaturedProductsCarousel } from '@/components/featured-products-carousel';
 
 // A custom TikTok icon as lucide-react might not have it.
 const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -35,16 +30,22 @@ const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
 function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [current, setCurrent] = React.useState(0);
   const [isPlaying, setIsPlaying] = React.useState(true);
+  const [isClient, setIsClient] = React.useState(false);
+
+  // This ensures the component only renders on the client, avoiding hydration errors
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   React.useEffect(() => {
-    if (!isPlaying || banners.length === 0) return;
+    if (!isPlaying || banners.length === 0 || !isClient) return;
 
     const timer = setTimeout(() => {
       setCurrent((prev) => (prev === banners.length - 1 ? 0 : prev + 1));
     }, 5000);
 
     return () => clearTimeout(timer);
-  }, [current, isPlaying, banners.length]);
+  }, [current, isPlaying, banners.length, isClient]);
 
   const togglePlay = () => {
     setIsPlaying(prev => !prev);
@@ -54,7 +55,10 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
     setCurrent(slideIndex);
   };
   
-  if (banners.length === 0) return null;
+  if (!isClient || banners.length === 0) {
+    // Render a placeholder or nothing on the server and during initial client render
+    return <section className="relative w-full h-[50vh] sm:h-[60vh] lg:h-[70vh] bg-muted animate-pulse"></section>;
+  }
 
   return (
     <section className="relative w-full group/hero h-[50vh] sm:h-[60vh] lg:h-[70vh]">
@@ -127,38 +131,6 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   );
 }
 
-function FeaturedProductsCarousel({ products }: { products: Product[] }) {
-    if (products.length === 0) return null;
-
-    const autoplayPlugin = React.useRef(
-        Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })
-    );
-
-    return (
-        <section className="py-12 md:py-20 bg-gradient-to-b from-primary-light to-background">
-            <div className="container mx-auto px-4">
-                <h2 className="text-2xl md:text-3xl font-bold text-center mb-10 md:mb-12 text-primary">Nuestras Mejores Ofertas</h2>
-                <Carousel
-                    opts={{
-                        align: 'start',
-                        loop: products.length > 4,
-                    }}
-                    plugins={[autoplayPlugin.current]}
-                    className="w-full"
-                >
-                    <CarouselContent>
-                        {products.map((product) => (
-                            <CarouselItem key={product.id} className="basis-1/2 md:basis-1/3 lg:basis-1/4">
-                                <ProductGridHomepage.Card product={product} />
-                            </CarouselItem>
-                        ))}
-                    </CarouselContent>
-                </Carousel>
-            </div>
-        </section>
-    );
-}
-
 function StoreMobileCartButton() {
     const { total, toggleCart, items } = useCart(state => ({ 
         total: state.total, 
@@ -191,10 +163,6 @@ export default function Home() {
   const { categories, isLoading: isLoadingCategories } = useCategoriesStore();
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
   
-  React.useEffect(() => {
-    // Data is loaded from localStorage by persist middleware, no fetch needed.
-  }, []);
-
   const productsByCategory = React.useMemo(() => {
     return products.reduce((acc, product) => {
       const { category } = product;

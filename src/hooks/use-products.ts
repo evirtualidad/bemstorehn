@@ -13,8 +13,8 @@ type ProductsState = {
   products: Product[];
   isLoading: boolean;
   error: string | null;
-  addProduct: (product: Omit<Product, 'id'> & { image: File | string }) => Promise<Product | null>;
-  updateProduct: (product: Product & { image: File | string }) => Promise<void>;
+  addProduct: (product: Omit<Product, 'id'>) => Promise<Product | null>;
+  updateProduct: (product: Product) => Promise<void>;
   deleteProduct: (productId: string) => Promise<void>;
   getProductById: (productId: string) => Product | undefined;
   decreaseStock: (productId: string, quantity: number) => Promise<void>;
@@ -33,17 +33,9 @@ export const useProductsStore = create<ProductsState>()(
       },
 
       addProduct: async (productData) => {
-        let imageUrl = '';
-        if (productData.image instanceof File) {
-            imageUrl = URL.createObjectURL(productData.image);
-        } else {
-            imageUrl = productData.image;
-        }
-        
         const newProduct: Product = {
           ...productData,
           id: uuidv4(),
-          image: imageUrl,
         };
         
         set(produce((state: ProductsState) => {
@@ -54,15 +46,10 @@ export const useProductsStore = create<ProductsState>()(
       },
 
       updateProduct: async (product) => {
-        let imageUrl = product.image as string;
-        if (product.image instanceof File) {
-            imageUrl = URL.createObjectURL(product.image);
-        }
-
         set(produce((state: ProductsState) => {
             const index = state.products.findIndex((p) => p.id === product.id);
             if (index !== -1) {
-                state.products[index] = { ...product, image: imageUrl };
+                state.products[index] = { ...state.products[index], ...product };
             }
         }));
         toast({ title: 'Producto actualizado', description: `Los cambios en ${product.name} han sido guardados.` });

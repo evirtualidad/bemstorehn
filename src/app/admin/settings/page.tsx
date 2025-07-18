@@ -193,14 +193,10 @@ function GeneralSettings() {
 }
 
 function BannersManager() {
-  const { banners, addBanner, updateBanner, deleteBanner, fetchBanners, isLoading } = useBannersStore();
+  const { banners, addBanner, updateBanner, deleteBanner, isLoading } = useBannersStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingBanner, setEditingBanner] = React.useState<Banner | null>(null);
   const { toast } = useToast();
-
-  React.useEffect(() => {
-    fetchBanners();
-  }, [fetchBanners]);
 
   const uploadImage = async (file: File): Promise<string | null> => {
     // Simulate upload by creating a blob URL

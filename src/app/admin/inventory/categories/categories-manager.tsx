@@ -108,13 +108,9 @@ function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps) {
 
 
 export function CategoriesManager() {
-  const { categories, addCategory, updateCategory, deleteCategory, fetchCategories, isLoading } = useCategoriesStore();
+  const { categories, addCategory, updateCategory, deleteCategory, isLoading } = useCategoriesStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingCategory, setEditingCategory] = React.useState<Category | null>(null);
-
-  React.useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
 
   const handleAddCategory = async (values: z.infer<typeof categoryFormSchema>) => {
     await addCategory(values);

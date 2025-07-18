@@ -48,17 +48,11 @@ import Link from 'next/link';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function DashboardV2() {
-  const { orders, fetchOrders, isLoading: isLoadingOrders } = useOrdersStore();
-  const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
-  const { customers, fetchCustomers, isLoading: isLoadingCustomers } = useCustomersStore();
+  const { orders, isLoading: isLoadingOrders } = useOrdersStore();
+  const { products, isLoading: isLoadingProducts } = useProductsStore();
+  const { customers, isLoading: isLoadingCustomers } = useCustomersStore();
   const { currency } = useCurrencyStore();
   
-  React.useEffect(() => {
-    fetchOrders();
-    fetchProducts();
-    fetchCustomers();
-  }, [fetchOrders, fetchProducts, fetchCustomers]);
-
   const dashboardData = React.useMemo(() => {
 
     const nonCancelledOrders = orders.filter((o) => o.status !== 'cancelled' && o.status !== 'pending-approval');

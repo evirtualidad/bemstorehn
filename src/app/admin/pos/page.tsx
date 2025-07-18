@@ -13,9 +13,8 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useProductsStore } from '@/hooks/use-products';
-import type { Product } from '@/lib/products';
 import Image from 'next/image';
-import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Users, Receipt, CreditCard, X, BadgePercent, Truck, Store, MapPin, CheckCircle } from 'lucide-react';
+import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Receipt, CreditCard, X, BadgePercent, Truck, Store, MapPin, CheckCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -37,7 +36,6 @@ import { useCustomersStore, type Customer } from '@/hooks/use-customers';
 import { CustomerSearch } from '@/components/customer-search';
 import { paymentMethods } from '@/lib/payment-methods.tsx';
 import { usePosCart } from '@/hooks/use-pos-cart';
-import { v4 as uuidv4 } from 'uuid';
 import { ProductGrid } from '@/components/product-grid';
 import { useAuthStore } from '@/hooks/use-auth-store';
 
@@ -142,7 +140,6 @@ function CategoryList({
     </div>
   );
 }
-
 
 function TicketView({
   onCheckout,
@@ -368,6 +365,27 @@ function MobileTicketView({
         </div>
     </div>
   );
+}
+
+function PosMobileCartButton() {
+    const { currency } = useCurrencyStore();
+    const { totalWithShipping, items } = usePosCart();
+    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  
+    return (
+        <Button
+            size="lg"
+            className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 bg-primary text-primary-foreground hover:bg-primary/90 border-4 border-background"
+        >
+            <Receipt className="h-7 w-7" />
+            <span className="text-md font-bold">{formatCurrency(totalWithShipping, currency.code)}</span>
+            {totalItems > 0 && (
+                <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-8 w-8 flex items-center justify-center border-4 border-background">
+                    {totalItems}
+                </div>
+            )}
+        </Button>
+    );
 }
 
 function ShippingDialog({
@@ -846,33 +864,8 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, isInDialog, onOp
     )
 }
 
-function PosMobileCartButton() {
-    const { currency } = useCurrencyStore();
-    const { totalWithShipping, items } = usePosCart();
-    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  
-    return (
-        <Button
-            size="lg"
-            className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 bg-primary text-primary-foreground hover:bg-primary/90 border-4 border-background"
-        >
-            <Receipt className="h-7 w-7" />
-            <span className="text-md font-bold">{formatCurrency(totalWithShipping, currency.code)}</span>
-            {totalItems > 0 && (
-                <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-8 w-8 flex items-center justify-center border-4 border-background">
-                    {totalItems}
-                </div>
-            )}
-        </Button>
-    );
-}
-
 export default function PosPage() {
-  const { products, isLoading: isLoadingProducts, decreaseStock } = useProductsStore(state => ({
-      products: state.products,
-      isLoading: state.isLoading,
-      decreaseStock: state.decreaseStock,
-  }));
+  const { products, isLoading: isLoadingProducts, decreaseStock } = useProductsStore();
   const { setShippingCost, clearCart, items: cartItems, totalWithShipping } = usePosCart();
   const { addOrderToState } = useOrdersStore();
   const { isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
@@ -886,10 +879,6 @@ export default function PosPage() {
   const { session } = useAuthStore();
   const { currency } = useCurrencyStore();
 
-  React.useEffect(() => {
-    // Data is loaded from localStorage by persist middleware, no fetch needed.
-  }, []);
-  
   const hasOfferProducts = React.useMemo(() => products.some(p => p.originalPrice && p.originalPrice > p.price), [products]);
   
   const filteredProducts = React.useMemo(() => {
@@ -949,6 +938,11 @@ export default function PosPage() {
         form.setValue('phone', customer.phone || '');
         if (customer.address) {
             form.setValue('address', customer.address as Address);
+            // This part is new: automatically set shipping cost if address exists
+            const { shippingLocalCost, shippingNationalCost } = useSettingsStore.getState();
+            const addressType = (customer.address as any).type || 'local';
+            const cost = addressType === 'local' ? shippingLocalCost : shippingNationalCost;
+            setShippingCost(cost);
         }
     } else {
        form.setValue('name', form.getValues('name') || '');
@@ -962,25 +956,13 @@ export default function PosPage() {
   }
 
   const handleOpenChangeCheckout = (open: boolean) => {
-    setIsCheckoutOpen(open);
     if (!open) {
-      // Don't clear cart on cancel, only on successful submission or explicit cancel
+      // Don't clear cart or form on simple close, only on explicit cancel/submit
     }
+    setIsCheckoutOpen(open);
   };
   
   const handleCancelCheckout = () => {
-    // Reset form but don't clear cart, let user decide
-    form.reset({
-      name: '',
-      phone: '',
-      deliveryMethod: 'pickup',
-      address: undefined,
-      paymentMethod: 'efectivo',
-      cashAmount: '',
-      paymentReference: '',
-      paymentDueDate: undefined,
-    });
-    setShippingCost(0);
     clearCartAndForm();
     setIsCheckoutOpen(false);
   };

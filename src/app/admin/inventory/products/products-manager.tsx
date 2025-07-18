@@ -55,15 +55,11 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 export function ProductsManager() {
-  const { products, addProduct, updateProduct, deleteProduct, fetchProducts, isLoading } = useProductsStore();
+  const { products, addProduct, updateProduct, deleteProduct, isLoading } = useProductsStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
-
-  React.useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
   
   const uploadImage = async (file: File): Promise<string | null> => {
     // Simulate upload by creating a blob URL
