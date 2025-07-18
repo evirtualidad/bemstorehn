@@ -41,7 +41,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { ThemeProvider } from '@/components/theme-provider';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 
 function CurrencySelector() {
     const { currency, currencies, setCurrency } = useCurrencyStore();
@@ -77,25 +77,13 @@ function AdminLayoutContent({
   const pathname = usePathname();
   const router = useRouter();
   const orders = useOrdersStore(state => state.orders);
-  const fetchOrders = useOrdersStore(state => state.fetchOrders);
   const { user, loading, logout, role } = useAuthStore();
   
   React.useEffect(() => {
-    // With mock data, we bypass the auth check, but keep the structure
-    if (db) { // Only check auth if firebase is configured
-        if (!loading && !user) {
-            router.push('/login');
-        }
+    if (!loading && !user) {
+        router.push('/login');
     }
   }, [user, loading, router]);
-
-  React.useEffect(() => {
-    // If we're using Firebase, fetch the orders
-    if (db) {
-        const unsubscribe = fetchOrders();
-        return () => unsubscribe();
-    }
-  }, [fetchOrders]);
 
 
   const pendingApprovalCount = React.useMemo(() => {
@@ -174,7 +162,7 @@ function AdminLayoutContent({
     )
   };
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingSpinner />
@@ -243,7 +231,7 @@ function AdminLayoutContent({
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Mi Cuenta ({role})</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem disabled>{user?.email || 'admin@example.com'}</DropdownMenuItem>
+              <DropdownMenuItem disabled>{user?.email}</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />

@@ -25,45 +25,19 @@ type AuthState = {
 let authUnsubscribe: (() => void) | null = null;
 
 const startAuthListener = () => {
-    if (!auth || authUnsubscribe) return;
+    if (authUnsubscribe) authUnsubscribe(); // Prevent multiple listeners
     
     authUnsubscribe = onAuthStateChanged(auth, async (user) => {
         useAuthStore.getState()._setUser(user);
     });
 };
 
-const mockUsers = {
-    'admin@example.com': { role: 'admin' },
-    'cashier@example.com': { role: 'cashier' },
-};
-
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   role: null,
-  loading: !auth, // Set loading to false immediately if not using Firebase
+  loading: true, // Start as loading until auth state is confirmed
   
   login: async (email, password) => {
-    if (!auth) {
-        console.log("SIMULATION: Firebase not configured, using mock login.");
-        set({ loading: true });
-        return new Promise(resolve => {
-            setTimeout(() => {
-                if (mockUsers[email as keyof typeof mockUsers]) {
-                    const role = mockUsers[email as keyof typeof mockUsers].role as UserRole;
-                     const mockUser = {
-                        uid: `mock_${role}`,
-                        email: email,
-                    } as User;
-                    set({ user: mockUser, role: role, loading: false });
-                    resolve(null);
-                } else {
-                    set({ loading: false });
-                    resolve('Correo o contraseña incorrectos.');
-                }
-            }, 500);
-        });
-    }
-
     set({ loading: true });
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -84,29 +58,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   
   logout: async () => {
-    if (auth) {
-       await signOut(auth);
-    }
-    // For both firebase and mock, we clear the state
+    await signOut(auth);
     set({ user: null, role: null, loading: false });
   },
 
   _setUser: async (user: User | null) => {
     if (user) {
-      const idTokenResult = await user.getIdTokenResult(true);
-      const role = (idTokenResult.claims.role as UserRole) || 'cashier';
-      
-      set({ user, role, loading: false });
+      try {
+        const idTokenResult = await user.getIdTokenResult(true); // Force refresh token
+        const role = (idTokenResult.claims.role as UserRole) || 'cashier';
+        set({ user, role, loading: false });
+      } catch (error) {
+        console.error("Error getting user token/role:", error);
+        // Log out user if token is invalid
+        await signOut(auth);
+        set({ user: null, role: null, loading: false });
+      }
     } else {
       set({ user: null, role: null, loading: false });
     }
   },
 }));
 
-// Initialize listeners
-if (auth) {
-    startAuthListener();
-} else {
-    // If not using Firebase, set a default mock user so the admin panel is accessible
-    useAuthStore.getState().login('admin@example.com', 'password');
-}
+// Initialize listener
+startAuthListener();

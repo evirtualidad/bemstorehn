@@ -38,7 +38,6 @@ import { paymentMethods } from '@/lib/payment-methods.tsx';
 import { usePosCart } from '@/hooks/use-pos-cart';
 import { ProductGrid } from '@/components/product-grid';
 import { useAuthStore } from '@/hooks/use-auth-store';
-import { db } from '@/lib/firebase';
 
 type SelectedFilter = { type: 'category' | 'offer'; value: string } | null;
 
@@ -866,39 +865,23 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, isInDialog, onOp
 }
 
 export default function PosPage() {
-  const { products, isLoading: isLoadingProducts, decreaseStock, fetchProducts } = useProductsStore(state => ({
-    products: state.products,
-    isLoading: state.isLoading,
-    decreaseStock: state.decreaseStock,
-    fetchProducts: state.fetchProducts
-  }));
+  const products = useProductsStore(state => state.products);
+  const isLoadingProducts = useProductsStore(state => state.isLoading);
+  const decreaseStock = useProductsStore(state => state.decreaseStock);
 
   const { setShippingCost, clearCart, items: cartItems, totalWithShipping } = usePosCart();
   const { addOrderToState } = useOrdersStore();
-  const { isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer, fetchCustomers } = useCustomersStore();
-  const { categories, isLoading: isLoadingCategories, fetchCategories } = useCategoriesStore();
+  const { isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
+  const categories = useCategoriesStore(state => state.categories);
+  const isLoadingCategories = useCategoriesStore(state => state.isLoading);
   const { toast } = useToast();
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isTicketVisible, setIsTicketVisible] = React.useState(false);
   const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = React.useState(false);
-  const { session } = useAuthStore();
-  const { currency } = useCurrencyStore();
+  const { user } = useAuthStore();
   
-  React.useEffect(() => {
-    if (db) {
-        const unsubProducts = fetchProducts();
-        const unsubCategories = fetchCategories();
-        const unsubCustomers = fetchCustomers();
-        return () => {
-            unsubProducts();
-            unsubCategories();
-            unsubCustomers();
-        };
-    }
-  }, [fetchProducts, fetchCategories, fetchCustomers]);
-
   const hasOfferProducts = React.useMemo(() => products.some(p => p.originalPrice && p.originalPrice > p.price), [products]);
   
   const filteredProducts = React.useMemo(() => {
@@ -977,15 +960,12 @@ export default function PosPage() {
 
   const handleOpenChangeCheckout = (open: boolean) => {
     if (!open && !isSubmitting) {
-        // Only clear/reset if the dialog is closed without submitting.
-        // But let's not clear the cart, just the form state.
         // handleCancelCheckout();
     }
     setIsCheckoutOpen(open);
   };
   
   const handleCancelCheckout = () => {
-    // This only clears the form, not the cart.
     form.reset({
       name: '',
       phone: '',
@@ -996,8 +976,8 @@ export default function PosPage() {
       paymentReference: '',
       paymentDueDate: undefined,
     });
-    // The cart is explicitly preserved.
     setIsCheckoutOpen(false);
+    clearCartAndForm();
   };
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
@@ -1021,9 +1001,9 @@ export default function PosPage() {
         addPurchaseToCustomer(customerId, totalWithShipping);
     }
     
-    for (const item of cartItems) {
-        decreaseStock(item.id, item.quantity);
-    }
+    // Decrease stock for each item in the cart
+    const stockPromises = cartItems.map(item => decreaseStock(item.id, item.quantity));
+    await Promise.all(stockPromises);
 
     let change = 0;
     if (values.paymentMethod === 'efectivo' && values.cashAmount) {
@@ -1034,7 +1014,7 @@ export default function PosPage() {
     }
 
     const newOrderData: NewOrderData = {
-        user_id: session?.user.id || null,
+        user_id: user?.uid || null,
         customer_id: customerId || null,
         customer_name: customerName,
         customer_phone: customerPhone,
@@ -1064,18 +1044,16 @@ export default function PosPage() {
         delivery_method: values.deliveryMethod,
     };
     
-    addOrderToState(newOrderData);
+    await addOrderToState(newOrderData);
 
-    setTimeout(() => {
-        toast({
-          title: '¡Pedido Creado!',
-          description: 'El pedido se ha añadido al sistema.',
-        });
-        clearCartAndForm();
-        setIsCheckoutOpen(false);
-        setIsTicketVisible(false);
-        setIsSubmitting(false);
-    }, 500);
+    toast({
+      title: '¡Pedido Creado!',
+      description: 'El pedido se ha añadido al sistema.',
+    });
+    clearCartAndForm();
+    setIsCheckoutOpen(false);
+    setIsTicketVisible(false);
+    setIsSubmitting(false);
   }
   
   const isLoading = isLoadingProducts || isLoadingCategories || isLoadingCustomers;

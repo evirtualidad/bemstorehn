@@ -20,24 +20,45 @@ import { useCustomersStore } from '@/hooks/use-customers';
 
 export default function OrderConfirmationPage({ params }: { params: { orderId: string } }) {
   const { orderId } = params;
-  const { getOrderById } = useOrdersStore();
+  const getOrderById = useOrdersStore(state => state.getOrderById);
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
   const [order, setOrder] = React.useState<ReturnType<typeof useOrdersStore.getState.getOrderById>>(undefined);
-  const [isClient, setIsClient] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
   
   React.useEffect(() => {
-    setIsClient(true);
-    const foundOrder = getOrderById(orderId);
-    setOrder(foundOrder);
-  }, [isClient, orderId, getOrderById]);
+    // We poll for the order, as it might take a moment to appear in the listener
+    const interval = setInterval(() => {
+      const foundOrder = getOrderById(orderId);
+      if (foundOrder) {
+        setOrder(foundOrder);
+        setIsLoading(false);
+        clearInterval(interval);
+      }
+    }, 500); // Check every 500ms
+
+    // Timeout after 10 seconds if order not found
+    const timeout = setTimeout(() => {
+        clearInterval(interval);
+        if (!order) {
+            setIsLoading(false);
+        }
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [orderId, getOrderById, order]);
 
 
-  if (!isClient) {
+  if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
-        <LoadingSpinner />
+        <div className="flex-1 flex items-center justify-center">
+            <LoadingSpinner />
+        </div>
       </div>
     );
   }
@@ -49,7 +70,7 @@ export default function OrderConfirmationPage({ params }: { params: { orderId: s
             <main className="flex-grow container mx-auto px-4 py-16 flex items-center justify-center text-center">
                 <div>
                     <h1 className="text-4xl font-bold mb-4">Pedido no encontrado</h1>
-                    <p className="text-muted-foreground mb-8">No pudimos encontrar los detalles para tu pedido. Esto puede suceder en modo de simulación.</p>
+                    <p className="text-muted-foreground mb-8">No pudimos encontrar los detalles para tu pedido. Por favor, contacta a soporte.</p>
                     <Button asChild><Link href="/">Volver a la tienda</Link></Button>
                 </div>
             </main>

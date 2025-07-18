@@ -7,7 +7,6 @@ import { produce } from 'immer';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, updateDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
-import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface Payment {
     date: string;
@@ -25,7 +24,7 @@ export interface Address {
 }
 
 export interface Order {
-  id: string; // Firestore document ID or mock UUID
+  id: string; // Firestore document ID
   display_id: string;
   created_at: any; // Firestore timestamp or ISO string
   user_id: string | null;
@@ -65,9 +64,6 @@ type OrdersState = {
   getOrderById: (orderId: string) => Order | undefined;
 };
 
-// Mock data for local development without Firebase
-const getInitialOrders = (): Order[] => []; // Start with an empty list
-
 const generateDisplayId = () => {
   const timestamp = new Date().getTime().toString().slice(-6);
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -75,18 +71,11 @@ const generateDisplayId = () => {
 };
 
 export const useOrdersStore = create<OrdersState>()(
-  persist(
     (set, get) => ({
-      orders: getInitialOrders(),
+      orders: [],
       isLoading: true,
 
       fetchOrders: () => {
-        if (!db) {
-            console.log("SIMULATION: Firebase not configured, using mock orders.");
-            set({ orders: getInitialOrders(), isLoading: false });
-            return () => {}; // Return an empty unsubscribe function
-        }
-
         set({ isLoading: true });
         const q = query(collection(db, 'orders'), orderBy('created_at', 'desc'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -108,18 +97,6 @@ export const useOrdersStore = create<OrdersState>()(
 
       addOrderToState: async (orderData) => {
         const display_id = generateDisplayId();
-        if (!db) {
-            console.log("SIMULATION: Adding mock order.");
-            const newOrder: Order = {
-                ...orderData,
-                id: uuidv4(),
-                display_id,
-                created_at: new Date().toISOString(),
-            };
-            set(produce(state => { state.orders.unshift(newOrder) }));
-            return newOrder.id;
-        }
-
         const newOrder = {
             ...orderData,
             display_id,
@@ -137,19 +114,6 @@ export const useOrdersStore = create<OrdersState>()(
         const newStatus = newBalance <= 0 ? 'paid' : order.status;
         const newPayment: Payment = { amount, method, date: new Date().toISOString() };
 
-        if (!db) {
-            set(produce(state => {
-                const o = state.orders.find(ord => ord.id === orderId);
-                if (o) {
-                    o.balance = newBalance;
-                    o.status = newStatus;
-                    o.payments.push(newPayment);
-                }
-            }));
-            toast({ title: 'Pago (sim) Registrado' });
-            return;
-        }
-        
         const orderRef = doc(db, 'orders', orderId);
         await updateDoc(orderRef, {
             balance: newBalance,
@@ -177,17 +141,6 @@ export const useOrdersStore = create<OrdersState>()(
             updateData.balance = 0;
             updateData.payments = [{ amount: order.total, date: new Date().toISOString(), method: paymentMethod }];
         }
-
-        if (!db) {
-            set(produce(state => {
-                const o = state.orders.find(ord => ord.id === orderId);
-                if (o) {
-                    Object.assign(o, updateData);
-                }
-            }));
-            toast({ title: 'Pedido (sim) Aprobado' });
-            return;
-        }
         
         const orderRef = doc(db, 'orders', orderId);
         await updateDoc(orderRef, updateData);
@@ -195,14 +148,6 @@ export const useOrdersStore = create<OrdersState>()(
       },
 
       cancelOrder: async (orderId: string) => {
-        if (!db) {
-            set(produce(state => {
-                const o = state.orders.find(ord => ord.id === orderId);
-                if (o) o.status = 'cancelled';
-            }));
-            toast({ title: 'Pedido (sim) Cancelado', variant: 'destructive' });
-            return;
-        }
         const orderRef = doc(db, 'orders', orderId);
         await updateDoc(orderRef, { status: 'cancelled' });
         toast({ title: 'Pedido Cancelado', variant: 'destructive' });
@@ -211,12 +156,8 @@ export const useOrdersStore = create<OrdersState>()(
       getOrderById: (orderId: string) => {
         return get().orders.find((o) => o.display_id === orderId || o.id === orderId);
       },
-    }),
-    {
-      name: 'orders-storage-v1', // Unique key for local storage
-      storage: createJSONStorage(() => localStorage),
-       // Only persist if Firebase is not configured
-      skipHydration: !!db,
-    }
-  )
+    })
 );
+
+// Initialize the store by fetching data
+useOrdersStore.getState().fetchOrders();
