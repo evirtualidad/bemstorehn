@@ -22,7 +22,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Loader2, Truck, MapPin, Store, CheckCircle, Banknote, CreditCard, Landmark } from 'lucide-react';
-import { useProductsStore } from '@/hooks/use-products';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
 import { useOrdersStore, type Address, type NewOrderData } from '@/hooks/use-orders';
