@@ -9,6 +9,7 @@ import {
   signOut,
   type User,
 } from 'firebase/auth';
+import { setRole } from '@/actions/set-role';
 
 export type UserRole = 'admin' | 'cashier';
 
@@ -65,8 +66,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   _setUser: async (user: User | null) => {
     if (user) {
       try {
-        const idTokenResult = await user.getIdTokenResult(true); // Force refresh token
-        const role = (idTokenResult.claims.role as UserRole) || 'cashier';
+        let idTokenResult = await user.getIdTokenResult(true); // Force refresh token
+        let role = (idTokenResult.claims.role as UserRole) || null;
+
+        // TEMPORARY BOOTSTRAP: Automatically make 'admin@bemstore.hn' an admin if they have no role
+        if (user.email === 'admin@bemstore.hn' && !role) {
+          console.log("Attempting to bootstrap admin user...");
+          const result = await setRole(user.uid, 'admin');
+          if (result.success) {
+            console.log("Bootstrap successful. Forcing token refresh.");
+            // Force a token refresh to get the new custom claims immediately
+            idTokenResult = await user.getIdTokenResult(true);
+            role = (idTokenResult.claims.role as UserRole) || 'cashier';
+          } else {
+             console.error("Failed to bootstrap admin user:", result.error);
+             // Default to cashier if bootstrap fails to prevent being locked out
+             role = 'cashier';
+          }
+        }
+        
+        // Default to 'cashier' if no role is found after all checks
+        if (!role) {
+            role = 'cashier';
+        }
+
         set({ user, role, loading: false });
       } catch (error) {
         console.error("Error getting user token/role:", error);
