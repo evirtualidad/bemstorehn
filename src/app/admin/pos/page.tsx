@@ -870,7 +870,7 @@ export default function PosPage() {
   } = usePosCart();
   const { products, fetchProducts, isLoading: isLoadingProducts, decreaseStock } = useProductsStore();
   const { addOrderToState, fetchOrders } = useOrdersStore();
-  const { customers, fetchCustomers, isLoading: isLoadingCustomers, addOrUpdateCustomer } = useCustomersStore();
+  const { customers, fetchCustomers, isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
@@ -1032,8 +1032,11 @@ export default function PosPage() {
         name: values.name || 'Consumidor Final',
         phone: values.phone || 'N/A',
         address: values.address,
-        total_to_add: totalWithShipping
     });
+    
+    if (customerId) {
+        addPurchaseToCustomer(customerId, totalWithShipping);
+    }
     
     for (const item of cart) {
         await decreaseStock(item.id, item.quantity);

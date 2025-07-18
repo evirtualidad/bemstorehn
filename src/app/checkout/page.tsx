@@ -297,7 +297,7 @@ function ShippingDialog({
 export default function CheckoutPage() {
   const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart } = useCart();
   const { addOrderToState } = useOrdersStore();
-  const { addOrUpdateCustomer } = useCustomersStore();
+  const { addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
   const { taxRate, pickupAddress } = useSettingsStore();
   const { toast } = useToast();
   const router = useRouter();
@@ -360,8 +360,11 @@ export default function CheckoutPage() {
         name: values.name,
         phone: values.phone,
         address: shippingAddress,
-        total_to_add: total,
     });
+
+    if (customerId) {
+        addPurchaseToCustomer(customerId, total);
+    }
 
     const newOrderData: NewOrderData = {
       user_id: null, // Anonymous user from online store

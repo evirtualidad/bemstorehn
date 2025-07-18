@@ -32,9 +32,9 @@ type CustomersState = {
       phone: string;
       name: string;
       address?: Address | null;
-      total_to_add: number;
     }
   ) => Promise<string | undefined>; // Returns customer ID
+  addPurchaseToCustomer: (customerId: string, amount: number) => void;
   getCustomerById: (id: string) => Customer | undefined;
 };
 
@@ -49,7 +49,7 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     }, 500);
   },
   
-  addOrUpdateCustomer: async ({ phone, name, address, total_to_add }) => {
+  addOrUpdateCustomer: async ({ phone, name, address }) => {
     if ((!phone || phone.trim() === '') && name.trim().toLowerCase() === 'consumidor final') {
         return undefined; // Do not create/update "Consumidor Final"
     }
@@ -57,14 +57,11 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     let customerId: string | undefined = undefined;
 
     set(produce((state: CustomersState) => {
-        // Prefer finding by phone as it's more unique
         const existingCustomer = state.customers.find(c => c.phone && c.phone.trim() !== '' && c.phone === phone);
 
         if (existingCustomer) {
             existingCustomer.name = name;
             existingCustomer.address = address || existingCustomer.address;
-            existingCustomer.total_spent += total_to_add;
-            existingCustomer.order_count += 1;
             customerId = existingCustomer.id;
         } else {
             const newCustomer: Customer = {
@@ -73,8 +70,8 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
                 phone: phone || '',
                 name,
                 address: address || null,
-                total_spent: total_to_add,
-                order_count: 1,
+                total_spent: 0,
+                order_count: 0,
             };
             state.customers.push(newCustomer);
             customerId = newCustomer.id;
@@ -82,6 +79,16 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
     }));
     
     return customerId;
+  },
+  
+  addPurchaseToCustomer: (customerId, amount) => {
+    set(produce((state: CustomersState) => {
+      const customer = state.customers.find(c => c.id === customerId);
+      if (customer) {
+        customer.total_spent += amount;
+        customer.order_count += 1;
+      }
+    }));
   },
 
   getCustomerById: (id) => {
