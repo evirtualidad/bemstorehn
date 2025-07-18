@@ -4,38 +4,31 @@
 import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
-import { v4 as uuidv4 } from 'uuid';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
 
 export interface Category {
-  id: string; // uuid
-  created_at?: string;
-  name: string;
-  label: string;
+  id: string; // Firestore document ID
+  name: string; // The unique name/slug for the category
+  label: string; // The display label
 }
-
-const mockCategories: Category[] = [
-    { id: 'cat_1', name: 'skincare', label: 'Cuidado de la Piel' },
-    { id: 'cat_2', name: 'makeup', label: 'Maquillaje' },
-    { id: 'cat_3', name: 'haircare', label: 'Cuidado del Cabello' },
-];
 
 type CategoriesState = {
   categories: Category[];
   isLoading: boolean;
   error: string | null;
-  addCategory: (category: Omit<Category, 'id' | 'created_at'>) => Promise<void>;
-  updateCategory: (category: Omit<Category, 'created_at'>) => Promise<void>;
+  fetchCategories: () => () => void; // Returns unsubscribe function
+  addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
+  updateCategory: (category: Category) => Promise<void>;
   deleteCategory: (categoryId: string) => Promise<void>;
   getCategoryById: (categoryId: string) => Category | undefined;
   getCategoryByName: (categoryName: string) => Category | undefined;
 };
 
 export const useCategoriesStore = create<CategoriesState>()(
-  persist(
     (set, get) => ({
-      categories: mockCategories,
-      isLoading: false,
+      categories: [],
+      isLoading: true,
       error: null,
       
       getCategoryById: (categoryId: string) => {
@@ -46,36 +39,36 @@ export const useCategoriesStore = create<CategoriesState>()(
         return get().categories.find((c) => c.name === categoryName);
       },
 
+      fetchCategories: () => {
+        const q = query(collection(db, 'categories'), orderBy('label'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+          const categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+          set({ categories, isLoading: false });
+        }, (error) => {
+          console.error("Firebase Error: ", error);
+          set({ error: "No se pudieron cargar las categorías.", isLoading: false });
+        });
+        return unsubscribe;
+      },
+
       addCategory: async (categoryData) => {
-        const newCategory = { ...categoryData, id: uuidv4(), created_at: new Date().toISOString() };
-        set(produce((state: CategoriesState) => {
-          state.categories.push(newCategory);
-          state.categories.sort((a,b) => a.label.localeCompare(b.label));
-        }));
+        await addDoc(collection(db, 'categories'), categoryData);
         toast({ title: 'Categoría añadida' });
       },
 
       updateCategory: async (category) => {
-        set(produce((state: CategoriesState) => {
-            const index = state.categories.findIndex((c) => c.id === category.id);
-            if (index !== -1) {
-                state.categories[index] = { ...state.categories[index], ...category };
-                state.categories.sort((a,b) => a.label.localeCompare(b.label));
-            }
-        }));
+        const { id, ...data } = category;
+        const docRef = doc(db, 'categories', id);
+        await updateDoc(docRef, data);
         toast({ title: 'Categoría actualizada' });
       },
 
       deleteCategory: async (categoryId: string) => {
-        set(produce((state: CategoriesState) => {
-          state.categories = state.categories.filter((c) => c.id !== categoryId);
-        }));
+        await deleteDoc(doc(db, 'categories', categoryId));
         toast({ title: 'Categoría eliminada' });
       },
-    }),
-    {
-      name: 'categories-storage-v2',
-      storage: createJSONStorage(() => localStorage),
-    }
-  )
+    })
 );
+
+// Start listening to category changes when the store is initialized
+useCategoriesStore.getState().fetchCategories();

@@ -2,86 +2,88 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Session, User } from '@supabase/supabase-js';
+import { auth, db } from '@/lib/firebase';
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  type User,
+} from 'firebase/auth';
+import type { Session } from '@supabase/supabase-js'; // Keep for type compat until full removal
 
 export type UserRole = 'admin' | 'cashier';
 
 type AuthState = {
-  session: Session | null;
+  session: Session | null; // Keep for now for type compatibility in components
   user: User | null;
   role: UserRole | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<string | null>;
+  login: (email: string, password:string) => Promise<string | null>;
   logout: () => Promise<void>;
-  setSession: (session: Session | null) => void;
-  setLoading: (loading: boolean) => void;
+  _setUser: (user: User | null) => void;
 };
 
-// Mock user for the simulation
-const mockUser = {
-    id: 'user_admin_mock',
-    app_metadata: {
-        provider: 'email',
-        providers: ['email'],
-        role: 'admin'
-    },
-    user_metadata: {
-        name: 'Admin User'
-    },
-    aud: 'authenticated',
-    created_at: new Date().toISOString(),
-} as unknown as User;
+// This function listens to Firebase Auth state changes and updates the store
+let authUnsubscribe: (() => void) | null = null;
 
-const mockSession = {
-    access_token: 'mock_access_token',
-    refresh_token: 'mock_refresh_token',
-    user: mockUser,
-    token_type: 'bearer',
-    expires_in: 3600,
-    expires_at: Date.now() / 1000 + 3600,
-} as unknown as Session;
+const startAuthListener = () => {
+    if (authUnsubscribe) return; // Listener already active
+    
+    authUnsubscribe = onAuthStateChanged(auth, async (user) => {
+        useAuthStore.getState()._setUser(user);
+    });
+};
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   user: null,
   role: null,
-  loading: true,
+  loading: true, // Start with loading true
   login: async (email, password) => {
     set({ loading: true });
-    // Simulate network delay
-    await new Promise(res => setTimeout(res, 500));
-
-    if (email === 'admin@example.com' && password === 'password') {
-        const role = (mockUser.app_metadata.role as UserRole) || 'admin';
-        set({ session: mockSession, user: mockUser, role: role, loading: false });
-        return null; // No error
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // The onAuthStateChanged listener will handle setting the user state
+      return null;
+    } catch (error: any) {
+      console.error("Firebase Login Error:", error);
+      set({ loading: false });
+      switch (error.code) {
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+          return 'Correo o contraseña incorrectos.';
+        default:
+          return 'Ocurrió un error inesperado al iniciar sesión.';
+      }
     }
-    if (email === 'cashier@example.com' && password === 'password') {
-         const cashierUser = { ...mockUser, app_metadata: { ...mockUser.app_metadata, role: 'cashier' }};
-         const cashierSession = { ...mockSession, user: cashierUser };
-         set({ session: cashierSession as Session, user: cashierUser, role: 'cashier', loading: false });
-         return null;
-    }
-    
-    set({ loading: false });
-    return 'Credenciales inválidas. Inténtalo de nuevo.';
   },
   logout: async () => {
-    set({ loading: true });
-    await new Promise(res => setTimeout(res, 300));
+    await signOut(auth);
     set({ session: null, user: null, role: null, loading: false });
   },
-  setSession: (session) => {
-    // This function will likely not be called directly in mock mode,
-    // but it's here for completeness.
-    const role = session ? (session.user?.app_metadata?.role as UserRole) || 'cashier' : null;
-    set({ session, user: session?.user || null, role, loading: false });
+  _setUser: async (user: User | null) => {
+    if (user) {
+      // Get custom claims for role
+      const idTokenResult = await user.getIdTokenResult(true);
+      const role = (idTokenResult.claims.role as UserRole) || 'cashier';
+      
+      // We create a mock session object for component compatibility for now
+      const mockSession: Session = {
+          access_token: await user.getIdToken(),
+          user: {
+              id: user.uid,
+              email: user.email,
+              app_metadata: { role },
+          } as any, // Cast to any to satisfy Supabase User type temporarily
+      } as any;
+
+      set({ session: mockSession, user, role, loading: false });
+    } else {
+      set({ session: null, user: null, role: null, loading: false });
+    }
   },
-  setLoading: (loading) => set({ loading }),
 }));
 
-// Initialize the store with a mock session so the user is "logged in" on refresh for easier development.
-setTimeout(() => {
-    const role = (mockUser.app_metadata.role as UserRole) || 'admin';
-    useAuthStore.setState({ session: mockSession, user: mockUser, role, loading: false });
-}, 100);
+// Initialize the auth listener when the app loads
+startAuthListener();

@@ -4,94 +4,111 @@
 import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
-import { v4 as uuidv4 } from 'uuid';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { db, storage } from '@/lib/firebase';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 export interface Banner {
-  id: string; // uuid
-  created_at?: string;
+  id: string; // Firestore document ID
+  created_at?: string; // Kept for compatibility, but Firestore has timestamps
   title: string;
   description: string;
-  image: string; // url
+  image: string; // URL from Firebase Storage
+  imagePath: string; // Path in Firebase Storage
   aiHint?: string;
 }
-
-const mockBanners: Banner[] = [
-    {
-        id: 'banner_1',
-        created_at: new Date().toISOString(),
-        title: 'Colección Esencial de Verano',
-        description: 'Descubre nuestros productos más vendidos para un look fresco y radiante.',
-        image: 'https://placehold.co/1200x600.png',
-        aiHint: 'summer cosmetics'
-    },
-    {
-        id: 'banner_2',
-        created_at: new Date().toISOString(),
-        title: '20% de Descuento en Skincare',
-        description: 'Cuida tu piel con nuestras mejores ofertas de la temporada.',
-        image: 'https://placehold.co/1200x600.png',
-        aiHint: 'skincare products'
-    },
-    {
-        id: 'banner_3',
-        created_at: new Date().toISOString(),
-        title: 'Nuevos Tonos de Labiales',
-        description: 'Colores vibrantes y de larga duración para cualquier ocasión.',
-        image: 'https://placehold.co/1200x600.png',
-        aiHint: 'lipstick collection'
-    }
-];
 
 type BannersState = {
   banners: Banner[];
   isLoading: boolean;
   error: string | null;
-  addBanner: (banner: Omit<Banner, 'id' | 'created_at'>) => Promise<void>;
-  updateBanner: (banner: Banner) => Promise<void>;
-  deleteBanner: (bannerId: string) => Promise<void>;
+  fetchBanners: () => () => void; // Returns the unsubscribe function
+  addBanner: (banner: Omit<Banner, 'id' | 'imagePath'> & { imageFile: File }) => Promise<void>;
+  updateBanner: (banner: Omit<Banner, 'imagePath'> & { imageFile?: File }) => Promise<void>;
+  deleteBanner: (banner: Banner) => Promise<void>;
 };
 
-export const useBannersStore = create<BannersState>()(
-  persist(
-    (set, get) => ({
-      banners: mockBanners,
-      isLoading: false,
-      error: null,
+export const useBannersStore = create<BannersState>((set) => ({
+  banners: [],
+  isLoading: true,
+  error: null,
 
-      addBanner: async (bannerData) => {
-        const newBanner = {
-            ...bannerData,
-            id: uuidv4(),
-            created_at: new Date().toISOString(),
-        };
+  fetchBanners: () => {
+    const q = query(collection(db, 'banners'), orderBy('created_at', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const banners: Banner[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Banner));
+      set({ banners, isLoading: false });
+    }, (error) => {
+      console.error("Firebase Error: ", error);
+      set({ error: "No se pudieron cargar los banners.", isLoading: false });
+    });
+    return unsubscribe;
+  },
 
-        set(produce((state: BannersState) => {
-            state.banners.unshift(newBanner);
-        }));
-        toast({ title: 'Banner añadido', description: 'El nuevo banner se ha guardado.' });
-      },
+  addBanner: async (bannerData) => {
+    const { imageFile, ...restData } = bannerData;
+    toast({ title: 'Subiendo banner...', description: 'Por favor espera.' });
+    
+    // Upload image
+    const imagePath = `banners/${Date.now()}_${imageFile.name}`;
+    const storageRef = ref(storage, imagePath);
+    await uploadBytes(storageRef, imageFile);
+    const imageUrl = await getDownloadURL(storageRef);
 
-      updateBanner: async (banner) => {
-        set(produce((state: BannersState) => {
-            const index = state.banners.findIndex((b) => b.id === banner.id);
-            if (index !== -1) {
-                state.banners[index] = { ...state.banners[index], ...banner };
-            }
-        }));
-        toast({ title: 'Banner actualizado', description: 'Los cambios se han guardado.' });
-      },
+    // Add banner to Firestore
+    await addDoc(collection(db, 'banners'), {
+      ...restData,
+      image: imageUrl,
+      imagePath: imagePath,
+      created_at: new Date().toISOString(),
+    });
 
-      deleteBanner: async (bannerId: string) => {
-        set(produce((state: BannersState) => {
-            state.banners = state.banners.filter((b) => b.id !== bannerId);
-        }));
-        toast({ title: 'Banner eliminado', description: 'El banner ha sido eliminado.' });
-      },
-    }),
-    {
-      name: 'banners-storage-v2',
-      storage: createJSONStorage(() => localStorage),
+    toast({ title: 'Banner añadido', description: 'El nuevo banner se ha guardado.' });
+  },
+
+  updateBanner: async (banner) => {
+    const { id, imageFile, ...restData } = banner;
+    let imageUrl = banner.image;
+    let imagePath = banner.imagePath;
+
+    toast({ title: 'Actualizando banner...', description: 'Por favor espera.' });
+
+    // If a new image is provided, upload it and delete the old one
+    if (imageFile) {
+        // Delete old image
+        if (imagePath) {
+            const oldImageRef = ref(storage, imagePath);
+            await deleteObject(oldImageRef).catch(err => console.error("Error deleting old image:", err));
+        }
+        // Upload new image
+        imagePath = `banners/${Date.now()}_${imageFile.name}`;
+        const newImageRef = ref(storage, imagePath);
+        await uploadBytes(newImageRef, imageFile);
+        imageUrl = await getDownloadURL(newImageRef);
     }
-  )
-);
+    
+    const docRef = doc(db, 'banners', id);
+    await updateDoc(docRef, {
+        ...restData,
+        image: imageUrl,
+        imagePath: imagePath,
+    });
+
+    toast({ title: 'Banner actualizado', description: 'Los cambios se han guardado.' });
+  },
+
+  deleteBanner: async (banner) => {
+    // Delete image from storage
+    if (banner.imagePath) {
+        const imageRef = ref(storage, banner.imagePath);
+        await deleteObject(imageRef).catch(err => console.error("Failed to delete banner image:", err));
+    }
+    
+    // Delete document from firestore
+    await deleteDoc(doc(db, 'banners', banner.id));
+    toast({ title: 'Banner eliminado', description: 'El banner ha sido eliminado.' });
+  },
+}));
+
+// Initialize the listener when the app loads
+useBannersStore.getState().fetchBanners();
