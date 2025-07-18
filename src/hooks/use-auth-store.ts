@@ -21,7 +21,7 @@ type AuthState = {
   loading: boolean;
   login: (email: string, password: string) => Promise<string | null>;
   logout: () => Promise<void>;
-  initialize: () => void;
+  initializeAuth: () => void;
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -58,7 +58,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       // This function runs on initial load to check if a user is already logged in
-      initialize: () => {
+      initializeAuth: () => {
         const state = get();
         // If there's a user in the persisted state, we're not loading anymore.
         // If not, we're also not loading. This effectively just turns off the
@@ -78,7 +78,7 @@ export const useAuthStore = create<AuthState>()(
       // Custom onRehydrate logic to run after loading from storage
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.initialize();
+          state.initializeAuth();
         }
       }
     }
@@ -86,4 +86,4 @@ export const useAuthStore = create<AuthState>()(
 );
 
 // Initialize the store on load
-useAuthStore.getState().initialize();
+useAuthStore.getState().initializeAuth();
