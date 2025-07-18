@@ -51,6 +51,7 @@ export const productFormSchema = z.object({
       return true; // Pass if it's a string URL or no file
     }, 'Solo se aceptan imágenes .jpg, .jpeg, .png y .webp.'),
   featured: z.boolean().default(false),
+  aiHint: z.string().optional(),
 }).refine(data => {
     if (data.originalPrice && data.price >= data.originalPrice) {
       return false;
@@ -89,6 +90,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
       category: product?.category || '',
       image: product?.image || '',
       featured: product?.featured || false,
+      aiHint: product?.aiHint || '',
     },
   });
 
@@ -259,6 +261,23 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
               <FormMessage />
             </FormItem>
           )}
+        />
+
+        <FormField
+            control={form.control}
+            name="aiHint"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Pista para IA (Opcional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="cosmetics flatlay" {...field} />
+                </FormControl>
+                <FormMessage />
+                 <FormDescription>
+                  Palabras clave para generar una imagen de marcador de posición.
+                </FormDescription>
+              </FormItem>
+            )}
         />
         
          <FormField

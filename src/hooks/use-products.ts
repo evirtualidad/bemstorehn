@@ -10,7 +10,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { produce } from 'immer';
 
 // Helper type for adding a new product
-export type NewProductData = Omit<Product, 'id' | 'image' | 'aiHint'> & { imageFile: File, aiHint?: string };
+export type NewProductData = Omit<Product, 'id' | 'image'> & { imageFile: File };
 
 type ProductsState = {
   products: Product[];
@@ -59,8 +59,19 @@ export const useProductsStore = create<ProductsState>()(
             await uploadBytes(storageRef, imageFile);
             const imageUrl = await getDownloadURL(storageRef);
 
-            const newProductData = { ...restData, image: imageUrl, imagePath: imagePath, created_at: serverTimestamp() };
-            const docRef = await addDoc(collection(db, 'products'), newProductData);
+            const newProductDataForDb = { 
+              ...restData, 
+              image: imageUrl, 
+              imagePath: imagePath, 
+              created_at: serverTimestamp() 
+            };
+            
+            // Ensure aiHint is not undefined when saving
+            if (!newProductDataForDb.aiHint) {
+              delete (newProductDataForDb as Partial<typeof newProductDataForDb>).aiHint;
+            }
+
+            const docRef = await addDoc(collection(db, 'products'), newProductDataForDb);
             
             toast({ title: 'Producto añadido', description: `${productData.name} ha sido añadido.` });
             return docRef.id;

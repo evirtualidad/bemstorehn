@@ -90,6 +90,7 @@ export function ProductsManager() {
         originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,
         stock: Number(values.stock),
         featured: values.featured,
+        aiHint: values.aiHint,
         imageFile: image,
     };
     
