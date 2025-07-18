@@ -18,7 +18,7 @@ type AuthState = {
   loading: boolean;
   login: (email: string, password:string) => Promise<string | null>;
   logout: () => Promise<void>;
-  _setUser: (user: User | null) => void;
+  _setUser: (user: User | null) => Promise<void>;
 };
 
 // This function listens to Firebase Auth state changes and updates the store
@@ -28,7 +28,7 @@ const startAuthListener = () => {
     if (authUnsubscribe) authUnsubscribe(); // Prevent multiple listeners
     
     authUnsubscribe = onAuthStateChanged(auth, async (user) => {
-        useAuthStore.getState()._setUser(user);
+        await useAuthStore.getState()._setUser(user);
     });
 };
 

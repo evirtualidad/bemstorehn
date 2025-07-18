@@ -33,13 +33,14 @@ import { es } from 'date-fns/locale/es';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { useRouter } from 'next/navigation';
 import { getUsers, type UserWithRole } from '@/actions/get-users';
+import { auth } from '@/lib/firebase';
 
 
 export default function UsersPage() {
   const [users, setUsers] = React.useState<UserWithRole[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const { toast } = useToast();
-  const { role: adminRole } = useAuthStore();
+  const { role: adminRole, _setUser } = useAuthStore();
   const router = useRouter();
   
   React.useEffect(() => {
@@ -48,35 +49,35 @@ export default function UsersPage() {
     }
   }, [adminRole, router]);
 
+  const fetchUsers = React.useCallback(async () => {
+    setIsLoading(true);
+    const result = await getUsers();
+    if (result.error) {
+    toast({
+        title: 'Error al cargar usuarios',
+        description: result.error,
+        variant: 'destructive',
+    });
+    setUsers([]);
+    } else {
+    // Ensure app_metadata and role exist to prevent runtime errors
+    const sanitizedUsers = result.users.map(u => ({
+        ...u,
+        customClaims: {
+            ...u.customClaims,
+            role: u.customClaims?.role || 'cashier',
+        },
+    }));
+    setUsers(sanitizedUsers);
+    }
+    setIsLoading(false);
+  }, [toast]);
+
   React.useEffect(() => {
     if (!adminRole) return;
-
-    const fetchUsers = async () => {
-        setIsLoading(true);
-        const result = await getUsers();
-        if (result.error) {
-        toast({
-            title: 'Error al cargar usuarios',
-            description: result.error,
-            variant: 'destructive',
-        });
-        setUsers([]);
-        } else {
-        // Ensure app_metadata and role exist to prevent runtime errors
-        const sanitizedUsers = result.users.map(u => ({
-            ...u,
-            customClaims: {
-                ...u.customClaims,
-                role: u.customClaims?.role || 'cashier',
-            },
-        }));
-        setUsers(sanitizedUsers);
-        }
-        setIsLoading(false);
-    };
     
     fetchUsers();
-  }, [adminRole, router, toast]);
+  }, [adminRole, router, fetchUsers]);
   
 
   const handleRoleChange = async (userId: string, newRole: 'admin' | 'cashier') => {
@@ -100,6 +101,16 @@ export default function UsersPage() {
         title: '¡Rol actualizado!',
         description: `El rol del usuario ha sido cambiado a ${newRole}.`,
       });
+
+      // Force a token refresh to get the new custom claims
+      if (auth.currentUser) {
+        await auth.currentUser.getIdToken(true);
+        // Update the user state in the auth store to reflect the new role
+        await _setUser(auth.currentUser);
+      }
+      
+      // Re-fetch all users to ensure data is consistent
+      await fetchUsers();
     }
   };
   
@@ -169,6 +180,7 @@ export default function UsersPage() {
                     <Select
                         value={user.customClaims?.role}
                         onValueChange={(newRole: 'admin' | 'cashier') => handleRoleChange(user.uid, newRole)}
+                        disabled={adminRole !== 'admin'}
                     >
                         <SelectTrigger className="w-[120px]">
                             <SelectValue placeholder="Seleccionar rol" />
