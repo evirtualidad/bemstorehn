@@ -24,4 +24,5 @@ if (!admin.apps.length) {
     }
 }
 
-const app = admin.apps.length >
+// Export the initialized admin instance
+export { admin };
