@@ -851,20 +851,41 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, isInDialog, onOp
     )
 }
 
-export default function PosPage() {
-  const { 
-    items: cart,
-    totalWithShipping,
-    addToCart,
-    clearCart,
-    setShippingCost,
-  } = usePosCart();
+function PosMobileCartButton({ onClick }: { onClick: () => void }) {
+    const { totalWithShipping } = usePosCart(state => ({ totalWithShipping: state.totalWithShipping }));
+    const totalItems = usePosCart(state => state.items.reduce((sum, item) => sum + item.quantity, 0));
+    const { currency } = useCurrencyStore();
+  
+    return (
+        <Button
+            size="lg"
+            className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 bg-primary text-primary-foreground hover:bg-primary/90 border-4 border-background"
+            onClick={onClick}
+        >
+            <Receipt className="h-7 w-7" />
+            <span className="text-md font-bold">{formatCurrency(totalWithShipping, currency.code)}</span>
+            {totalItems > 0 && (
+                <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-8 w-8 flex items-center justify-center border-4 border-background">
+                    {totalItems}
+                </div>
+            )}
+        </Button>
+    );
+}
 
+export default function PosPage() {
+  const { addToCart, totalWithShipping, setShippingCost, clearCart } = usePosCart(state => ({
+    addToCart: state.addToCart,
+    totalWithShipping: state.totalWithShipping,
+    setShippingCost: state.setShippingCost,
+    clearCart: state.clearCart
+  }));
+
+  const cartItems = usePosCart(state => state.items);
   const { products, fetchProducts, isLoading: isLoadingProducts, decreaseStock } = useProductsStore();
   const { addOrderToState } = useOrdersStore();
   const { fetchCustomers, isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
-  const { currency } = useCurrencyStore();
   const { toast } = useToast();
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -892,10 +913,6 @@ export default function PosPage() {
     }
     return products;
   }, [selectedFilter, products]);
-
-  const totalItems = React.useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.quantity, 0);
-  }, [cart]);
 
   const form = useForm<z.infer<typeof checkoutFormSchema>>({
     resolver: zodResolver(checkoutFormSchema),
@@ -973,7 +990,7 @@ export default function PosPage() {
   };
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
-    if (cart.length === 0) {
+    if (cartItems.length === 0) {
       toast({ title: 'Carrito Vacío', description: 'Añade productos antes de crear un pedido.', variant: 'destructive' });
       return;
     }
@@ -993,7 +1010,7 @@ export default function PosPage() {
         addPurchaseToCustomer(customerId, totalWithShipping);
     }
     
-    for (const item of cart) {
+    for (const item of cartItems) {
         await decreaseStock(item.id, item.quantity);
     }
 
@@ -1015,7 +1032,7 @@ export default function PosPage() {
         customer_name: customerName,
         customer_phone: customerPhone,
         customer_address: values.address || null,
-        items: cart.map(item => ({
+        items: cartItems.map(item => ({
             id: item.id,
             name: item.name,
             price: item.price,
@@ -1096,19 +1113,7 @@ export default function PosPage() {
         </div>
 
         <div className="lg:hidden fixed bottom-4 right-4 z-20">
-            <Button
-                size="lg"
-                className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 bg-primary text-primary-foreground hover:bg-primary/90 border-4 border-background"
-                onClick={() => setIsTicketVisible(true)}
-            >
-                <Receipt className="h-7 w-7" />
-                <span className="text-md font-bold">{formatCurrency(totalWithShipping, currency.code)}</span>
-                {totalItems > 0 && (
-                    <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-8 w-8 flex items-center justify-center border-4 border-background">
-                        {totalItems}
-                    </div>
-                )}
-            </Button>
+            <PosMobileCartButton onClick={() => setIsTicketVisible(true)} />
         </div>
         
         <TicketView

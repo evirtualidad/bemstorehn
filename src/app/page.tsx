@@ -11,7 +11,6 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  type CarouselApi,
 } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
 import * as React from 'react';
@@ -162,12 +161,33 @@ function FeaturedProductsCarousel({ products, onAddToCart }: { products: Product
     );
 }
 
+function StoreMobileCartButton() {
+    const { total, toggleCart } = useCart(state => ({ total: state.total, toggleCart: state.toggleCart }));
+    const itemCount = useCart(state => state.items.reduce((sum, item) => sum + item.quantity, 0));
+    const { currency } = useCurrencyStore();
+  
+    return (
+        <Button
+            size="lg"
+            className="relative h-20 w-20 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 bg-primary text-primary-foreground hover:bg-primary/90 border-4 border-background"
+            onClick={toggleCart}
+        >
+            <ShoppingCart className="h-6 w-6" />
+            <span className="text-sm font-bold">{formatCurrency(total, currency.code)}</span>
+            {itemCount > 0 && (
+                <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-7 w-7 flex items-center justify-center border-4 border-background">
+                    {itemCount}
+                </div>
+            )}
+        </Button>
+    );
+}
+
 export default function Home() {
   const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
   const { banners, fetchBanners, isLoading: isLoadingBanners } = useBannersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
-  const { items, total, toggleCart, addToCart } = useCart();
-  const { currency } = useCurrencyStore();
+  const { addToCart } = useCart(state => ({ addToCart: state.addToCart }));
   const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
   
@@ -176,10 +196,6 @@ export default function Home() {
     fetchBanners();
     fetchCategories();
   }, [fetchProducts, fetchBanners, fetchCategories]);
-
-  const itemCount = React.useMemo(() => {
-    return items.reduce((sum, item) => sum + item.quantity, 0);
-  }, [items]);
 
   const productsByCategory = React.useMemo(() => {
     return products.reduce((acc, product) => {
@@ -290,19 +306,7 @@ export default function Home() {
       </main>
 
       <div className="md:hidden fixed bottom-4 right-4 z-20">
-            <Button
-                size="lg"
-                className="relative h-20 w-20 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 bg-primary text-primary-foreground hover:bg-primary/90 border-4 border-background"
-                onClick={toggleCart}
-            >
-                <ShoppingCart className="h-6 w-6" />
-                <span className="text-sm font-bold">{formatCurrency(total, currency.code)}</span>
-                {itemCount > 0 && (
-                    <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-7 w-7 flex items-center justify-center border-4 border-background">
-                        {itemCount}
-                    </div>
-                )}
-            </Button>
+            <StoreMobileCartButton />
       </div>
 
       <footer className="py-10 border-t border-border/40 bg-muted/30">
