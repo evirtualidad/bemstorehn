@@ -874,10 +874,10 @@ function PosMobileCartButton() {
 
 export default function PosPage() {
   const { setShippingCost, clearCart, items: cartItems, totalWithShipping } = usePosCart();
-  const { products, fetchProducts, isLoading: isLoadingProducts, decreaseStock } = useProductsStore();
+  const { products, isLoading: isLoadingProducts, decreaseStock } = useProductsStore();
   const { addOrderToState } = useOrdersStore();
-  const { customers, fetchCustomers, isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
-  const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
+  const { customers, isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
+  const { categories, isLoading: isLoadingCategories } = useCategoriesStore();
   const { toast } = useToast();
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -888,10 +888,8 @@ export default function PosPage() {
   const { currency } = useCurrencyStore();
 
   React.useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-    fetchCustomers();
-  }, [fetchProducts, fetchCategories, fetchCustomers]);
+    // Data is loaded from localStorage by persist middleware, no fetch needed.
+  }, []);
   
   const hasOfferProducts = React.useMemo(() => products.some(p => p.originalPrice && p.originalPrice > p.price), [products]);
   
@@ -1050,7 +1048,6 @@ export default function PosPage() {
         setIsCheckoutOpen(false);
         setIsTicketVisible(false);
         setIsSubmitting(false);
-        fetchProducts(); 
     }, 500);
   }
   

@@ -186,16 +186,14 @@ function StoreMobileCartButton() {
 }
 
 export default function Home() {
-  const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
-  const { banners, fetchBanners, isLoading: isLoadingBanners } = useBannersStore();
-  const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
+  const { products, isLoading: isLoadingProducts } = useProductsStore();
+  const { banners, isLoading: isLoadingBanners } = useBannersStore();
+  const { categories, isLoading: isLoadingCategories } = useCategoriesStore();
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
   
   React.useEffect(() => {
-    fetchProducts();
-    fetchBanners();
-    fetchCategories();
-  }, [fetchProducts, fetchBanners, fetchCategories]);
+    // Data is loaded from localStorage by persist middleware, no fetch needed.
+  }, []);
 
   const productsByCategory = React.useMemo(() => {
     return products.reduce((acc, product) => {
