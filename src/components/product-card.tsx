@@ -74,7 +74,11 @@ export function ProductCard({
         <CardContent className="p-4 flex-grow flex flex-col">
           {category && <Badge variant="outline" className="mb-2 w-fit text-xs">{category.label}</Badge>}
           <h4 className="font-bold text-md leading-tight flex-grow group-hover:text-primary transition-colors">{product.name}</h4>
-          {showDescription && product.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{product.description}</p>}
+          {showDescription && (
+            <div className="h-10"> 
+              {product.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{product.description}</p>}
+            </div>
+          )}
         </CardContent>
         <CardFooter className="p-4 pt-0 flex flex-col items-start gap-3 mt-auto">
           <Button 
