@@ -1,7 +1,18 @@
 
 'use server';
 
-import { admin } from '@/lib/firebase-admin';
+import * as admin from 'firebase-admin';
+import { serviceAccount } from '@/lib/serviceAccountKey';
+
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+  } catch (error: any) {
+    console.error('Error initializing Firebase Admin SDK in get-users:', error.message);
+  }
+}
 
 export interface UserWithRole {
     uid: string;
@@ -15,7 +26,6 @@ export interface UserWithRole {
         role?: 'admin' | 'cashier';
     };
 }
-
 
 export async function getUsers(): Promise<{ users: UserWithRole[], error?: string }> {
   if (!admin.apps.length) {

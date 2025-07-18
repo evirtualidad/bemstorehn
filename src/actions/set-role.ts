@@ -1,7 +1,18 @@
 
 'use server';
 
-import { admin } from '@/lib/firebase-admin';
+import * as admin from 'firebase-admin';
+import { serviceAccount } from '@/lib/serviceAccountKey';
+
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+  } catch (error: any) {
+    console.error('Error initializing Firebase Admin SDK in set-role:', error.message);
+  }
+}
 
 type Role = 'admin' | 'cashier';
 
