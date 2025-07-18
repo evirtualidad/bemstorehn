@@ -1,13 +1,14 @@
 
 'use server';
 
-import { admin } from '@/lib/firebase-admin';
+import { getAdmin } from '@/lib/firebase-admin';
 
 type Role = 'admin' | 'cashier';
 
 export async function setRole(userId: string, role: Role): Promise<{ success: boolean, error?: string }> {
-  if (!admin) {
-    const errorMessage = "Firebase Admin SDK no está inicializado. Revisa las variables de entorno del servidor.";
+  const { admin, error: adminError } = getAdmin();
+  if (!admin || adminError) {
+    const errorMessage = adminError || "Firebase Admin SDK no está inicializado. Revisa las variables de entorno del servidor.";
     console.error(errorMessage);
     return { success: false, error: errorMessage };
   }
@@ -15,7 +16,6 @@ export async function setRole(userId: string, role: Role): Promise<{ success: bo
   try {
     const auth = admin.auth();
     
-    // Set custom user claims
     await auth.setCustomUserClaims(userId, { role });
     
     console.log(`Successfully set role for user ${userId} to ${role}`);

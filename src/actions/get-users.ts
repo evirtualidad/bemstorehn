@@ -1,7 +1,7 @@
 
 'use server';
 
-import { admin } from '@/lib/firebase-admin';
+import { getAdmin } from '@/lib/firebase-admin';
 import type { UserRecord } from 'firebase-admin/auth';
 
 export interface UserWithRole {
@@ -18,8 +18,9 @@ export interface UserWithRole {
 }
 
 export async function getUsers(): Promise<{ users: UserWithRole[], error?: string }> {
-  if (!admin) {
-    const errorMessage = "Firebase Admin SDK no está inicializado. Revisa las variables de entorno del servidor.";
+  const { admin, error: adminError } = getAdmin();
+  if (!admin || adminError) {
+    const errorMessage = adminError || "Firebase Admin SDK no está inicializado. Revisa las variables de entorno del servidor.";
     console.error(errorMessage);
     return { users: [], error: errorMessage };
   }

@@ -1,7 +1,7 @@
 
 'use server';
 
-import { admin } from '@/lib/firebase-admin';
+import { getAdmin } from '@/lib/firebase-admin';
 
 type Role = 'admin' | 'cashier';
 
@@ -11,8 +11,9 @@ interface CreateUserResult {
 }
 
 export async function createUser(email: string, password: string, role: Role): Promise<CreateUserResult> {
-    if (!admin) {
-        const errorMessage = "Firebase Admin SDK no está inicializado. Revisa las variables de entorno del servidor.";
+    const { admin, error: adminError } = getAdmin();
+    if (!admin || adminError) {
+        const errorMessage = adminError || "Firebase Admin SDK no está inicializado. Revisa las variables de entorno del servidor.";
         console.error(errorMessage);
         return { success: false, error: errorMessage };
     }
@@ -20,14 +21,12 @@ export async function createUser(email: string, password: string, role: Role): P
     try {
         const auth = admin.auth();
 
-        // Create the user
         const userRecord = await auth.createUser({
             email,
             password,
-            emailVerified: true, // Mark email as verified since it's created by an admin
+            emailVerified: true,
         });
 
-        // Set the custom role claim
         await auth.setCustomUserClaims(userRecord.uid, { role });
 
         console.log(`Successfully created new user: ${email} with role: ${role}`);
