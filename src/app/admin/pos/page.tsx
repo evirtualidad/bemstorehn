@@ -951,12 +951,21 @@ export default function PosPage() {
     setShippingCost(cost);
   };
 
-  const handleProductSelect = (product: Product): boolean => {
-    return addToCart(product);
+  const handleProductSearchSelect = (product: Product): void => {
+    const wasAdded = addToCart(product);
+     if (wasAdded) {
+      setTimeout(() => {
+        toast({
+          title: 'Producto añadido',
+          description: `${product.name} añadido al pedido.`,
+          duration: 3000,
+        });
+      }, 0);
+    }
   };
   
   const handleProductClick = (product: Product) => {
-    const wasAdded = handleProductSelect(product);
+    const wasAdded = addToCart(product);
     if (wasAdded) {
       setTimeout(() => {
         toast({
@@ -989,18 +998,7 @@ export default function PosPage() {
     if (!itemToUpdate) return;
     
     if (amount > 0) {
-        if(itemToUpdate.quantity < itemToUpdate.stock) {
-            increaseQuantity(productId)
-        } else {
-            setTimeout(() => {
-                toast({
-                    title: 'Stock Máximo Alcanzado',
-                    description: `No puedes añadir más ${itemToUpdate.name}.`,
-                    variant: 'destructive',
-                    duration: 3000,
-                });
-            }, 0);
-        }
+        increaseQuantity(productId)
     } else {
         decreaseQuantity(productId);
     }
@@ -1026,24 +1024,20 @@ export default function PosPage() {
     
     setIsSubmitting(true);
     
-    // Step 1: Handle Customer
     const customerId = await addOrUpdateCustomer({
         name: values.name || 'Consumidor Final',
         phone: values.phone || 'N/A',
         address: values.address,
     });
     
-    // Step 2: Handle purchase update for the customer (locally)
     if (customerId) {
         addPurchaseToCustomer(customerId, totalWithShipping);
     }
     
-    // Step 3: Handle Stock
     for (const item of cart) {
         await decreaseStock(item.id, item.quantity);
     }
 
-    // Step 4: Create Order Object
     const newOrderData: NewOrderData = {
         user_id: session?.user.id || null,
         customer_id: customerId || null,
@@ -1075,10 +1069,8 @@ export default function PosPage() {
         delivery_method: values.deliveryMethod,
     };
     
-    // Step 5: Add order to state
     addOrderToState(newOrderData);
 
-    // Step 6: Finalize
     setTimeout(() => {
         toast({
           title: '¡Pedido Creado!',
@@ -1113,7 +1105,7 @@ export default function PosPage() {
             <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20 flex-shrink-0">
                 <h1 className="text-xl font-bold flex-1 whitespace-nowrap">POS</h1>
                  <div className="w-full sm:w-auto sm:flex-initial">
-                    <ProductSearch onProductSelect={handleProductSelect} />
+                    <ProductSearch onProductSelect={handleProductSearchSelect} />
                  </div>
             </header>
             <main className="flex-1 flex flex-col">
@@ -1219,5 +1211,3 @@ export default function PosPage() {
     </div>
   );
 }
-
-    
