@@ -2,6 +2,9 @@
 'use client';
 
 import * as React from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Table,
   TableBody,
@@ -33,63 +36,196 @@ import { es } from 'date-fns/locale/es';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { useRouter } from 'next/navigation';
 import { getUsers, type UserWithRole } from '@/actions/get-users';
-import { auth } from '@/lib/firebase';
+import { createUser } from '@/actions/create-user';
+import { Button } from '@/components/ui/button';
+import { PlusCircle, Loader2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+
+const userFormSchema = z.object({
+  email: z.string().email({ message: 'Por favor, ingresa un correo válido.' }),
+  password: z.string().min(6, { message: 'La contraseña debe tener al menos 6 caracteres.' }),
+  role: z.enum(['admin', 'cashier'], { required_error: 'Debes seleccionar un rol.' }),
+});
+
+function CreateUserDialog({ onUserCreated }: { onUserCreated: () => void }) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<z.infer<typeof userFormSchema>>({
+    resolver: zodResolver(userFormSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      role: 'cashier',
+    },
+  });
+
+  const onSubmit = async (values: z.infer<typeof userFormSchema>) => {
+    setIsSubmitting(true);
+    const result = await createUser(values.email, values.password, values.role);
+    setIsSubmitting(false);
+
+    if (result.success) {
+      toast({
+        title: '¡Usuario Creado!',
+        description: `El usuario ${values.email} ha sido creado exitosamente.`,
+      });
+      setIsOpen(false);
+      onUserCreated();
+      form.reset();
+    } else {
+      toast({
+        title: 'Error al Crear Usuario',
+        description: result.error,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" className="ml-auto gap-1">
+          <PlusCircle className="h-3.5 w-3.5" />
+          Crear Usuario
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Crear Nuevo Usuario</DialogTitle>
+          <DialogDescription>
+            Completa los detalles para crear un nuevo usuario en el sistema.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Correo Electrónico</FormLabel>
+                  <FormControl>
+                    <Input placeholder="usuario@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contraseña</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="••••••••" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Rol</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un rol" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="cashier">Cajero</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <DialogFooter className='pt-4'>
+                <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Crear Usuario
+                </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 
 export default function UsersPage() {
   const [users, setUsers] = React.useState<UserWithRole[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const { toast } = useToast();
-  const { role: adminRole, _setUser } = useAuthStore();
+  const { role: adminRole } = useAuthStore();
   const router = useRouter();
-  
-  React.useEffect(() => {
-    if (adminRole && !['admin', 'cashier'].includes(adminRole)) {
-      router.replace('/admin/dashboard');
-    }
-  }, [adminRole, router]);
 
   const fetchUsers = React.useCallback(async () => {
     setIsLoading(true);
     const result = await getUsers();
     if (result.error) {
-    toast({
+      toast({
         title: 'Error al cargar usuarios',
         description: result.error,
         variant: 'destructive',
-    });
-    setUsers([]);
+      });
+      setUsers([]);
     } else {
-    // Ensure app_metadata and role exist to prevent runtime errors
-    const sanitizedUsers = result.users.map(u => ({
+      const sanitizedUsers = result.users.map(u => ({
         ...u,
         customClaims: {
-            ...u.customClaims,
-            role: u.customClaims?.role || 'cashier',
+          ...u.customClaims,
+          role: u.customClaims?.role || 'cashier',
         },
-    }));
-    setUsers(sanitizedUsers);
+      }));
+      setUsers(sanitizedUsers);
     }
     setIsLoading(false);
   }, [toast]);
 
   React.useEffect(() => {
-    if (!adminRole) return;
-    
-    fetchUsers();
+    if (adminRole && !['admin', 'cashier'].includes(adminRole)) {
+      router.replace('/admin/dashboard');
+    } else if (adminRole) {
+      fetchUsers();
+    }
   }, [adminRole, router, fetchUsers]);
-  
 
   const handleRoleChange = async (userId: string, newRole: 'admin' | 'cashier') => {
     const originalUsers = [...users];
     
-    // Optimistically update UI
     setUsers(currentUsers => currentUsers.map(u => u.uid === userId ? { ...u, customClaims: { ...u.customClaims, role: newRole } } : u));
     
     const { success, error } = await setRole(userId, newRole);
 
     if (!success) {
-      // Revert UI on failure
       setUsers(originalUsers);
       toast({
         title: 'Error al cambiar el rol',
@@ -101,42 +237,15 @@ export default function UsersPage() {
         title: '¡Rol actualizado!',
         description: `El rol del usuario ha sido cambiado a ${newRole}.`,
       });
-
-      // Force a token refresh to get the new custom claims
-      if (auth.currentUser) {
-        await auth.currentUser.getIdToken(true);
-        // Update the user state in the auth store to reflect the new role
-        await _setUser(auth.currentUser);
-      }
-      
-      // Re-fetch all users to ensure data is consistent
-      await fetchUsers();
+      await fetchUsers(); // Re-fetch to ensure data consistency
     }
   };
-  
-  if (adminRole && !['admin', 'cashier'].includes(adminRole)) {
-      return (
-        <div className="flex h-[80vh] items-center justify-center">
-            <LoadingSpinner />
-        </div>
-      )
-  }
 
-  if (isLoading) {
+  if (isLoading || !adminRole) {
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Gestión de Usuarios</CardTitle>
-                <CardDescription>
-                  Administra los usuarios y sus roles en el sistema.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex justify-center items-center h-48">
-                    <LoadingSpinner />
-                </div>
-            </CardContent>
-        </Card>
+      <div className="flex h-[80vh] items-center justify-center">
+        <LoadingSpinner />
+      </div>
     );
   }
 
@@ -144,6 +253,7 @@ export default function UsersPage() {
     <main className="grid flex-1 items-start gap-4">
       <div className="flex items-center">
         <h1 className="text-2xl font-bold">Usuarios</h1>
+        {adminRole === 'admin' && <CreateUserDialog onUserCreated={fetchUsers} />}
       </div>
       <Card>
         <CardHeader>
