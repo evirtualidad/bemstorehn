@@ -631,11 +631,9 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, isInDialog, onOp
 
     const CancelButton = () => {
         return (
-            <DialogClose asChild>
-                <Button type="button" variant="outline" size="lg" className='w-full sm:w-auto' onClick={onCancel} disabled={isSubmitting}>
-                    Cancelar
-                </Button>
-            </DialogClose>
+            <Button type="button" variant="outline" size="lg" className='w-full sm:w-auto' onClick={onCancel} disabled={isSubmitting}>
+                Cancelar
+            </Button>
         );
     };
 
@@ -870,9 +868,10 @@ function PosMobileCartButton() {
 }
 
 export default function PosPage() {
-  const { products, isLoading: isLoadingProducts } = useProductsStore(state => ({
+  const { products, isLoading: isLoadingProducts, decreaseStock } = useProductsStore(state => ({
       products: state.products,
       isLoading: state.isLoading,
+      decreaseStock: state.decreaseStock,
   }));
   const { setShippingCost, clearCart, items: cartItems, totalWithShipping } = usePosCart();
   const { addOrderToState } = useOrdersStore();
@@ -964,10 +963,13 @@ export default function PosPage() {
 
   const handleOpenChangeCheckout = (open: boolean) => {
     setIsCheckoutOpen(open);
+    if (!open) {
+      // Don't clear cart on cancel, only on successful submission or explicit cancel
+    }
   };
   
   const handleCancelCheckout = () => {
-    // Reset form but don't clear cart
+    // Reset form but don't clear cart, let user decide
     form.reset({
       name: '',
       phone: '',
@@ -979,7 +981,8 @@ export default function PosPage() {
       paymentDueDate: undefined,
     });
     setShippingCost(0);
-    setIsCheckoutOpen(false); // Manually close since we are handling it
+    clearCartAndForm();
+    setIsCheckoutOpen(false);
   };
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
@@ -1004,20 +1007,17 @@ export default function PosPage() {
     }
     
     for (const item of cartItems) {
-        useProductsStore.getState().decreaseStock(item.id, item.quantity);
+        decreaseStock(item.id, item.quantity);
     }
 
     const { cashAmount } = form.getValues();
-    const change = React.useMemo(() => {
-        if (values.paymentMethod === 'efectivo' && cashAmount) {
-          const cash = parseFloat(cashAmount);
-          if (!isNaN(cash) && cash > totalWithShipping) {
-            return cash - totalWithShipping;
-          }
+    let change = 0;
+    if (values.paymentMethod === 'efectivo' && cashAmount) {
+        const cash = parseFloat(cashAmount);
+        if (!isNaN(cash) && cash > totalWithShipping) {
+            change = cash - totalWithShipping;
         }
-        return 0;
-    }, [values.paymentMethod, cashAmount, totalWithShipping]);
-
+    }
 
     const newOrderData: NewOrderData = {
         user_id: session?.user.id || null,
