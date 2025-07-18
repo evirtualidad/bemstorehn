@@ -69,15 +69,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         let idTokenResult = await user.getIdTokenResult(true); // Force refresh token
         let role = (idTokenResult.claims.role as UserRole) || null;
 
-        // TEMPORARY BOOTSTRAP: Automatically make 'admin@bemstore.hn' an admin if they have no role
+        // Automatically make 'admin@bemstore.hn' an admin if they have no role
         if (user.email === 'admin@bemstore.hn' && role !== 'admin') {
           console.log("Attempting to bootstrap admin user...");
           const result = await setRole(user.uid, 'admin');
           if (result.success) {
             console.log("Bootstrap successful. Forcing token refresh.");
-            // Force a token refresh to get the new custom claims immediately
             idTokenResult = await user.getIdTokenResult(true);
-            role = (idTokenResult.claims.role as UserRole) || 'admin'; // Assign admin role
+            role = (idTokenResult.claims.role as UserRole) || 'admin';
           } else {
              console.error("Failed to bootstrap admin user:", result.error, "Assigning admin role in UI temporarily.");
              // Force admin role in the UI to allow user to proceed
