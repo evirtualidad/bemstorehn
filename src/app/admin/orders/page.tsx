@@ -96,6 +96,7 @@ import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { paymentMethods, paymentMethodIcons, paymentMethodLabels } from '@/lib/payment-methods.tsx';
+import { Input } from '@/components/ui/input';
 
 const deliveryMethodLabels = {
   pickup: 'Recoger en Tienda',
@@ -111,6 +112,14 @@ const orderApprovalFormSchema = z
   .refine(data => data.paymentMethod !== 'credito' || !!data.paymentDueDate, {
     message: 'La fecha de pago es obligatoria para pagos a crédito.',
     path: ['paymentDueDate'],
+  }).refine(data => {
+    if (data.paymentMethod === 'tarjeta' || data.paymentMethod === 'transferencia') {
+        return !!data.paymentReference && data.paymentReference.length > 3;
+    }
+    return true;
+  }, {
+    message: 'La referencia es obligatoria para este método de pago.',
+    path: ['paymentReference'],
   });
 
 
@@ -321,6 +330,21 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
                                 </FormItem>
                             )}
                         />
+                        {(form.watch('paymentMethod') === 'tarjeta' || form.watch('paymentMethod') === 'transferencia') && (
+                            <FormField
+                                control={form.control}
+                                name="paymentReference"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Número de Referencia</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Ej: 123456789" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
                          {form.watch('paymentMethod') === 'credito' && (
                             <FormField
                                 control={form.control}
@@ -655,8 +679,8 @@ export default function OrdersPage() {
                     <TableRow key={order.id}>
                     <TableCell>
                         <div className="font-medium text-primary hover:underline cursor-pointer" onClick={() => handleViewDetails(order)}>{order.display_id}</div>
-                         {order.payment_method === 'transferencia' && order.payment_reference && (
-                           <p className="text-xs text-muted-foreground">Ref: {order.payment_reference}</p>
+                         {order.payment_reference && (
+                           <p className="text-xs text-muted-foreground truncate" title={order.payment_reference}>Ref: {order.payment_reference}</p>
                          )}
                     </TableCell>
                     <TableCell>
