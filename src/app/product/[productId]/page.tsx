@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from 'react';
 import { useProductsStore } from '@/hooks/use-products';
 import { notFound } from 'next/navigation';
 import { Header } from '@/components/header';
@@ -17,16 +18,16 @@ import { Product } from '@/lib/products';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import * as React from 'react';
+
 
 interface ProductDetailPageProps {
-    params: {
+    params: Promise<{
         productId: string;
-    }
+    }>
 }
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
-  const { productId } = params;
+  const { productId } = React.use(params);
   const { getProductById, products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
   const { getCategoryByName, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
   const { addToCart } = useCart();
