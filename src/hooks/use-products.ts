@@ -10,7 +10,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { produce } from 'immer';
 
 // Helper type for adding a new product
-export type NewProductData = Omit<Product, 'id' | 'image'> & { imageFile: File };
+export type NewProductData = Omit<Product, 'id'> & { imageFile?: File };
 
 type ProductsState = {
   products: Product[];
@@ -52,12 +52,17 @@ export const useProductsStore = create<ProductsState>()(
       addProduct: async (productData) => {
         const { imageFile, ...restData } = productData;
         
-        toast({ title: 'Subiendo producto...', description: 'Por favor espera.' });
+        toast({ title: 'Añadiendo producto...', description: 'Por favor espera.' });
         try {
-            const imagePath = `products/${Date.now()}_${imageFile.name}`;
-            const storageRef = ref(storage, imagePath);
-            await uploadBytes(storageRef, imageFile);
-            const imageUrl = await getDownloadURL(storageRef);
+            let imageUrl = productData.image;
+            let imagePath: string | undefined = undefined;
+
+            if (imageFile) {
+                imagePath = `products/${Date.now()}_${imageFile.name}`;
+                const storageRef = ref(storage, imagePath);
+                await uploadBytes(storageRef, imageFile);
+                imageUrl = await getDownloadURL(storageRef);
+            }
 
             const newProductDataForDb = { 
               ...restData, 

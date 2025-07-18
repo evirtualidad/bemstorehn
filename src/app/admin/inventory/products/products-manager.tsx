@@ -61,25 +61,14 @@ export function ProductsManager() {
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
   
-  const uploadImage = async (file: File): Promise<string | null> => {
-    // Simulate upload by creating a blob URL
-    return new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            resolve(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-    });
-  }
-
   const handleAddProduct = async (values: z.infer<typeof productFormSchema>) => {
-    if (!values.image || typeof values.image === 'string') {
-        toast({
-            title: 'Error',
-            description: 'Se requiere un archivo de imagen para crear un producto.',
-            variant: 'destructive',
-        });
-        return;
+    let imageFile: File | undefined;
+    let imageUrl: string | undefined;
+
+    if (values.image instanceof File) {
+        imageFile = values.image;
+    } else {
+        imageUrl = `https://placehold.co/400x400.png?text=${values.name.replace(/\s/g, '+')}`;
     }
 
     const { image, ...restOfValues } = values;
@@ -91,7 +80,8 @@ export function ProductsManager() {
         stock: Number(values.stock),
         featured: values.featured,
         aiHint: values.aiHint,
-        imageFile: image,
+        image: imageUrl, // Pass placeholder URL if no file
+        imageFile: imageFile, // Pass file if it exists
     };
     
     await addProduct(newProductData);
@@ -109,12 +99,15 @@ export function ProductsManager() {
         // The upload and URL generation is handled within the updateProduct hook now
     } else if (typeof values.image === 'string') {
         imageUrl = values.image;
+    } else {
+        // If no image is set (was cleared), use a placeholder
+        imageUrl = `https://placehold.co/400x400.png?text=${values.name.replace(/\s/g, '+')}`;
     }
 
     await updateProduct({
       ...editingProduct,
       ...values,
-      image: imageUrl, // Pass original image URL
+      image: imageUrl, // Pass original or placeholder image URL
       imageFile: imageFile, // Pass new file if it exists
       price: Number(values.price),
       originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,

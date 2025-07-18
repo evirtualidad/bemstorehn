@@ -40,16 +40,12 @@ export const productFormSchema = z.object({
   originalPrice: z.coerce.number().positive('El precio debe ser un número positivo.').optional().or(z.literal('')),
   stock: z.coerce.number().int().min(0, 'El stock no puede ser negativo.'),
   category: z.string({ required_error: 'Debes seleccionar una categoría.' }),
-  image: z.any().refine((file) => {
-    if (typeof file === 'string' && file.length > 0) return true; // Already uploaded
-    if (file instanceof File && file.name !== '') return true; // New file to upload
-    return false;
-  }, 'Se requiere una imagen.').refine(file => {
-      if (file instanceof File && file.name !== '') {
-        return ACCEPTED_IMAGE_TYPES.includes(file.type);
-      }
-      return true; // Pass if it's a string URL or no file
-    }, 'Solo se aceptan imágenes .jpg, .jpeg, .png y .webp.'),
+  image: z.any().optional().refine(file => {
+      if (!file) return true; // Optional, so no file is valid
+      if (typeof file === 'string') return true; // URL is valid
+      if (file instanceof File) return ACCEPTED_IMAGE_TYPES.includes(file.type); // File must have valid type
+      return false;
+    }, 'Tipo de archivo no válido. Solo se aceptan imágenes .jpg, .jpeg, .png y .webp.'),
   featured: z.boolean().default(false),
   aiHint: z.string().optional(),
 }).refine(data => {
@@ -88,7 +84,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
       originalPrice: product?.originalPrice || '',
       stock: product?.stock || 0,
       category: product?.category || '',
-      image: product?.image || '',
+      image: product?.image || undefined,
       featured: product?.featured || false,
       aiHint: product?.aiHint || '',
     },
@@ -107,7 +103,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
   };
   
   const clearImage = () => {
-    form.setValue('image', '');
+    form.setValue('image', undefined);
     setPreview(null);
     if(fileInputRef.current) {
         fileInputRef.current.value = '';
