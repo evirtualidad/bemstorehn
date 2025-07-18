@@ -54,9 +54,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { auth, db } from '@/lib/firebase';
-import { collection, onSnapshot, query, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { v4 as uuidv4 } from 'uuid';
 
 
 // --- User Type Definition ---
@@ -70,11 +68,21 @@ export interface UserDoc {
     };
 }
 
-// --- Firebase Functions Callables ---
-// These are now only used for actions requiring special permissions (creating a user in Auth, setting claims)
-const functions = getFunctions(auth.app);
-const createUserCallable = httpsCallable(functions, 'createUser');
-const setRoleCallable = httpsCallable(functions, 'setRole');
+const initialUsers: UserDoc[] = [
+    {
+        uid: 'admin_user_id',
+        email: 'admin@bemstore.hn',
+        role: 'admin',
+        created_at: { seconds: Math.floor(new Date().getTime() / 1000) - 86400, nanoseconds: 0 }
+    },
+    {
+        uid: 'cashier_user_id',
+        email: 'cashier@bemstore.hn',
+        role: 'cashier',
+        created_at: { seconds: Math.floor(new Date().getTime() / 1000) - 172800, nanoseconds: 0 }
+    }
+];
+
 
 // --- Create User Dialog ---
 const userFormSchema = z.object({
@@ -83,7 +91,7 @@ const userFormSchema = z.object({
   role: z.enum(['admin', 'cashier'], { required_error: 'Debes seleccionar un rol.' }),
 });
 
-function CreateUserDialog({ onUserCreated }: { onUserCreated: () => void }) {
+function CreateUserDialog({ onUserCreated }: { onUserCreated: (newUser: UserDoc) => void }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const { toast } = useToast();
@@ -99,29 +107,30 @@ function CreateUserDialog({ onUserCreated }: { onUserCreated: () => void }) {
 
   const onSubmit = async (values: z.infer<typeof userFormSchema>) => {
     setIsSubmitting(true);
-    try {
-      const result = await createUserCallable(values);
-      if ((result.data as any).success) {
-        toast({
-            title: '¡Usuario Creado!',
-            description: `El usuario ${values.email} ha sido creado exitosamente.`,
-        });
-        setIsOpen(false);
-        onUserCreated();
-        form.reset();
-      } else {
-        throw new Error((result.data as any).error || 'Error desconocido');
-      }
-    } catch(error: any) {
-        console.error("Error creating user via function:", error);
-        toast({
-            title: 'Error al Crear Usuario',
-            description: error.message || 'Ocurrió un error en el servidor.',
-            variant: 'destructive',
-        });
-    } finally {
-        setIsSubmitting(false);
-    }
+    
+    // Simulate async operation
+    await new Promise(res => setTimeout(res, 500));
+
+    const newUser: UserDoc = {
+        uid: uuidv4(),
+        email: values.email,
+        role: values.role,
+        created_at: {
+            seconds: Math.floor(new Date().getTime() / 1000),
+            nanoseconds: 0
+        }
+    };
+    
+    onUserCreated(newUser);
+
+    toast({
+        title: '¡Usuario Creado!',
+        description: `El usuario ${values.email} ha sido creado exitosamente (simulado).`,
+    });
+
+    setIsSubmitting(false);
+    setIsOpen(false);
+    form.reset();
   };
 
   return (
@@ -204,61 +213,22 @@ function CreateUserDialog({ onUserCreated }: { onUserCreated: () => void }) {
 
 // --- Main Page Component ---
 export default function UsersPage() {
-  const [users, setUsers] = React.useState<UserDoc[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [users, setUsers] = React.useState<UserDoc[]>(initialUsers);
+  const [isLoading, setIsLoading] = React.useState(false); // Can be false as it's local
   const { toast } = useToast();
   const { role: adminRole, user: currentUser } = useAuthStore();
 
-  const fetchUsers = React.useCallback(() => {
-    setIsLoading(true);
-    const q = query(collection(db, 'users'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const userDocs = snapshot.docs.map(doc => doc.data() as UserDoc);
-        setUsers(userDocs);
-        setIsLoading(false);
-    }, (error) => {
-        console.error("Error fetching users from Firestore:", error);
-        toast({ title: 'Error al Cargar Usuarios', description: "No se pudieron obtener los datos de Firestore.", variant: 'destructive' });
-        setUsers([]);
-        setIsLoading(false);
-    });
 
-    return unsubscribe;
-  }, [toast]);
-
-  React.useEffect(() => {
-    const unsubscribe = fetchUsers();
-    return () => unsubscribe();
-  }, [fetchUsers]);
-
-  const handleRoleChange = async (uid: string, newRole: 'admin' | 'cashier') => {
-    const originalUsers = [...users];
-    
-    // Optimistic UI update
-    setUsers(currentUsers => currentUsers.map(u => u.uid === uid ? { ...u, role: newRole } : u));
-    
-    try {
-        // First, update the role in the Firestore document
-        const userRef = doc(db, 'users', uid);
-        await updateDoc(userRef, { role: newRole });
-        
-        // Then, call the cloud function to update the custom claim
-        const result = await setRoleCallable({ userId: uid, role: newRole });
-        
-        if (!(result.data as any).success) {
-            throw new Error((result.data as any).error || 'Error desconocido al cambiar el rol.');
-        }
-        
-        toast({ title: '¡Rol actualizado!', description: `El rol del usuario ha sido cambiado a ${newRole}.`});
-        
-    } catch(error: any) {
-        // Revert UI on error
-        setUsers(originalUsers);
-        toast({ title: 'Error al cambiar el rol', description: error.message, variant: 'destructive'});
-    }
+  const handleUserCreated = (newUser: UserDoc) => {
+    setUsers(currentUsers => [newUser, ...currentUsers]);
   };
 
-  const isCurrentUser = (uid: string) => currentUser?.uid === uid;
+  const handleRoleChange = async (uid: string, newRole: 'admin' | 'cashier') => {
+    setUsers(currentUsers => currentUsers.map(u => u.uid === uid ? { ...u, role: newRole } : u));
+    toast({ title: '¡Rol actualizado!', description: `El rol del usuario ha sido cambiado a ${newRole} (simulado).`});
+  };
+
+  const isCurrentUser = (uid: string) => currentUser?.uid === uid || (currentUser?.email === 'admin@bemstore.hn' && uid === 'admin_user_id');
 
   if (isLoading || !adminRole) {
     return (
@@ -272,7 +242,7 @@ export default function UsersPage() {
     <main className="grid flex-1 items-start gap-4">
       <div className="flex items-center">
         <h1 className="text-2xl font-bold">Usuarios</h1>
-        {adminRole === 'admin' && <CreateUserDialog onUserCreated={() => {}} />}
+        {adminRole === 'admin' && <CreateUserDialog onUserCreated={handleUserCreated} />}
       </div>
 
       <Card>
