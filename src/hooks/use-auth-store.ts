@@ -3,7 +3,6 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { UserDoc } from './use-users-store';
 import { useUsersStore } from './use-users-store';
 
 export type UserRole = 'admin' | 'cajero';
@@ -19,40 +18,24 @@ type AuthState = {
   loading: boolean;
   login: (email: string, password: string) => Promise<string | null>;
   logout: () => Promise<void>;
-  _setLoading: (loading: boolean) => void;
+  _initialize: () => void;
 };
-
-// Helper function to wait for hydration
-const waitForHydration = () => {
-    return new Promise<void>(resolve => {
-        const unsubscribe = useUsersStore.subscribe(state => {
-            if (state._hasHydrated) {
-                resolve();
-                unsubscribe();
-            }
-        });
-
-        // Resolve immediately if already hydrated
-        if (useUsersStore.getState()._hasHydrated) {
-            resolve();
-            unsubscribe();
-        }
-    });
-};
-
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       role: null,
-      loading: true, 
+      loading: true,
       
-      _setLoading: (loading: boolean) => set({ loading }),
+      _initialize: () => {
+        // This function is called once the app is mounted on the client
+        // to signify that persisted state is loaded and we can stop the initial loading state.
+        set({ loading: false });
+      },
 
-      login: async (email: string, password: string) => {
-        await waitForHydration();
-
+      login: async (email, password) => {
+        // Direct look-up to the single source of truth for users.
         const users = useUsersStore.getState().users;
         const foundUser = users.find(u => u.email === email && u.password === password);
 
@@ -64,28 +47,29 @@ export const useAuthStore = create<AuthState>()(
           set({ user: localUser, role: foundUser.role, loading: false });
           return null; // Success
         } else {
-          set({ loading: false });
           return 'Correo o contraseña incorrectos.'; // Failure
         }
       },
       
       logout: async () => {
-        set({ user: null, role: null, loading: false });
+        set({ user: null, role: null });
       },
     }),
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ user: state.user, role: state.role }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-            state._setLoading(false);
+            // When rehydrating, set loading to false.
+            // But we use _initialize for more explicit control.
+            state.loading = false;
         }
       }
     }
   )
 );
 
+// Initialize the store on client-side load.
 if (typeof window !== 'undefined') {
-    useAuthStore.getState()._setLoading(false);
+    useAuthStore.getState()._initialize();
 }
