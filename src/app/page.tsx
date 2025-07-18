@@ -18,13 +18,13 @@ import { useBannersStore, Banner } from '@/hooks/use-banners';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
-import { ProductGridHomepage } from '@/components/product-grid-homepage';
-import { ProductCard } from '@/components/product-card';
 import { Pause, Play, Instagram, Facebook, ShoppingCart } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { useCart } from '@/hooks/use-cart';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { useToast } from '@/hooks/use-toast';
+import { ProductGridHomepage } from '@/components/product-grid-homepage';
+import { ProductCard } from '@/components/product-card';
 
 // A custom TikTok icon as lucide-react might not have it.
 const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -162,8 +162,12 @@ function FeaturedProductsCarousel({ products, onAddToCart }: { products: Product
 }
 
 function StoreMobileCartButton() {
-    const { total, toggleCart } = useCart(state => ({ total: state.total, toggleCart: state.toggleCart }));
-    const itemCount = useCart(state => state.items.reduce((sum, item) => sum + item.quantity, 0));
+    const { total, toggleCart, items } = useCart(state => ({ 
+        total: state.total, 
+        toggleCart: state.toggleCart,
+        items: state.items
+    }));
+    const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
     const { currency } = useCurrencyStore();
   
     return (
@@ -187,7 +191,7 @@ export default function Home() {
   const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
   const { banners, fetchBanners, isLoading: isLoadingBanners } = useBannersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
-  const { addToCart } = useCart(state => ({ addToCart: state.addToCart }));
+  const addToCart = useCart(state => state.addToCart);
   const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
   

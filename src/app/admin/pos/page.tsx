@@ -36,10 +36,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useCustomersStore, type Customer } from '@/hooks/use-customers';
 import { CustomerSearch } from '@/components/customer-search';
 import { paymentMethods } from '@/lib/payment-methods.tsx';
-import { ProductGrid } from '@/components/product-grid';
-import { useAuthStore } from '@/hooks/use-auth-store';
 import { usePosCart } from '@/hooks/use-pos-cart';
 import { v4 as uuidv4 } from 'uuid';
+import { ProductGrid } from '@/components/product-grid';
 
 type SelectedFilter = { type: 'category' | 'offer'; value: string } | null;
 
@@ -851,16 +850,18 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, isInDialog, onOp
     )
 }
 
-function PosMobileCartButton({ onClick }: { onClick: () => void }) {
-    const { totalWithShipping } = usePosCart(state => ({ totalWithShipping: state.totalWithShipping }));
-    const totalItems = usePosCart(state => state.items.reduce((sum, item) => sum + item.quantity, 0));
+function PosMobileCartButton() {
+    const { totalWithShipping, items } = usePosCart(state => ({ 
+        totalWithShipping: state.totalWithShipping,
+        items: state.items
+    }));
+    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
     const { currency } = useCurrencyStore();
   
     return (
         <Button
             size="lg"
             className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 bg-primary text-primary-foreground hover:bg-primary/90 border-4 border-background"
-            onClick={onClick}
         >
             <Receipt className="h-7 w-7" />
             <span className="text-md font-bold">{formatCurrency(totalWithShipping, currency.code)}</span>
@@ -874,8 +875,8 @@ function PosMobileCartButton({ onClick }: { onClick: () => void }) {
 }
 
 export default function PosPage() {
-  const { addToCart, totalWithShipping, setShippingCost, clearCart } = usePosCart(state => ({
-    addToCart: state.addToCart,
+  const addToCart = usePosCart(state => state.addToCart);
+  const { totalWithShipping, setShippingCost, clearCart } = usePosCart(state => ({
     totalWithShipping: state.totalWithShipping,
     setShippingCost: state.setShippingCost,
     clearCart: state.clearCart
@@ -893,6 +894,7 @@ export default function PosPage() {
   const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = React.useState(false);
   const { session } = useAuthStore();
+  const { currency } = useCurrencyStore();
 
   React.useEffect(() => {
     fetchProducts();
@@ -1112,8 +1114,8 @@ export default function PosPage() {
             </main>
         </div>
 
-        <div className="lg:hidden fixed bottom-4 right-4 z-20">
-            <PosMobileCartButton onClick={() => setIsTicketVisible(true)} />
+        <div className="lg:hidden fixed bottom-4 right-4 z-20" onClick={() => setIsTicketVisible(true)}>
+            <PosMobileCartButton />
         </div>
         
         <TicketView
