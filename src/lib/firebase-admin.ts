@@ -1,17 +1,10 @@
-
 import * as admin from 'firebase-admin';
+import { serviceAccount } from './serviceAccountKey';
 
 // Check if the app is already initialized to prevent errors
 if (!admin.apps.length) {
-    const serviceAccount: admin.ServiceAccount = {
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    };
-    
-    // Check for missing environment variables before initializing
     if (!serviceAccount.projectId || !serviceAccount.privateKey || !serviceAccount.clientEmail) {
-        console.error('Firebase Admin SDK: Missing environment variables. Make sure FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, and FIREBASE_CLIENT_EMAIL are set in your .env.local file for server-side operations.');
+        console.error('Firebase Admin SDK: Service account key is missing or incomplete. Please check src/lib/serviceAccountKey.ts');
     } else {
         try {
             admin.initializeApp({
@@ -24,5 +17,4 @@ if (!admin.apps.length) {
     }
 }
 
-// Export the initialized admin instance
 export { admin };
