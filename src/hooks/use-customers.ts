@@ -50,14 +50,15 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
   },
   
   addOrUpdateCustomer: async ({ phone, name, address, total_to_add }) => {
-    if (!phone && !name) {
+    if ((!phone || phone.trim() === '') && name.trim().toLowerCase() === 'consumidor final') {
         return undefined; // Do not create/update "Consumidor Final"
     }
 
     let customerId: string | undefined = undefined;
 
     set(produce((state: CustomersState) => {
-        const existingCustomer = state.customers.find(c => c.phone === phone);
+        // Prefer finding by phone as it's more unique
+        const existingCustomer = state.customers.find(c => c.phone && c.phone.trim() !== '' && c.phone === phone);
 
         if (existingCustomer) {
             existingCustomer.name = name;
@@ -69,7 +70,7 @@ export const useCustomersStore = create<CustomersState>((set, get) => ({
             const newCustomer: Customer = {
                 id: uuidv4(),
                 created_at: new Date().toISOString(),
-                phone,
+                phone: phone || '',
                 name,
                 address: address || null,
                 total_spent: total_to_add,
