@@ -1,5 +1,4 @@
 
-import 'dotenv/config';
 import * as admin from 'firebase-admin';
 
 // Check if the app is already initialized to prevent errors
@@ -12,7 +11,7 @@ if (!admin.apps.length) {
     
     // Check for missing environment variables before initializing
     if (!serviceAccount.projectId || !serviceAccount.privateKey || !serviceAccount.clientEmail) {
-        console.error('Firebase Admin SDK: Missing environment variables. Make sure FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, and FIREBASE_CLIENT_EMAIL are set.');
+        console.error('Firebase Admin SDK: Missing environment variables. Make sure FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, and FIREBASE_CLIENT_EMAIL are set in your .env.local file for server-side operations.');
     } else {
         try {
             admin.initializeApp({
@@ -25,6 +24,4 @@ if (!admin.apps.length) {
     }
 }
 
-const app = admin.apps.length > 0 ? admin.app() : null;
-
-export { app, admin };
+const app = admin.apps.length >

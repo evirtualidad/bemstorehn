@@ -201,6 +201,4 @@ export default function UsersPage() {
           </Table>
         </CardContent>
       </Card>
-    </main>
-  );
-}
+    </

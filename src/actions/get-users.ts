@@ -1,7 +1,6 @@
 
 'use server';
 
-import 'dotenv/config';
 import { admin } from '@/lib/firebase-admin';
 
 export interface UserWithRole {
