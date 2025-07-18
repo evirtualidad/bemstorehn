@@ -18,8 +18,8 @@ import Image from 'next/image';
 import { useSettingsStore } from '@/hooks/use-settings-store';
 import { useCustomersStore } from '@/hooks/use-customers';
 
-export default function OrderConfirmationPage({ params }: { params: { orderId: string } }) {
-  const { orderId } = params;
+export default function OrderConfirmationPage({ params }: { params: Promise<{ orderId: string }> }) {
+  const { orderId } = React.use(params);
   const getOrderById = useOrdersStore(state => state.getOrderById);
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
