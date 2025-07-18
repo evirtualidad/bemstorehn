@@ -18,7 +18,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import type { User } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import {
   Select,
@@ -33,16 +32,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { useRouter } from 'next/navigation';
-import { getUsers } from '@/actions/get-users';
+import { getUsers, type UserWithRole } from '@/actions/get-users';
 
-
-export type UserWithRole = User & {
-    app_metadata: {
-        role?: 'admin' | 'cashier';
-        provider?: string;
-        providers?: string[];
-    }
-}
 
 export default function UsersPage() {
   const [users, setUsers] = React.useState<UserWithRole[]>([]);
@@ -74,9 +65,9 @@ export default function UsersPage() {
         // Ensure app_metadata and role exist to prevent runtime errors
         const sanitizedUsers = result.users.map(u => ({
             ...u,
-            app_metadata: {
-                ...u.app_metadata,
-                role: u.app_metadata.role || 'cashier',
+            customClaims: {
+                ...u.customClaims,
+                role: u.customClaims?.role || 'cashier',
             },
         }));
         setUsers(sanitizedUsers);
@@ -92,7 +83,7 @@ export default function UsersPage() {
     const originalUsers = [...users];
     
     // Optimistically update UI
-    setUsers(currentUsers => currentUsers.map(u => u.id === userId ? { ...u, app_metadata: { ...u.app_metadata, role: newRole } } : u));
+    setUsers(currentUsers => currentUsers.map(u => u.uid === userId ? { ...u, customClaims: { ...u.customClaims, role: newRole } } : u));
     
     const { success, error } = await setRole(userId, newRole);
 
@@ -164,20 +155,20 @@ export default function UsersPage() {
             </TableHeader>
             <TableBody>
               {users.map((user) => (
-                <TableRow key={user.id}>
+                <TableRow key={user.uid}>
                   <TableCell>
                     <div className="font-medium">{user.email}</div>
                   </TableCell>
                   <TableCell>
-                    {user.created_at ? format(new Date(user.created_at), 'd MMM, yyyy', { locale: es }) : 'N/A'}
+                    {user.metadata?.creationTime ? format(new Date(user.metadata.creationTime), 'd MMM, yyyy', { locale: es }) : 'N/A'}
                   </TableCell>
                    <TableCell>
-                    {user.last_sign_in_at ? format(new Date(user.last_sign_in_at), 'd MMM, yyyy HH:mm', { locale: es }) : 'Nunca'}
+                    {user.metadata?.lastSignInTime ? format(new Date(user.metadata.lastSignInTime), 'd MMM, yyyy HH:mm', { locale: es }) : 'Nunca'}
                   </TableCell>
                   <TableCell>
                     <Select
-                        value={user.app_metadata.role}
-                        onValueChange={(newRole: 'admin' | 'cashier') => handleRoleChange(user.id, newRole)}
+                        value={user.customClaims?.role}
+                        onValueChange={(newRole: 'admin' | 'cashier') => handleRoleChange(user.uid, newRole)}
                     >
                         <SelectTrigger className="w-[120px]">
                             <SelectValue placeholder="Seleccionar rol" />

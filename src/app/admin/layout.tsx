@@ -78,14 +78,16 @@ function AdminLayoutContent({
   const router = useRouter();
   const orders = useOrdersStore(state => state.orders);
   const fetchOrders = useOrdersStore(state => state.fetchOrders);
-  const { session, loading, logout, role } = useAuthStore();
+  const { user, loading, logout, role } = useAuthStore();
   
   React.useEffect(() => {
     // With mock data, we bypass the auth check, but keep the structure
-    // if (!loading && !session) {
-    //   router.push('/login');
-    // }
-  }, [session, loading, router]);
+    if (db) { // Only check auth if firebase is configured
+        if (!loading && !user) {
+            router.push('/login');
+        }
+    }
+  }, [user, loading, router]);
 
   React.useEffect(() => {
     // If we're using Firebase, fetch the orders
@@ -241,7 +243,7 @@ function AdminLayoutContent({
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Mi Cuenta ({role})</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem disabled>{session?.email || 'admin@example.com'}</DropdownMenuItem>
+              <DropdownMenuItem disabled>{user?.email || 'admin@example.com'}</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
