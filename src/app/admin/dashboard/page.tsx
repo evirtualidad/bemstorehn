@@ -88,6 +88,7 @@ export default function Dashboard() {
     const endDate = to ? endOfDay(to) : new Date();
 
     const filteredOrders = orders.filter(o => {
+        if (!o.created_at) return false; // Defensive check for created_at
         const orderDate = parseISO(o.created_at);
         return o.status !== 'cancelled' && o.status !== 'pending-approval' && isAfter(orderDate, startDate) && isBefore(orderDate, endDate);
     });
@@ -138,7 +139,7 @@ export default function Dashboard() {
         };
     }).reverse();
 
-    orders.filter(o => o.status !== 'cancelled' && o.status !== 'pending-approval').forEach(order => {
+    orders.filter(o => o.created_at && o.status !== 'cancelled' && o.status !== 'pending-approval').forEach(order => {
         const orderDate = parseISO(order.created_at);
         const thirtyDaysAgo = startOfDay(subDays(new Date(), 29));
         if (orderDate >= thirtyDaysAgo) {
