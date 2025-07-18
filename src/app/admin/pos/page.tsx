@@ -630,16 +630,13 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, isInDialog, onOp
 
 
     const CancelButton = () => {
-        const button = (
-            <Button type="button" variant="outline" size="lg" className='w-full sm:w-auto' onClick={onCancel} disabled={isSubmitting}>
-                Cancelar
-            </Button>
+        return (
+            <DialogClose asChild>
+                <Button type="button" variant="outline" size="lg" className='w-full sm:w-auto' onClick={onCancel} disabled={isSubmitting}>
+                    Cancelar
+                </Button>
+            </DialogClose>
         );
-
-        if (isInDialog) {
-            return <DialogClose asChild>{button}</DialogClose>
-        }
-        return button;
     };
 
 
@@ -873,10 +870,13 @@ function PosMobileCartButton() {
 }
 
 export default function PosPage() {
+  const { products, isLoading: isLoadingProducts } = useProductsStore(state => ({
+      products: state.products,
+      isLoading: state.isLoading,
+  }));
   const { setShippingCost, clearCart, items: cartItems, totalWithShipping } = usePosCart();
-  const { products, isLoading: isLoadingProducts } = useProductsStore();
   const { addOrderToState } = useOrdersStore();
-  const { customers, isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
+  const { isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
   const { categories, isLoading: isLoadingCategories } = useCategoriesStore();
   const { toast } = useToast();
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
@@ -964,9 +964,22 @@ export default function PosPage() {
 
   const handleOpenChangeCheckout = (open: boolean) => {
     setIsCheckoutOpen(open);
-    if (!open) {
-      clearCartAndForm();
-    }
+  };
+  
+  const handleCancelCheckout = () => {
+    // Reset form but don't clear cart
+    form.reset({
+      name: '',
+      phone: '',
+      deliveryMethod: 'pickup',
+      address: undefined,
+      paymentMethod: 'efectivo',
+      cashAmount: '',
+      paymentReference: '',
+      paymentDueDate: undefined,
+    });
+    setShippingCost(0);
+    setIsCheckoutOpen(false); // Manually close since we are handling it
   };
 
   async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
@@ -1122,7 +1135,7 @@ export default function PosPage() {
                             form={form} 
                             onSubmit={onSubmit} 
                             isSubmitting={isSubmitting} 
-                            onCancel={() => handleOpenChangeCheckout(false)} 
+                            onCancel={handleCancelCheckout} 
                             isInDialog={true}
                             onOpenShipping={() => setIsShippingDialogOpen(true)}
                             onCustomerSelect={handleCustomerSelect}
