@@ -2,7 +2,6 @@
 'use client';
 
 import { create } from 'zustand';
-import { toast } from './use-toast';
 import type { Address } from './use-orders';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';

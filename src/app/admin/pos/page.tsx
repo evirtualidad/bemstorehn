@@ -146,28 +146,22 @@ function CategoryList({
 
 
 function TicketView({
-  cart,
-  subtotal,
-  taxAmount,
-  total,
-  shippingCost,
-  totalWithShipping,
-  onUpdateQuantity,
-  onRemoveFromCart,
-  onClearCart,
   onCheckout,
 }: {
-  cart: PosCartItem[];
-  subtotal: number;
-  taxAmount: number;
-  total: number;
-  shippingCost: number;
-  totalWithShipping: number;
-  onUpdateQuantity: (productId: string, amount: number) => void;
-  onRemoveFromCart: (productId:string) => void;
-  onClearCart: () => void;
   onCheckout: () => void;
 }) {
+  const { 
+    items: cart,
+    subtotal,
+    taxAmount,
+    shippingCost,
+    totalWithShipping,
+    increaseQuantity,
+    decreaseQuantity,
+    removeFromCart,
+    clearCart,
+  } = usePosCart();
+
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
 
@@ -176,7 +170,7 @@ function TicketView({
         <div className="p-4 border-b flex-shrink-0 bg-background">
             <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Pedido Actual</h2>
-                <Button variant="ghost" size="sm" onClick={onClearCart} disabled={cart.length === 0}>
+                <Button variant="ghost" size="sm" onClick={clearCart} disabled={cart.length === 0}>
                     Borrar
                 </Button>
             </div>
@@ -204,17 +198,17 @@ function TicketView({
                         <p className="font-semibold text-sm leading-tight">{item.name}</p>
                         <p className="text-xs text-muted-foreground">{formatCurrency(item.price, currency.code)}</p>
                         <div className="flex items-center gap-2 mt-2">
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, -1)}>
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => decreaseQuantity(item.id)}>
                             <Minus className="h-4 w-4" />
                         </Button>
                         <span className="w-8 text-center text-md font-bold">{item.quantity}</span>
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, 1)}>
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => increaseQuantity(item.id)}>
                             <Plus className="h-4 w-4" />
                         </Button>
                         </div>
                     </div>
                     <p className="w-24 text-right font-medium text-sm">{formatCurrency(item.price * item.quantity, currency.code)}</p>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onRemoveFromCart(item.id)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => removeFromCart(item.id)}>
                         <Trash2 className="h-5 w-5" />
                     </Button>
                     </div>
@@ -258,33 +252,26 @@ function TicketView({
 }
 
 function MobileTicketView({
-  cart,
-  total,
-  subtotal,
-  taxAmount,
-  shippingCost,
-  totalWithShipping,
   isVisible,
-  onUpdateQuantity,
-  onRemoveFromCart,
-  onClearCart,
   onCheckout,
   onClose,
 }: {
-  cart: PosCartItem[];
-  total: number;
-  subtotal: number;
-  taxAmount: number;
-  shippingCost: number;
-  totalWithShipping: number;
   isVisible: boolean;
-  onUpdateQuantity: (productId: string, amount: number) => void;
-  onRemoveFromCart: (productId:string) => void;
-  onClearCart: () => void;
   onCheckout: () => void;
   onClose: () => void;
 }) {
   if (!isVisible) return null;
+  const { 
+    items: cart,
+    subtotal,
+    taxAmount,
+    shippingCost,
+    totalWithShipping,
+    increaseQuantity,
+    decreaseQuantity,
+    removeFromCart,
+    clearCart,
+  } = usePosCart();
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
 
@@ -298,7 +285,7 @@ function MobileTicketView({
                 <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold">Pedido Actual</h2>
                      <div className='flex items-center gap-2'>
-                        <Button variant="ghost" size="sm" onClick={onClearCart} disabled={cart.length === 0}>
+                        <Button variant="ghost" size="sm" onClick={clearCart} disabled={cart.length === 0}>
                             Borrar
                         </Button>
                         <Button variant="ghost" size="icon" onClick={onClose}>
@@ -330,17 +317,17 @@ function MobileTicketView({
                             <p className="font-semibold text-sm leading-tight">{item.name}</p>
                             <p className="text-xs text-muted-foreground">{formatCurrency(item.price, currency.code)}</p>
                             <div className="flex items-center gap-2 mt-2">
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, -1)}>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => decreaseQuantity(item.id)}>
                                 <Minus className="h-4 w-4" />
                             </Button>
                             <span className="w-8 text-center text-md font-bold">{item.quantity}</span>
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onUpdateQuantity(item.id, 1)}>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => increaseQuantity(item.id)}>
                                 <Plus className="h-4 w-4" />
                             </Button>
                             </div>
                         </div>
                         <p className="w-24 text-right font-medium text-sm">{formatCurrency(item.price * item.quantity, currency.code)}</p>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => onRemoveFromCart(item.id)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => removeFromCart(item.id)}>
                             <Trash2 className="h-5 w-5" />
                         </Button>
                         </div>
@@ -617,10 +604,12 @@ function ShippingDialog({
   );
 }
 
-function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, subtotal, taxAmount, shippingCost, totalWithShipping, change, isInDialog, onOpenShipping, onCustomerSelect }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, cart: PosCartItem[], total: number, subtotal: number, taxAmount: number, shippingCost: number, totalWithShipping: number, change: number, isInDialog?: boolean, onOpenShipping: () => void, onCustomerSelect: (customer: Customer | null) => void }) {
+function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, isInDialog, onOpenShipping, onCustomerSelect }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, isInDialog?: boolean, onOpenShipping: () => void, onCustomerSelect: (customer: Customer | null) => void }) {
+    const { items: cart, subtotal, taxAmount, shippingCost, totalWithShipping } = usePosCart();
     const paymentMethod = form.watch('paymentMethod');
     const deliveryMethod = form.watch('deliveryMethod');
     const address = form.watch('address');
+    const cashAmount = form.watch('cashAmount');
     const { currency } = useCurrencyStore();
     const { taxRate, pickupAddress } = useSettingsStore();
 
@@ -629,6 +618,17 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
     React.useEffect(() => {
         setToday(new Date());
     }, []);
+
+    const change = React.useMemo(() => {
+      if (paymentMethod === 'efectivo' && cashAmount) {
+        const cash = parseFloat(cashAmount);
+        if (!isNaN(cash) && cash > totalWithShipping) {
+          return cash - totalWithShipping;
+        }
+      }
+      return 0;
+    }, [paymentMethod, cashAmount, totalWithShipping]);
+
 
     const CancelButton = () => {
         const button = (
@@ -854,18 +854,11 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
 
 export default function PosPage() {
   const { 
-      items: cart,
-      total,
-      subtotal,
-      taxAmount,
-      shippingCost,
-      totalWithShipping,
-      setShippingCost,
-      addToCart,
-      removeFromCart,
-      increaseQuantity,
-      decreaseQuantity,
-      clearCart,
+    items: cart,
+    totalWithShipping,
+    addToCart,
+    clearCart,
+    setShippingCost,
   } = usePosCart();
 
   const { products, fetchProducts, isLoading: isLoadingProducts, decreaseStock } = useProductsStore();
@@ -923,17 +916,7 @@ export default function PosPage() {
     form.setValue('totalWithShipping', totalWithShipping);
   }, [totalWithShipping, form]);
 
-  const { paymentMethod, cashAmount, deliveryMethod } = form.watch();
-
-  const change = React.useMemo(() => {
-    if (paymentMethod === 'efectivo' && cashAmount) {
-      const cash = parseFloat(cashAmount);
-      if (!isNaN(cash) && cash > totalWithShipping) {
-        return cash - totalWithShipping;
-      }
-    }
-    return 0;
-  }, [paymentMethod, cashAmount, totalWithShipping]);
+  const deliveryMethod = form.watch('deliveryMethod');
 
   React.useEffect(() => {
     if (deliveryMethod === 'pickup') {
@@ -971,14 +954,6 @@ export default function PosPage() {
     }
   };
 
-  const updateQuantity = (productId: string, amount: number) => {
-    if (amount > 0) {
-        increaseQuantity(productId)
-    } else {
-        decreaseQuantity(productId);
-    }
-  };
-
   const clearCartAndForm = () => {
     clearCart();
     form.reset({ name: '', phone: '', deliveryMethod: 'pickup', address: undefined, paymentMethod: 'efectivo', paymentDueDate: undefined, cashAmount: '', paymentReference: '' });
@@ -998,10 +973,13 @@ export default function PosPage() {
     }
     
     setIsSubmitting(true);
+
+    const customerName = values.name || 'Consumidor Final';
+    const customerPhone = values.phone || 'N/A';
     
     const customerId = await addOrUpdateCustomer({
-        name: values.name || 'Consumidor Final',
-        phone: values.phone || 'N/A',
+        name: customerName,
+        phone: customerPhone,
         address: values.address,
     });
     
@@ -1013,11 +991,23 @@ export default function PosPage() {
         await decreaseStock(item.id, item.quantity);
     }
 
+    const { cashAmount } = form.getValues();
+    const change = React.useMemo(() => {
+        if (values.paymentMethod === 'efectivo' && cashAmount) {
+          const cash = parseFloat(cashAmount);
+          if (!isNaN(cash) && cash > totalWithShipping) {
+            return cash - totalWithShipping;
+          }
+        }
+        return 0;
+    }, [values.paymentMethod, cashAmount, totalWithShipping]);
+
+
     const newOrderData: NewOrderData = {
         user_id: session?.user.id || null,
         customer_id: customerId || null,
-        customer_name: values.name || 'Consumidor Final',
-        customer_phone: values.phone || 'N/A',
+        customer_name: customerName,
+        customer_phone: customerPhone,
         customer_address: values.address || null,
         items: cart.map(item => ({
             id: item.id,
@@ -1027,7 +1017,7 @@ export default function PosPage() {
             image: item.image,
         })),
         total: totalWithShipping,
-        shipping_cost: shippingCost,
+        shipping_cost: deliveryMethod === 'delivery' ? usePosCart.getState().shippingCost : 0,
         payment_method: values.paymentMethod,
         payment_due_date: values.paymentDueDate?.toISOString() || null,
         payment_reference: values.paymentReference || null,
@@ -1116,15 +1106,6 @@ export default function PosPage() {
         </div>
         
         <TicketView
-            cart={cart}
-            subtotal={subtotal}
-            taxAmount={taxAmount}
-            total={total}
-            shippingCost={shippingCost}
-            totalWithShipping={totalWithShipping}
-            onUpdateQuantity={(pid, a) => updateQuantity(pid, a)}
-            onRemoveFromCart={removeFromCart}
-            onClearCart={clearCartAndForm}
             onCheckout={() => {
                 setIsCheckoutOpen(true)
                 setIsTicketVisible(false)
@@ -1132,16 +1113,7 @@ export default function PosPage() {
         />
         
         <MobileTicketView
-            cart={cart}
-            total={total}
-            subtotal={subtotal}
-            taxAmount={taxAmount}
-            shippingCost={shippingCost}
-            totalWithShipping={totalWithShipping}
             isVisible={isTicketVisible}
-            onUpdateQuantity={(pid, a) => updateQuantity(pid, a)}
-            onRemoveFromCart={removeFromCart}
-            onClearCart={clearCartAndForm}
             onCheckout={() => {
                 setIsCheckoutOpen(true)
                 setIsTicketVisible(false)
@@ -1161,13 +1133,6 @@ export default function PosPage() {
                             onSubmit={onSubmit} 
                             isSubmitting={isSubmitting} 
                             onCancel={() => handleOpenChangeCheckout(false)} 
-                            cart={cart}
-                            subtotal={subtotal}
-                            taxAmount={taxAmount}
-                            total={total}
-                            shippingCost={shippingCost}
-                            totalWithShipping={totalWithShipping}
-                            change={change} 
                             isInDialog={true}
                             onOpenShipping={() => setIsShippingDialogOpen(true)}
                             onCustomerSelect={handleCustomerSelect}
@@ -1186,3 +1151,4 @@ export default function PosPage() {
     </div>
   );
 }
+
