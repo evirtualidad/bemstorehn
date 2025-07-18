@@ -8,7 +8,7 @@ type Role = 'admin' | 'cashier';
 export async function setRole(userId: string, role: Role): Promise<{ success: boolean, error?: string }> {
   const { admin, error: adminError } = getAdmin();
   if (!admin || adminError) {
-    const errorMessage = adminError || "Firebase Admin SDK no está inicializado. Revisa las variables de entorno del servidor.";
+    const errorMessage = adminError || "Firebase Admin SDK no está inicializado.";
     console.error(errorMessage);
     return { success: false, error: errorMessage };
   }

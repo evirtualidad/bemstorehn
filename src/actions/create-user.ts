@@ -13,7 +13,7 @@ interface CreateUserResult {
 export async function createUser(email: string, password: string, role: Role): Promise<CreateUserResult> {
     const { admin, error: adminError } = getAdmin();
     if (!admin || adminError) {
-        const errorMessage = adminError || "Firebase Admin SDK no está inicializado. Revisa las variables de entorno del servidor.";
+        const errorMessage = adminError || "Firebase Admin SDK no está inicializado.";
         console.error(errorMessage);
         return { success: false, error: errorMessage };
     }

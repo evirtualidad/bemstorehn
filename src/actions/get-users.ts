@@ -20,7 +20,7 @@ export interface UserWithRole {
 export async function getUsers(): Promise<{ users: UserWithRole[], error?: string }> {
   const { admin, error: adminError } = getAdmin();
   if (!admin || adminError) {
-    const errorMessage = adminError || "Firebase Admin SDK no está inicializado. Revisa las variables de entorno del servidor.";
+    const errorMessage = adminError || "Firebase Admin SDK no está inicializado.";
     console.error(errorMessage);
     return { users: [], error: errorMessage };
   }

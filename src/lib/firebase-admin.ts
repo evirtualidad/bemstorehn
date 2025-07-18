@@ -1,6 +1,6 @@
 
-import 'dotenv/config';
 import * as admin from 'firebase-admin';
+import { serviceAccount } from './serviceAccountKey';
 
 let adminInstance: typeof admin | null = null;
 let initializationError: string | null = null;
@@ -12,21 +12,15 @@ function initializeAdmin() {
     }
 
     try {
-        const serviceAccount = {
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-        };
-
-        if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
-            throw new Error("Firebase Admin SDK environment variables are not fully set.");
+        if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
+            throw new Error("Las credenciales de la cuenta de servicio en serviceAccountKey.ts no están completas.");
         }
 
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
         });
 
-        console.log("Firebase Admin SDK initialized successfully.");
+        console.log("Firebase Admin SDK initialized successfully via serviceAccountKey.ts.");
         adminInstance = admin;
 
     } catch (error: any) {
@@ -40,7 +34,7 @@ function initializeAdmin() {
 initializeAdmin();
 
 export function getAdmin() {
-    if (!adminInstance) {
+    if (!adminInstance && !initializationError) {
         // This might re-attempt initialization if the first one failed,
         // or just return the existing error.
         initializeAdmin();
