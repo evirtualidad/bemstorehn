@@ -855,11 +855,11 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
 export default function PosPage() {
   const { 
       items: cart,
-      totalWithShipping,
+      total,
       subtotal,
       taxAmount,
-      total,
       shippingCost,
+      totalWithShipping,
       setShippingCost,
       addToCart,
       removeFromCart,
@@ -867,6 +867,7 @@ export default function PosPage() {
       decreaseQuantity,
       clearCart,
   } = usePosCart();
+
   const { products, fetchProducts, isLoading: isLoadingProducts, decreaseStock } = useProductsStore();
   const { addOrderToState } = useOrdersStore();
   const { fetchCustomers, isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
@@ -1218,3 +1219,5 @@ export default function PosPage() {
     </div>
   );
 }
+
+    
