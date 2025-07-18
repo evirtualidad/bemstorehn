@@ -83,21 +83,21 @@ export function ProductCard({
             disabled={product.stock <= 0}
             onClick={handleButtonClick}
           >
-            <div className="flex items-center justify-between w-full">
-                <div className='flex items-center gap-2'>
-                    <ShoppingCart className="h-4 w-4" />
-                    <span>Añadir</span>
-                </div>
-                <div className="flex items-baseline gap-2">
-                    <span className={cn("font-bold", isDiscounted && "text-offer")}>
-                        {formatCurrency(product.price, currency.code)}
-                    </span>
-                    {isDiscounted && (
-                        <span className="text-xs text-muted-foreground line-through">
-                            {formatCurrency(product.originalPrice!, currency.code)}
-                        </span>
-                    )}
-                </div>
+            <div className="flex items-center justify-center flex-wrap gap-x-2 w-full">
+              <div className='flex items-center gap-2'>
+                  <ShoppingCart className="h-4 w-4" />
+                  <span>Añadir</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                  <span className={cn("font-bold", isDiscounted && "text-offer")}>
+                      {formatCurrency(product.price, currency.code)}
+                  </span>
+                  {isDiscounted && (
+                      <span className="text-xs text-muted-foreground line-through">
+                          {formatCurrency(product.originalPrice!, currency.code)}
+                      </span>
+                  )}
+              </div>
             </div>
           </Button>
         </CardFooter>
