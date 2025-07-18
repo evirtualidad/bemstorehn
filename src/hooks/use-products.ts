@@ -71,9 +71,12 @@ export const useProductsStore = create<ProductsState>()(
               created_at: serverTimestamp() 
             };
             
-            // Ensure aiHint is not undefined when saving
+            // Clean up optional fields so they are not `undefined` or `null` in Firestore
             if (!newProductDataForDb.aiHint) {
               delete (newProductDataForDb as Partial<typeof newProductDataForDb>).aiHint;
+            }
+            if (newProductDataForDb.originalPrice === null || newProductDataForDb.originalPrice === undefined) {
+              delete (newProductDataForDb as any).originalPrice;
             }
 
             const docRef = await addDoc(collection(db, 'products'), newProductDataForDb);
@@ -106,7 +109,16 @@ export const useProductsStore = create<ProductsState>()(
             }
             
             const docRef = doc(db, 'products', id);
-            await updateDoc(docRef, { ...restData, image: imageUrl, imagePath: imagePath });
+            const dataToUpdate = { ...restData, image: imageUrl, imagePath: imagePath };
+
+            if (dataToUpdate.originalPrice === null || dataToUpdate.originalPrice === undefined) {
+                delete (dataToUpdate as any).originalPrice;
+            }
+            if (!dataToUpdate.aiHint) {
+              delete (dataToUpdate as Partial<typeof dataToUpdate>).aiHint;
+            }
+
+            await updateDoc(docRef, dataToUpdate);
             toast({ title: 'Producto actualizado', description: `Los cambios en ${product.name} han sido guardados.` });
         } catch (error) {
              console.error("Error updating product: ", error);

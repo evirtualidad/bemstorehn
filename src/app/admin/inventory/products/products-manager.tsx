@@ -77,7 +77,7 @@ export function ProductsManager() {
     const newProductData = {
         ...restOfValues,
         price: Number(values.price),
-        originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,
+        originalPrice: values.originalPrice ? Number(values.originalPrice) : null,
         stock: Number(values.stock),
         featured: values.featured,
         aiHint: values.aiHint,
@@ -85,7 +85,7 @@ export function ProductsManager() {
         imageFile: imageFile, // Pass file if it exists
     };
     
-    await addProduct(newProductData);
+    await addProduct(newProductData as any);
     setIsDialogOpen(false);
   };
   
@@ -112,10 +112,10 @@ export function ProductsManager() {
       image: imageUrl, // Pass original or placeholder image URL
       imageFile: imageFile, // Pass new file if it exists
       price: Number(values.price),
-      originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,
+      originalPrice: values.originalPrice ? Number(values.originalPrice) : null,
       stock: Number(values.stock),
       featured: values.featured,
-    });
+    } as any);
 
     setEditingProduct(null);
     setIsDialogOpen(false);
