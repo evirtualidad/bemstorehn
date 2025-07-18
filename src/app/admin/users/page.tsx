@@ -43,13 +43,13 @@ export default function UsersPage() {
   const router = useRouter();
   
   React.useEffect(() => {
-    if (adminRole && adminRole !== 'admin') {
+    if (adminRole && !['admin', 'cashier'].includes(adminRole)) {
       router.replace('/admin/dashboard');
     }
   }, [adminRole, router]);
 
   React.useEffect(() => {
-    if (adminRole !== 'admin') return;
+    if (!adminRole) return;
 
     const fetchUsers = async () => {
         setIsLoading(true);
@@ -103,7 +103,7 @@ export default function UsersPage() {
     }
   };
   
-  if (adminRole !== 'admin') {
+  if (adminRole && !['admin', 'cashier'].includes(adminRole)) {
       return (
         <div className="flex h-[80vh] items-center justify-center">
             <LoadingSpinner />

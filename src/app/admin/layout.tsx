@@ -102,7 +102,7 @@ function AdminLayoutContent({
     { href: '/admin/inventory', icon: Archive, label: 'Inventario', roles: ['admin'] },
     { href: '/admin/finance', icon: Coins, label: 'Finanzas', roles: ['admin'] },
     { href: '/admin/customers', icon: Users, label: 'Clientes', roles: ['admin', 'cashier'] },
-    { href: '/admin/users', icon: CircleUser, label: 'Usuarios', roles: ['admin'] },
+    { href: '/admin/users', icon: CircleUser, label: 'Usuarios', roles: ['admin', 'cashier'] },
     { href: '/admin/settings', icon: Settings, label: 'Ajustes', roles: ['admin'] },
   ];
 
