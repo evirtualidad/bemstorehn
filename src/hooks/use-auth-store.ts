@@ -66,28 +66,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   _setUser: async (user: User | null) => {
     if (user) {
       try {
-        let idTokenResult = await user.getIdTokenResult(true); // Force refresh token
+        const idTokenResult = await user.getIdTokenResult(true); // Force refresh token
         let role = (idTokenResult.claims.role as UserRole) || null;
 
-        // Automatically make 'admin@bemstore.hn' an admin if they have no role
-        if (user.email === 'admin@bemstore.hn' && role !== 'admin') {
-          console.log("Attempting to bootstrap admin user...");
-          const result = await setRole(user.uid, 'admin');
-          if (result.success) {
-            console.log("Bootstrap successful. Forcing token refresh.");
-            idTokenResult = await user.getIdTokenResult(true);
-            role = (idTokenResult.claims.role as UserRole) || 'admin';
-          } else {
-             console.error("Failed to bootstrap admin user:", result.error, "Assigning admin role in UI temporarily.");
-             // Force admin role in the UI to allow user to proceed
-             role = 'admin';
-          }
-        }
-        
-        // Default to 'cashier' if no role is found after all checks
+        // If no role is found, default to 'cashier'
         if (!role) {
             role = 'cashier';
         }
+        
+        // The bootstrap logic is removed from here to prevent login failures.
+        // Admin role assignment should be handled via the UI by an existing admin.
 
         set({ user, role, loading: false });
       } catch (error) {

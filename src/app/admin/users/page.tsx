@@ -20,6 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -38,7 +39,7 @@ import { useRouter } from 'next/navigation';
 import { getUsers, type UserWithRole } from '@/actions/get-users';
 import { createUser } from '@/actions/create-user';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Loader2, AlertTriangle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -65,7 +66,7 @@ const userFormSchema = z.object({
   role: z.enum(['admin', 'cashier'], { required_error: 'Debes seleccionar un rol.' }),
 });
 
-function CreateUserDialog({ onUserCreated }: { onUserCreated: () => void }) {
+function CreateUserDialog({ onUserCreated, disabled }: { onUserCreated: () => void, disabled: boolean }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const { toast } = useToast();
@@ -104,7 +105,7 @@ function CreateUserDialog({ onUserCreated }: { onUserCreated: () => void }) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="ml-auto gap-1">
+        <Button size="sm" className="ml-auto gap-1" disabled={disabled}>
           <PlusCircle className="h-3.5 w-3.5" />
           Crear Usuario
         </Button>
@@ -183,6 +184,7 @@ function CreateUserDialog({ onUserCreated }: { onUserCreated: () => void }) {
 export default function UsersPage() {
   const [users, setUsers] = React.useState<UserWithRole[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [adminError, setAdminError] = React.useState<string | null>(null);
   const { toast } = useToast();
   const { role: adminRole } = useAuthStore();
   const router = useRouter();
@@ -191,11 +193,7 @@ export default function UsersPage() {
     setIsLoading(true);
     const result = await getUsers();
     if (result.error) {
-      toast({
-        title: 'Error al cargar usuarios',
-        description: result.error,
-        variant: 'destructive',
-      });
+      setAdminError(result.error);
       setUsers([]);
     } else {
       const sanitizedUsers = result.users.map(u => ({
@@ -206,6 +204,7 @@ export default function UsersPage() {
         },
       }));
       setUsers(sanitizedUsers);
+      setAdminError(null);
     }
     setIsLoading(false);
   }, [toast]);
@@ -253,8 +252,19 @@ export default function UsersPage() {
     <main className="grid flex-1 items-start gap-4">
       <div className="flex items-center">
         <h1 className="text-2xl font-bold">Usuarios</h1>
-        {adminRole === 'admin' && <CreateUserDialog onUserCreated={fetchUsers} />}
+        {adminRole === 'admin' && <CreateUserDialog onUserCreated={fetchUsers} disabled={!!adminError} />}
       </div>
+
+      {adminError && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error de Configuración del Administrador</AlertTitle>
+          <AlertDescription>
+             {adminError} No se pueden gestionar usuarios. Por favor, completa las credenciales en el archivo <strong>src/lib/serviceAccountKey.ts</strong> y reinicia el servidor.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardHeader>
             <div>
@@ -290,7 +300,7 @@ export default function UsersPage() {
                     <Select
                         value={user.customClaims?.role}
                         onValueChange={(newRole: 'admin' | 'cashier') => handleRoleChange(user.uid, newRole)}
-                        disabled={adminRole !== 'admin'}
+                        disabled={adminRole !== 'admin' || !!adminError}
                     >
                         <SelectTrigger className="w-[120px]">
                             <SelectValue placeholder="Seleccionar rol" />
