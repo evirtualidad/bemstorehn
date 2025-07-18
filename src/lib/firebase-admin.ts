@@ -1,5 +1,6 @@
 
 import * as admin from 'firebase-admin';
+import { serviceAccount } from './serviceAccountKey';
 
 let adminInstance: typeof admin | null = null;
 let initializationError: string | null = null;
@@ -11,23 +12,15 @@ function initializeAdmin() {
     }
 
     try {
-        const privateKey = (process.env.FIREBASE_PRIVATE_KEY || "").replace(/\\n/g, '\n');
-
-        if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !privateKey) {
-            throw new Error("Las variables de entorno de Firebase Admin SDK no están completas. Asegúrate de que FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, y FIREBASE_PRIVATE_KEY estén definidas.");
+        if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
+            throw new Error("Las credenciales de la cuenta de servicio en serviceAccountKey.ts no están completas. Por favor, rellena el archivo con las credenciales de tu proyecto de Firebase.");
         }
         
-        const serviceAccount = {
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: privateKey,
-        };
-
         admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
+            credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
         });
 
-        console.log("Firebase Admin SDK initialized successfully.");
+        console.log("Firebase Admin SDK initialized successfully via service account file.");
         adminInstance = admin;
 
     } catch (error: any) {

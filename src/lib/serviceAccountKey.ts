@@ -3,19 +3,20 @@
 // For this context, we will use it to ensure server-side Firebase Admin SDK initializes correctly.
 
 // Instructions:
-// 1. Get your Firebase service account key JSON file from the Firebase console.
-//    (Project Settings -> Service accounts -> Generate new private key)
-// 2. Copy the contents of that file and paste them here, replacing the placeholder values.
+// 1. Go to your Firebase project settings.
+// 2. Navigate to the "Service accounts" tab.
+// 3. Click "Generate new private key" to download your service account JSON file.
+// 4. Copy the values from that file into the corresponding fields below.
 
 export const serviceAccount = {
-  "type": "service_account",
-  "project_id": process.env.FIREBASE_PROJECT_ID || "", // e.g., "your-project-id"
-  "private_key_id": process.env.FIREBASE_PRIVATE_KEY_ID || "", // e.g., "your-private-key-id"
-  "private_key": (process.env.FIREBASE_PRIVATE_KEY || "").replace(/\\n/g, '\n'), // Your private key
-  "client_email": process.env.FIREBASE_CLIENT_EMAIL || "", // e.g., "firebase-adminsdk-...@your-project-id.iam.gserviceaccount.com"
-  "client_id": process.env.FIREBASE_CLIENT_ID || "", // e.g., "your-client-id"
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": `https://www.googleapis.com/robot/v1/metadata/x509/${process.env.FIREBASE_CLIENT_EMAIL || ""}`.replace(/%40/g, "@")
+  type: "service_account",
+  project_id: "", // <-- PASTE your project_id HERE (e.g., "your-project-id")
+  private_key_id: "", // <-- PASTE your private_key_id HERE
+  private_key: "", // <-- PASTE your private_key HERE (it will be very long and start with "-----BEGIN PRIVATE KEY-----")
+  client_email: "", // <-- PASTE your client_email HERE (e.g., "firebase-adminsdk-...@your-project-id.iam.gserviceaccount.com")
+  client_id: "", // <-- PASTE your client_id HERE
+  auth_uri: "https://accounts.google.com/o/oauth2/auth",
+  token_uri: "https://oauth2.googleapis.com/token",
+  auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+  client_x509_cert_url: "" // <-- PASTE your client_x509_cert_url HERE
 };
