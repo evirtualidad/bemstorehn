@@ -874,7 +874,7 @@ function PosMobileCartButton() {
 
 export default function PosPage() {
   const { setShippingCost, clearCart, items: cartItems, totalWithShipping } = usePosCart();
-  const { products, isLoading: isLoadingProducts, decreaseStock } = useProductsStore();
+  const { products, isLoading: isLoadingProducts } = useProductsStore();
   const { addOrderToState } = useOrdersStore();
   const { customers, isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
   const { categories, isLoading: isLoadingCategories } = useCategoriesStore();
@@ -991,7 +991,7 @@ export default function PosPage() {
     }
     
     for (const item of cartItems) {
-        await decreaseStock(item.id, item.quantity);
+        useProductsStore.getState().decreaseStock(item.id, item.quantity);
     }
 
     const { cashAmount } = form.getValues();
