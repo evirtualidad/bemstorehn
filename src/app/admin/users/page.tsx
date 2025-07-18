@@ -72,35 +72,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
-
-
-// --- User Type Definition ---
-export interface UserDoc {
-    uid: string;
-    email: string;
-    role: 'admin' | 'cashier';
-    created_at: {
-        seconds: number;
-        nanoseconds: number;
-    };
-}
-
-const initialUsers: UserDoc[] = [
-    {
-        uid: 'admin_user_id',
-        email: 'admin@bemstore.hn',
-        role: 'admin',
-        created_at: { seconds: Math.floor(new Date().getTime() / 1000) - 86400, nanoseconds: 0 }
-    },
-    {
-        uid: 'cashier_user_id',
-        email: 'cashier@bemstore.hn',
-        role: 'cashier',
-        created_at: { seconds: Math.floor(new Date().getTime() / 1000) - 172800, nanoseconds: 0 }
-    }
-];
+import { useUsersStore, type UserDoc } from '@/hooks/use-users-store';
 
 
 // --- Create User Dialog ---
@@ -110,7 +83,8 @@ const userFormSchema = z.object({
   role: z.enum(['admin', 'cashier'], { required_error: 'Debes seleccionar un rol.' }),
 });
 
-function CreateUserDialog({ onUserCreated }: { onUserCreated: (newUser: UserDoc) => void }) {
+function CreateUserDialog() {
+  const { addUser } = useUsersStore();
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const { toast } = useToast();
@@ -128,23 +102,12 @@ function CreateUserDialog({ onUserCreated }: { onUserCreated: (newUser: UserDoc)
     setIsSubmitting(true);
     
     // Simulate async operation
-    await new Promise(res => setTimeout(res, 500));
+    await new Promise(res => setTimeout(res, 300));
 
-    const newUser: UserDoc = {
-        uid: uuidv4(),
+    addUser({
         email: values.email,
         role: values.role,
-        created_at: {
-            seconds: Math.floor(new Date().getTime() / 1000),
-            nanoseconds: 0
-        }
-    };
-    
-    onUserCreated(newUser);
-
-    toast({
-        title: '¡Usuario Creado!',
-        description: `El usuario ${values.email} ha sido creado exitosamente (simulado).`,
+        // password is not stored
     });
 
     setIsSubmitting(false);
@@ -232,28 +195,16 @@ function CreateUserDialog({ onUserCreated }: { onUserCreated: (newUser: UserDoc)
 
 // --- Main Page Component ---
 export default function UsersPage() {
-  const [users, setUsers] = React.useState<UserDoc[]>(initialUsers);
-  const [isLoading, setIsLoading] = React.useState(false); // Can be false as it's local
+  const { users, isLoading, updateUserRole, deleteUser } = useUsersStore();
   const { toast } = useToast();
   const { role: adminRole, user: currentUser } = useAuthStore();
 
-
-  const handleUserCreated = (newUser: UserDoc) => {
-    setUsers(currentUsers => [newUser, ...currentUsers]);
-  };
-
   const handleRoleChange = async (uid: string, newRole: 'admin' | 'cashier') => {
-    setUsers(currentUsers => currentUsers.map(u => u.uid === uid ? { ...u, role: newRole } : u));
-    toast({ title: '¡Rol actualizado!', description: `El rol del usuario ha sido cambiado a ${newRole} (simulado).`});
+    updateUserRole(uid, newRole);
+    toast({ title: '¡Rol actualizado!', description: `El rol del usuario ha sido cambiado a ${newRole}.`});
   };
 
-  const handleDeleteUser = (uid: string) => {
-    setUsers(currentUsers => currentUsers.filter(u => u.uid !== uid));
-    toast({ title: '¡Usuario eliminado!', variant: 'destructive' });
-  };
-
-
-  const isCurrentUser = (uid: string) => currentUser?.uid === uid || (currentUser?.email === 'admin@bemstore.hn' && uid === 'admin_user_id');
+  const isCurrentUser = (uid: string) => currentUser?.uid === uid || (currentUser?.email === 'admin@bemstore.hn' && uid === 'admin_user_id_simulated');
 
   if (isLoading || !adminRole) {
     return (
@@ -267,7 +218,7 @@ export default function UsersPage() {
     <main className="grid flex-1 items-start gap-4">
       <div className="flex items-center">
         <h1 className="text-2xl font-bold">Usuarios</h1>
-        {adminRole === 'admin' && <CreateUserDialog onUserCreated={handleUserCreated} />}
+        {adminRole === 'admin' && <CreateUserDialog />}
       </div>
 
       <Card>
@@ -354,7 +305,7 @@ export default function UsersPage() {
                                         <AlertDialogFooter>
                                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                         <AlertDialogAction
-                                            onClick={() => handleDeleteUser(user.uid)}
+                                            onClick={() => deleteUser(user.uid)}
                                             className={cn(buttonVariants({ variant: 'destructive' }))}
                                         >
                                             Sí, eliminar usuario
