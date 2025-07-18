@@ -2,8 +2,6 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { useUsersStore } from './use-users-store';
 
 export type UserRole = 'admin' | 'cajero';
 
@@ -15,62 +13,26 @@ export interface LocalUser {
 type AuthState = {
   user: LocalUser | null;
   role: UserRole | null;
-  loading: boolean;
   login: (email: string, password: string) => Promise<string | null>;
   logout: () => Promise<void>;
-  _initialize: () => void;
 };
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      user: null,
-      role: null,
-      loading: true,
-      
-      _initialize: () => {
-        // This function is called once the app is mounted on the client
-        // to signify that persisted state is loaded and we can stop the initial loading state.
-        // It now also waits for the user store to be hydrated.
-        useUsersStore.persist.onFinishHydration(() => {
-          set({ loading: false });
-        });
-      },
-
-      login: async (email, password) => {
-        // Direct look-up to the single source of truth for users.
-        const users = useUsersStore.getState().users;
-        const foundUser = users.find(u => u.email === email && u.password === password);
-
-        if (foundUser) {
-          const localUser: LocalUser = {
-            uid: foundUser.uid,
-            email: foundUser.email,
-          };
-          set({ user: localUser, role: foundUser.role, loading: false });
-          return null; // Success
-        } else {
-          return 'Correo o contraseña incorrectos.'; // Failure
-        }
-      },
-      
-      logout: async () => {
-        set({ user: null, role: null });
-      },
-    }),
-    {
-      name: 'auth-storage',
-      storage: createJSONStorage(() => localStorage),
-       onRehydrateStorage: () => (state) => {
-        if (state) {
-          state._initialize();
-        }
-      }
-    }
-  )
-);
-
-// Initialize the store on client-side load.
-if (typeof window !== 'undefined') {
-    useAuthStore.getState()._initialize();
-}
+// With the login system temporarily disabled, we default to a logged-in admin user
+// to allow full access to the application's features without requiring credentials.
+export const useAuthStore = create<AuthState>()((set) => ({
+    user: {
+        uid: 'default_admin_id',
+        email: 'admin@bemstore.hn'
+    },
+    role: 'admin',
+    login: async (email, password) => {
+        console.log("Login function is disabled.");
+        return "Login system is currently disabled.";
+    },
+    logout: async () => {
+        console.log("Logout function is disabled.");
+        // In this disabled state, logout does nothing.
+        // If re-enabled, it would set user and role to null.
+        // set({ user: null, role: null });
+    },
+}));

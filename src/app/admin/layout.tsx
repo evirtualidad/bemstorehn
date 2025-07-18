@@ -41,7 +41,6 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { ThemeProvider } from '@/components/theme-provider';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { auth } from '@/lib/firebase';
 
 function CurrencySelector() {
     const { currency, currencies, setCurrency } = useCurrencyStore();
@@ -75,26 +74,13 @@ function AdminLayoutContent({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const orders = useOrdersStore(state => state.orders);
-  const { user, loading, logout, role } = useAuthStore();
+  const { user, role } = useAuthStore();
   
-  React.useEffect(() => {
-    if (!loading && !user) {
-        router.push('/login');
-    }
-  }, [user, loading, router]);
-
-
   const pendingApprovalCount = React.useMemo(() => {
     return orders.filter(o => o.status === 'pending-approval').length;
   }, [orders]);
   
-  const handleLogout = async () => {
-    await logout();
-    router.push('/login');
-  };
-
   const allNavItems = [
     { href: '/admin/dashboard', icon: Activity, label: 'Dashboard', roles: ['admin', 'cajero'] },
     { href: '/admin/pos', icon: Tablet, label: 'POS', roles: ['admin', 'cajero'] },
@@ -162,7 +148,7 @@ function AdminLayoutContent({
     )
   };
 
-  if (loading || !user) {
+  if (!user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingSpinner />
@@ -232,11 +218,6 @@ function AdminLayoutContent({
               <DropdownMenuLabel>Mi Cuenta ({role})</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem disabled>{user?.email}</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Cerrar Sesión
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
