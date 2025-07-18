@@ -855,7 +855,6 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, cart, total, sub
 export default function PosPage() {
   const { 
       items: cart,
-      setItems: setCart,
       totalWithShipping,
       subtotal,
       taxAmount,
@@ -869,8 +868,8 @@ export default function PosPage() {
       clearCart,
   } = usePosCart();
   const { products, fetchProducts, isLoading: isLoadingProducts, decreaseStock } = useProductsStore();
-  const { addOrderToState, fetchOrders } = useOrdersStore();
-  const { customers, fetchCustomers, isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
+  const { addOrderToState } = useOrdersStore();
+  const { fetchCustomers, isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
@@ -1026,8 +1025,6 @@ export default function PosPage() {
     
     setIsSubmitting(true);
     
-    console.warn("MODO SIMULADO: La creación de pedidos está simulada y solo afecta el estado local.");
-
     const customerId = await addOrUpdateCustomer({
         name: values.name || 'Consumidor Final',
         phone: values.phone || 'N/A',
@@ -1077,14 +1074,14 @@ export default function PosPage() {
 
     setTimeout(() => {
         toast({
-          title: '¡Pedido Creado (Simulado)!',
-          description: 'El pedido se ha añadido localmente.',
+          title: '¡Pedido Creado!',
+          description: 'El pedido se ha añadido al sistema.',
         });
         clearCartAndForm();
         setIsCheckoutOpen(false);
         setIsTicketVisible(false);
         setIsSubmitting(false);
-        fetchProducts(); // Refresh product list to show updated stock
+        fetchProducts(); 
     }, 500);
   }
   

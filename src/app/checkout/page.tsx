@@ -353,8 +353,6 @@ export default function CheckoutPage() {
     }
     setIsSubmitting(true);
     
-    console.warn("MODO SIMULADO: La creación de pedidos está simulada y solo afecta el estado local.");
-
     const customerId = await addOrUpdateCustomer({
         name: values.name,
         phone: values.phone,
@@ -394,7 +392,7 @@ export default function CheckoutPage() {
 
     setTimeout(() => {
         toast({
-          title: '¡Pedido Recibido! (Simulado)',
+          title: '¡Pedido Recibido!',
           description: 'Gracias por tu compra. Tu pedido está siendo procesado.',
         });
         clearCart();
