@@ -35,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { type Product } from '@/lib/products';
+import type { Product } from '@/lib/products';
 import Image from 'next/image';
 import {
   Dialog,
@@ -65,7 +65,8 @@ export function ProductsManager() {
     let imageFile: File | undefined;
     let imageUrl: string | undefined;
 
-    if (values.image instanceof File) {
+    // Check if image is a file object without using instanceof
+    if (values.image && typeof values.image === 'object' && typeof values.image.name === 'string') {
         imageFile = values.image;
     } else {
         imageUrl = `https://placehold.co/400x400.png?text=${values.name.replace(/\s/g, '+')}`;
@@ -94,7 +95,8 @@ export function ProductsManager() {
     let imageUrl = editingProduct.image;
     let imageFile: File | undefined = undefined;
 
-    if (values.image && typeof values.image !== 'string') {
+    // Check if image is a file object without using instanceof
+    if (values.image && typeof values.image === 'object' && typeof values.image.name === 'string') {
         imageFile = values.image;
         // The upload and URL generation is handled within the updateProduct hook now
     } else if (typeof values.image === 'string') {

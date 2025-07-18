@@ -43,7 +43,9 @@ export const productFormSchema = z.object({
   image: z.any().optional().refine(file => {
       if (!file) return true; // Optional, so no file is valid
       if (typeof file === 'string') return true; // URL is valid
-      if (file instanceof File) return ACCEPTED_IMAGE_TYPES.includes(file.type); // File must have valid type
+      if (typeof file === 'object' && typeof file.name === 'string' && typeof file.type === 'string') {
+        return ACCEPTED_IMAGE_TYPES.includes(file.type); // File must have valid type
+      }
       return false;
     }, 'Tipo de archivo no válido. Solo se aceptan imágenes .jpg, .jpeg, .png y .webp.'),
   featured: z.boolean().default(false),
