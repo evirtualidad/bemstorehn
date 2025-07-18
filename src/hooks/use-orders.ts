@@ -6,6 +6,7 @@ import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import { subDays, subHours } from 'date-fns';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface Payment {
     date: string;
@@ -142,6 +143,7 @@ const generateDisplayId = () => {
 };
 
 export const useOrdersStore = create<OrdersState>()(
+  persist(
     (set, get) => ({
       orders: initialOrders,
       isLoading: false,
@@ -210,5 +212,10 @@ export const useOrdersStore = create<OrdersState>()(
       getOrderById: (orderId: string) => {
         return get().orders.find((o) => o.display_id === orderId || o.id === orderId);
       },
-    })
+    }),
+    {
+      name: 'orders-storage',
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
 );

@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface Category {
   id: string; // Firestore document ID
@@ -29,6 +30,7 @@ type CategoriesState = {
 };
 
 export const useCategoriesStore = create<CategoriesState>()(
+  persist(
     (set, get) => ({
       categories: initialCategories,
       isLoading: false,
@@ -65,5 +67,10 @@ export const useCategoriesStore = create<CategoriesState>()(
         }));
         toast({ title: 'Categoría eliminada' });
       },
-    })
+    }),
+    {
+      name: 'categories-storage',
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
 );

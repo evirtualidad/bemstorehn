@@ -6,6 +6,7 @@ import type { Address } from './use-orders';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import { subDays } from 'date-fns';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface Customer {
   id: string;
@@ -62,6 +63,7 @@ type CustomersState = {
 };
 
 export const useCustomersStore = create<CustomersState>()(
+  persist(
     (set, get) => ({
       customers: initialCustomers,
       isLoading: false,
@@ -115,5 +117,10 @@ export const useCustomersStore = create<CustomersState>()(
       getCustomerById: (id) => {
         return get().customers.find((c) => c.id === id);
       },
-    })
+    }),
+    {
+      name: 'customers-storage',
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
 );

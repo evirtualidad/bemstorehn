@@ -6,6 +6,7 @@ import { type Product, products as initialProducts } from '@/lib/products';
 import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export type NewProductData = Omit<Product, 'id'> & { imageFile?: File };
 
@@ -21,6 +22,7 @@ type ProductsState = {
 };
 
 export const useProductsStore = create<ProductsState>()(
+  persist(
     (set, get) => ({
       products: initialProducts,
       isLoading: false,
@@ -116,5 +118,10 @@ export const useProductsStore = create<ProductsState>()(
             }
         }));
       },
-    })
+    }),
+    {
+      name: 'products-storage',
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
 );

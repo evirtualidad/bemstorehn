@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface Banner {
   id: string;
@@ -47,6 +48,7 @@ type BannersState = {
 };
 
 export const useBannersStore = create<BannersState>()(
+  persist(
     (set, get) => ({
       banners: initialBanners,
       isLoading: false,
@@ -78,5 +80,10 @@ export const useBannersStore = create<BannersState>()(
         }));
         toast({ title: 'Banner eliminado' });
       },
-    })
+    }),
+    {
+      name: 'banners-storage',
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
 );
