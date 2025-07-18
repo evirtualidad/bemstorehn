@@ -22,9 +22,7 @@ import { Pause, Play, Instagram, Facebook, ShoppingCart } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { useCart } from '@/hooks/use-cart';
 import { useCurrencyStore } from '@/hooks/use-currency';
-import { useToast } from '@/hooks/use-toast';
 import { ProductGridHomepage } from '@/components/product-grid-homepage';
-import { ProductCard } from '@/components/product-card';
 
 // A custom TikTok icon as lucide-react might not have it.
 const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -129,7 +127,7 @@ function HeroCarousel({ banners }: { banners: Banner[] }) {
   );
 }
 
-function FeaturedProductsCarousel({ products, onAddToCart }: { products: Product[], onAddToCart: (product: Product) => void }) {
+function FeaturedProductsCarousel({ products }: { products: Product[] }) {
     if (products.length === 0) return null;
 
     const autoplayPlugin = React.useRef(
@@ -151,7 +149,7 @@ function FeaturedProductsCarousel({ products, onAddToCart }: { products: Product
                     <CarouselContent>
                         {products.map((product) => (
                             <CarouselItem key={product.id} className="basis-1/2 md:basis-1/3 lg:basis-1/4">
-                                <ProductCard product={product} onAddToCart={onAddToCart} />
+                                <ProductGridHomepage.Card product={product} />
                             </CarouselItem>
                         ))}
                     </CarouselContent>
@@ -191,8 +189,6 @@ export default function Home() {
   const { products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
   const { banners, fetchBanners, isLoading: isLoadingBanners } = useBannersStore();
   const { categories, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
-  const addToCart = useCart(state => state.addToCart);
-  const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
   
   React.useEffect(() => {
@@ -228,14 +224,6 @@ export default function Home() {
     return products.filter(p => p.category === selectedCategory);
   }, [selectedCategory, products, offerProducts]);
 
-  const handleAddToCart = (product: Product) => {
-    addToCart(product);
-    toast({
-      title: "Añadido al carrito",
-      description: `${product.name} ha sido añadido a tu carrito.`,
-    });
-  };
-  
   const isLoading = isLoadingProducts || isLoadingBanners || isLoadingCategories;
 
   if (isLoading) {
@@ -261,7 +249,7 @@ export default function Home() {
       <div className="mb-12">
         <div className="container mx-auto px-4">
           <h3 className="text-xl md:text-2xl font-bold mb-6 text-primary">{category.label}</h3>
-          <ProductGridHomepage products={productsByCategory[categoryName]} onAddToCart={handleAddToCart} />
+          <ProductGridHomepage products={productsByCategory[categoryName]} />
         </div>
       </div>
     );
@@ -285,7 +273,7 @@ export default function Home() {
         {!selectedCategory ? (
           <>
             <HeroCarousel banners={banners} />
-            <FeaturedProductsCarousel products={featuredOfferProducts} onAddToCart={handleAddToCart} />
+            <FeaturedProductsCarousel products={featuredOfferProducts} />
             <Separator className="my-8 bg-border/40" />
             <section className="py-10 md:py-16">
               <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">Nuestro Catálogo</h2>
@@ -303,7 +291,7 @@ export default function Home() {
                     </h2>
                     <Button variant="outline" onClick={() => setSelectedCategory(null)}>Ver Todos los Productos</Button>
                 </div>
-                <ProductGridHomepage products={filteredProducts} onAddToCart={handleAddToCart} />
+                <ProductGridHomepage products={filteredProducts} />
             </div>
           </section>
         )}

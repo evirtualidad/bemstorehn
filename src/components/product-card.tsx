@@ -24,7 +24,7 @@ export function ProductCard({
   className, 
   onAddToCart,
   showDescription = true,
-  useLink = true, // By default, wrap in a link. For POS, we'll set this to false.
+  useLink = true,
   ...props 
 }: ProductCardProps) {
   const { getCategoryByName } = useCategoriesStore();
@@ -34,8 +34,8 @@ export function ProductCard({
   const isDiscounted = product.originalPrice && product.originalPrice > product.price;
 
   const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    e.preventDefault(); // Prevent link navigation if inside a Link
-    e.stopPropagation(); // Prevent card's onClick if it has one
+    e.preventDefault(); 
+    e.stopPropagation();
     onAddToCart(product);
   }
 
@@ -43,7 +43,7 @@ export function ProductCard({
 
   const cardContent = (
       <Card className={cn(
-          "flex flex-col overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 animate-in fade-in-0 slide-in-from-bottom-5 ease-in-out h-full", 
+          "flex flex-col overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 h-full", 
           isDiscounted && "border-offer",
           className
       )}>

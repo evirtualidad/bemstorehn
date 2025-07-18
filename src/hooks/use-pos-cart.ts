@@ -6,6 +6,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { useSettingsStore } from './use-settings-store';
 import { toast } from './use-toast';
+import { produce } from 'immer';
+
 
 export type PosCartItem = {
   quantity: number;
@@ -28,23 +30,7 @@ type CartState = {
 
 export const usePosCart = create<CartState>()(
   persist(
-    (set, get) => {
-      // Helper function defined inside the hook's scope to ensure isolation.
-      const calculatePosCartTotals = (items: PosCartItem[], shippingCost: number) => {
-        const taxRate = useSettingsStore.getState().taxRate;
-        const itemsTotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-        const totalWithShipping = itemsTotal + shippingCost;
-        const subtotal = totalWithShipping / (1 + taxRate);
-        const taxAmount = totalWithShipping - subtotal;
-        return { total: itemsTotal, subtotal, taxAmount, totalWithShipping };
-      };
-
-      const reCalculateAndSetState = (items: PosCartItem[], shippingCost: number) => {
-        const totals = calculatePosCartTotals(items, shippingCost);
-        set({ items, ...totals, shippingCost });
-      };
-
-      return {
+    (set, get) => ({
         items: [],
         total: 0,
         subtotal: 0,
@@ -53,85 +39,108 @@ export const usePosCart = create<CartState>()(
         totalWithShipping: 0,
         
         addToCart: (product) => {
-          const currentItems = get().items;
-          const existingItem = currentItems.find((item) => item.id === product.id);
+            let success = false;
+            set(produce((state: CartState) => {
+                const existingItem = state.items.find((item) => item.id === product.id);
 
-          let updatedItems;
-          if (existingItem) {
-            if (existingItem.quantity < product.stock) {
-              updatedItems = currentItems.map((item) =>
-                item.id === product.id
-                  ? { ...item, quantity: item.quantity + 1 }
-                  : item
-              );
-            } else {
-              setTimeout(() => {
-                  toast({
-                      title: 'Stock Máximo Alcanzado',
-                      description: `No puedes añadir más de ${product.name}.`,
-                      variant: 'destructive',
-                      duration: 3000,
-                  });
-              }, 0);
-              return false;
-            }
-          } else {
-            if (product.stock > 0) {
-                updatedItems = [...currentItems, { ...product, quantity: 1 }];
-            } else {
-                setTimeout(() => {
-                  toast({
-                    title: 'Producto Agotado',
-                    description: `${product.name} no tiene stock disponible.`,
-                    variant: 'destructive',
-                    duration: 3000,
-                  });
-                }, 0);
-                return false;
-            }
-          }
-          
-          reCalculateAndSetState(updatedItems, get().shippingCost);
-          return true;
+                if (existingItem) {
+                    if (existingItem.quantity < product.stock) {
+                        existingItem.quantity += 1;
+                        success = true;
+                    } else {
+                        setTimeout(() => toast({
+                            title: 'Stock Máximo Alcanzado',
+                            description: `No puedes añadir más de ${product.name}.`,
+                            variant: 'destructive',
+                            duration: 3000,
+                        }), 0);
+                        success = false;
+                    }
+                } else {
+                    if (product.stock > 0) {
+                        state.items.push({ ...product, quantity: 1 });
+                        success = true;
+                    } else {
+                        setTimeout(() => toast({
+                            title: 'Producto Agotado',
+                            description: `${product.name} no tiene stock disponible.`,
+                            variant: 'destructive',
+                            duration: 3000,
+                        }), 0);
+                        success = false;
+                    }
+                }
+
+                if (success) {
+                    const { taxRate } = useSettingsStore.getState();
+                    const itemsTotal = state.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+                    state.total = itemsTotal;
+                    state.totalWithShipping = itemsTotal + state.shippingCost;
+                    state.subtotal = state.totalWithShipping / (1 + taxRate);
+                    state.taxAmount = state.totalWithShipping - state.subtotal;
+                }
+            }));
+            return success;
         },
         removeFromCart: (productId) => {
-          const updatedItems = get().items.filter((item) => item.id !== productId);
-          reCalculateAndSetState(updatedItems, get().shippingCost);
+          set(produce((state: CartState) => {
+            state.items = state.items.filter((item) => item.id !== productId);
+            const { taxRate } = useSettingsStore.getState();
+            const itemsTotal = state.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+            state.total = itemsTotal;
+            state.totalWithShipping = itemsTotal + state.shippingCost;
+            state.subtotal = state.totalWithShipping / (1 + taxRate);
+            state.taxAmount = state.totalWithShipping - state.subtotal;
+          }));
         },
         increaseQuantity: (productId) => {
-          const currentItems = get().items;
-          const itemToUpdate = currentItems.find(item => item.id === productId);
-          if (!itemToUpdate || itemToUpdate.quantity >= itemToUpdate.stock) return;
-
-          const updatedItems = currentItems.map((item) =>
-            item.id === productId ? { ...item, quantity: item.quantity + 1 } : item
-          );
-          reCalculateAndSetState(updatedItems, get().shippingCost);
+          set(produce((state: CartState) => {
+            const item = state.items.find(item => item.id === productId);
+            if(item && item.quantity < item.stock) {
+                item.quantity += 1;
+                const { taxRate } = useSettingsStore.getState();
+                const itemsTotal = state.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+                state.total = itemsTotal;
+                state.totalWithShipping = itemsTotal + state.shippingCost;
+                state.subtotal = state.totalWithShipping / (1 + taxRate);
+                state.taxAmount = state.totalWithShipping - state.subtotal;
+            }
+          }));
         },
         decreaseQuantity: (productId) => {
-          const currentItems = get().items;
-          const existingItem = currentItems.find((item) => item.id === productId);
-
-          if (existingItem?.quantity === 1) {
-            const updatedItems = currentItems.filter((item) => item.id !== productId);
-            reCalculateAndSetState(updatedItems, get().shippingCost);
-          } else {
-            const updatedItems = currentItems.map((item) =>
-              item.id === productId
-                ? { ...item, quantity: Math.max(0, item.quantity - 1) }
-                : item
-            );
-            reCalculateAndSetState(updatedItems, get().shippingCost);
-          }
+          set(produce((state: CartState) => {
+            const itemIndex = state.items.findIndex((item) => item.id === productId);
+             if (itemIndex !== -1) {
+                 if (state.items[itemIndex].quantity > 1) {
+                    state.items[itemIndex].quantity -= 1;
+                 } else {
+                    state.items.splice(itemIndex, 1);
+                 }
+                const { taxRate } = useSettingsStore.getState();
+                const itemsTotal = state.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+                state.total = itemsTotal;
+                state.totalWithShipping = itemsTotal + state.shippingCost;
+                state.subtotal = state.totalWithShipping / (1 + taxRate);
+                state.taxAmount = state.totalWithShipping - state.subtotal;
+             }
+          }));
         },
         clearCart: () => {
           set({ items: [], total: 0, subtotal: 0, taxAmount: 0, shippingCost: 0, totalWithShipping: 0 });
         },
         setShippingCost: (cost) => {
-          reCalculateAndSetState(get().items, cost);
+          set(produce((state: CartState) => {
+              state.shippingCost = cost;
+              const { taxRate } = useSettingsStore.getState();
+              const itemsTotal = state.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+              state.total = itemsTotal;
+              state.totalWithShipping = itemsTotal + state.shippingCost;
+              state.subtotal = state.totalWithShipping / (1 + taxRate);
+              state.taxAmount = state.totalWithShipping - state.subtotal;
+          }));
         },
       }
-    },
+    }),
     {
       name: 'pos-cart-v2', // Unique key for the POS cart
       storage: createJSONStorage(() => localStorage),

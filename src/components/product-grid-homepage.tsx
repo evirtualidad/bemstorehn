@@ -1,13 +1,27 @@
 
+'use client';
+
 import type { Product } from '@/lib/products';
 import { ProductCard } from './product-card';
+import { useCart } from '@/hooks/use-cart';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProductGridHomepageProps {
   products: Product[];
-  onAddToCart: (product: Product) => void;
 }
 
-export function ProductGridHomepage({ products, onAddToCart }: ProductGridHomepageProps) {
+function ProductGridHomepage({ products }: ProductGridHomepageProps) {
+  const addToCart = useCart.getState().addToCart;
+  const { toast } = useToast();
+
+  const handleAddToCart = (product: Product) => {
+    addToCart(product);
+    toast({
+      title: "Añadido al carrito",
+      description: `${product.name} ha sido añadido a tu carrito.`,
+    });
+  };
+
   if (products.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-10">
@@ -22,9 +36,14 @@ export function ProductGridHomepage({ products, onAddToCart }: ProductGridHomepa
         <ProductCard 
           key={product.id} 
           product={product} 
-          onAddToCart={onAddToCart}
+          onAddToCart={handleAddToCart}
         />
       ))}
     </div>
   );
 }
+
+// Attach the Card component to the main component for the carousel usage
+ProductGridHomepage.Card = ProductCard;
+
+export { ProductGridHomepage };

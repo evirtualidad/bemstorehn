@@ -18,6 +18,7 @@ import { Product } from '@/lib/products';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { ProductGridHomepage } from '@/components/product-grid-homepage';
 
 
 interface ProductDetailPageProps {
@@ -30,7 +31,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { productId } = React.use(params);
   const { getProductById, products, fetchProducts, isLoading: isLoadingProducts } = useProductsStore();
   const { getCategoryByName, fetchCategories, isLoading: isLoadingCategories } = useCategoriesStore();
-  const { addToCart } = useCart();
+  const addToCart = useCart.getState().addToCart;
   const { toast } = useToast();
   const { currency } = useCurrencyStore();
   
@@ -63,14 +64,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const isDiscounted = product.originalPrice && product.originalPrice > product.price;
 
   const handleAddToCart = () => {
-    addToCart(product);
-    toast({
-      title: "Añadido al carrito",
-      description: `${product.name} ha sido añadido a tu carrito.`,
-    });
-  }
-
-  const handleRelatedAddToCart = (product: Product) => {
     addToCart(product);
     toast({
       title: "Añadido al carrito",
@@ -148,7 +141,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 md:mb-14">También te podría interesar</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
               {relatedProducts.map(related => (
-                <ProductCard key={related.id} product={related as Product} onAddToCart={handleRelatedAddToCart} />
+                <ProductGridHomepage.Card key={related.id} product={related as Product} />
               ))}
             </div>
           </div>

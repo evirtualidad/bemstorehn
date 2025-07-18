@@ -1,13 +1,26 @@
 
+'use client';
+
 import type { Product } from '@/lib/products';
 import { ProductCard } from './product-card';
+import { usePosCart } from '@/hooks/use-pos-cart';
+import { useToast } from '../hooks/use-toast';
 
 interface ProductGridProps {
   products: Product[];
-  onAddToCart: (product: Product) => void;
 }
 
-export function ProductGrid({ products, onAddToCart }: ProductGridProps) {
+export function ProductGrid({ products }: ProductGridProps) {
+  const addToCart = usePosCart.getState().addToCart;
+  const { toast } = useToast();
+
+  const handleAddToCart = (product: Product) => {
+    const success = addToCart(product);
+    if (!success) {
+      // Toast logic is handled inside the hook for POS
+    }
+  };
+
   if (products.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-10">
@@ -22,7 +35,7 @@ export function ProductGrid({ products, onAddToCart }: ProductGridProps) {
         <ProductCard 
           key={product.id} 
           product={product} 
-          onAddToCart={onAddToCart}
+          onAddToCart={handleAddToCart}
           useLink={false} // For POS, card click adds to cart, button does too. No linking.
         />
       ))}

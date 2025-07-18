@@ -855,8 +855,8 @@ function PosMobileCartButton() {
         totalWithShipping: state.totalWithShipping,
         items: state.items
     }));
-    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
     const { currency } = useCurrencyStore();
+    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   
     return (
         <Button
@@ -875,14 +875,11 @@ function PosMobileCartButton() {
 }
 
 export default function PosPage() {
-  const addToCart = usePosCart(state => state.addToCart);
-  const { totalWithShipping, setShippingCost, clearCart } = usePosCart(state => ({
-    totalWithShipping: state.totalWithShipping,
-    setShippingCost: state.setShippingCost,
-    clearCart: state.clearCart
-  }));
-
+  const setShippingCost = usePosCart(state => state.setShippingCost);
+  const clearCart = usePosCart(state => state.clearCart);
   const cartItems = usePosCart(state => state.items);
+  const totalWithShipping = usePosCart(state => state.totalWithShipping);
+  
   const { products, fetchProducts, isLoading: isLoadingProducts, decreaseStock } = useProductsStore();
   const { addOrderToState } = useOrdersStore();
   const { fetchCustomers, isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
@@ -894,7 +891,6 @@ export default function PosPage() {
   const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = React.useState(false);
   const { session } = useAuthStore();
-  const { currency } = useCurrencyStore();
 
   React.useEffect(() => {
     fetchProducts();
@@ -950,17 +946,6 @@ export default function PosPage() {
     const addressWithType = { ...address, type };
     form.setValue('address', addressWithType as Address);
     setShippingCost(cost);
-  };
-
-  const handleAddToCart = (product: Product) => {
-    const success = addToCart(product);
-    if (!success) {
-      toast({
-        title: 'No se pudo añadir el producto',
-        description: `El stock para "${product.name}" es insuficiente.`,
-        variant: 'destructive',
-      });
-    }
   };
   
   const handleCustomerSelect = (customer: Customer | null) => {
@@ -1095,7 +1080,7 @@ export default function PosPage() {
             <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20 flex-shrink-0">
                 <h1 className="text-xl font-bold flex-1 whitespace-nowrap">POS</h1>
                  <div className="w-full sm:w-auto sm:flex-initial">
-                    <ProductSearch onProductSelect={handleAddToCart} />
+                    <ProductSearch onProductSelect={usePosCart.getState().addToCart} />
                  </div>
             </header>
             <main className="flex-1 flex flex-col">
@@ -1109,7 +1094,7 @@ export default function PosPage() {
                     <Separator />
                 </div>
                  <ScrollArea className="flex-1 p-4 bg-background">
-                     <ProductGrid products={filteredProducts} onAddToCart={handleAddToCart} />
+                     <ProductGrid products={filteredProducts} />
                 </ScrollArea>
             </main>
         </div>
