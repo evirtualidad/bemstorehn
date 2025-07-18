@@ -34,4 +34,7 @@ if (firebaseConfig.apiKey) {
     // @ts-ignore
     db = null;
     // @ts-ignore
-    
+    storage = null;
+}
+
+export { app, auth, db, storage };
