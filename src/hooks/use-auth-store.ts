@@ -32,11 +32,6 @@ async function getUserRole(userId: string): Promise<UserRole | null> {
 
     if (error) {
         console.error('Error fetching user role:', error.message);
-        // This can happen if the user exists in auth but not in roles table yet, or due to RLS.
-        if (error.code === 'PGRST116') {
-             console.log("User role not found, returning null.");
-             return null;
-        }
         return null;
     }
     
@@ -55,6 +50,8 @@ export const useAuthStore = create<AuthState>()(
       initializeSession: () => {
         if (!isSupabaseConfigured) {
           console.log("Running in local mode. Supabase not configured.");
+          const localUsersStore = useUsersStore.getState();
+          localUsersStore.ensureAdminUser();
           set({ isLoading: false });
           return;
         }
@@ -63,7 +60,6 @@ export const useAuthStore = create<AuthState>()(
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
           if (session) {
               const userRole = await getUserRole(session.user.id);
-              // If user exists in auth but not in roles table, assign a default role.
               const finalRole = userRole || 'admin';
               set({ 
                   user: { id: session.user.id, email: session.user.email || '', role: finalRole },
@@ -97,8 +93,13 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (email, password) => {
           if (!isSupabaseConfigured) {
-            toast({ title: "Supabase no configurado", description: "No se puede iniciar sesión sin las credenciales de Supabase.", variant: "destructive" });
-            return "Supabase no configurado";
+            const users = useUsersStore.getState().users;
+            const foundUser = users.find(u => u.email === email && (u as any).password === password);
+            if (foundUser) {
+                set({ user: foundUser, role: foundUser.role, isLoading: false });
+                return null;
+            }
+            return "Credenciales inválidas (local)";
           }
           
           set({ isLoading: true });
@@ -106,11 +107,9 @@ export const useAuthStore = create<AuthState>()(
           
           if (error) {
             set({ isLoading: false });
-            return 'Credenciales inválidas. Por favor, inténtalo de nuevo.';
+            return error.message; // Return the actual error message from Supabase
           }
           
-          // The onAuthStateChange listener will handle setting the user and role.
-          // We don't need to explicitly set loading to false here, as the listener will do it.
           return null;
       },
 
@@ -129,12 +128,14 @@ export const useAuthStore = create<AuthState>()(
               toast({ title: 'Función no disponible', description: 'La creación de usuarios requiere conexión a Supabase.', variant: 'destructive'});
               return 'Supabase no configurado.';
           }
-          
-          const { data, error: signUpError } = await supabase.auth.signUp({
-              email,
-              password,
-          });
 
+          // Use a temporary admin client to create the user without email confirmation
+          const { data, error: signUpError } = await supabase.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true, // User is confirmed automatically
+          });
+          
           if (signUpError) {
               return signUpError.message;
           }
@@ -145,11 +146,9 @@ export const useAuthStore = create<AuthState>()(
                   .insert({ id: data.user.id, role: role });
               
               if (roleError) {
-                  console.error("User created, but failed to set role:", roleError);
-                  // Attempt to delete the auth user if role assignment fails to avoid orphaned users
-                  // This requires admin privileges and is best handled in a server-side function.
-                  // For now, we'll just return the error.
-                  return "El usuario fue creado, pero falló al asignar el rol. Por favor, asigna el rol manualmente.";
+                  // Attempt to delete the auth user if role assignment fails
+                  await supabase.auth.admin.deleteUser(data.user.id);
+                  return "Error al asignar rol. El usuario no fue creado. Por favor, inténtelo de nuevo.";
               }
           }
           

@@ -14,6 +14,7 @@ export interface UserDoc {
     id: string; 
     email: string;
     role: UserRole;
+    password?: string; // Only for local fallback
 }
 
 type UsersState = {
@@ -22,6 +23,14 @@ type UsersState = {
   fetchUsers: () => Promise<void>;
   updateUserRole: (userId: string, newRole: 'admin' | 'cajero') => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
+  ensureAdminUser: () => void;
+};
+
+const localAdmin: UserDoc = {
+  id: 'local-admin-id',
+  email: 'evirt@bemstore.hn',
+  password: 'password',
+  role: 'admin',
 };
 
 export const useUsersStore = create<UsersState>()(
@@ -32,7 +41,7 @@ export const useUsersStore = create<UsersState>()(
       
       fetchUsers: async () => {
           if (!isSupabaseConfigured) {
-              console.log("Running in local mode. Supabase not configured.");
+              get().ensureAdminUser();
               set({ isLoading: false });
               return;
           }
@@ -45,7 +54,6 @@ export const useUsersStore = create<UsersState>()(
               return;
           }
 
-          // We need to fetch the actual user emails from auth.users
           const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
           
           if (authError) {
@@ -91,8 +99,6 @@ export const useUsersStore = create<UsersState>()(
               return;
            }
            
-           // Deleting a user requires admin privileges and is best done via a server-side function.
-           // This is a placeholder for a more secure implementation.
            const { error } = await supabase.auth.admin.deleteUser(userId);
            
             if (error) {
@@ -102,10 +108,24 @@ export const useUsersStore = create<UsersState>()(
                 await get().fetchUsers();
             }
       },
+
+      ensureAdminUser: () => {
+        set(produce(state => {
+          const adminExists = state.users.some(u => u.email === localAdmin.email);
+          if (!adminExists) {
+            state.users.push(localAdmin);
+          }
+        }));
+      }
     }),
     {
       name: 'users-storage',
       storage: createJSONStorage(() => localStorage),
+       onRehydrateStorage: () => (state, error) => {
+        if (state) {
+          state.ensureAdminUser();
+        }
+      }
     }
   )
 );
