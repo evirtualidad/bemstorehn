@@ -2,7 +2,6 @@
 'use client';
 
 import { create } from 'zustand';
-import { useUsersStore } from './use-users-store';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 export type UserRole = 'admin' | 'cajero';
@@ -21,6 +20,24 @@ type AuthState = {
   setHasHydrated: (state: boolean) => void;
 };
 
+// --- SIMULATED USER DATABASE ---
+// This is now the single source of truth for the login function.
+// It is completely independent of the user management page for stability.
+const hardcodedUsers = [
+    {
+        uid: 'admin_user_id_simulated',
+        email: 'admin@bemstore.hn',
+        password: 'password',
+        role: 'admin' as UserRole,
+    },
+    {
+        uid: 'cashier_user_id_simulated',
+        email: 'cajero@bemstore.hn',
+        password: 'password',
+        role: 'cajero' as UserRole,
+    }
+];
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -33,11 +50,9 @@ export const useAuthStore = create<AuthState>()(
         });
       },
       login: (email, password) => {
-        // This function now directly uses the other store's state.
-        // It relies on the UI waiting for hydration before calling it.
-        const users = useUsersStore.getState().users;
-        
-        const foundUser = users.find(
+        // This function now uses the simple, hardcoded list above.
+        // This eliminates all race conditions with the user management store.
+        const foundUser = hardcodedUsers.find(
           u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
         );
 
@@ -46,9 +61,9 @@ export const useAuthStore = create<AuthState>()(
             user: { uid: foundUser.uid, email: foundUser.email },
             role: foundUser.role,
           });
-          return null; // No error
+          return null; // Success
         } else {
-          return 'Correo o contraseña incorrectos.'; // Error message
+          return 'Correo o contraseña incorrectos.'; // Error
         }
       },
       logout: () => {
