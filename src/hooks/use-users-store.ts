@@ -18,6 +18,7 @@ export interface UserDoc {
 export const initialUsers: UserDoc[] = [
     { id: 'user-1-admin', email: 'evirt@bemstore.hn', role: 'admin', password: 'password' },
     { id: 'user-2-cajero', email: 'cajero@bemstore.hn', role: 'cajero', password: 'password' },
+    { id: 'admin-user', email: 'admin@bemstore.hn', role: 'admin', password: 'password' },
 ]
 
 type UsersState = {
@@ -51,7 +52,13 @@ export const useUsersStore = create<UsersState>()((set, get) => ({
 
     updateUserRole: async (userId, newRole) => {
          if (!isSupabaseConfigured) {
-            toast({ title: 'Función no disponible', description: 'La actualización de roles requiere conexión a Supabase.', variant: 'destructive'});
+            set(produce((state) => {
+                const userToUpdate = state.users.find((user) => user.id === userId);
+                if (userToUpdate) {
+                    userToUpdate.role = newRole;
+                }
+            }));
+            toast({ title: 'Rol actualizado (modo local)' });
             return;
          }
 
@@ -69,7 +76,7 @@ export const useUsersStore = create<UsersState>()((set, get) => ({
                     userToUpdate.role = newRole;
                 }
               }));
-              toast({ title: 'Rol actualizado' });
+              toast({ title: 'Rol actualizado en Supabase' });
           }
     },
     
