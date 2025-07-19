@@ -35,8 +35,8 @@ type CustomersState = {
 };
 
 export const useCustomersStore = create<CustomersState>()((set, get) => ({
-    customers: initialCustomers,
-    isLoading: false,
+    customers: [],
+    isLoading: true,
     
     fetchCustomers: async () => {
         set({ isLoading: true });
@@ -47,7 +47,7 @@ export const useCustomersStore = create<CustomersState>()((set, get) => ({
         const { data, error } = await supabase.from('customers').select('*');
         if (error) {
           toast({ title: 'Error al cargar clientes', description: error.message, variant: 'destructive' });
-          set({ customers: initialCustomers, isLoading: false });
+          set({ customers: [], isLoading: false });
         } else {
           set({ customers: data as Customer[], isLoading: false });
         }

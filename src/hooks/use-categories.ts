@@ -32,8 +32,8 @@ type CategoriesState = {
 };
 
 export const useCategoriesStore = create<CategoriesState>()((set, get) => ({
-    categories: initialCategories,
-    isLoading: false,
+    categories: [],
+    isLoading: true,
     
     fetchCategories: async () => {
         set({ isLoading: true });
@@ -44,7 +44,7 @@ export const useCategoriesStore = create<CategoriesState>()((set, get) => ({
         const { data, error } = await supabase.from('categories').select('*');
         if(error) {
             toast({ title: 'Error al cargar categorías', description: error.message, variant: 'destructive' });
-            set({ categories: initialCategories, isLoading: false });
+            set({ categories: [], isLoading: false });
         } else {
             set({ categories: data, isLoading: false });
         }

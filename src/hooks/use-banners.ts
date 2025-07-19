@@ -5,7 +5,7 @@ import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
-import { isSupabaseConfigured } from '@/lib/supabase';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 
 export interface Banner {
   id: string;
@@ -51,8 +51,8 @@ type BannersState = {
 
 
 export const useBannersStore = create<BannersState>()((set) => ({
-    banners: initialBanners,
-    isLoading: false,
+    banners: [],
+    isLoading: true,
     
     fetchBanners: async () => {
         set({ isLoading: true });
@@ -61,8 +61,14 @@ export const useBannersStore = create<BannersState>()((set) => ({
           set({ banners: initialBanners, isLoading: false });
           return;
         }
-        // Placeholder for fetching from Supabase in the future if needed
-        set({ banners: initialBanners, isLoading: false });
+        
+        const { data, error } = await supabase.from('banners').select('*');
+         if (error) {
+            toast({ title: 'Error al cargar banners', description: error.message, variant: 'destructive'});
+            set({ banners: [], isLoading: false });
+        } else {
+            set({ banners: data, isLoading: false });
+        }
     },
 
     addBanner: async (bannerData) => {

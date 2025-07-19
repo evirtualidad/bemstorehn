@@ -67,8 +67,8 @@ type OrdersState = {
 };
 
 export const useOrdersStore = create<OrdersState>()((set, get) => ({
-    orders: initialOrders,
-    isLoading: false,
+    orders: [],
+    isLoading: true,
 
     fetchOrders: async () => {
         set({ isLoading: true });
@@ -76,10 +76,10 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
           set({ orders: initialOrders, isLoading: false });
           return;
         }
-        const { data, error } = await supabase.from('orders').select('*');
+        const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
          if (error) {
             toast({ title: 'Error al cargar pedidos', description: error.message, variant: 'destructive'});
-            set({ orders: initialOrders, isLoading: false });
+            set({ orders: [], isLoading: false });
         } else {
             set({ orders: data as any[], isLoading: false });
         }

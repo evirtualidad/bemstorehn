@@ -64,9 +64,9 @@ type ProductsState = {
 
 
 export const useProductsStore = create<ProductsState>()((set, get) => ({
-    products: initialProducts,
-    featuredProducts: initialProducts.filter(p => p.featured),
-    isLoading: false,
+    products: [],
+    featuredProducts: [],
+    isLoading: true,
 
     fetchProducts: async () => {
         set({ isLoading: true });
@@ -78,10 +78,10 @@ export const useProductsStore = create<ProductsState>()((set, get) => ({
             });
             return;
         }
-        const { data, error } = await supabase.from('products').select('*');
+        const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
         if (error) {
             toast({ title: 'Error al cargar productos', description: error.message, variant: 'destructive'});
-            set({ products: initialProducts, isLoading: false });
+            set({ products: [], featuredProducts: [], isLoading: false });
         } else {
             set({ 
               products: data as Product[],
