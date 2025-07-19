@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import { produce } from 'immer';
 import { toast } from './use-toast';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { useAuthStore } from './use-auth-store';
 
 export type UserRole = 'admin' | 'cajero';
 
@@ -30,7 +31,7 @@ type UsersState = {
 };
 
 export const useUsersStore = create<UsersState>()((set, get) => ({
-    users: initialUsers,
+    users: [],
     isLoading: false,
     
     fetchUsers: async () => {
@@ -51,34 +52,45 @@ export const useUsersStore = create<UsersState>()((set, get) => ({
     },
 
     updateUserRole: async (userId, newRole) => {
-         if (!isSupabaseConfigured) {
+        const { user: currentUser } = useAuthStore.getState();
+        if (currentUser?.id === userId) {
+            toast({ title: 'Acción no permitida', description: 'No puedes cambiar tu propio rol.', variant: 'destructive'});
+            return;
+        }
+
+        if (!isSupabaseConfigured) {
+            toast({ title: 'Función no disponible', description: 'Se requiere Supabase para cambiar roles.', variant: 'destructive'});
+            // For local mode, we can optimistically update
             set(produce((state) => {
                 const userToUpdate = state.users.find((user) => user.id === userId);
                 if (userToUpdate) {
                     userToUpdate.role = newRole;
                 }
             }));
-            toast({ title: 'Rol actualizado (modo local)' });
             return;
-         }
+        }
+        
+        // Step 1: Call the Supabase RPC function
+        const { error } = await supabase.rpc('update_user_role', {
+            user_id: userId,
+            new_role: newRole,
+        });
 
-          const { error } = await supabase.rpc('update_user_role', {
-              user_id: userId,
-              new_role: newRole,
-          });
-          
-          if (error) {
-              toast({ title: 'Error al actualizar rol', description: error.message, variant: 'destructive' });
-              return;
-          }
-          
-          set(produce((state) => {
+        // Step 2: Handle errors
+        if (error) {
+            toast({ title: 'Error al actualizar rol', description: `Supabase: ${error.message}`, variant: 'destructive' });
+            return;
+        }
+
+        // Step 3: If successful, update the local state
+        set(produce((state) => {
             const userToUpdate = state.users.find((user) => user.id === userId);
             if (userToUpdate) {
                 userToUpdate.role = newRole;
             }
-          }));
-          toast({ title: 'Rol actualizado', description: 'El rol del usuario ha sido guardado en Supabase.' });
+        }));
+
+        toast({ title: '¡Rol Actualizado!', description: `El rol del usuario ha sido cambiado a ${newRole}.` });
     },
     
     deleteUser: async (userId: string) => {
