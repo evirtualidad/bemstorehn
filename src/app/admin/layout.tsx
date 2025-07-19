@@ -142,31 +142,22 @@ function AdminLayoutContent({
   const DesktopNavItem = ({ item }: { item: any }) => {
     const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
     return (
-     <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            asChild
-            variant={isActive ? 'secondary' : 'ghost'}
-            className="justify-start relative"
-            onClick={item.action ? () => item.action() : undefined}
-          >
-            <Link href={item.href} className="flex items-center">
-              <item.icon className="h-5 w-5" />
-              <span className="sr-only lg:not-sr-only lg:ml-2">{item.label}</span>
-               {item.badge && (
-                <Badge className={cn("absolute -top-2 -right-2 lg:static lg:ml-auto flex items-center justify-center")}>
-                  {item.badge}
-                </Badge>
-              )}
-            </Link>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="lg:hidden">
-          <p>{item.label}</p>
-        </TooltipContent>
-      </Tooltip>
-     </TooltipProvider>
+      <Button
+        asChild
+        variant={isActive ? 'secondary' : 'ghost'}
+        className="justify-start relative"
+        onClick={item.action ? () => item.action() : undefined}
+      >
+        <Link href={item.href} className="flex items-center gap-2">
+          <item.icon className="h-5 w-5" />
+          <span className="md:hidden lg:inline">{item.label}</span>
+           {item.badge && (
+            <Badge className={cn("absolute -top-2 -right-2 md:static md:ml-auto flex items-center justify-center")}>
+              {item.badge}
+            </Badge>
+          )}
+        </Link>
+      </Button>
     )
   };
   
