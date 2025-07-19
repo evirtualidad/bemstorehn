@@ -1,4 +1,4 @@
-import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesBrowserClient, type SupabaseClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/lib/database.types';
 
 // NOTE: This file is now used to initialize the Supabase client.
@@ -7,11 +7,18 @@ import type { Database } from '@/lib/database.types';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Supabase URL and Anon Key are required. Please check your .env file.");
+let supabase: SupabaseClient<Database>;
+
+if (supabaseUrl && supabaseAnonKey) {
+  supabase = createPagesBrowserClient<Database>({
+    supabaseUrl,
+    supabaseKey: supabaseAnonKey,
+  });
+} else {
+  console.warn("Supabase credentials are not set. App will run in a simulated/local mode.");
+  // Assign a mock object if Supabase is not configured to avoid runtime errors
+  supabase = {} as SupabaseClient<Database>;
 }
 
-export const supabase = createPagesBrowserClient<Database>({
-  supabaseUrl,
-  supabaseKey: supabaseAnonKey,
-});
+
+export { supabase };
