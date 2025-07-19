@@ -88,7 +88,7 @@ export const useUsersStore = create<UsersState>()(
             if (error) {
                 toast({ title: 'Error al eliminar usuario', description: error.message, variant: 'destructive' });
             } else {
-                toast({ title: 'Usuario eliminado de la lista', description: 'La cuenta de autenticación debe ser eliminada manualmente en Supabase.', variant: 'default' });
+                toast({ title: 'Usuario eliminado de la lista', description: 'La cuenta de autenticación debe ser eliminada manually en Supabase.', variant: 'default' });
                 await get().fetchUsers();
             }
       },
