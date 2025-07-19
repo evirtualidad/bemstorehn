@@ -56,7 +56,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   }
   
   return (
-    <div className="bg-muted min-h-screen">
+    <div className="bg-muted h-screen overflow-hidden">
       <ProductHeader />
       
       {/* Product Image Section */}
@@ -126,3 +126,4 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     </div>
   );
 }
+
