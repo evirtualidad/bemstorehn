@@ -39,6 +39,13 @@ const initialUsers: UserDoc[] = [
         password: 'password',
         role: 'cajero',
         created_at: { seconds: Math.floor(new Date().getTime() / 1000) - 172800, nanoseconds: 0 }
+    },
+    {
+        uid: 'evirt_user_id_simulated',
+        email: 'evirt@bemstore.hn',
+        password: 'password',
+        role: 'admin',
+        created_at: { seconds: Math.floor(new Date().getTime() / 1000) - 172800, nanoseconds: 0 }
     }
 ];
 
@@ -54,7 +61,7 @@ type UsersState = {
 export const useUsersStore = create<UsersState>()(
   persist(
     (set) => ({
-      users: initialUsers,
+      users: [],
       _hasHydrated: false,
       setHasHydrated: (state) => {
         set({
@@ -101,9 +108,13 @@ export const useUsersStore = create<UsersState>()(
     {
       name: 'users-storage',
       storage: createJSONStorage(() => localStorage),
-      onRehydrateStorage: () => (state) => {
+      onRehydrateStorage: () => (state, error) => {
         if (state) {
-            state.setHasHydrated(true);
+          if (error || !state.users || state.users.length === 0) {
+            // If storage is empty or there was an error, initialize with default users
+            state.users = initialUsers;
+          }
+          state.setHasHydrated(true);
         }
       },
     }
