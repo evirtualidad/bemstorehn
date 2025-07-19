@@ -60,9 +60,9 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       <ProductHeader />
       
       {/* Main content */}
-      <div>
+      <div className="pb-28">
         {/* Product Image Section */}
-        <div className="relative w-full h-[400px] flex-shrink-0">
+        <div className="relative w-full h-[60vh] flex-shrink-0">
           <Image
               src={product.image || 'https://placehold.co/600x600.png'}
               alt={product.name}
@@ -83,7 +83,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         </div>
 
         {/* Product Details Section */}
-        <div className="bg-card rounded-t-3xl z-10 relative -mt-5 p-6 pb-28">
+        <div className="bg-card rounded-t-3xl z-10 relative -mt-5 p-6">
           <div className="flex justify-between items-start">
               <div>
                   <h1 className="text-2xl font-bold">{product.name}</h1>
