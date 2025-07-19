@@ -24,7 +24,7 @@ export function ProductCard({
   const { currency } = useCurrencyStore();
   const { addToCart } = useCart();
   const { toast } = useToast();
-  const isDiscounted = product.originalPrice && product.originalPrice > product.price;
+  const isDiscounted = product.original_price && product.original_price > product.price;
 
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -76,7 +76,7 @@ export function ProductCard({
                 </p>
                 {isDiscounted && (
                     <p className="text-sm text-muted-foreground line-through">
-                        {formatCurrency(product.originalPrice!, currency.code)}
+                        {formatCurrency(product.original_price!, currency.code)}
                     </p>
                 )}
             </div>

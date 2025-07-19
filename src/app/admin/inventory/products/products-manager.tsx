@@ -77,7 +77,7 @@ export function ProductsManager() {
     const newProductData = {
         ...restOfValues,
         price: Number(values.price),
-        originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,
+        original_price: values.original_price ? Number(values.original_price) : undefined,
         stock: Number(values.stock),
         featured: values.featured,
         aiHint: values.aiHint,
@@ -112,7 +112,7 @@ export function ProductsManager() {
       image: imageUrl, // Pass original or placeholder image URL
       imageFile: imageFile, // Pass new file if it exists
       price: Number(values.price),
-      originalPrice: values.originalPrice ? Number(values.originalPrice) : undefined,
+      original_price: values.original_price ? Number(values.original_price) : undefined,
       stock: Number(values.stock),
       featured: values.featured,
     } as any);
@@ -247,7 +247,7 @@ export function ProductsManager() {
             </TableHeader>
             <TableBody>
               {products.map((product) => {
-                const isDiscounted = product.originalPrice && product.originalPrice > product.price;
+                const isDiscounted = product.original_price && product.original_price > product.price;
                 return (
                   <TableRow key={product.id}>
                     <TableCell className="hidden sm:table-cell">
@@ -275,7 +275,7 @@ export function ProductsManager() {
                             </span>
                             {isDiscounted && (
                               <span className="text-xs text-muted-foreground line-through">
-                                {formatCurrency(product.originalPrice!, currency.code)}
+                                {formatCurrency(product.original_price!, currency.code)}
                               </span>
                             )}
                         </div>

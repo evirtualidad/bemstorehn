@@ -5,7 +5,7 @@ export type Product = {
   image: string;
   aiHint?: string;
   price: number;
-  originalPrice?: number;
+  original_price?: number;
   description: string;
   category: string; 
   stock: number;

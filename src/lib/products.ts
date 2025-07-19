@@ -6,7 +6,7 @@ export type Product = {
   image: string;
   aiHint?: string;
   price: number;
-  originalPrice?: number;
+  original_price?: number;
   description: string;
   category: string; 
   stock: number;
@@ -28,7 +28,7 @@ export const products: Product[] = [
       "image": "https://placehold.co/400x400.png",
       "aiHint": "skincare serum",
       "price": 650,
-      "originalPrice": 750,
+      "original_price": 750,
       "description": "Un suero ligero que repone la hidratación y restaura la luminosidad para una piel de aspecto saludable.",
       "category": "skincare",
       "stock": 50,
@@ -81,7 +81,7 @@ export const products: Product[] = [
       "image": "https://placehold.co/400x400.png",
       "aiHint": "eyeshadow palette",
       "price": 950,
-      "originalPrice": 1100,
+      "original_price": 1100,
       "description": "12 tonos cálidos y vibrantes con acabados mate y satinado para looks espectaculares.",
       "category": "makeup",
       "stock": 25,

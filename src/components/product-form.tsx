@@ -37,7 +37,7 @@ export const productFormSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
   description: z.string().min(10, 'La descripción debe tener al menos 10 caracteres.'),
   price: z.coerce.number().positive('El precio debe ser un número positivo.'),
-  originalPrice: z.coerce.number().positive('El precio debe ser un número positivo.').optional().or(z.literal('')),
+  original_price: z.coerce.number().positive('El precio debe ser un número positivo.').optional().or(z.literal('')),
   stock: z.coerce.number().int().min(0, 'El stock no puede ser negativo.'),
   category: z.string({ required_error: 'Debes seleccionar una categoría.' }),
   image: z.any().optional().refine(file => {
@@ -51,7 +51,7 @@ export const productFormSchema = z.object({
   featured: z.boolean().default(false),
   aiHint: z.string().optional(),
 }).refine(data => {
-    if (data.originalPrice && data.price >= data.originalPrice) {
+    if (data.original_price && data.price >= data.original_price) {
       return false;
     }
     return true;
@@ -83,7 +83,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
       name: product?.name || '',
       description: product?.description || '',
       price: product?.price || 0,
-      originalPrice: product?.originalPrice || '',
+      original_price: product?.original_price || '',
       stock: product?.stock || 0,
       category: product?.category || '',
       image: product?.image || undefined,
@@ -206,7 +206,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
           />
           <FormField
             control={form.control}
-            name="originalPrice"
+            name="original_price"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Precio Original</FormLabel>
