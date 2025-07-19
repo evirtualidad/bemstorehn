@@ -3,7 +3,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { useUsersStore } from './use-users-store';
+import type { UserDoc } from './use-users-store';
 
 export type UserRole = 'admin' | 'cajero';
 
@@ -15,10 +15,8 @@ export interface LocalUser {
 type AuthState = {
   user: LocalUser | null;
   role: UserRole | null;
-  _hasHydrated: boolean;
   login: (email: string, password: string) => string | null;
   logout: () => void;
-  setHasHydrated: (state: boolean) => void;
 };
 
 
@@ -27,30 +25,35 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       role: null,
-      _hasHydrated: false,
-      setHasHydrated: (state) => {
-        set({
-          _hasHydrated: state,
-        });
-      },
       login: (email, password) => {
-        // This is the definitive fix.
-        // It directly gets the current state from the usersStore,
-        // which includes any newly created users. This avoids all race conditions.
-        const users = useUsersStore.getState().users;
-        
-        const foundUser = users.find(
-          u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-        );
+        // This is the definitive fix. Instead of relying on a potentially
+        // non-hydrated state from another store, we read directly from the
+        // source of truth: localStorage.
+        try {
+          const usersStorage = localStorage.getItem('users-storage');
+          if (!usersStorage) {
+            return 'Error interno: no se pudo encontrar el almacenamiento de usuarios.';
+          }
+          
+          const storedData = JSON.parse(usersStorage);
+          const users: UserDoc[] = storedData?.state?.users || [];
 
-        if (foundUser) {
-          set({
-            user: { uid: foundUser.uid, email: foundUser.email },
-            role: foundUser.role,
-          });
-          return null; // Success
-        } else {
-          return 'Correo o contraseña incorrectos.'; // Error
+          const foundUser = users.find(
+            u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+          );
+
+          if (foundUser) {
+            set({
+              user: { uid: foundUser.uid, email: foundUser.email },
+              role: foundUser.role,
+            });
+            return null; // Success
+          } else {
+            return 'Correo o contraseña incorrectos.'; // Error
+          }
+        } catch (error) {
+            console.error("Failed to parse user storage:", error);
+            return 'Error al leer los datos de usuario.';
         }
       },
       logout: () => {
@@ -60,11 +63,6 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => localStorage),
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-            state.setHasHydrated(true);
-        }
-      },
     }
   )
 );
