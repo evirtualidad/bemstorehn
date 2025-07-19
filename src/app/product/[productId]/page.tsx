@@ -65,11 +65,11 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   ];
 
   return (
-    <div className="bg-muted h-screen flex flex-col">
+    <div className="bg-muted min-h-screen">
       <ProductHeader />
       
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="pb-28"> {/* Padding at the bottom to avoid content being hidden by the fixed footer */}
         {/* Product Image Section */}
         <div className="relative w-full aspect-square flex-shrink-0">
           <Image
@@ -152,7 +152,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       </div>
       
       {/* Fixed Footer / Add to Cart */}
-      <div className="flex-shrink-0 w-full bg-card border-t p-4 flex items-center justify-between gap-4">
+      <div className="fixed bottom-0 left-0 right-0 z-20 w-full bg-card border-t p-4 flex items-center justify-between gap-4">
         <div>
             <p className="text-sm text-muted-foreground">Total Price</p>
             <p className="text-2xl font-bold">{formatCurrency(product.price * quantity, currency.code)}</p>
@@ -171,3 +171,4 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     </div>
   );
 }
+
