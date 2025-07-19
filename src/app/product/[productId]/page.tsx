@@ -28,8 +28,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { currency } = useCurrencyStore();
   
   const [quantity, setQuantity] = React.useState(1);
-  const [selectedSize, setSelectedSize] = React.useState('41');
-  const [selectedColor, setSelectedColor] = React.useState('blue');
 
   const product = getProductById(productId);
 
@@ -57,13 +55,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     });
   }
   
-  const sizes = ['39', '39.5', '40', '40.5', '41'];
-  const colors = [
-      { name: 'white', class: 'bg-gray-200' },
-      { name: 'black', class: 'bg-black' },
-      { name: 'blue', class: 'bg-blue-600' }
-  ];
-
   return (
     <div className="bg-muted min-h-screen">
       <ProductHeader />
@@ -107,40 +98,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         </div>
         
         <div>
-            <h2 className="text-lg font-bold">Size</h2>
-            <div className="flex items-center gap-3 mt-2">
-                {sizes.map(size => (
-                    <Button 
-                        key={size}
-                        variant={selectedSize === size ? 'default' : 'outline'}
-                        className={cn(
-                            "rounded-full h-11 w-11 border-gray-300",
-                            selectedSize === size && "bg-black text-white"
-                        )}
-                        onClick={() => setSelectedSize(size)}
-                    >
-                        {size}
-                    </Button>
-                ))}
-            </div>
-        </div>
-        
-        <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold">Description</h2>
-            <div className="flex items-center gap-2">
-                {colors.map(color => (
-                    <button 
-                        key={color.name}
-                        className={cn(
-                            "h-7 w-7 rounded-full border-2 transition",
-                            selectedColor === color.name ? 'border-blue-500' : 'border-transparent'
-                        )}
-                        onClick={() => setSelectedColor(color.name)}
-                    >
-                        <div className={cn("h-full w-full rounded-full border-2 border-white", color.class)}></div>
-                    </button>
-                ))}
-            </div>
         </div>
 
         <p className="text-muted-foreground text-sm leading-relaxed">
