@@ -148,21 +148,21 @@ function AdminLayoutContent({
           <Button
             asChild
             variant={isActive ? 'secondary' : 'ghost'}
-            className="justify-center md:justify-start relative w-10 h-10 md:w-auto"
+            className="justify-start relative"
             onClick={item.action ? () => item.action() : undefined}
           >
-            <Link href={item.href}>
-              <item.icon className="h-5 w-5 md:mr-2" />
-              <span className="hidden md:inline">{item.label}</span>
+            <Link href={item.href} className="flex items-center">
+              <item.icon className="h-5 w-5" />
+              <span className="sr-only lg:not-sr-only lg:ml-2">{item.label}</span>
                {item.badge && (
-                <Badge className="absolute -top-2 -right-2 md:static md:ml-auto w-6 h-6 md:w-auto md:h-auto flex items-center justify-center">
+                <Badge className={cn("absolute -top-2 -right-2 lg:static lg:ml-auto flex items-center justify-center")}>
                   {item.badge}
                 </Badge>
               )}
             </Link>
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="right" className="md:hidden">
+        <TooltipContent side="bottom" className="lg:hidden">
           <p>{item.label}</p>
         </TooltipContent>
       </Tooltip>
@@ -203,13 +203,13 @@ function AdminLayoutContent({
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
-        <nav className="hidden font-medium sm:flex sm:flex-row sm:items-center sm:gap-5 sm:text-sm lg:gap-6">
+        <nav className="hidden font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
           <Link
             href="/admin/pos"
             className="flex items-center gap-2 font-semibold text-lg md:text-base text-foreground"
           >
             <Package2 className="h-6 w-6" />
-            <span className="whitespace-nowrap hidden md:inline">Cosmetica Admin</span>
+            <span className="sr-only lg:not-sr-only">Cosmetica Admin</span>
           </Link>
           <div className="flex items-center gap-1">
             {navItems.map((item) => (
@@ -222,20 +222,20 @@ function AdminLayoutContent({
             <Button
               variant="outline"
               size="icon"
-              className="shrink-0 sm:hidden"
+              className="shrink-0 md:hidden"
             >
               <Menu className="h-5 w-5" />
               <span className="sr-only">Alternar menú de navegación</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left">
-            <SheetHeader className='sr-only'>
+          <SheetContent side="left" className="p-0">
+            <SheetHeader className='p-6 pb-2 sr-only'>
                 <SheetTitle>Menú Principal</SheetTitle>
             </SheetHeader>
-            <nav className="grid gap-6 text-lg font-medium">
+            <nav className="grid gap-2 text-lg font-medium p-4">
               <Link
                 href="#"
-                className="flex items-center gap-2 text-lg font-semibold mb-4"
+                className="flex items-center gap-4 text-lg font-semibold mb-4 px-2"
               >
                 <Package2 className="h-6 w-6" />
                 <span className="whitespace-nowrap">Cosmetica Admin</span>
@@ -271,7 +271,7 @@ function AdminLayoutContent({
           </DropdownMenu>
         </div>
       </header>
-      <div className="flex-1 p-4 sm:p-6 md:p-8">
+      <div className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
         {children}
       </div>
     </div>
