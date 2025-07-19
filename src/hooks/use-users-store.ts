@@ -15,7 +15,7 @@ export interface UserDoc {
     password?: string; // Only for local fallback
 }
 
-const initialUsers: UserDoc[] = [
+export const initialUsers: UserDoc[] = [
     { id: 'user-1-admin', email: 'evirt@bemstore.hn', role: 'admin', password: 'password' },
     { id: 'user-2-cajero', email: 'cajero@bemstore.hn', role: 'cajero', password: 'password' },
 ]
