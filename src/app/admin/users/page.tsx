@@ -87,7 +87,6 @@ function CreateUserDialog() {
   const { addUser } = useUsersStore();
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof userFormSchema>>({
     resolver: zodResolver(userFormSchema),
@@ -101,9 +100,6 @@ function CreateUserDialog() {
   const onSubmit = async (values: z.infer<typeof userFormSchema>) => {
     setIsSubmitting(true);
     
-    // Simulate async operation
-    await new Promise(res => setTimeout(res, 300));
-
     addUser({
         email: values.email,
         password: values.password,

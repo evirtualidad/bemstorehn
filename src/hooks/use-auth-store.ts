@@ -2,6 +2,8 @@
 'use client';
 
 import { create } from 'zustand';
+import { useUsersStore, type UserDoc } from './use-users-store';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export type UserRole = 'admin' | 'cajero';
 
@@ -13,26 +15,57 @@ export interface LocalUser {
 type AuthState = {
   user: LocalUser | null;
   role: UserRole | null;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<string | null>;
   logout: () => Promise<void>;
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
 };
 
-// With the login system temporarily disabled, we default to a logged-in admin user
-// to allow full access to the application's features without requiring credentials.
-export const useAuthStore = create<AuthState>()((set) => ({
-    user: {
-        uid: 'default_admin_id',
-        email: 'admin@bemstore.hn'
-    },
-    role: 'admin',
-    login: async (email, password) => {
-        console.log("Login function is disabled.");
-        return "Login system is currently disabled.";
-    },
-    logout: async () => {
-        console.log("Logout function is disabled.");
-        // In this disabled state, logout does nothing.
-        // If re-enabled, it would set user and role to null.
-        // set({ user: null, role: null });
-    },
-}));
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      role: null,
+      isLoading: true,
+      _hasHydrated: false,
+      setHasHydrated: (state) => {
+        set({
+          _hasHydrated: state,
+          isLoading: false, // Stop loading once hydrated
+        });
+      },
+      login: async (email, password) => {
+        // Use the most up-to-date state from the users store
+        const users = useUsersStore.getState().users;
+        
+        const foundUser = users.find(
+          u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+        );
+
+        if (foundUser) {
+          set({
+            user: { uid: foundUser.uid, email: foundUser.email },
+            role: foundUser.role,
+            isLoading: false,
+          });
+          return null; // No error
+        } else {
+          return 'Correo o contraseña incorrectos.'; // Error message
+        }
+      },
+      logout: async () => {
+        set({ user: null, role: null, isLoading: false });
+      },
+    }),
+    {
+      name: 'auth-storage',
+      storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+            state.setHasHydrated(true);
+        }
+      },
+    }
+  )
+);

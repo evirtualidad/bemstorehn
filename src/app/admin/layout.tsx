@@ -74,12 +74,25 @@ function AdminLayoutContent({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const orders = useOrdersStore(state => state.orders);
-  const { user, role } = useAuthStore();
+  const { user, role, isLoading, logout } = useAuthStore();
   
+  React.useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace('/login');
+    }
+  }, [user, isLoading, router]);
+
+
   const pendingApprovalCount = React.useMemo(() => {
     return orders.filter(o => o.status === 'pending-approval').length;
   }, [orders]);
+  
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
+  };
   
   const allNavItems = [
     { href: '/admin/dashboard', icon: Activity, label: 'Dashboard', roles: ['admin', 'cajero'] },
@@ -148,7 +161,7 @@ function AdminLayoutContent({
     )
   };
 
-  if (!user) {
+  if (isLoading || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingSpinner />
@@ -218,6 +231,11 @@ function AdminLayoutContent({
               <DropdownMenuLabel>Mi Cuenta ({role})</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem disabled>{user?.email}</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Cerrar Sesión
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

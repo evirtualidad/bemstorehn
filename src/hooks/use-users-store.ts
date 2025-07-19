@@ -28,7 +28,7 @@ const initialUsers: UserDoc[] = [
     },
     {
         uid: 'cashier_user_id_simulated',
-        email: 'cashier@bemstore.hn',
+        email: 'cajero@bemstore.hn',
         password: 'password',
         role: 'cajero',
         created_at: { seconds: Math.floor(new Date().getTime() / 1000) - 172800, nanoseconds: 0 }
@@ -41,13 +41,22 @@ type UsersState = {
   addUser: (userData: Omit<UserDoc, 'uid' | 'created_at'>) => void;
   updateUserRole: (uid: string, newRole: 'admin' | 'cajero') => void;
   deleteUser: (uid: string) => void;
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
 };
 
 export const useUsersStore = create<UsersState>()(
   persist(
     (set) => ({
       users: initialUsers,
-      isLoading: false,
+      isLoading: true,
+      _hasHydrated: false,
+      setHasHydrated: (state) => {
+        set({
+          _hasHydrated: state,
+          isLoading: false,
+        });
+      },
 
       addUser: (userData) => {
         const newUser: UserDoc = {
@@ -88,6 +97,11 @@ export const useUsersStore = create<UsersState>()(
     {
       name: 'users-storage',
       storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+            state.setHasHydrated(true);
+        }
+      },
     }
   )
 );
