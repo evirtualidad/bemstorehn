@@ -35,34 +35,44 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           set({ isAuthLoading: false });
           return;
         }
-        
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            if (session) {
-                const userRole = (session.user.user_metadata?.role as UserRole) || 'cajero';
-                set({ 
-                    user: { id: session.user.id, email: session.user.email || '', role: userRole },
-                    role: userRole,
-                    isAuthLoading: false 
-                });
+
+        const fetchUserProfile = async (session: Session | null) => {
+            if (session?.user) {
+                const { data: userProfile, error } = await supabase
+                    .from('users')
+                    .select('id, email, role')
+                    .eq('id', session.user.id)
+                    .single();
+                
+                if (error) {
+                    console.error("Error fetching user profile:", error);
+                    set({ user: null, role: null, isAuthLoading: false });
+                    return;
+                }
+                
+                if(userProfile) {
+                    console.log("User role fetched from DB:", userProfile.role);
+                    set({
+                        user: userProfile as UserDoc,
+                        role: userProfile.role as UserRole,
+                        isAuthLoading: false
+                    });
+                } else {
+                     set({ user: null, role: null, isAuthLoading: false });
+                }
+
             } else {
                 set({ user: null, role: null, isAuthLoading: false });
             }
+        };
+        
+        supabase.auth.onAuthStateChange(async (_event, session) => {
+            await fetchUserProfile(session);
         });
         
         supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session) {
-                const userRole = (session.user.user_metadata?.role as UserRole) || 'cajero';
-                set({ 
-                    user: { id: session.user.id, email: session.user.email || '', role: userRole },
-                    role: userRole, 
-                });
-            }
-            set({ isAuthLoading: false });
+            fetchUserProfile(session);
         });
-
-        return () => {
-            subscription?.unsubscribe();
-        };
     },
 
     login: async (email, password) => {
@@ -91,10 +101,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     },
 
     logout: async () => {
-        set({ user: null, role: null, isAuthLoading: false });
         if (isSupabaseConfigured) {
             await supabase.auth.signOut();
         }
+        // The onAuthStateChange listener will handle setting the state to null
+        set({ user: null, role: null, isAuthLoading: false });
     },
     
     createUser: async (email, password, role) => {
@@ -103,23 +114,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             return 'Supabase no configurado.';
         }
         
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
+        const { data, error } = await supabase.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: { role }
         });
 
-        if (signUpError) {
-            return signUpError.message;
-        }
-        
-        if (signUpData.user) {
-             const { error: updateError } = await supabase.auth.admin.updateUserById(
-                signUpData.user.id,
-                { user_metadata: { role: role } }
-             )
-             if (updateError) {
-                 return `User created but failed to set role: ${updateError.message}`;
-             }
+        if (error) {
+            return error.message;
         }
         
         // Use a timeout to allow Supabase to process the new user before refetching
