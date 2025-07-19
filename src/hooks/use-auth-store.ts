@@ -103,20 +103,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             return 'Supabase no configurado.';
         }
         
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
-          options: {
-            data: {
-              role: role,
-            }
-          }
         });
 
-        if (error) {
-            return error.message;
+        if (signUpError) {
+            return signUpError.message;
         }
         
+        if (signUpData.user) {
+             const { error: updateError } = await supabase.auth.admin.updateUserById(
+                signUpData.user.id,
+                { user_metadata: { role: role } }
+             )
+             if (updateError) {
+                 return `User created but failed to set role: ${updateError.message}`;
+             }
+        }
+        
+        // Use a timeout to allow Supabase to process the new user before refetching
         setTimeout(() => useUsersStore.getState().fetchUsers(), 2000);
         
         return null;
