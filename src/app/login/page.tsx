@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import { Loader2, Leaf } from 'lucide-react';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const loginFormSchema = z.object({
   email: z.string().email({ message: 'Por favor, ingresa un correo válido.' }),
