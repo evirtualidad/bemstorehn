@@ -23,26 +23,15 @@ type AuthState = {
 
 /**
  * Gets the user role ONLY from the session's JWT metadata.
- * This is the safest way to get the role on the client-side, as it doesn't
- * trigger RLS policies that might cause infinite recursion.
+ * This is the safest way to get the role on the client-side.
  * @param session The Supabase session object.
  * @returns The user role or null if not found.
  */
-async function getUserRole(session: Session | null): Promise<UserRole | null> {
+function getUserRoleFromSession(session: Session | null): UserRole | null {
     if (!session?.user?.id) {
         return null;
     }
-
-    const roleFromMetadata = session.user.user_metadata?.role as UserRole;
-    
-    if (roleFromMetadata) {
-        return roleFromMetadata;
-    }
-
-    // If role is not in metadata, we cannot trust this session for roles.
-    // The user will need to log out and log in again for the trigger to update their metadata.
-    console.warn(`Role for user ${session.user.email} not found in JWT metadata. The user should sign out and sign back in.`);
-    return null;
+    return (session.user.user_metadata?.role as UserRole) || null;
 }
 
 
@@ -60,11 +49,11 @@ export const useAuthStore = create<AuthState>()(
           return;
         }
         
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
           if (session) {
-              const userRole = await getUserRole(session);
+              const userRole = getUserRoleFromSession(session);
               set({ 
-                  user: { id: session.user.id, email: session.user.email || '', role: userRole || 'cajero' }, // Default to least privileged role if null
+                  user: { id: session.user.id, email: session.user.email || '', role: userRole || 'cajero' }, 
                   role: userRole, 
                   isLoading: false 
               });
@@ -73,9 +62,9 @@ export const useAuthStore = create<AuthState>()(
           }
         });
         
-        supabase.auth.getSession().then(async ({ data: { session } }) => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
           if (session) {
-              const userRole = await getUserRole(session);
+              const userRole = getUserRoleFromSession(session);
               set({ 
                   user: { id: session.user.id, email: session.user.email || '', role: userRole || 'cajero' },
                   role: userRole, 
@@ -110,7 +99,7 @@ export const useAuthStore = create<AuthState>()(
             return error.message;
           }
           
-          // The onAuthStateChange listener will handle setting the user state.
+          // The onAuthStateChange listener will handle setting the user state and isLoading to false.
           // We explicitly refresh to get the latest JWT with metadata.
           await supabase.auth.refreshSession();
           return null;
@@ -132,32 +121,25 @@ export const useAuthStore = create<AuthState>()(
               return 'Supabase no configurado.';
           }
           
-          // We pass the role in the metadata during sign-up. The trigger will handle the rest.
-          const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+          // The database trigger `handle_new_user` handles creating the profile and setting metadata.
+          const { error } = await supabase.auth.signUp({
             email,
             password,
           });
 
-          if (signUpError) {
-              return signUpError.message;
-          }
-
-          if (!user) {
-              return 'No se pudo crear el usuario en el sistema de autenticación.';
+          if (error) {
+              return error.message;
           }
           
-          // The database trigger `handle_new_user` is now the single source of truth for creating the profile in public.users
-          // and setting the role in auth.users metadata. We don't need to do anything else on the client.
-          
-          // Refresh the user list in the UI after a short delay to allow the trigger to complete.
+          // The trigger should handle everything. We just need to refresh the user list in the UI.
           setTimeout(() => useUsersStore.getState().fetchUsers(), 2000);
           
           return null; // Success
       }
     }),
     {
-      name: 'auth-storage',
-      storage: createJSONStorage(() => sessionStorage), 
+      name: 'auth-storage-v3', // Incremented version to clear old state
+      storage: createJSONStorage(() => localStorage), 
     }
   )
 );
