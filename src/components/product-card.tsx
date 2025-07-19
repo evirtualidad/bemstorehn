@@ -39,7 +39,7 @@ export function ProductCard({
 
   const isDiscounted = product.originalPrice && product.originalPrice > product.price;
 
-  const handleAddToCartClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleAddToCartClick = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -106,8 +106,11 @@ export function ProductCard({
   );
 
   return (
-    <div {...props} className={cn("group", className)}
-        onClick={useLink ? undefined : () => handleAddToCartClick({} as React.MouseEvent<HTMLButtonElement>)}
+    <div 
+      {...props} 
+      className={cn("group", className)}
+      onClick={useLink ? undefined : (e) => handleAddToCartClick(e)}
+      style={!useLink ? { cursor: 'pointer' } : {}}
     >
         {useLink ? (
              <Link href={`/product/${product.id}`} className="block">

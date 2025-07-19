@@ -36,7 +36,7 @@ export function ProductGrid({ products }: ProductGridProps) {
           key={product.id} 
           product={product} 
           onAddToCart={handleAddToCart}
-          useLink={false} // For POS, card click adds to cart, button does too. No linking.
+          useLink={false} // For POS, clicking the card adds to cart.
         />
       ))}
     </div>
