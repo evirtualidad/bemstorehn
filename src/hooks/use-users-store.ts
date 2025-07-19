@@ -51,6 +51,7 @@ const initialUsers: UserDoc[] = [
 
 type UsersState = {
   users: UserDoc[];
+  isLoading: boolean;
   _hasHydrated: boolean;
   addUser: (userData: Omit<UserDoc, 'uid' | 'created_at'>) => void;
   updateUserRole: (uid: string, newRole: 'admin' | 'cajero') => void;
@@ -62,6 +63,7 @@ export const useUsersStore = create<UsersState>()(
   persist(
     (set) => ({
       users: [],
+      isLoading: false,
       _hasHydrated: false,
       setHasHydrated: (state) => {
         set({
@@ -111,7 +113,6 @@ export const useUsersStore = create<UsersState>()(
       onRehydrateStorage: () => (state, error) => {
         if (state) {
           if (error || !state.users || state.users.length === 0) {
-            // If storage is empty or there was an error, initialize with default users
             state.users = initialUsers;
           }
           state.setHasHydrated(true);
