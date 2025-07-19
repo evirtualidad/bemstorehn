@@ -71,9 +71,21 @@ export function ProductCard({
             data-ai-hint={product.aiHint}
             />
             {isDiscounted && (
-            <Badge variant="destructive" className="absolute top-2 left-2 rounded-full">
+            <Badge variant="offer" className="absolute top-2 left-2 rounded-full">
                 Oferta
             </Badge>
+            )}
+            {isPos && (
+                 <Badge 
+                    variant={product.stock <= 0 ? 'destructive' : product.stock < 10 ? 'secondary' : 'default'}
+                    className={cn(
+                        "absolute top-2 right-2 rounded-full",
+                        product.stock > 0 && product.stock < 10 && "bg-amber-400 text-amber-900 border-amber-400",
+                        product.stock > 9 && "bg-green-100 text-green-900 border-green-100"
+                    )}
+                >
+                    Stock: {product.stock}
+                </Badge>
             )}
         </div>
         </div>
