@@ -25,10 +25,10 @@ async function getUserRole(userId: string): Promise<UserRole | null> {
     if (!isSupabaseConfigured) return 'admin'; 
 
     const { data, error } = await supabase
-        .from('roles')
+        .from('users')
         .select('role')
         .eq('id', userId)
-        .maybeSingle(); 
+        .single();
 
     if (error) {
         console.error('Error fetching user role:', error.message);
@@ -49,9 +49,12 @@ export const useAuthStore = create<AuthState>()(
 
       initializeSession: () => {
         if (!isSupabaseConfigured) {
-          console.log("Running in local mode. Supabase not configured.");
+          // This part is for local/demo mode without Supabase connection
           const localUsersStore = useUsersStore.getState();
-          localUsersStore.ensureAdminUser();
+          const adminUser = localUsersStore.users.find(u => u.role === 'admin');
+          if (!get().user && adminUser) {
+             // To be implemented: auto-login for local mode if needed
+          }
           set({ isLoading: false });
           return;
         }
@@ -60,7 +63,7 @@ export const useAuthStore = create<AuthState>()(
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
           if (session) {
               const userRole = await getUserRole(session.user.id);
-              const finalRole = userRole || 'admin';
+              const finalRole = userRole || 'admin'; // Default to admin if role not found
               set({ 
                   user: { id: session.user.id, email: session.user.email || '', role: finalRole },
                   role: finalRole, 
@@ -93,13 +96,13 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (email, password) => {
           if (!isSupabaseConfigured) {
-            const users = useUsersStore.getState().users;
-            const foundUser = users.find(u => u.email === email && (u as any).password === password);
-            if (foundUser) {
-                set({ user: foundUser, role: foundUser.role, isLoading: false });
-                return null;
-            }
-            return "Credenciales inválidas (local)";
+              const users = useUsersStore.getState().users;
+              const foundUser = users.find(u => u.email === email && (u as any).password === password);
+              if (foundUser) {
+                  set({ user: foundUser, role: foundUser.role, isLoading: false });
+                  return null;
+              }
+              return "Credenciales inválidas (local)";
           }
           
           set({ isLoading: true });
@@ -110,6 +113,7 @@ export const useAuthStore = create<AuthState>()(
             return error.message; // Return the actual error message from Supabase
           }
           
+          // The onAuthStateChange listener will handle setting the user state.
           return null;
       },
 
@@ -129,25 +133,30 @@ export const useAuthStore = create<AuthState>()(
               return 'Supabase no configurado.';
           }
 
-          // Use a temporary admin client to create the user without email confirmation
-          const { data, error: signUpError } = await supabase.auth.admin.createUser({
+          // We use an Edge Function to create the user and assign the role in a single, secure transaction.
+          // For simplicity in this environment, we'll try to create the user and then set the role.
+          // This is not ideal for production as it's not atomic.
+
+          const { data: authData, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
-            email_confirm: true, // User is confirmed automatically
           });
-          
+
           if (signUpError) {
               return signUpError.message;
           }
 
-          if (data.user) {
+          if (authData.user) {
+              // The trigger in Supabase should handle creating the user in the public.users table.
+              // We just need to update their role.
               const { error: roleError } = await supabase
-                  .from('roles')
-                  .insert({ id: data.user.id, role: role });
+                  .from('users')
+                  .update({ role: role })
+                  .eq('id', authData.user.id);
               
               if (roleError) {
                   // Attempt to delete the auth user if role assignment fails
-                  await supabase.auth.admin.deleteUser(data.user.id);
+                  await supabase.auth.admin.deleteUser(authData.user.id);
                   return "Error al asignar rol. El usuario no fue creado. Por favor, inténtelo de nuevo.";
               }
           }
@@ -157,7 +166,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      storage: createJSONStorage(() => sessionStorage), // Use sessionStorage for Supabase to avoid conflicts
+      storage: createJSONStorage(() => sessionStorage), 
     }
   )
 );

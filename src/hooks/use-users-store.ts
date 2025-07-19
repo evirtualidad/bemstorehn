@@ -23,14 +23,6 @@ type UsersState = {
   fetchUsers: () => Promise<void>;
   updateUserRole: (userId: string, newRole: 'admin' | 'cajero') => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
-  ensureAdminUser: () => void;
-};
-
-const localAdmin: UserDoc = {
-  id: 'local-admin-id',
-  email: 'evirt@bemstore.hn',
-  password: 'password',
-  role: 'admin',
 };
 
 export const useUsersStore = create<UsersState>()(
@@ -41,37 +33,21 @@ export const useUsersStore = create<UsersState>()(
       
       fetchUsers: async () => {
           if (!isSupabaseConfigured) {
-              get().ensureAdminUser();
               set({ isLoading: false });
               return;
           }
           set({ isLoading: true });
-          const { data: rolesData, error: rolesError } = await supabase.from('roles').select('id, role');
+
+          // Fetch users from the public 'users' table
+          const { data, error } = await supabase.from('users').select('id, email, role');
           
-          if (rolesError) {
-              toast({ title: 'Error al cargar usuarios', description: rolesError.message, variant: 'destructive'});
+          if (error) {
+              toast({ title: 'Error al cargar usuarios', description: error.message, variant: 'destructive'});
               set({ isLoading: false, users: [] });
               return;
           }
 
-          const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
-          
-          if (authError) {
-              toast({ title: 'Error al cargar correos', description: authError.message, variant: 'destructive'});
-              set({ isLoading: false, users: [] });
-              return;
-          }
-
-          const combinedUsers = rolesData.map(roleInfo => {
-              const authUser = authUsers.find(u => u.id === roleInfo.id);
-              return {
-                  id: roleInfo.id,
-                  email: authUser?.email || 'No encontrado',
-                  role: roleInfo.role as UserRole
-              };
-          });
-
-          set({ users: combinedUsers, isLoading: false });
+          set({ users: data as UserDoc[], isLoading: false });
       },
 
       updateUserRole: async (userId, newRole) => {
@@ -81,7 +57,7 @@ export const useUsersStore = create<UsersState>()(
            }
 
             const { error } = await supabase
-                .from('roles')
+                .from('users')
                 .update({ role: newRole })
                 .eq('id', userId);
             
@@ -99,33 +75,21 @@ export const useUsersStore = create<UsersState>()(
               return;
            }
            
-           const { error } = await supabase.auth.admin.deleteUser(userId);
+           // You would typically call a Supabase Edge Function to delete the auth user securely.
+           // For now, we'll just delete from our public table.
+           const { error } = await supabase.from('users').delete().eq('id', userId);
            
             if (error) {
                 toast({ title: 'Error al eliminar usuario', description: error.message, variant: 'destructive' });
             } else {
-                toast({ title: 'Usuario eliminado' });
+                toast({ title: 'Usuario eliminado de la lista', description: 'La cuenta de autenticación debe ser eliminada manualmente en Supabase.', variant: 'default' });
                 await get().fetchUsers();
             }
       },
-
-      ensureAdminUser: () => {
-        set(produce(state => {
-          const adminExists = state.users.some(u => u.email === localAdmin.email);
-          if (!adminExists) {
-            state.users.push(localAdmin);
-          }
-        }));
-      }
     }),
     {
       name: 'users-storage',
       storage: createJSONStorage(() => localStorage),
-       onRehydrateStorage: () => (state, error) => {
-        if (state) {
-          state.ensureAdminUser();
-        }
-      }
     }
   )
 );
