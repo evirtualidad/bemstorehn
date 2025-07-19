@@ -1,39 +1,34 @@
 
 'use client';
 
-import { Search, ShoppingCart } from 'lucide-react';
-import Link from 'next/link';
+import { Menu, CircleUser } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/use-cart';
+import Image from 'next/image';
 
 export function Header() {
-  const { items, toggleCart } = useCart();
-  const itemCount = items.reduce((total, item) => total + item.quantity, 0);
+  const { toggleCart } = useCart();
 
   return (
-    <header className="py-4 px-4 md:px-6 bg-background/80 backdrop-blur-sm sticky top-0 z-40 border-b">
-      <div className="container mx-auto flex items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-foreground tracking-wide">
-            BEM
-          </h1>
-        </Link>
-        
-        <div className="flex items-center gap-2">
-           <Button variant="ghost" size="icon" className="relative hidden md:flex">
-              <Search className="w-5 h-5" />
-              <span className="sr-only">Buscar</span>
-            </Button>
-            <Button variant="ghost" size="icon" className="relative" onClick={toggleCart}>
-              {itemCount > 0 && (
-                <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full flex items-center justify-center bg-destructive text-destructive-foreground text-xs font-bold">
-                  {itemCount}
-                </div>
-              )}
-              <ShoppingCart className="w-5 h-5" />
-              <span className="sr-only">Carrito de Compras</span>
-            </Button>
+    <header className="px-4 pt-4 pb-2 bg-background">
+      <div className="container mx-auto flex items-center justify-between gap-4 p-0">
+        <Button variant="outline" size="icon" className="h-12 w-12 rounded-full border-2">
+            <Menu className="w-6 h-6" />
+            <span className="sr-only">Menu</span>
+        </Button>
+        <div className="h-12 w-[120px] bg-secondary rounded-lg flex items-center justify-center text-muted-foreground">
+            Logo
         </div>
+        <Button variant="ghost" size="icon" className="relative h-12 w-12 rounded-full" onClick={toggleCart}>
+            <Image 
+                src="https://placehold.co/48x48.png" 
+                alt="User Avatar"
+                width={48}
+                height={48}
+                className="rounded-full"
+                data-ai-hint="woman avatar"
+            />
+        </Button>
       </div>
     </header>
   );

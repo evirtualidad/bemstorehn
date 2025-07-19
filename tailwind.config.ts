@@ -17,7 +17,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['var(--font-body)', 'sans-serif'],
+        heading: ['var(--font-heading)', 'sans-serif'],
+        body: ['var(--font-body)', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -77,14 +78,14 @@ export default {
           },
         },
          fadeIn: {
-          from: { opacity: '0' },
-          to: { opacity: '1' },
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        'fade-in': 'fadeIn 0.5s ease-in-out',
+        'fade-in': 'fadeIn 0.5s ease-out forwards',
       },
     },
   },

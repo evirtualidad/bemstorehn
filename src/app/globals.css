@@ -1,51 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400..900;1,400..900&family=Belleza&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 224 71.4% 4.1%;
+    --background: 30 20% 98%;
+    --foreground: 20 14.3% 4.1%;
     --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
+    --card-foreground: 20 14.3% 4.1%;
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
-    --primary: 220.9 39.3% 11%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 220 14.3% 95.9%;
-    --secondary-foreground: 220.9 39.3% 11%;
-    --muted: 220 14.3% 95.9%;
-    --muted-foreground: 225.5 8.9% 43.1%;
-    --accent: 220 14.3% 95.9%;
-    --accent-foreground: 220.9 39.3% 11%;
+    --popover-foreground: 20 14.3% 4.1%;
+    --primary: 15 56% 51%; /* Dusty Rose */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 19% 95%; /* Off-White adjusted for secondary elements */
+    --secondary-foreground: 20 14.3% 4.1%;
+    --muted: 40 19% 95%;
+    --muted-foreground: 20 8.9% 43.1%;
+    --accent: 40 33% 62%; /* Soft Gold */
+    --accent-foreground: 20 14.3% 4.1%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 224 71.4% 4.1%;
-    --radius: 0.5rem;
+    --destructive-foreground: 0 0% 98%;
+    --border: 20 5.9% 90%;
+    --input: 20 5.9% 90%;
+    --ring: 15 56% 51%;
+    --radius: 0.8rem;
   }
  
   .dark {
-    --background: 224 71.4% 4.1%;
-    --foreground: 210 20% 98%;
-    --card: 224 71.4% 4.1%;
-    --card-foreground: 210 20% 98%;
-    --popover: 224 71.4% 4.1%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 210 20% 98%;
-    --primary-foreground: 220.9 39.3% 11%;
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
-    --accent: 215 27.9% 16.9%;
-    --accent-foreground: 210 20% 98%;
+    --background: 20 14.3% 4.1%;
+    --foreground: 0 0% 98%;
+    --card: 20 14.3% 4.1%;
+    --card-foreground: 0 0% 98%;
+    --popover: 20 14.3% 4.1%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 15 56% 51%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 12 6.5% 15.1%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 12 6.5% 15.1%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 40 33% 62%;
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 216 12.2% 83.9%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 12 6.5% 15.1%;
+    --input: 12 6.5% 15.1%;
+    --ring: 15 56% 51%;
   }
 }
 
@@ -55,22 +57,23 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
 @layer utilities {
   .fade-in {
-    animation: fadeIn 0.5s ease-in-out;
+    animation: fadeIn 1.5s ease-in-out forwards;
   }
-
+  
   @keyframes fadeIn {
     from {
-      opacity: 0;
-      transform: translateY(10px);
+        opacity: 0;
+        transform: translateY(10px);
     }
     to {
-      opacity: 1;
-      transform: translateY(0);
+        opacity: 1;
+        transform: translateY(0);
     }
   }
 }
