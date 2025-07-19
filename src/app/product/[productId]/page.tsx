@@ -69,7 +69,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       <ProductHeader />
       
       {/* Scrollable Content */}
-      <div className="overflow-y-auto pb-24">
+      <div className="overflow-y-auto h-screen pt-20 pb-28">
         {/* Product Image Section */}
         <div className="relative w-full aspect-square flex-shrink-0">
           <Image
