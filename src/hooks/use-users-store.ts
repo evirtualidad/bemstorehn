@@ -69,15 +69,16 @@ export const useUsersStore = create<UsersState>()((set, get) => ({
           
           if (error) {
               toast({ title: 'Error al actualizar rol', description: error.message, variant: 'destructive' });
-          } else {
-              set(produce((state) => {
-                const userToUpdate = state.users.find((user) => user.id === userId);
-                if (userToUpdate) {
-                    userToUpdate.role = newRole;
-                }
-              }));
-              toast({ title: 'Rol actualizado en Supabase' });
+              return;
           }
+          
+          set(produce((state) => {
+            const userToUpdate = state.users.find((user) => user.id === userId);
+            if (userToUpdate) {
+                userToUpdate.role = newRole;
+            }
+          }));
+          toast({ title: 'Rol actualizado', description: 'El rol del usuario ha sido guardado en Supabase.' });
     },
     
     deleteUser: async (userId: string) => {
