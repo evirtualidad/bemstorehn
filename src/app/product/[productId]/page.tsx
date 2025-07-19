@@ -15,9 +15,9 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ProductHeader } from '@/components/product-header';
 
 interface ProductDetailPageProps {
-    params: Promise<{
+    params: {
         productId: string;
-    }>
+    }
 }
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
@@ -59,10 +59,10 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     <div className="bg-muted min-h-screen">
       <ProductHeader />
       
-      {/* Main content with padding to avoid fixed footer */}
-      <div className="pb-28">
+      {/* Main content */}
+      <div>
         {/* Product Image Section */}
-        <div className="relative w-full aspect-square flex-shrink-0">
+        <div className="relative w-full h-[400px] flex-shrink-0">
           <Image
               src={product.image || 'https://placehold.co/600x600.png'}
               alt={product.name}
@@ -83,7 +83,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         </div>
 
         {/* Product Details Section */}
-        <div className="bg-card rounded-t-3xl z-10 relative -mt-5 p-6">
+        <div className="bg-card rounded-t-3xl z-10 relative -mt-5 p-6 pb-28">
           <div className="flex justify-between items-start">
               <div>
                   <h1 className="text-2xl font-bold">{product.name}</h1>
