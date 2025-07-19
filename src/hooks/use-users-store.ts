@@ -60,29 +60,19 @@ export const useUsersStore = create<UsersState>()((set, get) => ({
 
         if (!isSupabaseConfigured) {
             toast({ title: 'Función no disponible', description: 'Se requiere Supabase para cambiar roles.', variant: 'destructive'});
-            // For local mode, we can optimistically update
-            set(produce((state) => {
-                const userToUpdate = state.users.find((user) => user.id === userId);
-                if (userToUpdate) {
-                    userToUpdate.role = newRole;
-                }
-            }));
             return;
         }
         
-        // Step 1: Call the Supabase RPC function
         const { error } = await supabase.rpc('update_user_role', {
             user_id: userId,
             new_role: newRole,
         });
 
-        // Step 2: Handle errors
         if (error) {
             toast({ title: 'Error al actualizar rol', description: `Supabase: ${error.message}`, variant: 'destructive' });
             return;
         }
 
-        // Step 3: If successful, update the local state
         set(produce((state) => {
             const userToUpdate = state.users.find((user) => user.id === userId);
             if (userToUpdate) {

@@ -14,7 +14,7 @@ type AuthState = {
   isAuthLoading: boolean;
   initializeSession: () => Promise<void>;
   login: (email: string, password: string) => Promise<string | null>;
-  logout: () => void;
+  logout: () => Promise<void>;
   createUser: (email: string, password: string, role: UserRole) => Promise<string | null>;
 };
 
@@ -28,8 +28,6 @@ export const useAuthStore = create<AuthState>((set, get) => {
             const { user } = session;
             const role = (user.user_metadata?.role as UserRole) || 'cajero';
             
-            console.log("Session handled. User role from metadata:", role);
-
             set({
                 user: {
                     id: user.id,
@@ -40,7 +38,6 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 isAuthLoading: false
             });
         } else {
-            console.log("No session found.");
             set({ user: null, role: null, isAuthLoading: false });
         }
     };
@@ -58,8 +55,6 @@ export const useAuthStore = create<AuthState>((set, get) => {
             sessionInitialized = true;
             
             if (!isSupabaseConfigured) {
-              console.log("Auth: Supabase not configured. Running in local mode.");
-              // Set a default user for local development to avoid being logged out
               const localUser = initialUsers.find(u => u.email === 'evirt@bemstore.hn');
               if (localUser) {
                   set({ user: localUser, role: localUser.role, isAuthLoading: false });
