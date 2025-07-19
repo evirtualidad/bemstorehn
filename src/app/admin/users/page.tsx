@@ -283,7 +283,7 @@ export default function UsersPage() {
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                                 <AlertDialog>
-                                    <AlertDialogTrigger asChild>
+                                    <AlertDialogTrigger asChild key={user.id}>
                                         <div className={cn(
                                             "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
                                             "text-destructive focus:bg-destructive/10 focus:text-destructive"
