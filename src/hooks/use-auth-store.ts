@@ -23,32 +23,22 @@ let sessionInitialized = false;
 // --- Zustand Store Definition ---
 export const useAuthStore = create<AuthState>((set, get) => {
     
-    const fetchUserProfile = async (session: Session | null) => {
+    const handleSession = (session: Session | null) => {
         if (session?.user) {
-            const { data: userProfile, error } = await supabase
-                .from('users')
-                .select('id, email, role')
-                .eq('id', session.user.id)
-                .single();
+            const { user } = session;
+            const role = user.user_metadata?.role as UserRole || 'cajero';
             
-            if (error) {
-                console.error("Error fetching user profile:", error);
-                set({ user: null, role: null, isAuthLoading: false });
-                return;
-            }
-            
-            if(userProfile) {
-                console.log("User role fetched from DB:", userProfile.role);
-                set({
-                    user: userProfile as UserDoc,
-                    role: userProfile.role as UserRole,
-                    isAuthLoading: false
-                });
-            } else {
-                 console.warn("User profile not found for ID:", session.user.id);
-                 set({ user: null, role: null, isAuthLoading: false });
-            }
+            console.log("Session detected. User role from metadata:", role);
 
+            set({
+                user: {
+                    id: user.id,
+                    email: user.email || '',
+                    role: role,
+                },
+                role: role,
+                isAuthLoading: false
+            });
         } else {
             set({ user: null, role: null, isAuthLoading: false });
         }
@@ -69,12 +59,12 @@ export const useAuthStore = create<AuthState>((set, get) => {
               return;
             }
             
-            supabase.auth.onAuthStateChange(async (_event, session) => {
-                await fetchUserProfile(session);
+            supabase.auth.onAuthStateChange((_event, session) => {
+                handleSession(session);
             });
             
             supabase.auth.getSession().then(({ data: { session } }) => {
-                fetchUserProfile(session);
+                handleSession(session);
             });
         },
 
@@ -100,6 +90,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
               return error.message;
             }
             
+            // The onAuthStateChange listener will handle setting the user state.
             return null;
         },
 
@@ -127,7 +118,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 return error.message;
             }
             
-            setTimeout(() => useUsersStore.getState().fetchUsers(), 2000);
+            // Give Supabase a moment to process before refetching
+            setTimeout(() => useUsersStore.getState().fetchUsers(), 1500);
             
             return null;
         }
