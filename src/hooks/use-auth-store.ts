@@ -6,24 +6,18 @@ import { toast } from './use-toast';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import type { UserDoc, UserRole } from './use-users-store';
 import { useUsersStore } from './use-users-store';
+import { initialUsers } from '@/lib/users';
 import { Session } from '@supabase/supabase-js';
 
 type AuthState = {
   user: UserDoc | null;
   role: UserRole | null;
-  isLoading: boolean;
+  isAuthLoading: boolean;
   initializeSession: () => void;
   login: (email: string, password: string) => Promise<string | null>;
   logout: () => void;
   createUser: (email: string, password: string, role: UserRole) => Promise<string | null>;
 };
-
-function getUserRoleFromSession(session: Session | null): UserRole | null {
-    if (!session?.user?.id) {
-        return null;
-    }
-    return (session.user.user_metadata?.role as UserRole) || null;
-}
 
 let sessionInitialized = false;
 
@@ -31,39 +25,40 @@ let sessionInitialized = false;
 export const useAuthStore = create<AuthState>((set, get) => ({
     user: null,
     role: null,
-    isLoading: true,
+    isAuthLoading: true,
 
     initializeSession: () => {
-        if (sessionInitialized) {
-            set({ isLoading: false });
-            return;
-        }
+        if (sessionInitialized) return;
         sessionInitialized = true;
 
         if (!isSupabaseConfigured) {
           console.log("Auth: Supabase not configured. Running in local mode.");
-          set({ isLoading: false });
+          set({ isAuthLoading: false });
           return;
         }
         
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          const userRole = getUserRoleFromSession(session);
-          set({ 
-              user: session ? { id: session.user.id, email: session.user.email || '', role: userRole || 'cajero' } : null,
-              role: userRole,
-              isLoading: false 
-          });
+            if (session) {
+                const userRole = (session.user.user_metadata?.role as UserRole) || 'cajero';
+                set({ 
+                    user: { id: session.user.id, email: session.user.email || '', role: userRole },
+                    role: userRole,
+                    isAuthLoading: false 
+                });
+            } else {
+                set({ user: null, role: null, isAuthLoading: false });
+            }
         });
         
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session) {
-                const userRole = getUserRoleFromSession(session);
+                const userRole = (session.user.user_metadata?.role as UserRole) || 'cajero';
                 set({ 
-                    user: { id: session.user.id, email: session.user.email || '', role: userRole || 'cajero' },
+                    user: { id: session.user.id, email: session.user.email || '', role: userRole },
                     role: userRole, 
                 });
             }
-            set({ isLoading: false });
+            set({ isAuthLoading: false });
         });
 
         return () => {
@@ -73,21 +68,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     login: async (email, password) => {
         if (!isSupabaseConfigured) {
-          const localUsers = useUsersStore.getState().users;
-          const localUser = localUsers.find(u => u.email === email && u.password === password);
+          const localUser = initialUsers.find(u => u.email === email && u.password === password);
           if(localUser) {
-              set({ user: localUser, role: localUser.role, isLoading: false });
+              set({ user: localUser, role: localUser.role, isAuthLoading: false });
               return null;
           }
-          set({ isLoading: false });
           return "Credenciales inválidas (modo local).";
         }
         
-        set({ isLoading: true });
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         
         if (error) {
-          set({ isLoading: false });
           if (error.message.includes('Invalid login credentials')) {
               return 'Credenciales de inicio de sesión inválidas.';
           }
@@ -97,15 +88,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           return error.message;
         }
         
-        // The onAuthStateChange listener will handle setting the user and isLoading to false
         return null;
     },
 
     logout: async () => {
+        set({ user: null, role: null, isAuthLoading: false });
         if (isSupabaseConfigured) {
             await supabase.auth.signOut();
         }
-        set({ user: null, role: null, isLoading: false });
     },
     
     createUser: async (email, password, role) => {
