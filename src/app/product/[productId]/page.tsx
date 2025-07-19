@@ -59,8 +59,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     <div className="bg-muted min-h-screen">
       <ProductHeader />
       
-      {/* Main content with padding to avoid fixed header/footer */}
-      <div className="pt-20 pb-28">
+      {/* Main content with padding to avoid fixed footer */}
+      <div className="pb-28">
         {/* Product Image Section */}
         <div className="relative w-full aspect-square flex-shrink-0">
           <Image
