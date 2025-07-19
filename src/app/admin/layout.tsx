@@ -78,16 +78,15 @@ function AdminLayoutContent({
   const router = useRouter();
   const orders = useOrdersStore(state => state.orders);
   
-  const { user, role, logout } = useAuthStore();
-  const hasHydrated = useAuthStore(state => state._hasHydrated);
+  const { user, role, logout, _hasHydrated: authHasHydrated } = useAuthStore();
   const usersHydrated = useUsersStore(state => state._hasHydrated);
   
   React.useEffect(() => {
     // Wait until hydration is complete before checking for user
-    if (hasHydrated && usersHydrated && !user) {
+    if (authHasHydrated && usersHydrated && !user) {
       router.replace('/login');
     }
-  }, [user, hasHydrated, usersHydrated, router]);
+  }, [user, authHasHydrated, usersHydrated, router]);
 
 
   const pendingApprovalCount = React.useMemo(() => {
@@ -166,7 +165,7 @@ function AdminLayoutContent({
     )
   };
 
-  if (!hasHydrated || !usersHydrated || !user) {
+  if (!authHasHydrated || !usersHydrated || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingSpinner />
