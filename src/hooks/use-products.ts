@@ -70,25 +70,28 @@ export const useProductsStore = create<ProductsState>()((set, get) => ({
 
     fetchProducts: async () => {
         set({ isLoading: true });
-        if (!isSupabaseConfigured) {
-            set({ 
-              products: initialProducts, 
-              featuredProducts: initialProducts.filter(p => p.featured),
-              isLoading: false 
-            });
-            return;
+        
+        let products: Product[] = [];
+
+        if (isSupabaseConfigured) {
+            const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+            if (error) {
+                toast({ title: 'Error al cargar productos', description: error.message, variant: 'destructive'});
+            } else {
+                products = data as Product[];
+            }
         }
-        const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-        if (error) {
-            toast({ title: 'Error al cargar productos', description: error.message, variant: 'destructive'});
-            set({ products: [], featuredProducts: [], isLoading: false });
-        } else {
-            set({ 
-              products: data as Product[],
-              featuredProducts: (data as Product[]).filter(p => p.featured),
-              isLoading: false 
-            });
+        
+        // If Supabase fetch fails or is not configured, and there are no products, use initial data
+        if (products.length === 0) {
+          products = initialProducts;
         }
+
+        set({ 
+          products: products,
+          featuredProducts: products.filter(p => p.featured),
+          isLoading: false 
+        });
     },
 
     getProductById: (productId: string) => {
