@@ -3,12 +3,14 @@
 import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart } from 'lucide-react';
+import { Heart, Plus } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import type { Product } from '@/lib/types';
 import Link from 'next/link';
 import { Badge } from '../ui/badge';
+import { useCart } from '@/hooks/use-cart';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
   product: Product;
@@ -20,12 +22,24 @@ export function ProductCard({
   ...props 
 }: ProductCardProps) {
   const { currency } = useCurrencyStore();
+  const { addToCart } = useCart();
+  const { toast } = useToast();
   const isDiscounted = product.originalPrice && product.originalPrice > product.price;
+
+  const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(product);
+    toast({
+      title: "Añadido al carrito",
+      description: `${product.name} ha sido añadido a tu carrito.`,
+    });
+  };
   
   return (
     <div {...props} className={cn("group", className)}>
        <Link href={`/product/${product.id}`} className="block">
-        <Card className="overflow-hidden h-full border-0 shadow-none rounded-2xl bg-secondary p-0">
+        <Card className="overflow-hidden h-full border shadow-none rounded-2xl bg-secondary p-0">
             <div className="relative overflow-hidden aspect-[3/4] rounded-xl">
               <Image
                 src={product.image || 'https://placehold.co/600x800.png'}
@@ -42,6 +56,16 @@ export function ProductCard({
               <Button size="icon" variant="secondary" className="absolute top-2 right-2 h-8 w-8 rounded-full bg-black/50 backdrop-blur-sm text-white hover:bg-black/70">
                   <Heart className="h-4 w-4"/>
               </Button>
+               <Button 
+                variant="default"
+                size="icon"
+                className="absolute bottom-2 right-2 rounded-full h-9 w-9 shrink-0"
+                disabled={product.stock <= 0}
+                onClick={handleAddToCart}
+                aria-label={`Añadir ${product.name} al carrito`}
+              >
+                <Plus className="h-5 w-5" />
+            </Button>
             </div>
         </Card>
         <div className="pt-3 text-center">
