@@ -81,7 +81,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       </div>
 
       {/* Product Details Section - This will take the remaining space */}
-      <div className="flex-1 bg-card rounded-t-3xl z-10 p-6 flex flex-col min-h-0">
+      <div className="bg-card rounded-t-3xl z-10 p-6 flex flex-col min-h-0">
         <div className="flex justify-between items-start">
             <div>
                 <h1 className="text-2xl font-bold">{product.name}</h1>
