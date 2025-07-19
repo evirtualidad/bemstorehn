@@ -142,22 +142,31 @@ function AdminLayoutContent({
   const DesktopNavItem = ({ item }: { item: any }) => {
     const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
     return (
-      <Button
-        asChild
-        variant={isActive ? 'secondary' : 'ghost'}
-        className="justify-start relative"
-        onClick={item.action ? () => item.action() : undefined}
-      >
-        <Link href={item.href} className="flex items-center gap-2">
-          <item.icon className="h-5 w-5" />
-          <span className="md:hidden lg:inline">{item.label}</span>
-           {item.badge && (
-            <Badge className={cn("absolute -top-2 -right-2 md:static md:ml-auto flex items-center justify-center")}>
-              {item.badge}
-            </Badge>
-          )}
-        </Link>
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Button
+                    asChild
+                    variant={isActive ? 'secondary' : 'ghost'}
+                    className="justify-start relative"
+                    onClick={item.action ? () => item.action() : undefined}
+                >
+                    <Link href={item.href} className="flex items-center gap-2">
+                        <item.icon className="h-5 w-5" />
+                        <span className="md:hidden lg:inline">{item.label}</span>
+                        {item.badge && (
+                            <Badge className={cn("absolute -top-2 -right-2 md:static md:ml-auto flex items-center justify-center")}>
+                                {item.badge}
+                            </Badge>
+                        )}
+                    </Link>
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="md:hidden lg:hidden">
+                <p>{item.label}</p>
+            </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     )
   };
   
