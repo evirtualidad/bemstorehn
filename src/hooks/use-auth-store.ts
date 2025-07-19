@@ -26,9 +26,9 @@ export const useAuthStore = create<AuthState>((set, get) => {
     const handleSession = (session: Session | null) => {
         if (session?.user) {
             const { user } = session;
-            const role = user.user_metadata?.role as UserRole || 'cajero';
+            const role = (user.user_metadata?.role as UserRole) || 'cajero';
             
-            console.log("Session detected. User role from metadata:", role);
+            console.log("Session handled. User role from metadata:", role);
 
             set({
                 user: {
@@ -40,6 +40,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 isAuthLoading: false
             });
         } else {
+            console.log("No session found.");
             set({ user: null, role: null, isAuthLoading: false });
         }
     };
