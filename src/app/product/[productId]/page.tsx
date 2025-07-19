@@ -12,12 +12,9 @@ import { ShoppingCart } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import { cn, formatCurrency } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
-import { Product } from '@/lib/types';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { ProductGridHomepage } from '@/components/store/product-grid-homepage';
 
 
 interface ProductDetailPageProps {
@@ -28,7 +25,7 @@ interface ProductDetailPageProps {
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { productId } = React.use(params);
-  const { getProductById, products, isLoading: isLoadingProducts } = useProductsStore();
+  const { getProductById, isLoading: isLoadingProducts } = useProductsStore();
   const { getCategoryByName, isLoading: isLoadingCategories } = useCategoriesStore();
   const addToCart = useCart.getState().addToCart;
   const { toast } = useToast();
@@ -64,10 +61,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       description: `${product.name} ha sido añadido a tu carrito.`,
     });
   }
-
-  const relatedProducts = products
-    .filter(p => p.category === product.category && p.id !== product.id)
-    .slice(0, 4);
 
   return (
     <div className="bg-background min-h-screen">
@@ -127,19 +120,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             </Button>
           </div>
         </div>
-
-        {/* Related Products */}
-        {relatedProducts.length > 0 && (
-          <div className="mt-16 md:mt-20">
-            <Separator className="my-12" />
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 md:mb-14">También te podría interesar</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-              {relatedProducts.map(related => (
-                <ProductGridHomepage.Card key={related.id} product={related as Product} />
-              ))}
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );
