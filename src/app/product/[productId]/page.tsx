@@ -58,8 +58,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   return (
     <div className="bg-muted min-h-screen">
         <ProductHeader />
-
-        <div className="pb-24">
+        
+        <div className="pt-20 pb-28">
             {/* Product Image Section */}
             <div className="relative w-full aspect-square flex-shrink-0">
             <Image
@@ -81,7 +81,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             </div>
             </div>
 
-            {/* Product Details Section - This now fills remaining space */}
+            {/* Product Details Section */}
             <div className="bg-card rounded-t-3xl z-10 relative -mt-5 p-6">
             <div className="flex justify-between items-start">
                 <div>
