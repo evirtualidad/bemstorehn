@@ -6,7 +6,7 @@ import { useProductsStore } from '@/hooks/use-products';
 import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Minus, Plus, Star, Heart, ArrowLeft, Check } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, Heart } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import { cn, formatCurrency } from '@/lib/utils';
@@ -26,7 +26,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const addToCart = useCart.getState().addToCart;
   const { toast } = useToast();
   const { currency } = useCurrencyStore();
-  const router = useRouter();
   
   const [quantity, setQuantity] = React.useState(1);
   const [selectedSize, setSelectedSize] = React.useState('41');
@@ -169,5 +168,3 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     </div>
   );
 }
-
-    

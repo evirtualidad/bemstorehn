@@ -24,17 +24,21 @@ export function BottomNav() {
     { href: '/profile', icon: User, label: 'Profile' },
   ];
   
-  const shouldHideNav = pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/order-confirmation');
+  const shouldHideNav = pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/order-confirmation') || pathname.startsWith('/product');
 
   if (shouldHideNav) {
     return null;
+  }
+  
+  if (!isClient) {
+    return <div className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-background border-t rounded-t-2xl z-50" />;
   }
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-background/90 backdrop-blur-lg border-t rounded-t-2xl z-50">
       <div className="flex justify-around items-center h-full px-2">
         {navItems.map((item) => {
-          const isActive = isClient && pathname === item.href;
+          const isActive = pathname === item.href;
 
           return (
             <Link
