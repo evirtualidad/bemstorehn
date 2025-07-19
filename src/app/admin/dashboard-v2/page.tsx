@@ -52,8 +52,10 @@ export default function DashboardV2() {
   const { products, isLoading: isLoadingProducts } = useProductsStore();
   const { customers, isLoading: isLoadingCustomers } = useCustomersStore();
   const { currency } = useCurrencyStore();
+  const isLoading = isLoadingOrders || isLoadingProducts || isLoadingCustomers;
   
   const dashboardData = React.useMemo(() => {
+    if (isLoading) return null;
 
     const nonCancelledOrders = orders.filter((o) => o.status !== 'cancelled' && o.status !== 'pending-approval');
 
@@ -116,9 +118,7 @@ export default function DashboardV2() {
       recentTransactions: nonCancelledOrders.slice(0, 5),
       topSellingProducts,
     };
-  }, [orders, products, customers, currency.code]);
-
-  const isLoading = isLoadingOrders || isLoadingProducts || isLoadingCustomers;
+  }, [isLoading, orders, products, customers, currency.code]);
 
   if (isLoading || !dashboardData) {
     return (

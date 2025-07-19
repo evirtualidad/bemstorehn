@@ -69,20 +69,19 @@ const statusLabels: { [key: string]: string } = {
 };
 
 export default function Dashboard() {
-  const { orders } = useOrdersStore();
-  const { products } = useProductsStore();
-  const { customers } = useCustomersStore();
+  const { orders, isLoading: isLoadingOrders } = useOrdersStore();
+  const { products, isLoading: isLoadingProducts } = useProductsStore();
+  const { customers, isLoading: isLoadingCustomers } = useCustomersStore();
   const { categories } = useCategoriesStore();
   const { currency } = useCurrencyStore();
-  const [isClient, setIsClient] = React.useState(false);
   
   const [date, setDate] = React.useState<DateRange | undefined>(undefined);
-
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
+  
+  const isLoading = isLoadingOrders || isLoadingProducts || isLoadingCustomers;
 
   const dashboardData = React.useMemo(() => {
+    if (isLoading) return null;
+
     const { from, to } = date || {};
     const startDate = from ? startOfDay(from) : new Date(0);
     const endDate = to ? endOfDay(to) : new Date();
@@ -188,9 +187,9 @@ export default function Dashboard() {
       salesByChannelData,
       salesByCategoryData,
     };
-  }, [orders, products, customers, categories, date]);
+  }, [isLoading, orders, products, customers, categories, date]);
   
-  if (!isClient) {
+  if (isLoading || !dashboardData) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
         <LoadingSpinner />
