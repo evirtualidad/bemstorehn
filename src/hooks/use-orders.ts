@@ -78,7 +78,7 @@ export const useOrdersStore = create<OrdersState>()(
             return;
           }
           set({ isLoading: true });
-          const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+          const { data, error } = await supabase.from('orders').select('*');
            if (error) {
               toast({ title: 'Error al cargar pedidos', description: error.message, variant: 'destructive'});
               set({ orders: [], isLoading: false });

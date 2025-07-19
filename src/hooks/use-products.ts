@@ -76,7 +76,8 @@ export const useProductsStore = create<ProductsState>()(
               return;
           }
           set({ isLoading: true });
-          const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+          // Removed ordering by 'created_at' to fix the error
+          const { data, error } = await supabase.from('products').select('*');
           if (error) {
               toast({ title: 'Error al cargar productos', description: error.message, variant: 'destructive'});
               set({ products: initialProducts, isLoading: false });
