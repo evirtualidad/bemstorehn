@@ -163,7 +163,7 @@ function TicketView({
   const { taxRate } = useSettingsStore();
 
   return (
-    <aside className="fixed top-0 right-0 h-screen w-[420px] hidden lg:flex flex-col border-l z-10 bg-muted/40">
+    <aside className="sticky top-0 h-full w-[420px] hidden lg:flex flex-col border-l z-10 bg-muted/40">
         <div className="p-4 border-b flex-shrink-0 bg-background">
             <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Pedido Actual</h2>
@@ -932,7 +932,7 @@ function OrderSuccessDialog({
                 </div>
                 <div className="flex justify-between">
                     <span className="text-muted-foreground">ISV ({taxRate * 100}%):</span>
-                    <span className="font-medium">{formatCurrency(tax, currency.code)}</span>
+                    <span className="font-medium">{formatCurrency(taxAmount, currency.code)}</span>
                 </div>
                 {order.shipping_cost > 0 && (
                      <div className="flex justify-between">
@@ -993,7 +993,7 @@ export default function PosPage() {
   const [lastOrderInfo, setLastOrderInfo] = React.useState<{order: Order, change: number} | null>(null);
   const { user } = useAuthStore();
   
-  const hasOfferProducts = React.useMemo(() => products.some(p => p.originalPrice && p.originalPrice > p.price), [products]);
+  const hasOfferProducts = React.useMemo(() => products.some(p => p.original_price && p.original_price > p.price), [products]);
   
   const filteredProducts = React.useMemo(() => {
     if (!selectedFilter) return products;
@@ -1002,7 +1002,7 @@ export default function PosPage() {
       return products.filter((p) => p.category === selectedFilter.value);
     }
     if (selectedFilter.type === 'offer') {
-      return products.filter(p => p.originalPrice && p.originalPrice > p.price);
+      return products.filter(p => p.original_price && p.original_price > p.price);
     }
     return products;
   }, [selectedFilter, products]);
@@ -1181,7 +1181,7 @@ export default function PosPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen flex-col bg-muted/40">
+      <div className="flex flex-col min-h-screen bg-muted/40">
         <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20">
             <h1 className="text-xl font-bold flex-1 whitespace-nowrap">POS</h1>
         </header>
@@ -1193,15 +1193,15 @@ export default function PosPage() {
   }
 
   return (
-    <div className="relative h-screen bg-muted/40 flex flex-col lg:flex-row">
-        <div className='flex flex-col flex-1 lg:pr-[420px]'>
+    <div className="relative min-h-screen bg-muted/40 lg:flex">
+        <div className='flex-1 flex flex-col min-h-0'>
             <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20 flex-shrink-0">
                 <h1 className="text-xl font-bold flex-1 whitespace-nowrap">POS</h1>
                  <div className="w-full sm:w-auto sm:flex-initial">
                     <ProductSearch onProductSelect={usePosCart.getState().addToCart} />
                  </div>
             </header>
-            <main className="flex-1 flex flex-col">
+            <main className="flex-1 flex flex-col min-h-0">
                 <div className="p-4 space-y-4 flex-shrink-0 bg-background">
                      <CategoryList
                         categories={categories}
@@ -1274,3 +1274,4 @@ export default function PosPage() {
     </div>
   );
 }
+
