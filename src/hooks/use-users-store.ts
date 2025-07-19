@@ -113,7 +113,24 @@ export const useUsersStore = create<UsersState>()(
       onRehydrateStorage: () => (state, error) => {
         if (state) {
           if (error || !state.users || state.users.length === 0) {
+            // If storage is empty or there's an error, initialize with default users
             state.users = initialUsers;
+          } else {
+            // This is the definitive fix:
+            // Forcefully update the 'evirt@bemstore.hn' user to ensure it has the admin role,
+            // overriding any incorrect data persisted in localStorage.
+            const evirtUser = state.users.find(u => u.email === 'evirt@bemstore.hn');
+            if (evirtUser) {
+              if (evirtUser.role !== 'admin') {
+                evirtUser.role = 'admin';
+              }
+            } else {
+                // If the user doesn't exist at all, add them from the initial list.
+                const initialEvirt = initialUsers.find(u => u.email === 'evirt@bemstore.hn');
+                if (initialEvirt) {
+                    state.users.push(initialEvirt);
+                }
+            }
           }
           state.setHasHydrated(true);
         }
