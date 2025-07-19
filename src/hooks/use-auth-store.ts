@@ -78,7 +78,13 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (email, password) => {
           if (!isSupabaseConfigured) {
-            return "Supabase no está configurado. No se puede iniciar sesión.";
+            // Local fallback logic
+            const localUser = useUsersStore.getState().users.find(u => u.email === email && u.password === password);
+            if(localUser) {
+                set({ user: localUser, role: localUser.role, isLoading: false });
+                return null;
+            }
+            return "Credenciales inválidas (modo local).";
           }
           
           set({ isLoading: true });
@@ -96,18 +102,15 @@ export const useAuthStore = create<AuthState>()(
           }
           
           // The onAuthStateChange listener will handle setting the user state and isLoading to false.
-          // We explicitly refresh to get the latest JWT with metadata.
           await supabase.auth.refreshSession();
           return null;
       },
 
       logout: async () => {
-          if (!isSupabaseConfigured) {
-              set({ user: null, role: null, isLoading: false });
-              return;
+          if (isSupabaseConfigured) {
+              await supabase.auth.signOut();
           }
-
-          await supabase.auth.signOut();
+          // This clears the state for both Supabase and local mode
           set({ user: null, role: null, isLoading: false });
       },
       
@@ -121,6 +124,11 @@ export const useAuthStore = create<AuthState>()(
           const { error } = await supabase.auth.signUp({
             email,
             password,
+            options: {
+              data: {
+                role: role,
+              }
+            }
           });
 
           if (error) {
@@ -134,7 +142,7 @@ export const useAuthStore = create<AuthState>()(
       }
     }),
     {
-      name: 'auth-storage-v3', // Incremented version to clear old state
+      name: 'auth-storage-v4', // Incremented version to clear old state
       storage: createJSONStorage(() => localStorage), 
     }
   )

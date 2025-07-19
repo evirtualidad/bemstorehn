@@ -6,7 +6,7 @@ import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import { persist, createJSONStorage } from 'zustand/middleware';
-
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 
 export interface Category {
   id: string; 
@@ -36,10 +36,21 @@ export const useCategoriesStore = create<CategoriesState>()(
   persist(
     (set, get) => ({
         categories: initialCategories,
-        isLoading: false,
+        isLoading: true, // Start as true
         
         fetchCategories: async () => {
-            set({ isLoading: false });
+            if (!isSupabaseConfigured) {
+                set({ categories: initialCategories, isLoading: false });
+                return;
+            }
+            set({ isLoading: true });
+            const { data, error } = await supabase.from('categories').select('*');
+            if(error) {
+                toast({ title: 'Error al cargar categorías', description: error.message, variant: 'destructive' });
+                set({ isLoading: false });
+            } else {
+                set({ categories: data, isLoading: false });
+            }
         },
         
         getCategoryById: (categoryId: string) => {
@@ -76,11 +87,11 @@ export const useCategoriesStore = create<CategoriesState>()(
         },
     }),
     {
-      name: 'categories-storage',
+      name: 'categories-storage-v2',
       storage: createJSONStorage(() => localStorage),
        onRehydrateStorage: () => (state) => {
         if (state) {
-          state.isLoading = false;
+          state.isLoading = true; // Always start loading on rehydrate
         }
       }
     }

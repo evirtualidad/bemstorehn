@@ -54,10 +54,11 @@ export const useBannersStore = create<BannersState>()(
   persist(
     (set) => ({
       banners: initialBanners,
-      isLoading: false,
+      isLoading: true, // Start as true
       
       fetchBanners: async () => {
-          set({ isLoading: false });
+          // This store is local-only for now, so we just simulate loading.
+          set({ banners: initialBanners, isLoading: false });
       },
 
       addBanner: async (bannerData) => {
@@ -86,11 +87,11 @@ export const useBannersStore = create<BannersState>()(
       },
     }),
     {
-      name: 'banners-storage',
+      name: 'banners-storage-v2',
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.isLoading = false;
+          state.isLoading = true; // Set to true on rehydrate, fetch will set to false
         }
       }
     }

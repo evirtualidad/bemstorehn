@@ -17,6 +17,12 @@ export interface UserDoc {
     password?: string; // Only for local fallback
 }
 
+// Initial user for local mode
+const initialUsers: UserDoc[] = [
+    { id: 'user-1-admin', email: 'evirt@bemstore.hn', role: 'admin', password: 'password' },
+    { id: 'user-2-cajero', email: 'cajero@bemstore.hn', role: 'cajero', password: 'password' },
+]
+
 type UsersState = {
   users: UserDoc[];
   isLoading: boolean;
@@ -28,12 +34,12 @@ type UsersState = {
 export const useUsersStore = create<UsersState>()(
   persist(
     (set, get) => ({
-      users: [],
-      isLoading: false, 
+      users: initialUsers,
+      isLoading: true, // Start as true
       
       fetchUsers: async () => {
           if (!isSupabaseConfigured) {
-              set({ isLoading: false });
+              set({ users: initialUsers, isLoading: false });
               return;
           }
           set({ isLoading: true });
@@ -88,11 +94,11 @@ export const useUsersStore = create<UsersState>()(
       },
     }),
     {
-      name: 'users-storage',
+      name: 'users-storage-v2',
       storage: createJSONStorage(() => localStorage),
        onRehydrateStorage: () => (state) => {
         if (state) {
-          state.isLoading = false;
+          state.isLoading = true; // Always start loading on rehydrate
         }
       }
     }

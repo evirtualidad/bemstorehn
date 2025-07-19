@@ -7,7 +7,7 @@ import { produce } from 'immer';
 import { toast } from './use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { persist, createJSONStorage } from 'zustand/middleware';
-
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 
 export interface Customer {
   id: string;
@@ -64,10 +64,21 @@ export const useCustomersStore = create<CustomersState>()(
   persist(
     (set, get) => ({
       customers: initialCustomers,
-      isLoading: false,
+      isLoading: true, // Start as true
       
       fetchCustomers: async () => {
-          set({ isLoading: false });
+          if (!isSupabaseConfigured) {
+            set({ customers: initialCustomers, isLoading: false });
+            return;
+          }
+          set({ isLoading: true });
+          const { data, error } = await supabase.from('customers').select('*');
+          if (error) {
+            toast({ title: 'Error al cargar clientes', description: error.message, variant: 'destructive' });
+            set({ isLoading: false });
+          } else {
+            set({ customers: data as Customer[], isLoading: false });
+          }
       },
 
       addOrUpdateCustomer: async ({ phone, name, address }) => {
@@ -125,11 +136,11 @@ export const useCustomersStore = create<CustomersState>()(
       },
     }),
     {
-      name: 'customers-storage',
+      name: 'customers-storage-v2',
       storage: createJSONStorage(() => localStorage),
        onRehydrateStorage: () => (state) => {
         if (state) {
-          state.isLoading = false;
+          state.isLoading = true; // Always start loading on rehydrate
         }
       }
     }

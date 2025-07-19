@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import type { UploadProductData } from '@/lib/products';
+import { products as initialProducts } from '@/lib/products';
 
 export type Product = ProductType;
 
@@ -66,18 +67,19 @@ type ProductsState = {
 export const useProductsStore = create<ProductsState>()(
   persist(
     (set, get) => ({
-      products: [],
-      isLoading: false,
+      products: initialProducts,
+      isLoading: true, // Start as true
 
       fetchProducts: async () => {
           if (!isSupabaseConfigured) {
-              set({ isLoading: false });
+              set({ products: initialProducts, isLoading: false });
               return;
           }
           set({ isLoading: true });
           const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
           if (error) {
               toast({ title: 'Error al cargar productos', description: error.message, variant: 'destructive'});
+              set({ products: initialProducts, isLoading: false });
           } else {
               set({ products: data as Product[] });
           }
@@ -236,15 +238,11 @@ export const useProductsStore = create<ProductsState>()(
       },
     }),
     {
-      name: 'products-storage-v2', // Updated name to avoid conflicts with old structure
+      name: 'products-storage-v3', // Updated name to avoid conflicts with old structure
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state, error) => {
         if (state) {
-          state.isLoading = false;
-          // When rehydrating, immediately fetch fresh data from Supabase if configured
-          if (isSupabaseConfigured) {
-             state.fetchProducts();
-          }
+          state.isLoading = true; // Always start loading on rehydrate
         }
       }
     }
