@@ -295,8 +295,8 @@ function ShippingDialog({
 
 export default function CheckoutPage() {
   const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart } = useCart();
-  const { addOrderToState } = useOrdersStore();
-  const { addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
+  const { addOrderToState, fetchOrders } = useOrdersStore();
+  const { addOrUpdateCustomer, addPurchaseToCustomer, fetchCustomers } = useCustomersStore();
   const { taxRate, pickupAddress } = useSettingsStore();
   const { toast } = useToast();
   const router = useRouter();
@@ -305,6 +305,11 @@ export default function CheckoutPage() {
   const { currency } = useCurrencyStore();
 
   const [shippingAddress, setShippingAddress] = useState<Address | undefined>(undefined);
+  
+  useEffect(() => {
+    fetchOrders();
+    fetchCustomers();
+  }, [fetchOrders, fetchCustomers]);
 
   const form = useForm<z.infer<typeof checkoutFormSchema>>({
     resolver: zodResolver(checkoutFormSchema),
@@ -388,7 +393,7 @@ export default function CheckoutPage() {
       payment_due_date: null,
     };
     
-    addOrderToState(newOrderData);
+    const newOrderId = await addOrderToState(newOrderData);
 
     setTimeout(() => {
         toast({
@@ -396,7 +401,7 @@ export default function CheckoutPage() {
           description: 'Gracias por tu compra. Tu pedido está siendo procesado.',
         });
         clearCart();
-        router.push(`/order-confirmation/${newOrderData.id}`);
+        router.push(`/order-confirmation/${newOrderId}`);
         setIsSubmitting(false);
     }, 500);
   }

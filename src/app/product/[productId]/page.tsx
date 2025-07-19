@@ -22,12 +22,16 @@ interface ProductDetailPageProps {
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { productId } = React.use(params);
-  const { getProductById, isLoading: isLoadingProducts } = useProductsStore();
+  const { getProductById, isLoading: isLoadingProducts, fetchProducts } = useProductsStore();
   const addToCart = useCart.getState().addToCart;
   const { toast } = useToast();
   const { currency } = useCurrencyStore();
   
   const [quantity, setQuantity] = React.useState(1);
+
+  React.useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const product = getProductById(productId);
 
@@ -60,7 +64,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       <ProductHeader />
       
       {/* Main content */}
-      <div className="pb-28">
+      <div>
         {/* Product Image Section */}
         <div className="relative w-full h-[60vh] flex-shrink-0">
           <Image
