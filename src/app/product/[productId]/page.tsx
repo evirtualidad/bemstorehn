@@ -56,7 +56,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   }
   
   return (
-    <div className="bg-muted h-screen flex flex-col">
+    <div className="bg-muted min-h-screen flex flex-col">
         <ProductHeader />
         
         {/* Product Image Section */}
