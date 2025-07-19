@@ -3,6 +3,9 @@
 
 import { create } from 'zustand';
 import { toast } from './use-toast';
+import { produce } from 'immer';
+import { v4 as uuidv4 } from 'uuid';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import type { UserDoc, UserRole } from './use-users-store';
 import { useUsersStore } from './use-users-store';
@@ -25,15 +28,13 @@ async function getUserRole(userId: string): Promise<UserRole | null> {
         .from('roles')
         .select('role')
         .eq('id', userId)
-        .maybeSingle(); // Use maybeSingle to gracefully handle cases where no role is found (0 rows)
+        .maybeSingle(); 
 
     if (error) {
-        // We still log the error for debugging, but it won't be the "PGRST116" error anymore.
         console.error('Error fetching user role:', error.message);
         return null;
     }
     
-    // If data is null (no role found), it will correctly return null.
     return data?.role as UserRole | null;
 }
 
@@ -65,9 +66,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (session) {
             const userRole = await getUserRole(session.user.id);
+            // If user exists in auth but not in roles table, assign a default role.
+            const finalRole = userRole || 'cajero';
             set({ 
-                user: { id: session.user.id, email: session.user.email || '', role: userRole || 'cajero' },
-                role: userRole, 
+                user: { id: session.user.id, email: session.user.email || '', role: finalRole },
+                role: finalRole, 
                 isLoading: false 
             });
         } else {
@@ -79,9 +82,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       supabase.auth.getSession().then(async ({ data: { session } }) => {
         if (session) {
             const userRole = await getUserRole(session.user.id);
+             // If user exists in auth but not in roles table, assign a default role.
+            const finalRole = userRole || 'cajero';
             set({ 
-                user: { id: session.user.id, email: session.user.email || '', role: userRole || 'cajero' },
-                role: userRole, 
+                user: { id: session.user.id, email: session.user.email || '', role: finalRole },
+                role: finalRole, 
                 isLoading: false 
             });
         } else {
@@ -145,6 +150,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
         
         // This must be done from a server-side function with admin privileges in a real app
+        // We are using client-side for simplicity in this environment.
         const { data, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
@@ -154,9 +160,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             return signUpError.message;
         }
 
-        // The user is created in auth, but not confirmed. The role must be set,
-        // typically via a server-side function triggered by the new user event.
-        // The policies we set up earlier allow an admin to do this.
         if (data.user) {
             // Now, insert the role into the public 'roles' table.
             const { error: roleError } = await supabase
@@ -165,9 +168,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             
             if (roleError) {
                 console.error("User created, but failed to set role:", roleError);
-                // Attempt to delete the user if role setting fails to avoid orphaned auth users
-                // This requires admin privileges, so it might fail on the client.
-                // await supabase.auth.admin.deleteUser(data.user.id); // This would be the server-side approach
                 return "El usuario fue creado, pero falló al asignar el rol. Por favor, asigna el rol manualmente.";
             }
         }
