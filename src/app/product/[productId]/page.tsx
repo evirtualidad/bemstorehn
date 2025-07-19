@@ -93,14 +93,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       <div className="flex-grow flex flex-col bg-card rounded-t-3xl -mt-6 z-10 p-6 space-y-5">
         <div className="flex justify-between items-start">
             <div>
-                <h1 className="text-2xl font-bold">Axel Arigato</h1>
-                <p className="text-muted-foreground">{product.name}</p>
-                 <div className="flex items-center gap-2 mt-2">
-                    <div className="flex text-yellow-500">
-                        {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 fill-current" />)}
-                    </div>
-                    <p className="text-sm text-muted-foreground">(270 Review)</p>
-                </div>
+                <h1 className="text-2xl font-bold">{product.name}</h1>
             </div>
             <div className="flex items-center gap-3 bg-secondary p-1 rounded-full">
                 <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => setQuantity(q => Math.max(1, q - 1))}>
