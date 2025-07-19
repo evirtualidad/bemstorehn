@@ -15,7 +15,7 @@ export function ProductHeader() {
       <div className="flex items-center justify-between">
         <Button
           size="icon"
-          className="h-11 w-11 rounded-full bg-black text-white"
+          className="h-11 w-11 rounded-full bg-black/30 text-white backdrop-blur-sm"
           onClick={() => router.back()}
         >
           <ArrowLeft className="h-6 w-6" />
@@ -24,7 +24,7 @@ export function ProductHeader() {
         <Button
           size="icon"
           variant="secondary"
-          className="h-11 w-11 rounded-full bg-white text-black shadow-md"
+          className="h-11 w-11 rounded-full bg-white/50 text-black shadow-md backdrop-blur-sm"
           onClick={toggleCart}
         >
           <ShoppingBag className="h-5 w-5" />
