@@ -54,20 +54,7 @@ export const useAuthStore = create<AuthState>()(
 
       initializeSession: () => {
         if (!isSupabaseConfigured) {
-          try {
-              // Ensure the evirt user exists for local development
-              useUsersStore.getState().addUser({ email: 'evirt@bemstore.hn', password: 'password', role: 'admin' });
-              const storedUser = localStorage.getItem('auth-storage');
-              if (storedUser) {
-                  const authState = JSON.parse(storedUser);
-                  if (authState.state.user) {
-                      set({ user: authState.state.user, role: authState.state.role, isLoading: false });
-                      return;
-                  }
-              }
-          } catch (error) {
-              console.error("Failed to parse auth user from localStorage", error);
-          }
+          console.log("Running in local mode. Supabase not configured.");
           set({ isLoading: false });
           return;
         }
@@ -109,19 +96,22 @@ export const useAuthStore = create<AuthState>()(
       },
 
       login: async (email, password) => {
-          set({ isLoading: true });
+          if (!isSupabaseConfigured) {
+            toast({ title: "Supabase no configurado", description: "No se puede iniciar sesión sin las credenciales de Supabase.", variant: "destructive" });
+            return "Supabase no configurado";
+          }
           
-          // --- FORCED LOCAL LOGIN TO BYPASS ANY ISSUES ---
-          // This will always log you in as the admin user, regardless of input.
-          const adminUser: UserDoc = {
-            id: 'user-evirt',
-            email: 'evirt@bemstore.hn',
-            password: 'password',
-            role: 'admin'
-          };
-
-          set({ user: adminUser, role: adminUser.role, isLoading: false });
-          return null; // Always return success
+          set({ isLoading: true });
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          
+          if (error) {
+            set({ isLoading: false });
+            return 'Credenciales inválidas. Por favor, inténtalo de nuevo.';
+          }
+          
+          // The onAuthStateChange listener will handle setting the user and role.
+          // We don't need to explicitly set loading to false here, as the listener will do it.
+          return null;
       },
 
       logout: async () => {
@@ -136,14 +126,8 @@ export const useAuthStore = create<AuthState>()(
       
       createUser: async (email, password, role) => {
           if (!isSupabaseConfigured) {
-              const result = await useUsersStore.getState().addUser({ email, password, role });
-              if (result) {
-                  toast({ title: 'Usuario Creado', description: 'El nuevo usuario ha sido creado exitosamente.' });
-                  return null;
-              } else {
-                  toast({ title: 'Error al crear usuario', description: 'El correo electrónico ya está en uso.', variant: 'destructive' });
-                  return 'El correo electrónico ya está en uso.';
-              }
+              toast({ title: 'Función no disponible', description: 'La creación de usuarios requiere conexión a Supabase.', variant: 'destructive'});
+              return 'Supabase no configurado.';
           }
           
           const { data, error: signUpError } = await supabase.auth.signUp({
@@ -162,6 +146,9 @@ export const useAuthStore = create<AuthState>()(
               
               if (roleError) {
                   console.error("User created, but failed to set role:", roleError);
+                  // Attempt to delete the auth user if role assignment fails to avoid orphaned users
+                  // This requires admin privileges and is best handled in a server-side function.
+                  // For now, we'll just return the error.
                   return "El usuario fue creado, pero falló al asignar el rol. Por favor, asigna el rol manualmente.";
               }
           }
@@ -171,14 +158,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) =>
-        isSupabaseConfigured ? {} : { user: state.user, role: state.role },
-      onRehydrateStorage: () => (state) => {
-        if (!isSupabaseConfigured && state) {
-          state.initializeSession();
-        }
-      }
+      storage: createJSONStorage(() => sessionStorage), // Use sessionStorage for Supabase to avoid conflicts
     }
   )
 );

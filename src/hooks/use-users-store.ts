@@ -13,15 +13,8 @@ export type UserRole = 'admin' | 'cajero';
 export interface UserDoc {
     id: string; 
     email: string;
-    password?: string; // Only for local mock data
     role: UserRole;
 }
-
-const initialUsers: UserDoc[] = [
-    { id: 'user-admin', email: 'admin@bemstore.hn', password: 'password', role: 'admin' },
-    { id: 'user-cajero', email: 'cajero@bemstore.hn', password: 'password', role: 'cajero' },
-    { id: 'user-evirt', email: 'evirt@bemstore.hn', password: 'password', role: 'admin'},
-];
 
 type UsersState = {
   users: UserDoc[];
@@ -29,41 +22,53 @@ type UsersState = {
   fetchUsers: () => Promise<void>;
   updateUserRole: (userId: string, newRole: 'admin' | 'cajero') => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
-  addUser: (userData: Omit<UserDoc, 'id'>) => Promise<boolean>;
-  ensureAdminUser: () => void;
 };
 
 export const useUsersStore = create<UsersState>()(
   persist(
     (set, get) => ({
-      users: initialUsers,
+      users: [],
       isLoading: false, 
       
       fetchUsers: async () => {
           if (!isSupabaseConfigured) {
+              console.log("Running in local mode. Supabase not configured.");
               set({ isLoading: false });
               return;
           }
           set({ isLoading: true });
-          const { data: rolesData, error: rolesError } = await supabase.from('roles').select('*');
+          const { data: rolesData, error: rolesError } = await supabase.from('roles').select('id, role');
           
           if (rolesError) {
               toast({ title: 'Error al cargar usuarios', description: rolesError.message, variant: 'destructive'});
-              set({ isLoading: false });
+              set({ isLoading: false, users: [] });
               return;
           }
-          set({ isLoading: false });
+
+          // We need to fetch the actual user emails from auth.users
+          const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
+          
+          if (authError) {
+              toast({ title: 'Error al cargar correos', description: authError.message, variant: 'destructive'});
+              set({ isLoading: false, users: [] });
+              return;
+          }
+
+          const combinedUsers = rolesData.map(roleInfo => {
+              const authUser = authUsers.find(u => u.id === roleInfo.id);
+              return {
+                  id: roleInfo.id,
+                  email: authUser?.email || 'No encontrado',
+                  role: roleInfo.role as UserRole
+              };
+          });
+
+          set({ users: combinedUsers, isLoading: false });
       },
 
       updateUserRole: async (userId, newRole) => {
            if (!isSupabaseConfigured) {
-              set(produce(state => {
-                  const user = state.users.find(u => u.id === userId);
-                  if (user) {
-                      user.role = newRole;
-                  }
-              }));
-              toast({ title: 'Rol actualizado', description: `El rol del usuario ha sido cambiado a ${newRole}.` });
+              toast({ title: 'Función no disponible', description: 'La actualización de roles requiere conexión a Supabase.', variant: 'destructive'});
               return;
            }
 
@@ -76,56 +81,31 @@ export const useUsersStore = create<UsersState>()(
                 toast({ title: 'Error al actualizar rol', description: error.message, variant: 'destructive' });
             } else {
                 toast({ title: 'Rol actualizado' });
-                get().fetchUsers();
+                await get().fetchUsers();
             }
       },
       
       deleteUser: async (userId: string) => {
            if (!isSupabaseConfigured) {
-               set(produce(state => {
-                  state.users = state.users.filter(u => u.id !== userId);
-              }));
-              toast({ title: 'Usuario eliminado', variant: 'destructive' });
+              toast({ title: 'Función no disponible', description: 'La eliminación de usuarios requiere conexión a Supabase.', variant: 'destructive'});
               return;
            }
            
-           toast({ title: 'Función no implementada', description: 'La eliminación de usuarios debe configurarse con funciones de administrador en Supabase.', variant: 'destructive'});
+           // Deleting a user requires admin privileges and is best done via a server-side function.
+           // This is a placeholder for a more secure implementation.
+           const { error } = await supabase.auth.admin.deleteUser(userId);
+           
+            if (error) {
+                toast({ title: 'Error al eliminar usuario', description: error.message, variant: 'destructive' });
+            } else {
+                toast({ title: 'Usuario eliminado' });
+                await get().fetchUsers();
+            }
       },
-
-      addUser: async (userData) => {
-        const existingUser = get().users.find(u => u.email === userData.email);
-        if (existingUser) {
-            return false;
-        }
-
-        const newUser: UserDoc = { ...userData, id: uuidv4(), role: userData.role };
-        set(produce(state => {
-            state.users.push(newUser);
-        }));
-        return true;
-      },
-      
-      ensureAdminUser: () => {
-         set(produce(state => {
-             const evirtUser = state.users.find((u: UserDoc) => u.email === 'evirt@bemstore.hn');
-             if (!evirtUser) {
-                 state.users.push({ id: 'user-evirt', email: 'evirt@bemstore.hn', password: 'password', role: 'admin'});
-             } else {
-                 if(evirtUser.role !== 'admin') evirtUser.role = 'admin';
-                 if(evirtUser.password !== 'password') evirtUser.password = 'password';
-             }
-         }));
-      }
     }),
     {
       name: 'users-storage',
       storage: createJSONStorage(() => localStorage),
-       onRehydrateStorage: () => (state) => {
-         if (state && !isSupabaseConfigured) {
-             state.ensureAdminUser();
-             state.isLoading = false;
-         }
-       }
     }
   )
 );
