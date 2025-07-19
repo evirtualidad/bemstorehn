@@ -5,7 +5,6 @@ import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import { isSupabaseConfigured } from '@/lib/supabase';
 
 export interface Banner {
@@ -51,50 +50,43 @@ type BannersState = {
 };
 
 
-export const useBannersStore = create<BannersState>()(
-  persist(
-    (set) => ({
-      banners: initialBanners,
-      isLoading: false,
-      
-      fetchBanners: async () => {
-          set({ isLoading: true });
-          if (!isSupabaseConfigured) {
-            set({ banners: initialBanners, isLoading: false });
-            return;
-          }
-          // Placeholder for fetching from Supabase in the future if needed
+export const useBannersStore = create<BannersState>()((set) => ({
+    banners: initialBanners,
+    isLoading: false,
+    
+    fetchBanners: async () => {
+        set({ isLoading: true });
+        if (!isSupabaseConfigured) {
+          // In local mode, we assume the data is already there.
           set({ banners: initialBanners, isLoading: false });
-      },
+          return;
+        }
+        // Placeholder for fetching from Supabase in the future if needed
+        set({ banners: initialBanners, isLoading: false });
+    },
 
-      addBanner: async (bannerData) => {
-        const newBanner = { ...bannerData, id: uuidv4() };
-        set(produce(state => {
-            state.banners.unshift(newBanner);
-        }));
-        toast({ title: 'Banner añadido' });
-      },
+    addBanner: async (bannerData) => {
+      const newBanner = { ...bannerData, id: uuidv4() };
+      set(produce(state => {
+          state.banners.unshift(newBanner);
+      }));
+      toast({ title: 'Banner añadido' });
+    },
 
-      updateBanner: async (banner) => {
-        set(produce(state => {
-            const index = state.banners.findIndex(b => b.id === banner.id);
-            if (index !== -1) {
-                state.banners[index] = banner;
-            }
-        }));
-        toast({ title: 'Banner actualizado' });
-      },
+    updateBanner: async (banner) => {
+      set(produce(state => {
+          const index = state.banners.findIndex(b => b.id === banner.id);
+          if (index !== -1) {
+              state.banners[index] = banner;
+          }
+      }));
+      toast({ title: 'Banner actualizado' });
+    },
 
-      deleteBanner: async (bannerId: string) => {
-        set(produce(state => {
-            state.banners = state.banners.filter(b => b.id !== bannerId);
-        }));
-        toast({ title: 'Banner eliminado' });
-      },
-    }),
-    {
-      name: 'banners-storage-v3',
-      storage: createJSONStorage(() => localStorage),
-    }
-  )
-);
+    deleteBanner: async (bannerId: string) => {
+      set(produce(state => {
+          state.banners = state.banners.filter(b => b.id !== bannerId);
+      }));
+      toast({ title: 'Banner eliminado' });
+    },
+}));

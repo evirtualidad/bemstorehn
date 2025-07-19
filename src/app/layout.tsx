@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { CartSheet } from '@/components/cart-sheet';
 import { Inter } from 'next/font/google';
-import { AppProvider } from '@/components/app-provider';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -20,11 +20,16 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <AppProvider>
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+        >
           {children}
           <Toaster />
           <CartSheet />
-        </AppProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

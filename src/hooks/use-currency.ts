@@ -2,7 +2,6 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface Currency {
   code: string;
@@ -33,16 +32,8 @@ type CurrencyState = {
   setCurrency: (currency: Currency) => void;
 };
 
-export const useCurrencyStore = create<CurrencyState>()(
-  persist(
-    (set) => ({
-      currencies: currencies,
-      currency: initialCurrency,
-      setCurrency: (currency) => set({ currency }),
-    }),
-    {
-      name: 'currency-storage',
-      storage: createJSONStorage(() => localStorage),
-    }
-  )
-);
+export const useCurrencyStore = create<CurrencyState>()((set) => ({
+    currencies: currencies,
+    currency: initialCurrency,
+    setCurrency: (currency) => set({ currency }),
+}));

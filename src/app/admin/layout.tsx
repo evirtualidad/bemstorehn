@@ -80,7 +80,8 @@ function AdminLayoutContent({
   const pathname = usePathname();
   const router = useRouter();
   
-  const { user, role, logout, isAuthLoading } = useAuthStore();
+  const { user, role, logout, isAuthLoading, initializeSession } = useAuthStore();
+  
   const { orders } = useOrdersStore();
   const { fetchProducts } = useProductsStore();
   const { fetchCategories } = useCategoriesStore();
@@ -88,6 +89,11 @@ function AdminLayoutContent({
   const { fetchBanners } = useBannersStore();
   const { fetchUsers } = useUsersStore();
   const { fetchOrders } = useOrdersStore();
+
+  React.useEffect(() => {
+    initializeSession();
+  }, [initializeSession]);
+
 
   React.useEffect(() => {
     if (!isAuthLoading && !user) {
@@ -184,7 +190,7 @@ function AdminLayoutContent({
     )
   };
 
-  if (isAuthLoading || !user || !role) {
+  if (isAuthLoading || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingSpinner />
