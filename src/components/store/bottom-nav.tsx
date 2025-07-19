@@ -44,7 +44,7 @@ export function BottomNav() {
               )}
             >
               {isActive ? (
-                <div className='flex items-center gap-2 bg-secondary text-secondary-foreground rounded-full px-3 py-2'>
+                <div className='flex items-center gap-2 bg-muted/50 text-secondary-foreground rounded-full px-3 py-2'>
                   <div className="bg-primary text-primary-foreground rounded-full p-1.5">
                     <item.icon className="w-5 h-5" />
                   </div>
