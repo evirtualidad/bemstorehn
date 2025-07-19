@@ -295,8 +295,8 @@ function ShippingDialog({
 
 export default function CheckoutPage() {
   const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart } = useCart();
-  const { addOrderToState, fetchOrders } = useOrdersStore();
-  const { addOrUpdateCustomer, addPurchaseToCustomer, fetchCustomers } = useCustomersStore();
+  const { createOrder, fetchOrders } = useOrdersStore();
+  const { addOrUpdateCustomer, fetchCustomers } = useCustomersStore();
   const { taxRate, pickupAddress } = useSettingsStore();
   const { toast } = useToast();
   const router = useRouter();
@@ -393,17 +393,19 @@ export default function CheckoutPage() {
       payment_due_date: null,
     };
     
-    const newOrderId = await addOrderToState(newOrderData);
+    const newOrderId = await createOrder(newOrderData);
 
-    setTimeout(() => {
+    if (newOrderId) {
         toast({
           title: '¡Pedido Recibido!',
           description: 'Gracias por tu compra. Tu pedido está siendo procesado.',
         });
         clearCart();
         router.push(`/order-confirmation/${newOrderId}`);
-        setIsSubmitting(false);
-    }, 500);
+    }
+    // If newOrderId is null, the toast error is handled within the createOrder function
+    
+    setIsSubmitting(false);
   }
 
   if (items.length === 0 && !isSubmitting) {

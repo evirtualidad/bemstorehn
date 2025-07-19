@@ -979,7 +979,7 @@ export default function PosPage() {
   const decreaseStock = useProductsStore(state => state.decreaseStock);
 
   const { setShippingCost, clearCart, items: cartItems, totalWithShipping } = usePosCart();
-  const { addOrderToState, getOrderById } = useOrdersStore();
+  const { createOrder, getOrderById } = useOrdersStore();
   const { isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
   const categories = useCategoriesStore(state => state.categories);
   const isLoadingCategories = useCategoriesStore(state => state.isLoading);
@@ -1129,7 +1129,7 @@ export default function PosPage() {
     }
 
     const newOrderData: NewOrderData = {
-        user_id: user?.uid || null,
+        user_id: user?.id || null,
         customer_id: customerId || null,
         customer_name: customerName,
         customer_phone: customerPhone,
@@ -1159,14 +1159,16 @@ export default function PosPage() {
         delivery_method: values.deliveryMethod,
     };
     
-    const newOrderId = await addOrderToState(newOrderData);
-    const newOrder = getOrderById(newOrderId);
+    const newOrderId = await createOrder(newOrderData);
     
-    if(newOrder) {
-        setLastOrderInfo({
-            order: newOrder,
-            change: change
-        });
+    if(newOrderId) {
+        const newOrder = getOrderById(newOrderId);
+        if(newOrder) {
+            setLastOrderInfo({
+                order: newOrder,
+                change: change
+            });
+        }
     }
 
     setIsCheckoutOpen(false);

@@ -59,7 +59,7 @@ type OrdersState = {
   orders: Order[];
   isLoading: boolean;
   fetchOrders: () => Promise<void>;
-  addOrderToState: (order: NewOrderData) => Promise<string>; 
+  createOrder: (order: NewOrderData) => Promise<string | null>; 
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => Promise<void>;
   approveOrder: (data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
@@ -85,13 +85,21 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
         }
     },
 
-    addOrderToState: async (orderData) => {
+    createOrder: async (orderData) => {
         const newOrder: Order = {
           ...orderData,
           id: uuidv4(),
           display_id: generateDisplayId(),
           created_at: new Date().toISOString(),
         };
+        
+        if (isSupabaseConfigured) {
+            const { error } = await supabase.from('orders').insert([newOrder]);
+            if (error) {
+                toast({ title: 'Error al crear el pedido', description: error.message, variant: 'destructive'});
+                return null;
+            }
+        }
         
         set(produce(state => {
             state.orders.unshift(newOrder);
