@@ -3,138 +3,84 @@
 
 import { create } from 'zustand';
 import { produce } from 'immer';
-import { v4 as uuidv4 } from 'uuid';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import { toast } from './use-toast';
+import { supabase } from '@/lib/supabase';
 
+// This is a simplified interface for the client-side representation
+// of a user from the Supabase `users` table and their role from `user_roles`.
 export interface UserDoc {
-    uid: string;
-    email: string;
-    password?: string;
+    id: string; // Corresponds to Supabase user UUID
+    email?: string;
     role: 'admin' | 'cajero';
-    created_at: {
-        seconds: number;
-        nanoseconds: number;
-    };
+    // We no longer store created_at or password on the client.
 }
-
-const initialUsers: UserDoc[] = [
-    {
-        uid: 'admin_user_id_simulated',
-        email: 'admin@bemstore.hn',
-        password: 'password',
-        role: 'admin',
-        created_at: { seconds: Math.floor(new Date().getTime() / 1000) - 86400, nanoseconds: 0 }
-    },
-    {
-        uid: 'superadmin_user_id_simulated',
-        email: 'superadmin@bemstore.hn',
-        password: 'password',
-        role: 'admin',
-        created_at: { seconds: Math.floor(new Date().getTime() / 1000) - 86400, nanoseconds: 0 }
-    },
-    {
-        uid: 'cashier_user_id_simulated',
-        email: 'cajero@bemstore.hn',
-        password: 'password',
-        role: 'cajero',
-        created_at: { seconds: Math.floor(new Date().getTime() / 1000) - 172800, nanoseconds: 0 }
-    },
-    {
-        uid: 'evirt_user_id_simulated',
-        email: 'evirt@bemstore.hn',
-        password: 'password',
-        role: 'admin',
-        created_at: { seconds: Math.floor(new Date().getTime() / 1000) - 172800, nanoseconds: 0 }
-    }
-];
 
 type UsersState = {
   users: UserDoc[];
   isLoading: boolean;
-  _hasHydrated: boolean;
-  addUser: (userData: Omit<UserDoc, 'uid' | 'created_at'>) => void;
-  updateUserRole: (uid: string, newRole: 'admin' | 'cajero') => void;
-  deleteUser: (uid: string) => void;
-  setHasHydrated: (state: boolean) => void;
+  fetchUsers: () => Promise<void>;
+  updateUserRole: (userId: string, newRole: 'admin' | 'cajero') => Promise<void>;
+  deleteUser: (userId: string) => Promise<void>;
 };
 
-export const useUsersStore = create<UsersState>()(
-  persist(
-    (set) => ({
-      users: [],
-      isLoading: false,
-      _hasHydrated: false,
-      setHasHydrated: (state) => {
-        set({
-          _hasHydrated: state,
-        });
-      },
+export const useUsersStore = create<UsersState>((set) => ({
+    users: [],
+    isLoading: true, // Start with loading true
+    
+    fetchUsers: async () => {
+        set({ isLoading: true });
+        try {
+            // This Supabase Edge Function will fetch all users and their roles
+            const { data, error } = await supabase.functions.invoke('get-users-with-roles');
 
-      addUser: (userData) => {
-        const newUser: UserDoc = {
-          uid: uuidv4(),
-          email: userData.email,
-          password: userData.password,
-          role: userData.role,
-          created_at: {
-            seconds: Math.floor(new Date().getTime() / 1000),
-            nanoseconds: 0,
-          },
-        };
-        set(produce(state => {
-          state.users.unshift(newUser);
-        }));
-        toast({
-          title: '¡Usuario Creado!',
-          description: `El usuario ${userData.email} ha sido creado exitosamente.`,
-        });
-      },
-
-      updateUserRole: (uid, newRole) => {
-        set(produce(state => {
-          const user = state.users.find(u => u.uid === uid);
-          if (user) {
-            user.role = newRole;
-          }
-        }));
-      },
-      
-      deleteUser: (uid) => {
-        set(produce(state => {
-          state.users = state.users.filter(u => u.uid !== uid);
-        }));
-        toast({ title: '¡Usuario eliminado!', variant: 'destructive' });
-      }
-    }),
-    {
-      name: 'users-storage',
-      storage: createJSONStorage(() => localStorage),
-      onRehydrateStorage: () => (state, error) => {
-        if (state) {
-          if (error || !state.users || state.users.length === 0) {
-            // If storage is empty or there's an error, initialize with default users
-            state.users = initialUsers;
-          } else {
-            // This is the definitive fix:
-            // Forcefully update the 'evirt@bemstore.hn' user to ensure it has the admin role,
-            // overriding any incorrect data persisted in localStorage.
-            const evirtUser = state.users.find(u => u.email === 'evirt@bemstore.hn');
-            if (evirtUser) {
-              if (evirtUser.role !== 'admin') {
-                evirtUser.role = 'admin';
-              }
-            } else {
-                // If the user doesn't exist at all, add them from the initial list.
-                const initialEvirt = initialUsers.find(u => u.email === 'evirt@bemstore.hn');
-                if (initialEvirt) {
-                    state.users.push(initialEvirt);
-                }
+            if (error) throw error;
+            
+            if (data) {
+                set({ users: data.users as UserDoc[], isLoading: false });
             }
-          }
-          state.setHasHydrated(true);
+        } catch (error: any) {
+            console.error("Error fetching users:", error);
+            toast({ title: 'Error al cargar usuarios', description: error.message, variant: 'destructive' });
+            set({ isLoading: false });
         }
-      },
+    },
+
+    updateUserRole: async (userId, newRole) => {
+        try {
+            const { error } = await supabase.functions.invoke('set-user-role', {
+                body: { userId, role: newRole }
+            });
+
+            if (error) throw error;
+            
+            set(produce(state => {
+                const user = state.users.find(u => u.id === userId);
+                if (user) {
+                    user.role = newRole;
+                }
+            }));
+            toast({ title: 'Rol actualizado', description: `El rol del usuario ha sido cambiado a ${newRole}.` });
+        } catch (error: any) {
+             console.error("Error updating user role:", error);
+             toast({ title: 'Error al actualizar rol', description: error.message, variant: 'destructive' });
+        }
+    },
+    
+    deleteUser: async (userId: string) => {
+       try {
+            const { error } = await supabase.functions.invoke('delete-user', {
+                body: { userId }
+            });
+
+            if (error) throw error;
+
+            set(produce(state => {
+                state.users = state.users.filter(u => u.id !== userId);
+            }));
+            toast({ title: 'Usuario eliminado', variant: 'destructive' });
+        } catch (error: any) {
+             console.error("Error deleting user:", error);
+             toast({ title: 'Error al eliminar usuario', description: error.message, variant: 'destructive' });
+        }
     }
-  )
-);
+}));

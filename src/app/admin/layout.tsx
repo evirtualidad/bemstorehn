@@ -18,7 +18,7 @@ import {
   Activity,
   LogOut,
 } from 'lucide-react';
-
+import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,7 +34,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import * as React from 'react';
 import { useOrdersStore } from '@/hooks/use-orders';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -42,6 +41,10 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useUsersStore } from '@/hooks/use-users-store';
+import { useProductsStore } from '@/hooks/use-products';
+import { useCategoriesStore } from '@/hooks/use-categories';
+import { useCustomersStore } from '@/hooks/use-customers';
+import { useBannersStore } from '@/hooks/use-banners';
 
 function CurrencySelector() {
     const { currency, currencies, setCurrency } = useCurrencyStore();
@@ -76,25 +79,44 @@ function AdminLayoutContent({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const orders = useOrdersStore(state => state.orders);
   
-  const { user, role, logout, _hasHydrated: authHasHydrated } = useAuthStore();
-  const usersHydrated = useUsersStore(state => state._hasHydrated);
-  
+  const { user, role, logout, initializeSession, isLoading: isAuthLoading } = useAuthStore();
+  const { orders, fetchOrders } = useOrdersStore();
+  const { fetchProducts } = useProductsStore();
+  const { fetchCategories } = useCategoriesStore();
+  const { fetchCustomers } = useCustomersStore();
+  const { fetchBanners } = useBannersStore();
+  const { fetchUsers } = useUsersStore();
+
   React.useEffect(() => {
-    // Wait until hydration is complete before checking for user
-    if (authHasHydrated && usersHydrated && !user) {
+    initializeSession();
+  }, [initializeSession]);
+
+  React.useEffect(() => {
+    if (!isAuthLoading && !user) {
       router.replace('/login');
     }
-  }, [user, authHasHydrated, usersHydrated, router]);
+  }, [user, isAuthLoading, router]);
 
+  React.useEffect(() => {
+      if(user) {
+          fetchOrders();
+          fetchProducts();
+          fetchCategories();
+          fetchCustomers();
+          fetchBanners();
+          if (role === 'admin') {
+              fetchUsers();
+          }
+      }
+  }, [user, role, fetchOrders, fetchProducts, fetchCategories, fetchCustomers, fetchBanners, fetchUsers]);
 
   const pendingApprovalCount = React.useMemo(() => {
     return orders.filter(o => o.status === 'pending-approval').length;
   }, [orders]);
   
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push('/login');
   };
   
@@ -165,7 +187,7 @@ function AdminLayoutContent({
     )
   };
 
-  if (!authHasHydrated || !usersHydrated || !user) {
+  if (isAuthLoading || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingSpinner />

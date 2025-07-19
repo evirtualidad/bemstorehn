@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import { format, fromUnixTime } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -73,7 +73,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useUsersStore, type UserDoc } from '@/hooks/use-users-store';
+import { useUsersStore } from '@/hooks/use-users-store';
 
 
 // --- Create User Dialog ---
@@ -84,7 +84,9 @@ const userFormSchema = z.object({
 });
 
 function CreateUserDialog() {
-  const { addUser } = useUsersStore();
+  const { createUser } = useAuthStore();
+  const { fetchUsers } = useUsersStore();
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -99,16 +101,17 @@ function CreateUserDialog() {
 
   const onSubmit = async (values: z.infer<typeof userFormSchema>) => {
     setIsSubmitting(true);
-    
-    addUser({
-        email: values.email,
-        password: values.password,
-        role: values.role,
-    });
+    const error = await createUser(values.email, values.password, values.role);
 
+    if (error) {
+        toast({ title: 'Error al crear usuario', description: error, variant: 'destructive' });
+    } else {
+        toast({ title: 'Usuario Creado', description: 'El nuevo usuario ha sido creado exitosamente.' });
+        await fetchUsers(); // Refresh the user list
+        setIsOpen(false);
+        form.reset();
+    }
     setIsSubmitting(false);
-    setIsOpen(false);
-    form.reset();
   };
 
   return (
@@ -192,15 +195,13 @@ function CreateUserDialog() {
 // --- Main Page Component ---
 export default function UsersPage() {
   const { users, isLoading, updateUserRole, deleteUser } = useUsersStore();
-  const { toast } = useToast();
   const { role: adminRole, user: currentUser } = useAuthStore();
 
-  const handleRoleChange = async (uid: string, newRole: 'admin' | 'cajero') => {
-    updateUserRole(uid, newRole);
-    toast({ title: '¡Rol actualizado!', description: `El rol del usuario ha sido cambiado a ${newRole}.`});
+  const handleRoleChange = async (userId: string, newRole: 'admin' | 'cajero') => {
+    await updateUserRole(userId, newRole);
   };
 
-  const isCurrentUser = (uid: string) => currentUser?.uid === uid;
+  const isCurrentUser = (uid: string) => currentUser?.id === uid;
 
   if (isLoading || !adminRole) {
     return (
@@ -231,7 +232,6 @@ export default function UsersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Email</TableHead>
-                <TableHead>Fecha de Registro</TableHead>
                 <TableHead>Rol</TableHead>
                 <TableHead>
                     <span className="sr-only">Acciones</span>
@@ -240,18 +240,15 @@ export default function UsersPage() {
             </TableHeader>
             <TableBody>
               {users.map((user) => (
-                <TableRow key={user.uid}>
+                <TableRow key={user.id}>
                   <TableCell>
                     <div className="font-medium">{user.email}</div>
                   </TableCell>
                   <TableCell>
-                    {user.created_at ? format(new Date(user.created_at.seconds * 1000), 'd MMM, yyyy', { locale: es }) : 'N/A'}
-                  </TableCell>
-                  <TableCell>
                     <Select
                         value={user.role || 'cajero'}
-                        onValueChange={(newRole: 'admin' | 'cajero') => handleRoleChange(user.uid, newRole)}
-                        disabled={adminRole !== 'admin' || isCurrentUser(user.uid)}
+                        onValueChange={(newRole: 'admin' | 'cajero') => handleRoleChange(user.id, newRole)}
+                        disabled={adminRole !== 'admin' || isCurrentUser(user.id)}
                     >
                         <SelectTrigger className="w-[120px]">
                             <SelectValue placeholder="Seleccionar rol" />
@@ -267,7 +264,7 @@ export default function UsersPage() {
                     </Select>
                   </TableCell>
                   <TableCell>
-                    {!isCurrentUser(user.uid) && adminRole === 'admin' ? (
+                    {!isCurrentUser(user.id) && adminRole === 'admin' ? (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
@@ -301,7 +298,7 @@ export default function UsersPage() {
                                         <AlertDialogFooter>
                                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                         <AlertDialogAction
-                                            onClick={() => deleteUser(user.uid)}
+                                            onClick={() => deleteUser(user.id)}
                                             className={cn(buttonVariants({ variant: 'destructive' }))}
                                         >
                                             Sí, eliminar usuario

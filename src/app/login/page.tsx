@@ -27,13 +27,16 @@ const loginFormSchema = z.object({
 });
 
 export default function LoginPage() {
-  const { login, user } = useAuthStore();
+  const { login, user, isLoading, initializeSession } = useAuthStore();
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  
+  React.useEffect(() => {
+      initializeSession();
+  }, [initializeSession]);
 
   React.useEffect(() => {
-    // If user is already logged in, redirect to dashboard
     if (user) {
       router.replace('/admin/dashboard');
     }
@@ -49,7 +52,7 @@ export default function LoginPage() {
 
   const onSubmit = async (values: z.infer<typeof loginFormSchema>) => {
     setIsSubmitting(true);
-    const error = login(values.email, values.password);
+    const error = await login(values.email, values.password);
     
     if (error) {
       toast({
@@ -64,9 +67,16 @@ export default function LoginPage() {
         description: 'Has iniciado sesión correctamente.',
       });
       // The redirect will be handled by the layout component
-      router.push('/admin/dashboard');
     }
   };
+  
+  if (isLoading || user) {
+      return (
+          <div className="flex h-screen items-center justify-center">
+            <LoadingSpinner />
+          </div>
+      )
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4">

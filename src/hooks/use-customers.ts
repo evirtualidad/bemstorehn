@@ -4,13 +4,12 @@
 import { create } from 'zustand';
 import type { Address } from './use-orders';
 import { produce } from 'immer';
-import { v4 as uuidv4 } from 'uuid';
-import { subDays } from 'date-fns';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { supabase } from '@/lib/supabase';
+import { toast } from './use-toast';
 
 export interface Customer {
   id: string;
-  created_at: any;
+  created_at: string;
   name: string;
   phone: string;
   address: Address | null;
@@ -18,93 +17,97 @@ export interface Customer {
   order_count: number;
 }
 
-const initialCustomers: Customer[] = [
-    {
-        id: 'cust_1',
-        name: 'Ana García',
-        phone: '9988-7766',
-        address: { department: 'Francisco Morazán', municipality: 'Distrito Central', colony: 'Col. Kennedy', exactAddress: 'Bloque 5, Casa 20' },
-        total_spent: 1520.50,
-        order_count: 3,
-        created_at: subDays(new Date(), 30).toISOString(),
-    },
-    {
-        id: 'cust_2',
-        name: 'Carlos Rivera',
-        phone: '3322-1100',
-        address: { department: 'Cortés', municipality: 'San Pedro Sula', colony: 'Res. Los Alpes', exactAddress: 'Circuito 5, Casa 12' },
-        total_spent: 890.00,
-        order_count: 2,
-        created_at: subDays(new Date(), 60).toISOString(),
-    },
-     {
-        id: 'cust_3',
-        name: 'Sofía Martínez',
-        phone: '8787-9090',
-        address: null,
-        total_spent: 350.00,
-        order_count: 1,
-        created_at: subDays(new Date(), 15).toISOString(),
-    }
-];
-
 type CustomersState = {
   customers: Customer[];
   isLoading: boolean;
+  fetchCustomers: () => Promise<void>;
   addOrUpdateCustomer: (
     data: {
       phone?: string;
       name: string;
       address?: Address | null;
     }
-  ) => Promise<string | null>; // Returns customer ID or null
+  ) => Promise<string | null>; 
   addPurchaseToCustomer: (customerId: string, amount: number) => Promise<void>;
   getCustomerById: (id: string) => Customer | undefined;
 };
 
 export const useCustomersStore = create<CustomersState>()(
-  persist(
-    (set, get) => ({
-      customers: initialCustomers,
-      isLoading: false,
-
-      addOrUpdateCustomer: async ({ phone, name, address }) => {
-        if ((!phone || phone.trim() === '') && (name.trim().toLowerCase() === 'consumidor final' || name.trim() === '')) {
-            return null; 
+  (set, get) => ({
+    customers: [],
+    isLoading: true,
+    
+    fetchCustomers: async () => {
+        set({ isLoading: true });
+        const { data, error } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
+        if (error) {
+            toast({ title: 'Error', description: 'No se pudieron cargar los clientes.', variant: 'destructive' });
+            console.error(error);
+            set({ isLoading: false });
+            return;
         }
+        set({ customers: data as Customer[], isLoading: false });
+    },
 
-        const existingCustomer = phone ? get().customers.find(c => c.phone === phone) : null;
+    addOrUpdateCustomer: async ({ phone, name, address }) => {
+      if ((!phone || phone.trim() === '') && (name.trim().toLowerCase() === 'consumidor final' || name.trim() === '')) {
+          return null; 
+      }
+      
+      try {
+        let existingCustomer = null;
+        if (phone) {
+            const { data } = await supabase.from('customers').select('*').eq('phone', phone).single();
+            existingCustomer = data;
+        }
         
         if (existingCustomer) {
+            // Update customer
+            const { data: updatedCustomer, error } = await supabase
+                .from('customers')
+                .update({ name, address: address || existingCustomer.address })
+                .eq('id', existingCustomer.id)
+                .select()
+                .single();
+            if (error) throw error;
+            
             set(produce(state => {
-                const customer = state.customers.find(c => c.id === existingCustomer.id);
-                if (customer) {
-                    customer.name = name;
-                    if (address) {
-                        customer.address = address;
-                    }
+                const index = state.customers.findIndex(c => c.id === updatedCustomer.id);
+                if (index !== -1) {
+                    state.customers[index] = updatedCustomer as Customer;
                 }
             }));
-            return existingCustomer.id;
+            return updatedCustomer.id;
         } else {
-            const newCustomer: Customer = {
-                id: uuidv4(),
-                name,
-                phone: phone || '',
-                address: address || null,
-                total_spent: 0,
-                order_count: 0,
-                created_at: new Date().toISOString(),
-            };
+            // Create customer
+            const { data: newCustomer, error } = await supabase
+                .from('customers')
+                .insert([{ name, phone, address, total_spent: 0, order_count: 0 }])
+                .select()
+                .single();
+            if (error) throw error;
+
             set(produce(state => {
-                state.customers.push(newCustomer);
+                state.customers.unshift(newCustomer as Customer);
             }));
             return newCustomer.id;
         }
-      },
-      
-      addPurchaseToCustomer: async (customerId, amount) => {
-        if (!customerId) return;
+      } catch (error: any) {
+        toast({ title: 'Error', description: 'No se pudo guardar el cliente.', variant: 'destructive' });
+        console.error(error);
+        return null;
+      }
+    },
+    
+    addPurchaseToCustomer: async (customerId, amount) => {
+      if (!customerId) return;
+      try {
+        const { error } = await supabase.rpc('increment_customer_purchase', {
+            customer_id: customerId,
+            purchase_amount: amount
+        });
+        if (error) throw error;
+
         set(produce(state => {
             const customer = state.customers.find(c => c.id === customerId);
             if (customer) {
@@ -112,15 +115,14 @@ export const useCustomersStore = create<CustomersState>()(
                 customer.order_count += 1;
             }
         }));
-      },
+      } catch (error: any) {
+        toast({ title: 'Error', description: 'No se pudo actualizar el historial del cliente.', variant: 'destructive' });
+        console.error(error);
+      }
+    },
 
-      getCustomerById: (id) => {
-        return get().customers.find((c) => c.id === id);
-      },
-    }),
-    {
-      name: 'customers-storage',
-      storage: createJSONStorage(() => localStorage),
-    }
-  )
+    getCustomerById: (id) => {
+      return get().customers.find((c) => c.id === id);
+    },
+  })
 );

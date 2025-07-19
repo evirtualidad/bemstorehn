@@ -2,83 +2,101 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import type { UserDoc } from './use-users-store';
-import { useUsersStore } from './use-users-store';
+import { supabase } from '@/lib/supabase';
+import type { AuthUser } from '@supabase/supabase-js';
 
 export type UserRole = 'admin' | 'cajero';
 
-export interface LocalUser {
-  uid: string;
-  email: string;
-}
-
 type AuthState = {
-  user: LocalUser | null;
+  user: AuthUser | null;
   role: UserRole | null;
-  _hasHydrated: boolean;
-  login: (email: string, password: string) => string | null;
-  logout: () => void;
-  setHasHydrated: (state: boolean) => void;
+  isLoading: boolean;
+  initializeSession: () => Promise<void>;
+  login: (email: string, password: string) => Promise<string | null>;
+  logout: () => Promise<void>;
+  createUser: (email: string, password: string, role: UserRole) => Promise<string | null>;
 };
 
+// Helper function to get user role
+async function getUserRole(userId: string): Promise<UserRole | null> {
+    const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      user: null,
-      role: null,
-      _hasHydrated: false,
-      setHasHydrated: (state: boolean) => {
-        set({ _hasHydrated: state });
-      },
-      login: (email, password) => {
-        try {
-          // This is the definitive fix. Instead of relying on a potentially
-          // non-hydrated state from another store, we read directly from the
-          // source of truth: localStorage.
-          const usersStorage = localStorage.getItem('users-storage');
-          if (!usersStorage) {
-            return 'Error interno: no se pudo encontrar el almacenamiento de usuarios.';
-          }
-          
-          const storedData = JSON.parse(usersStorage);
-          const users: UserDoc[] = storedData?.state?.users || [];
-
-          if (users.length === 0) {
-              return 'La base de datos de usuarios está vacía. Contacte al administrador.';
-          }
-
-          const foundUser = users.find(
-            u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-          );
-
-          if (foundUser) {
-            set({
-              user: { uid: foundUser.uid, email: foundUser.email },
-              role: foundUser.role,
-            });
-            return null; // Success
-          } else {
-            return 'Correo o contraseña incorrectos.'; // Error
-          }
-        } catch (error) {
-            console.error("Failed to parse user storage:", error);
-            return 'Error al leer los datos de usuario.';
-        }
-      },
-      logout: () => {
-        set({ user: null, role: null });
-      },
-    }),
-    {
-      name: 'auth-storage',
-      storage: createJSONStorage(() => localStorage),
-       onRehydrateStorage: () => (state) => {
-        if (state) {
-            state.setHasHydrated(true);
-        }
-      },
+    if (error) {
+        console.error('Error fetching user role:', error);
+        return null;
     }
-  )
-);
+    return data?.role as UserRole | null;
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
+    user: null,
+    role: null,
+    isLoading: true, // Start as loading
+
+    initializeSession: async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            const user = session.user;
+            const role = await getUserRole(user.id);
+            set({ user, role, isLoading: false });
+        } else {
+            set({ user: null, role: null, isLoading: false });
+        }
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            if (session) {
+                const user = session.user;
+                const role = await getUserRole(user.id);
+                set({ user, role });
+            } else {
+                set({ user: null, role: null });
+            }
+        });
+
+        // Cleanup listener on unmount
+        return () => {
+            subscription?.unsubscribe();
+        };
+    },
+
+    login: async (email, password) => {
+        set({ isLoading: true });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+            set({ isLoading: false });
+            return error.message;
+        }
+        if (data.user) {
+            const role = await getUserRole(data.user.id);
+            set({ user: data.user, role, isLoading: false });
+        }
+        return null;
+    },
+
+    logout: async () => {
+        await supabase.auth.signOut();
+        set({ user: null, role: null, isLoading: false });
+    },
+    
+    createUser: async (email, password, role) => {
+        try {
+            // We need a server-side function to create users and assign roles securely
+            const { data, error } = await supabase.functions.invoke('create-user-with-role', {
+                body: { email, password, role }
+            });
+
+            if (error) throw new Error(error.message);
+            if (data.error) throw new Error(data.error);
+            
+            return null; // Success
+        } catch (error: any) {
+            console.error("Error creating user:", error);
+            return error.message;
+        }
+    }
+}));
