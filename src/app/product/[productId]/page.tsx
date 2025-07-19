@@ -56,7 +56,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   }
   
   return (
-    <div className="bg-muted h-screen overflow-hidden">
+    <div className="bg-muted h-screen overflow-hidden flex flex-col">
       <ProductHeader />
       
       {/* Product Image Section */}
@@ -80,8 +80,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         </div>
       </div>
 
-      {/* Product Details Section */}
-      <div className="absolute bottom-0 left-0 right-0 h-[55%] flex flex-col bg-card rounded-t-3xl z-10 p-6 space-y-5">
+      {/* Product Details Section - This will take the remaining space */}
+      <div className="flex-1 bg-card rounded-t-3xl z-10 p-6 flex flex-col min-h-0">
         <div className="flex justify-between items-start">
             <div>
                 <h1 className="text-2xl font-bold">{product.name}</h1>
@@ -97,33 +97,31 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             </div>
         </div>
         
-        <div>
+        <div className='mt-5 mb-2'>
             <h2 className="text-lg font-bold">Description</h2>
         </div>
 
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-muted-foreground text-sm leading-relaxed flex-shrink">
           {product.description}
         </p>
-      </div>
-      
-      {/* Fixed Footer / Add to Cart */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 w-full bg-card border-t p-4 flex items-center justify-between gap-4">
-        <div>
-            <p className="text-sm text-muted-foreground">Total Price</p>
-            <p className="text-2xl font-bold">{formatCurrency(product.price * quantity, currency.code)}</p>
-        </div>
-        <Button 
-          size="lg"
-          className="w-full max-w-xs h-14 rounded-full text-md"
-          disabled={product.stock <= 0}
-          onClick={handleAddToCart}
-        >
-          <ShoppingCart className="mr-3 h-5 w-5" />
-          Add to cart
-        </Button>
-      </div>
 
+        {/* This will be pushed to the bottom of the details section */}
+        <div className="mt-auto pt-4 flex items-center justify-between gap-4">
+           <div>
+              <p className="text-sm text-muted-foreground">Total Price</p>
+              <p className="text-2xl font-bold">{formatCurrency(product.price * quantity, currency.code)}</p>
+          </div>
+          <Button 
+            size="lg"
+            className="w-full max-w-xs h-14 rounded-full text-md"
+            disabled={product.stock <= 0}
+            onClick={handleAddToCart}
+          >
+            <ShoppingCart className="mr-3 h-5 w-5" />
+            Add to cart
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
-
