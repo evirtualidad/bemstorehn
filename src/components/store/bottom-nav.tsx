@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useCart } from '@/hooks/use-cart';
+import { Badge } from '../ui/badge';
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -17,9 +18,11 @@ export function BottomNav() {
     setIsClient(true);
   }, []);
 
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+
   const navItems = [
     { href: '/', icon: Home, label: 'Home' },
-    { href: '/cart', icon: ShoppingCart, label: 'Cart' },
+    { href: '/cart', icon: ShoppingCart, label: 'Cart', badge: totalItems },
     { href: '/notifications', icon: Bell, label: 'Notifications' },
     { href: '/profile', icon: User, label: 'Profile' },
   ];
@@ -45,7 +48,7 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-col items-center justify-center text-muted-foreground transition-colors h-full w-full'
+                'relative flex flex-col items-center justify-center text-muted-foreground transition-colors h-full w-full'
               )}
             >
               {isActive ? (
@@ -56,7 +59,14 @@ export function BottomNav() {
                   <span className="text-sm font-bold text-foreground">{item.label}</span>
                 </div>
               ) : (
-                <item.icon className="w-6 h-6 text-foreground" />
+                <>
+                  <item.icon className="w-6 h-6 text-foreground" />
+                   {item.badge && item.badge > 0 ? (
+                    <Badge variant="destructive" className="absolute top-2 right-6 rounded-full h-5 w-5 flex items-center justify-center p-0 text-[10px]">
+                      {item.badge}
+                    </Badge>
+                  ) : null}
+                </>
               )}
             </Link>
           )

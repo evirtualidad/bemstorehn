@@ -14,12 +14,10 @@ type CartState = {
   subtotal: number;
   taxAmount: number;
   shippingCost: number; 
-  isOpen: boolean;
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   increaseQuantity: (productId: string) => void;
   decreaseQuantity: (productId: string) => void;
-  toggleCart: () => void;
   clearCart: () => void;
   setShippingCost: (cost: number) => void;
 };
@@ -43,8 +41,6 @@ export const useCart = create<CartState>()(
         subtotal: 0,
         taxAmount: 0,
         shippingCost: 0,
-        isOpen: false,
-        toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
         addToCart: (product) => {
           set(produce((state: CartState) => {
             const existingItem = state.items.find((item) => item.id === product.id);
