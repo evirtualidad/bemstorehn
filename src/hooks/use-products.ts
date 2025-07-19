@@ -77,14 +77,13 @@ export const useProductsStore = create<ProductsState>()((set, get) => ({
             const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
             if (error) {
                 toast({ title: 'Error al cargar productos', description: error.message, variant: 'destructive'});
-            } else {
-                products = data as Product[];
+                 set({ products: [], featuredProducts: [], isLoading: false });
+                return;
             }
-        }
-        
-        // If Supabase fetch fails or is not configured, and there are no products, use initial data
-        if (products.length === 0) {
-          products = initialProducts;
+            products = data as Product[];
+        } else {
+            // Only use initial data if Supabase is not configured at all.
+            products = initialProducts;
         }
 
         set({ 
