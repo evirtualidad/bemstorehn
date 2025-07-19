@@ -2,15 +2,16 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Product as ProductType } from '@/lib/products';
 import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import type { UploadProductData } from '@/lib/products';
 import { products as initialProducts } from '@/lib/products';
+import { type Product } from '@/lib/types';
 
-export type Product = ProductType;
+export type UploadProductData = Omit<Product, 'id' | 'created_at'> & {
+  imageFile?: File;
+};
 
 const BUCKET_NAME = 'product-images';
 
@@ -50,6 +51,7 @@ async function deleteProductImage(imageUrl: string): Promise<void> {
 
 type ProductsState = {
   products: Product[];
+  featuredProducts: Product[];
   isLoading: boolean;
   fetchProducts: () => Promise<void>;
   addProduct: (productData: UploadProductData) => Promise<string | null>;
@@ -63,12 +65,17 @@ type ProductsState = {
 
 export const useProductsStore = create<ProductsState>()((set, get) => ({
     products: initialProducts,
+    featuredProducts: initialProducts.filter(p => p.featured),
     isLoading: false,
 
     fetchProducts: async () => {
         set({ isLoading: true });
         if (!isSupabaseConfigured) {
-            set({ products: initialProducts, isLoading: false });
+            set({ 
+              products: initialProducts, 
+              featuredProducts: initialProducts.filter(p => p.featured),
+              isLoading: false 
+            });
             return;
         }
         const { data, error } = await supabase.from('products').select('*');
@@ -76,7 +83,11 @@ export const useProductsStore = create<ProductsState>()((set, get) => ({
             toast({ title: 'Error al cargar productos', description: error.message, variant: 'destructive'});
             set({ products: initialProducts, isLoading: false });
         } else {
-            set({ products: data as Product[], isLoading: false });
+            set({ 
+              products: data as Product[],
+              featuredProducts: (data as Product[]).filter(p => p.featured),
+              isLoading: false 
+            });
         }
     },
 
@@ -116,6 +127,9 @@ export const useProductsStore = create<ProductsState>()((set, get) => ({
       
       set(produce((state) => {
           state.products.unshift(data as Product);
+          if (data.featured) {
+            state.featuredProducts.unshift(data as Product);
+          }
       }));
       
       toast({ title: 'Producto añadido', description: `${productData.name} ha sido añadido.` });
@@ -161,6 +175,8 @@ export const useProductsStore = create<ProductsState>()((set, get) => ({
               if (index !== -1) {
                   state.products[index] = data as Product;
               }
+              // Update featured products list
+              state.featuredProducts = state.products.filter(p => p.featured);
           }));
           toast({ title: 'Producto actualizado', description: `Los cambios en ${productData.name} han sido guardados.` });
       }
@@ -184,6 +200,7 @@ export const useProductsStore = create<ProductsState>()((set, get) => ({
           }
           set(produce(state => {
               state.products = state.products.filter(p => p.id !== productId);
+              state.featuredProducts = state.products.filter(p => p.featured);
           }));
           toast({ title: 'Producto eliminado', variant: 'destructive' });
       }

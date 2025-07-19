@@ -4,65 +4,48 @@
 
 @layer base {
   :root {
-    --background: 240 5% 96%; /* Light Gray */
-    --foreground: 240 6% 10%;
+    --background: 0 0% 100%;
+    --foreground: 224 71.4% 4.1%;
     --card: 0 0% 100%;
-    --card-foreground: 240 6% 10%;
+    --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 6% 10%;
-    --primary: 160 60% 38%; /* A more subtle green */
-    --primary-light: 160 60% 92%; /* A lighter, solid green */
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 5% 90%;
-    --secondary-foreground: 240 6% 10%;
-    --muted: 240 5% 90%;
-    --muted-foreground: 240 4% 46%;
-    --accent: 160 60% 92%;
-    --accent-foreground: 160 70% 32%;
+    --popover-foreground: 224 71.4% 4.1%;
+    --primary: 220.9 39.3% 11%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 220.9 39.3% 11%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 225.5 8.9% 43.1%;
+    --accent: 220 14.3% 95.9%;
+    --accent-foreground: 220.9 39.3% 11%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --offer: 35 92% 60%; /* Orange-amber color for offers */
-    --offer-foreground: 240 6% 10%;
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 173 58% 39%;
-    --chart-1: 173 58% 39%;
-    --chart-2: 43 74% 66%;
-    --chart-3: 27 87% 67%;
-    --chart-4: 197 37% 24%;
-    --chart-5: 12 76% 61%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 224 71.4% 4.1%;
     --radius: 0.5rem;
   }
-
+ 
   .dark {
-    --background: 240 6% 10%;
-    --foreground: 0 0% 98%;
-    --card: 240 4% 12%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 4% 12%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 160 60% 48%;
-    --primary-light: 160 50% 20%;
-    --primary-foreground: 240 6% 10%;
-    --secondary: 240 4% 16%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 4% 65%;
-    --accent: 160 50% 20%;
-    --accent-foreground: 160 60% 85%;
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 20% 98%;
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 20% 98%;
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 210 20% 98%;
+    --primary-foreground: 220.9 39.3% 11%;
+    --secondary: 215 27.9% 16.9%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 215 27.9% 16.9%;
+    --accent-foreground: 210 20% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --offer: 35 92% 60%;
-    --offer-foreground: 240 6% 10%;
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 173 50% 55%;
-    --chart-1: 173 50% 55%;
-    --chart-2: 43 74% 66%;
-    --chart-3: 27 87% 67%;
-    --chart-4: 197 37% 24%;
-    --chart-5: 12 76% 61%;
-    --radius: 0.5rem;
+    --destructive-foreground: 210 20% 98%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
+    --ring: 216 12.2% 83.9%;
   }
 }
 
@@ -76,38 +59,18 @@
 }
 
 @layer utilities {
-  .text-shadow {
-    text-shadow: 0 2px 4px rgb(0 0 0 / 50%);
-  }
-  .text-shadow-lg {
-    text-shadow: 0 2px 10px rgb(0 0 0 / 50%);
-  }
-}
-
-@layer utilities {
-  .animate-fill-progress {
-    animation-name: fill-progress;
-    animation-timing-function: linear;
-    animation-fill-mode: forwards;
+  .fade-in {
+    animation: fadeIn 0.5s ease-in-out;
   }
 
-  @keyframes fill-progress {
+  @keyframes fadeIn {
     from {
-      width: 0%;
+      opacity: 0;
+      transform: translateY(10px);
     }
     to {
-      width: 100%;
+      opacity: 1;
+      transform: translateY(0);
     }
-  }
-
-  /* Fade Carousel Styles */
-  .fade-carousel-content {
-    @apply relative h-full w-full;
-  }
-  .fade-carousel-item {
-    @apply opacity-0 transition-opacity duration-1000 ease-in-out absolute inset-0;
-  }
-  .fade-carousel-item[data-active="true"] {
-    @apply opacity-100 z-10;
   }
 }

@@ -124,7 +124,8 @@ function AdminLayoutContent({
   };
   
   const allNavItems = [
-    { href: '/admin/dashboard', icon: Activity, label: 'Dashboard', roles: ['admin', 'cajero'] },
+    // Dashboard is disabled for now
+    // { href: '/admin/dashboard', icon: Activity, label: 'Dashboard', roles: ['admin', 'cajero'] },
     { href: '/admin/pos', icon: Tablet, label: 'POS', roles: ['admin', 'cajero'] },
     { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: pendingApprovalCount > 0 ? pendingApprovalCount : null, roles: ['admin', 'cajero'] },
     { href: '/admin/inventory', icon: Archive, label: 'Inventario', roles: ['admin'] },
@@ -209,7 +210,7 @@ function AdminLayoutContent({
             className="flex items-center gap-2 font-semibold text-lg md:text-base text-foreground"
           >
             <Package2 className="h-6 w-6" />
-            <span className="whitespace-nowrap hidden md:inline">BEM STORE HN</span>
+            <span className="whitespace-nowrap hidden md:inline">Cosmetica Admin</span>
           </Link>
           <div className="flex items-center gap-1">
             {navItems.map((item) => (
@@ -238,7 +239,7 @@ function AdminLayoutContent({
                 className="flex items-center gap-2 text-lg font-semibold mb-4"
               >
                 <Package2 className="h-6 w-6" />
-                <span className="whitespace-nowrap">BEM STORE HN</span>
+                <span className="whitespace-nowrap">Cosmetica Admin</span>
               </Link>
               {navItems.map((item) => (
                 <MobileNavItem key={item.label} item={item} />
@@ -247,7 +248,7 @@ function AdminLayoutContent({
           </SheetContent>
         </Sheet>
         <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-          <div className="ml-auto flex items-center gap-4">
+           <div className="ml-auto flex items-center gap-4">
              <ThemeToggle />
              <CurrencySelector />
           </div>
@@ -286,7 +287,7 @@ export default function AdminLayout({
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="system"
+      defaultTheme="light"
       enableSystem
       disableTransitionOnChange
     >

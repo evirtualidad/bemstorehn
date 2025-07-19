@@ -85,7 +85,7 @@ export default function UsersPage() {
             <div>
               <CardTitle>Lista de Usuarios</CardTitle>
               <CardDescription>
-                Administra los usuarios y sus roles en el sistema.
+                Administra los usuarios y sus roles en el sistema. Los usuarios se crean desde el panel de Supabase.
               </CardDescription>
             </div>
         </CardHeader>

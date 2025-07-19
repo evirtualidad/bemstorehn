@@ -2,16 +2,16 @@
 'use client';
 
 import Image from 'next/image';
-import type { Product } from '@/lib/types';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, ShoppingBag } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { useCart } from '@/hooks/use-cart';
+import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '../ui/badge';
 import Link from 'next/link';
-import { Badge } from './ui/badge';
 
 interface ProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
   product: Product;
@@ -40,7 +40,7 @@ export function ProductCard({
 
   return (
     <div {...props} className={cn("group", className)}>
-      <Card className="flex flex-col overflow-hidden h-full border-0 shadow-none rounded-lg bg-secondary/50">
+      <Card className="flex flex-col overflow-hidden h-full border-0 shadow-none rounded-lg bg-secondary">
         <Link href={`/product/${product.id}`} className="block">
           <div className="p-2">
             <div className="relative overflow-hidden aspect-[4/5] rounded-lg">
