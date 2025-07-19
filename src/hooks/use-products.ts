@@ -6,86 +6,115 @@ import type { Product as ProductType } from '@/lib/products';
 import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
-import { supabase } from '@/lib/supabase';
+import { persist, createJSONStorage } from 'zustand/middleware';
+
 
 export type Product = ProductType;
-export type NewProductData = Omit<Product, 'id' | 'image'> & { imageFile?: File };
+export type NewProductData = Omit<Product, 'id'>;
+
+const initialProducts: Product[] = [
+    // Skincare
+    {
+      id: 'prod-1',
+      name: 'Suero Facial Vitamina C',
+      image: 'https://placehold.co/400x400.png',
+      aiHint: 'vitamin c serum',
+      price: 750,
+      description: 'Potente suero antioxidante con Vitamina C y Ácido Hialurónico para una piel radiante y uniforme.',
+      category: 'skincare',
+      stock: 15,
+      featured: true,
+    },
+    {
+      id: 'prod-2',
+      name: 'Crema Hidratante con Ceramidas',
+      image: 'https://placehold.co/400x400.png',
+      aiHint: 'moisturizer jar',
+      price: 650,
+      description: 'Restaura la barrera de la piel y proporciona hidratación profunda sin dejar sensación grasa.',
+      category: 'skincare',
+      stock: 20,
+    },
+    // Maquillaje
+    {
+      id: 'prod-3',
+      name: 'Base de Maquillaje Mate',
+      image: 'https://placehold.co/400x400.png',
+      aiHint: 'foundation bottle',
+      price: 950,
+      originalPrice: 1100,
+      description: 'Cobertura completa con acabado mate de larga duración que controla el brillo durante todo el día.',
+      category: 'makeup',
+      stock: 12,
+      featured: true,
+    },
+    {
+      id: 'prod-4',
+      name: 'Paleta de Sombras "Tierra"',
+      image: 'https://placehold.co/400x400.png',
+      aiHint: 'eyeshadow palette',
+      price: 1200,
+      description: '12 tonos tierra altamente pigmentados con acabados mate y satinados para looks versátiles.',
+      category: 'makeup',
+      stock: 8,
+    },
+    // Cabello
+    {
+      id: 'prod-5',
+      name: 'Aceite Reparador de Puntas',
+      image: 'https://placehold.co/400x400.png',
+      aiHint: 'hair oil',
+      price: 550,
+      description: 'Mezcla de aceites de argán y coco para nutrir, reparar y proteger las puntas abiertas.',
+      category: 'hair',
+      stock: 25,
+    },
+    // Cuerpo
+    {
+      id: 'prod-6',
+      name: 'Exfoliante Corporal de Café',
+      image: 'https://placehold.co/400x400.png',
+      aiHint: 'body scrub',
+      price: 480,
+      description: 'Exfolia suavemente, mejora la circulación y deja la piel suave y renovada.',
+      category: 'body',
+      stock: 18,
+    },
+];
 
 type ProductsState = {
   products: Product[];
   isLoading: boolean;
   fetchProducts: () => Promise<void>;
   addProduct: (product: NewProductData) => Promise<string | null>;
-  updateProduct: (product: Omit<Product, 'image'> & { id: string, image: string, imageFile?: File }) => Promise<void>;
+  updateProduct: (product: Product) => Promise<void>;
   deleteProduct: (productId: string) => Promise<void>;
   getProductById: (productId: string) => Product | undefined;
   decreaseStock: (productId: string, quantity: number) => Promise<void>;
   increaseStock: (productId: string, quantity: number) => Promise<void>;
 };
 
-const uploadProductImage = async (file: File, productId: string): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${productId}.${fileExt}`;
-    const filePath = `${productId}/${fileName}`;
-    
-    const { error: uploadError } = await supabase.storage
-        .from('products')
-        .upload(filePath, file, { upsert: true });
-
-    if (uploadError) {
-        throw new Error(`Failed to upload image: ${uploadError.message}`);
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-        .from('products')
-        .getPublicUrl(filePath);
-        
-    return publicUrl;
-};
 
 export const useProductsStore = create<ProductsState>()(
-  (set, get) => ({
-    products: [],
-    isLoading: true,
+  persist(
+    (set, get) => ({
+      products: initialProducts,
+      isLoading: false,
 
-    fetchProducts: async () => {
-        set({ isLoading: true });
-        const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-        if (error) {
-            toast({ title: 'Error', description: 'No se pudieron cargar los productos.', variant: 'destructive' });
-            set({ isLoading: false });
-            return;
-        }
-        set({ products: data, isLoading: false });
-    },
+      fetchProducts: async () => {
+          set({ isLoading: false });
+      },
 
-    getProductById: (productId: string) => {
-      return get().products.find((p) => p.id === productId);
-    },
+      getProductById: (productId: string) => {
+        return get().products.find((p) => p.id === productId);
+      },
 
-    addProduct: async (productData) => {
-      const { imageFile, ...restData } = productData;
-      toast({ title: 'Añadiendo producto...' });
-      
-      try {
-        const { data: newProduct, error } = await supabase
-          .from('products')
-          .insert([restData])
-          .select()
-          .single();
-
-        if (error) throw error;
-        
-        let imageUrl = `https://placehold.co/400x400.png?text=${encodeURIComponent(newProduct.name)}`;
-        if (imageFile) {
-            imageUrl = await uploadProductImage(imageFile, newProduct.id);
-            const { error: updateError } = await supabase
-                .from('products')
-                .update({ image: imageUrl })
-                .eq('id', newProduct.id);
-            if (updateError) throw updateError;
-            newProduct.image = imageUrl;
-        }
+      addProduct: async (productData) => {
+        toast({ title: 'Añadiendo producto...' });
+        const newProduct: Product = {
+            ...productData,
+            id: uuidv4(),
+        };
 
         set(produce((state) => {
             state.products.unshift(newProduct);
@@ -93,90 +122,52 @@ export const useProductsStore = create<ProductsState>()(
         
         toast({ title: 'Producto añadido', description: `${productData.name} ha sido añadido.` });
         return newProduct.id;
-      } catch (error: any) {
-        toast({ title: 'Error', description: error.message, variant: 'destructive' });
-        return null;
-      }
-    },
+      },
 
-    updateProduct: async (product) => {
-      const { id, imageFile, ...restData } = product;
-      let imageUrl = product.image;
-      toast({ title: 'Actualizando producto...' });
-      
-      try {
-        if (imageFile) {
-           imageUrl = await uploadProductImage(imageFile, id);
-        }
-        
-        const { data: updatedProduct, error } = await supabase
-            .from('products')
-            .update({ ...restData, image: imageUrl })
-            .eq('id', id)
-            .select()
-            .single();
-
-        if (error) throw error;
-
+      updateProduct: async (product) => {
+        toast({ title: 'Actualizando producto...' });
         set(produce(state => {
-            const index = state.products.findIndex(p => p.id === id);
+            const index = state.products.findIndex(p => p.id === product.id);
             if (index !== -1) {
-                state.products[index] = updatedProduct;
+                state.products[index] = product;
             }
         }));
-
         toast({ title: 'Producto actualizado', description: `Los cambios en ${product.name} han sido guardados.` });
-      } catch (error: any) {
-         toast({ title: 'Error', description: error.message, variant: 'destructive' });
-      }
-    },
+      },
 
-    deleteProduct: async (productId: string) => {
-        const { error } = await supabase.from('products').delete().eq('id', productId);
-        if (error) {
-            toast({ title: 'Error', description: 'No se pudo eliminar el producto.', variant: 'destructive' });
-            return;
-        }
+      deleteProduct: async (productId: string) => {
         set(produce(state => {
             state.products = state.products.filter(p => p.id !== productId);
         }));
         toast({ title: 'Producto eliminado', variant: 'destructive' });
-    },
+      },
 
-    decreaseStock: async (productId, quantity) => {
-        const product = get().products.find(p => p.id === productId);
-        if (!product) return;
-        const newStock = product.stock - quantity;
+      decreaseStock: async (productId, quantity) => {
+          set(produce(state => {
+              const product = state.products.find(p => p.id === productId);
+              if (product) {
+                  product.stock -= quantity;
+              }
+          }));
+      },
 
-        const { error } = await supabase.from('products').update({ stock: newStock }).eq('id', productId);
-        if (error) {
-            console.error("Failed to update stock in DB");
-            return;
-        }
-        set(produce(state => {
+      increaseStock: async (productId, quantity) => {
+         set(produce(state => {
             const product = state.products.find(p => p.id === productId);
             if (product) {
-                product.stock = newStock;
+                product.stock += quantity;
             }
         }));
-    },
-
-    increaseStock: async (productId, quantity) => {
-       const product = get().products.find(p => p.id === productId);
-       if (!product) return;
-       const newStock = product.stock + quantity;
-
-       const { error } = await supabase.from('products').update({ stock: newStock }).eq('id', productId);
-       if (error) {
-           console.error("Failed to update stock in DB");
-           return;
-       }
-       set(produce(state => {
-          const product = state.products.find(p => p.id === productId);
-          if (product) {
-              product.stock = newStock;
-          }
-      }));
-    },
-  })
+      },
+    }),
+    {
+      name: 'products-storage',
+      storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.isLoading = false;
+        }
+      }
+    }
+  )
 );
