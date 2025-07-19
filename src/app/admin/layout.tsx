@@ -130,7 +130,7 @@ function AdminLayoutContent({
     { href: '/admin/inventory', icon: Archive, label: 'Inventario', roles: ['admin'] },
     { href: '/admin/finance', icon: Coins, label: 'Finanzas', roles: ['admin'] },
     { href: '/admin/customers', icon: Users, label: 'Clientes', roles: ['admin', 'cajero'] },
-    { href: '/admin/users', icon: CircleUser, label: 'Usuarios', roles: ['admin'] },
+    { href: '/admin/users', icon: CircleUser, label: 'Usuarios', roles: ['admin'], action: fetchUsers },
     { href: '/admin/settings', icon: Settings, label: 'Ajustes', roles: ['admin'] },
   ];
 
@@ -149,6 +149,7 @@ function AdminLayoutContent({
             asChild
             variant={isActive ? 'secondary' : 'ghost'}
             className="justify-center md:justify-start relative w-10 h-10 md:w-auto"
+            onClick={item.action ? () => item.action() : undefined}
           >
             <Link href={item.href}>
               <item.icon className="h-5 w-5 md:mr-2" />
@@ -174,6 +175,7 @@ function AdminLayoutContent({
     return (
     <Link
       href={item.href}
+      onClick={item.action ? () => item.action() : undefined}
       className={cn(
         'flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground',
         isActive && 'bg-muted text-foreground'

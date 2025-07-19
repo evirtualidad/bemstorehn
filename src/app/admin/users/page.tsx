@@ -2,9 +2,6 @@
 'use client';
 
 import * as React from 'react';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Table,
   TableBody,
@@ -21,7 +18,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { useToast } from '@/hooks/use-toast';
 import {
   Select,
   SelectContent,
@@ -30,29 +26,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { format, fromUnixTime } from 'date-fns';
-import { es } from 'date-fns/locale/es';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { PlusCircle, Loader2, MoreHorizontal } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { MoreHorizontal } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,125 +47,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useUsersStore } from '@/hooks/use-users-store';
 
-
-const userFormSchema = z.object({
-  email: z.string().email({ message: 'Por favor, ingresa un correo válido.' }),
-  password: z.string().min(6, { message: 'La contraseña debe tener al menos 6 caracteres.' }),
-  role: z.enum(['admin', 'cajero'], { required_error: 'Debes seleccionar un rol.' }),
-});
-
-function CreateUserDialog() {
-  const { createUser } = useAuthStore();
-  const { fetchUsers } = useUsersStore();
-  const { toast } = useToast();
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-  const form = useForm<z.infer<typeof userFormSchema>>({
-    resolver: zodResolver(userFormSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-      role: 'cajero',
-    },
-  });
-
-  const onSubmit = async (values: z.infer<typeof userFormSchema>) => {
-    setIsSubmitting(true);
-    const error = await createUser(values.email, values.password, values.role);
-
-    if (error) {
-        toast({ title: 'Error al crear usuario', description: error, variant: 'destructive' });
-    } else {
-        toast({ title: 'Usuario Creado', description: 'El nuevo usuario ha sido creado exitosamente.' });
-        await fetchUsers();
-        setIsOpen(false);
-        form.reset();
-    }
-    setIsSubmitting(false);
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" className="ml-auto gap-1">
-          <PlusCircle className="h-3.5 w-3.5" />
-          Crear Usuario
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Crear Nuevo Usuario</DialogTitle>
-          <DialogDescription>
-            Completa los detalles para crear un nuevo usuario en el sistema.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Correo Electrónico</FormLabel>
-                  <FormControl>
-                    <Input placeholder="usuario@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contraseña</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Rol</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona un rol" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="cajero">Cajero</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <DialogFooter className='pt-4'>
-                <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
-                <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Crear Usuario
-                </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 export default function UsersPage() {
   const { users, isLoading, updateUserRole, deleteUser } = useUsersStore();
@@ -218,7 +78,6 @@ export default function UsersPage() {
     <main className="grid flex-1 items-start gap-4">
       <div className="flex items-center">
         <h1 className="text-2xl font-bold">Usuarios</h1>
-        {adminRole === 'admin' && <CreateUserDialog />}
       </div>
 
       <Card>
