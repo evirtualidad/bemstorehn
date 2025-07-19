@@ -27,6 +27,13 @@ const initialUsers: UserDoc[] = [
         created_at: { seconds: Math.floor(new Date().getTime() / 1000) - 86400, nanoseconds: 0 }
     },
     {
+        uid: 'superadmin_user_id_simulated',
+        email: 'superadmin@bemstore.hn',
+        password: 'password',
+        role: 'admin',
+        created_at: { seconds: Math.floor(new Date().getTime() / 1000) - 86400, nanoseconds: 0 }
+    },
+    {
         uid: 'cashier_user_id_simulated',
         email: 'cajero@bemstore.hn',
         password: 'password',
