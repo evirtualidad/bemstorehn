@@ -67,8 +67,8 @@ type ProductsState = {
 export const useProductsStore = create<ProductsState>()(
   persist(
     (set, get) => ({
-      products: initialProducts,
-      isLoading: true, // Start as true
+      products: [],
+      isLoading: true,
 
       fetchProducts: async () => {
           if (!isSupabaseConfigured) {
@@ -81,9 +81,8 @@ export const useProductsStore = create<ProductsState>()(
               toast({ title: 'Error al cargar productos', description: error.message, variant: 'destructive'});
               set({ products: initialProducts, isLoading: false });
           } else {
-              set({ products: data as Product[] });
+              set({ products: data as Product[], isLoading: false });
           }
-          set({ isLoading: false });
       },
 
       getProductById: (productId: string) => {
@@ -242,7 +241,8 @@ export const useProductsStore = create<ProductsState>()(
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state, error) => {
         if (state) {
-          state.isLoading = true; // Always start loading on rehydrate
+          state.isLoading = true;
+          state.fetchProducts();
         }
       }
     }

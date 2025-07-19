@@ -70,7 +70,7 @@ export const useOrdersStore = create<OrdersState>()(
   persist(
     (set, get) => ({
       orders: [],
-      isLoading: true, // Start as true
+      isLoading: true,
 
       fetchOrders: async () => {
           if (!isSupabaseConfigured) {
@@ -81,7 +81,7 @@ export const useOrdersStore = create<OrdersState>()(
           const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
            if (error) {
               toast({ title: 'Error al cargar pedidos', description: error.message, variant: 'destructive'});
-              set({ isLoading: false });
+              set({ orders: [], isLoading: false });
           } else {
               set({ orders: data as any[], isLoading: false });
           }
@@ -169,7 +169,8 @@ export const useOrdersStore = create<OrdersState>()(
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.isLoading = true; // Always start loading on rehydrate
+          state.isLoading = true;
+          state.fetchOrders();
         }
       }
     }

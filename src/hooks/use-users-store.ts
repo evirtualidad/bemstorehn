@@ -34,8 +34,8 @@ type UsersState = {
 export const useUsersStore = create<UsersState>()(
   persist(
     (set, get) => ({
-      users: initialUsers,
-      isLoading: true, // Start as true
+      users: [],
+      isLoading: true,
       
       fetchUsers: async () => {
           if (!isSupabaseConfigured) {
@@ -49,7 +49,7 @@ export const useUsersStore = create<UsersState>()(
           
           if (error) {
               toast({ title: 'Error al cargar usuarios', description: error.message, variant: 'destructive'});
-              set({ isLoading: false, users: [] });
+              set({ isLoading: false, users: initialUsers });
               return;
           }
 
@@ -88,7 +88,7 @@ export const useUsersStore = create<UsersState>()(
             if (error) {
                 toast({ title: 'Error al eliminar usuario', description: error.message, variant: 'destructive' });
             } else {
-                toast({ title: 'Usuario eliminado de la lista', description: 'La cuenta de autenticación debe ser eliminada manualmente en Supabase.', variant: 'default' });
+                toast({ title: 'Usuario eliminado de la lista', description: 'La cuenta de autenticación debe ser eliminada manually en Supabase.', variant: 'default' });
                 await get().fetchUsers();
             }
       },
@@ -98,7 +98,8 @@ export const useUsersStore = create<UsersState>()(
       storage: createJSONStorage(() => localStorage),
        onRehydrateStorage: () => (state) => {
         if (state) {
-          state.isLoading = true; // Always start loading on rehydrate
+          state.isLoading = true;
+          state.fetchUsers();
         }
       }
     }

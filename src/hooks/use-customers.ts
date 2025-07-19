@@ -63,8 +63,8 @@ type CustomersState = {
 export const useCustomersStore = create<CustomersState>()(
   persist(
     (set, get) => ({
-      customers: initialCustomers,
-      isLoading: true, // Start as true
+      customers: [],
+      isLoading: true,
       
       fetchCustomers: async () => {
           if (!isSupabaseConfigured) {
@@ -75,7 +75,7 @@ export const useCustomersStore = create<CustomersState>()(
           const { data, error } = await supabase.from('customers').select('*');
           if (error) {
             toast({ title: 'Error al cargar clientes', description: error.message, variant: 'destructive' });
-            set({ isLoading: false });
+            set({ customers: initialCustomers, isLoading: false });
           } else {
             set({ customers: data as Customer[], isLoading: false });
           }
@@ -140,7 +140,8 @@ export const useCustomersStore = create<CustomersState>()(
       storage: createJSONStorage(() => localStorage),
        onRehydrateStorage: () => (state) => {
         if (state) {
-          state.isLoading = true; // Always start loading on rehydrate
+          state.isLoading = true;
+          state.fetchCustomers();
         }
       }
     }

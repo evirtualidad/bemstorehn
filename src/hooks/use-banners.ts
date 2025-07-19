@@ -6,6 +6,7 @@ import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 export interface Banner {
   id: string;
@@ -54,10 +55,14 @@ export const useBannersStore = create<BannersState>()(
   persist(
     (set) => ({
       banners: initialBanners,
-      isLoading: true, // Start as true
+      isLoading: true,
       
       fetchBanners: async () => {
-          // This store is local-only for now, so we just simulate loading.
+          if (!isSupabaseConfigured) {
+            set({ banners: initialBanners, isLoading: false });
+            return;
+          }
+          // Placeholder for fetching from Supabase in the future if needed
           set({ banners: initialBanners, isLoading: false });
       },
 
@@ -91,7 +96,8 @@ export const useBannersStore = create<BannersState>()(
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.isLoading = true; // Set to true on rehydrate, fetch will set to false
+          state.isLoading = true;
+          state.fetchBanners();
         }
       }
     }
