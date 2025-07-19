@@ -1,5 +1,5 @@
 
-export interface Product {
+export type Product = {
   id: string;
   created_at?: string;
   name: string;
@@ -13,7 +13,7 @@ export interface Product {
   featured?: boolean;
 }
 
-// This interface is used for form submissions, which might include a File object
+// This type is used for form submissions, which might include a File object
 // that is not part of the final Product type stored in the DB.
 export type UploadProductData = Omit<Product, 'id' | 'created_at'> & {
   imageFile?: File;

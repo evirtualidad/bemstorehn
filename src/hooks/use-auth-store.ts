@@ -45,6 +45,7 @@ export const useAuthStore = create<AuthState>()(
 
       initializeSession: () => {
         if (!isSupabaseConfigured) {
+          console.log("Auth: Supabase not configured. Running in local mode.");
           set({ isLoading: false });
           return;
         }
@@ -65,11 +66,10 @@ export const useAuthStore = create<AuthState>()(
                 set({ 
                     user: { id: session.user.id, email: session.user.email || '', role: userRole || 'cajero' },
                     role: userRole, 
-                    isLoading: false 
                 });
-            } else {
-                set({ isLoading: false, user: null, role: null });
             }
+            // CRITICAL: Ensure loading is false after the check.
+            set({ isLoading: false });
         });
 
         return () => {
@@ -85,11 +85,14 @@ export const useAuthStore = create<AuthState>()(
                 set({ user: localUser, role: localUser.role, isLoading: false });
                 return null;
             }
+            set({ isLoading: false }); // Ensure loading is false on failure
             return "Credenciales inválidas (modo local).";
           }
           
           set({ isLoading: true });
           const { error } = await supabase.auth.signInWithPassword({ email, password });
+          
+          // The onAuthStateChange listener will handle setting isLoading to false.
           
           if (error) {
             set({ isLoading: false }); // Explicitly set loading to false on error
@@ -102,8 +105,6 @@ export const useAuthStore = create<AuthState>()(
             return error.message;
           }
           
-          // The onAuthStateChange listener will handle setting the user state and isLoading to false.
-          // We don't set isLoading to false here to avoid race conditions.
           return null;
       },
 
@@ -111,8 +112,7 @@ export const useAuthStore = create<AuthState>()(
           if (isSupabaseConfigured) {
               await supabase.auth.signOut();
           }
-          // This clears the state for both Supabase and local mode
-          // onAuthStateChange will set user/role to null and isLoading to false
+          // The onAuthStateChange listener will set user/role to null and isLoading to false
           set({ user: null, role: null, isLoading: false });
       },
       
@@ -122,7 +122,6 @@ export const useAuthStore = create<AuthState>()(
               return 'Supabase no configurado.';
           }
           
-          // The database trigger `handle_new_user` handles creating the profile and setting metadata.
           const { error } = await supabase.auth.signUp({
             email,
             password,
@@ -137,18 +136,18 @@ export const useAuthStore = create<AuthState>()(
               return error.message;
           }
           
-          // The trigger should handle everything. We just need to refresh the user list in the UI.
           setTimeout(() => useUsersStore.getState().fetchUsers(), 2000);
           
           return null; // Success
       }
     }),
     {
-      name: 'auth-storage-v5', // Incremented version to clear old state
+      name: 'auth-storage-v10', // Incremented version to clear old state
       storage: createJSONStorage(() => localStorage), 
       onRehydrateStorage: () => (state) => {
           if (state) {
-              state.initializeSession();
+            // onRehydrateStorage is for server-side hydration. We want initialization to run on the client.
+            // The actual initialization is now called from the AppProvider component.
           }
       },
     }
