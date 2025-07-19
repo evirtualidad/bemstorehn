@@ -3,6 +3,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { useUsersStore } from './use-users-store';
 
 export type UserRole = 'admin' | 'cajero';
 
@@ -20,23 +21,6 @@ type AuthState = {
   setHasHydrated: (state: boolean) => void;
 };
 
-// --- SIMULATED USER DATABASE ---
-// This is now the single source of truth for the login function.
-// It is completely independent of the user management page for stability.
-const hardcodedUsers = [
-    {
-        uid: 'admin_user_id_simulated',
-        email: 'admin@bemstore.hn',
-        password: 'password',
-        role: 'admin' as UserRole,
-    },
-    {
-        uid: 'cashier_user_id_simulated',
-        email: 'cajero@bemstore.hn',
-        password: 'password',
-        role: 'cajero' as UserRole,
-    }
-];
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -50,9 +34,12 @@ export const useAuthStore = create<AuthState>()(
         });
       },
       login: (email, password) => {
-        // This function now uses the simple, hardcoded list above.
-        // This eliminates all race conditions with the user management store.
-        const foundUser = hardcodedUsers.find(
+        // This is the definitive fix.
+        // It directly gets the current state from the usersStore,
+        // which includes any newly created users. This avoids all race conditions.
+        const users = useUsersStore.getState().users;
+        
+        const foundUser = users.find(
           u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
         );
 
