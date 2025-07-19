@@ -59,7 +59,13 @@ export const useAuthStore = create<AuthState>((set, get) => {
             
             if (!isSupabaseConfigured) {
               console.log("Auth: Supabase not configured. Running in local mode.");
-              set({ isAuthLoading: false });
+              // Set a default user for local development to avoid being logged out
+              const localUser = initialUsers.find(u => u.email === 'evirt@bemstore.hn');
+              if (localUser) {
+                  set({ user: localUser, role: localUser.role, isAuthLoading: false });
+              } else {
+                  set({ isAuthLoading: false });
+              }
               return;
             }
             
@@ -110,12 +116,11 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 return 'Supabase no configurado.';
             }
             
-            const { data, error } = await supabase.auth.admin.createUser({
-                email,
-                password,
-                email_confirm: true,
-                user_metadata: { role }
-            });
+            const { data, error } = await supabase.rpc('create_new_user', {
+              email_param: email,
+              password_param: password,
+              role_param: role
+            })
 
             if (error) {
                 return error.message;
