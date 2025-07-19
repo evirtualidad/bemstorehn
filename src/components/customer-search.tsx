@@ -19,6 +19,7 @@ export function CustomerSearch({ onCustomerSelect, form }: CustomerSearchProps) 
   const [results, setResults] = React.useState<Customer[]>([]);
   const [isOpen, setIsOpen] = React.useState(false);
   const searchContainerRef = React.useRef<HTMLDivElement>(null);
+  const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
 
   React.useEffect(() => {
     // Set initial search query from form if it exists
@@ -30,7 +31,8 @@ export function CustomerSearch({ onCustomerSelect, form }: CustomerSearchProps) 
 
 
   React.useEffect(() => {
-    if (searchQuery) {
+    // Only search if the query is not the name of the selected customer
+    if (searchQuery && searchQuery !== selectedCustomer?.name) {
       const lowerCaseQuery = searchQuery.toLowerCase();
       const filteredCustomers = customers.filter((customer) =>
         customer.name.toLowerCase().includes(lowerCaseQuery) ||
@@ -42,7 +44,7 @@ export function CustomerSearch({ onCustomerSelect, form }: CustomerSearchProps) 
       setResults([]);
       setIsOpen(false);
     }
-  }, [searchQuery, customers]);
+  }, [searchQuery, customers, selectedCustomer]);
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -58,6 +60,7 @@ export function CustomerSearch({ onCustomerSelect, form }: CustomerSearchProps) 
 
   const handleSelect = (customer: Customer) => {
     onCustomerSelect(customer);
+    setSelectedCustomer(customer);
     setSearchQuery(customer.name); // Set input to customer name
     setIsOpen(false);
   };
@@ -65,15 +68,17 @@ export function CustomerSearch({ onCustomerSelect, form }: CustomerSearchProps) 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newQuery = e.target.value;
       setSearchQuery(newQuery);
-      form.setValue('name', newQuery); // Update form value as user types
+      form.setValue('name', newQuery);
       
-      // If the query is cleared, also clear associated customer data
       if (newQuery === '') {
         onCustomerSelect(null);
+        setSelectedCustomer(null);
         form.setValue('phone', '');
         form.setValue('address', undefined);
       } else {
+        // A new search is being typed, so clear previous selection
         onCustomerSelect(null);
+        setSelectedCustomer(null);
       }
   }
 
@@ -92,7 +97,11 @@ export function CustomerSearch({ onCustomerSelect, form }: CustomerSearchProps) 
                                 placeholder="Buscar o registrar cliente..." 
                                 {...field} 
                                 className="h-11 pl-10"
-                                onFocus={() => searchQuery && setIsOpen(true)}
+                                onFocus={() => {
+                                    if (searchQuery && results.length > 0) {
+                                        setIsOpen(true);
+                                    }
+                                }}
                                 onChange={handleInputChange}
                                 value={searchQuery}
                                 autoComplete='off'
