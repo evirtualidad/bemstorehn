@@ -27,10 +27,17 @@ const loginFormSchema = z.object({
 });
 
 export default function LoginPage() {
-  const { login } = useAuthStore();
+  const { login, user } = useAuthStore();
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  React.useEffect(() => {
+    // If user is already logged in, redirect to dashboard
+    if (user) {
+      router.replace('/admin/dashboard');
+    }
+  }, [user, router]);
 
   const form = useForm<z.infer<typeof loginFormSchema>>({
     resolver: zodResolver(loginFormSchema),
@@ -42,20 +49,21 @@ export default function LoginPage() {
 
   const onSubmit = async (values: z.infer<typeof loginFormSchema>) => {
     setIsSubmitting(true);
-    const error = await login(values.email, values.password);
-    setIsSubmitting(false);
-
+    const error = login(values.email, values.password);
+    
     if (error) {
       toast({
         title: 'Error de Autenticación',
         description: error,
         variant: 'destructive',
       });
+      setIsSubmitting(false);
     } else {
       toast({
         title: '¡Bienvenido!',
         description: 'Has iniciado sesión correctamente.',
       });
+      // The redirect will be handled by the layout component
       router.push('/admin/dashboard');
     }
   };

@@ -2,7 +2,7 @@
 'use client';
 
 import { create } from 'zustand';
-import { useUsersStore, type UserDoc } from './use-users-store';
+import { useUsersStore } from './use-users-store';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 export type UserRole = 'admin' | 'cajero';
@@ -15,10 +15,9 @@ export interface LocalUser {
 type AuthState = {
   user: LocalUser | null;
   role: UserRole | null;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<string | null>;
-  logout: () => Promise<void>;
   _hasHydrated: boolean;
+  login: (email: string, password: string) => string | null;
+  logout: () => void;
   setHasHydrated: (state: boolean) => void;
 };
 
@@ -27,16 +26,15 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       role: null,
-      isLoading: true,
       _hasHydrated: false,
       setHasHydrated: (state) => {
         set({
           _hasHydrated: state,
-          isLoading: false, // Stop loading once hydrated
         });
       },
-      login: async (email, password) => {
-        // Use the most up-to-date state from the users store
+      login: (email, password) => {
+        // This function now directly uses the other store's state.
+        // It relies on the UI waiting for hydration before calling it.
         const users = useUsersStore.getState().users;
         
         const foundUser = users.find(
@@ -47,15 +45,14 @@ export const useAuthStore = create<AuthState>()(
           set({
             user: { uid: foundUser.uid, email: foundUser.email },
             role: foundUser.role,
-            isLoading: false,
           });
           return null; // No error
         } else {
           return 'Correo o contraseña incorrectos.'; // Error message
         }
       },
-      logout: async () => {
-        set({ user: null, role: null, isLoading: false });
+      logout: () => {
+        set({ user: null, role: null });
       },
     }),
     {

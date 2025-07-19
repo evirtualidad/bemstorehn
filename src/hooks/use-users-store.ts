@@ -37,11 +37,10 @@ const initialUsers: UserDoc[] = [
 
 type UsersState = {
   users: UserDoc[];
-  isLoading: boolean;
+  _hasHydrated: boolean;
   addUser: (userData: Omit<UserDoc, 'uid' | 'created_at'>) => void;
   updateUserRole: (uid: string, newRole: 'admin' | 'cajero') => void;
   deleteUser: (uid: string) => void;
-  _hasHydrated: boolean;
   setHasHydrated: (state: boolean) => void;
 };
 
@@ -49,12 +48,10 @@ export const useUsersStore = create<UsersState>()(
   persist(
     (set) => ({
       users: initialUsers,
-      isLoading: true,
       _hasHydrated: false,
       setHasHydrated: (state) => {
         set({
           _hasHydrated: state,
-          isLoading: false,
         });
       },
 

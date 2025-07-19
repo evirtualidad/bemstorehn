@@ -41,6 +41,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { ThemeProvider } from '@/components/theme-provider';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useUsersStore } from '@/hooks/use-users-store';
 
 function CurrencySelector() {
     const { currency, currencies, setCurrency } = useCurrencyStore();
@@ -76,21 +77,25 @@ function AdminLayoutContent({
   const pathname = usePathname();
   const router = useRouter();
   const orders = useOrdersStore(state => state.orders);
-  const { user, role, isLoading, logout } = useAuthStore();
+  
+  const { user, role, logout } = useAuthStore();
+  const hasHydrated = useAuthStore(state => state._hasHydrated);
+  const usersHydrated = useUsersStore(state => state._hasHydrated);
   
   React.useEffect(() => {
-    if (!isLoading && !user) {
+    // Wait until hydration is complete before checking for user
+    if (hasHydrated && usersHydrated && !user) {
       router.replace('/login');
     }
-  }, [user, isLoading, router]);
+  }, [user, hasHydrated, usersHydrated, router]);
 
 
   const pendingApprovalCount = React.useMemo(() => {
     return orders.filter(o => o.status === 'pending-approval').length;
   }, [orders]);
   
-  const handleLogout = async () => {
-    await logout();
+  const handleLogout = () => {
+    logout();
     router.push('/login');
   };
   
@@ -161,7 +166,7 @@ function AdminLayoutContent({
     )
   };
 
-  if (isLoading || !user) {
+  if (!hasHydrated || !usersHydrated || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingSpinner />
