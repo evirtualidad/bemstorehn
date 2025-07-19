@@ -30,6 +30,7 @@ type UsersState = {
   updateUserRole: (userId: string, newRole: 'admin' | 'cajero') => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
   addUser: (userData: Omit<UserDoc, 'id'>) => Promise<boolean>;
+  ensureAdminUser: () => void;
 };
 
 export const useUsersStore = create<UsersState>()(
@@ -58,7 +59,7 @@ export const useUsersStore = create<UsersState>()(
           // so we'll just use the roles data to populate emails (this is a simplification)
           // A proper implementation uses a server-side function.
           
-          // For now, we'll just mark as not loading. The user list will be managed differently.
+          // For now, we just mark as not loading. The user list will be managed differently.
           set({ isLoading: false });
       },
 
@@ -114,6 +115,19 @@ export const useUsersStore = create<UsersState>()(
             state.users.push(newUser);
         }));
         return true; // Success
+      },
+      
+      ensureAdminUser: () => {
+         setTimeout(() => {
+            set(produce(state => {
+                const evirtUser = state.users.find((u: UserDoc) => u.email === 'evirt@bemstore.hn');
+                 if (!evirtUser) {
+                     state.users.push({ id: 'user-evirt', email: 'evirt@bemstore.hn', password: 'password', role: 'admin'});
+                 } else if (evirtUser.role !== 'admin') {
+                     evirtUser.role = 'admin';
+                 }
+            }));
+         }, 0)
       }
     }),
     {
@@ -126,16 +140,6 @@ export const useUsersStore = create<UsersState>()(
              if (!hydratedState || !hydratedState.users || hydratedState.users.length === 0) {
                  // If storage is empty or users array is missing, populate with initial data.
                  set({ users: initialUsers });
-             } else {
-                 // Ensure the 'evirt' user always exists and is an admin in the local data.
-                 let users = hydratedState.users;
-                 const evirtUser = users.find((u: UserDoc) => u.email === 'evirt@bemstore.hn');
-                 if (!evirtUser) {
-                     users.push({ id: 'user-evirt', email: 'evirt@bemstore.hn', password: 'password', role: 'admin'});
-                 } else if (evirtUser.role !== 'admin') {
-                     evirtUser.role = 'admin';
-                 }
-                 set({ users });
              }
          }
        }
