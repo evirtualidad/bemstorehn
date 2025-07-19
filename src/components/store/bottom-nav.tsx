@@ -22,8 +22,8 @@ export function BottomNav() {
   ];
 
   return (
-    <div className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] h-16 bg-background/80 backdrop-blur-lg border rounded-full z-50 shadow-lg">
-      <div className="flex justify-around items-center h-full">
+    <div className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] h-16 bg-background/90 backdrop-blur-lg border rounded-full z-50 shadow-lg">
+      <div className="flex justify-around items-center h-full px-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -31,17 +31,18 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-col items-center justify-center text-muted-foreground transition-colors w-full h-full relative rounded-full',
-                !isActive && 'hover:text-primary'
+                'flex flex-col items-center justify-center text-muted-foreground transition-colors h-full w-full'
               )}
             >
               {isActive ? (
-                <div className='flex items-center gap-2 bg-primary text-primary-foreground rounded-full px-4 py-2'>
-                  <item.icon className="w-5 h-5" />
+                <div className='flex items-center gap-2 bg-secondary text-secondary-foreground rounded-full px-3 py-2'>
+                  <div className="bg-primary text-primary-foreground rounded-full p-1.5">
+                    <item.icon className="w-5 h-5" />
+                  </div>
                   <span className="text-sm font-bold">{item.label}</span>
                 </div>
               ) : (
-                <item.icon className="w-6 h-6" />
+                <item.icon className="w-6 h-6 text-foreground" />
               )}
             </Link>
           )
