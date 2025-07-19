@@ -1,141 +1,85 @@
--- Create the users table if it doesn't exist
-CREATE TABLE IF NOT EXISTS public.users (
-  id uuid NOT NULL REFERENCES auth.users(id) PRIMARY KEY,
-  email TEXT,
-  role TEXT
+-- Create a table for public products
+CREATE TABLE IF NOT EXISTS public.products (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  name character varying NOT NULL,
+  description text,
+  price double precision NOT NULL,
+  originalPrice double precision,
+  stock integer NOT NULL DEFAULT 0,
+  category text,
+  image text,
+  featured boolean DEFAULT false,
+  "aiHint" text,
+  CONSTRAINT products_pkey PRIMARY KEY (id)
 );
+
+-- USERS TABLE
+CREATE TABLE IF NOT EXISTS public.users (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    email TEXT,
+    role TEXT
+);
+
+-- Remove old, potentially conflicting policies first
+DROP POLICY IF EXISTS "Allow individual read access" ON public.users;
+DROP POLICY IF EXISTS "Allow individual update access" ON public.users;
+DROP POLICY IF EXISTS "Allow authenticated insert" ON public.users;
+
+-- Set up Row Level Security (RLS)
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
--- Allow public read access to the users table
-CREATE POLICY "Allow public read access to users"
-ON public.users
-FOR SELECT
-USING (true);
+-- This policy allows any authenticated user to read all user profiles.
+-- This is suitable for an admin-focused application where staff can see who else is on the system.
+CREATE POLICY "Allow authenticated users to read all users" ON public.users
+FOR SELECT TO authenticated USING (true);
 
--- Allow individual users to update their own profile
-CREATE POLICY "Allow individual user update access"
-ON public.users
-FOR UPDATE
-USING (auth.uid() = id);
+-- Allow admins to update user roles
+CREATE POLICY "Allow admins to update" ON public.users
+FOR UPDATE USING (
+  (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin'
+) WITH CHECK (
+  (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin'
+);
 
--- Allow admins to do anything
-CREATE POLICY "Allow admin all access"
-ON public.users
-FOR ALL
-USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin')
-WITH CHECK ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+-- Allow admins to insert new users (should not be needed if trigger works, but good as a fallback)
+CREATE POLICY "Allow admins to insert" ON public.users
+FOR INSERT WITH CHECK (
+  (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin'
+);
 
-
--- Create the function to handle new user creation
+-- This function is called by the trigger when a new user signs up in Supabase Auth
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
+  -- Insert a new row into public.users, linking it to the new auth.users record
   INSERT INTO public.users (id, email, role)
-  VALUES (new.id, new.email, 'cajero'); -- Default role is 'cajero'
+  VALUES (new.id, new.email, 'admin'); -- Default all new sign-ups to 'admin'
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create the trigger to call the function on new user sign-up
--- Drop trigger first to avoid errors on re-run
+-- Drop the old trigger if it exists
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+-- Create the trigger to fire after a new user is inserted into auth.users
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
-
--- Create the products table if it doesn't exist
-CREATE TABLE IF NOT EXISTS public.products (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    name TEXT NOT NULL,
-    image TEXT,
-    aiHint TEXT,
-    price REAL NOT NULL,
-    originalPrice REAL,
-    description TEXT,
-    category TEXT NOT NULL,
-    stock INTEGER NOT NULL,
-    featured BOOLEAN DEFAULT false
-);
-
-
--- Create a bucket for product images if it doesn't exist
+-- STORAGE BUCKET FOR PRODUCT IMAGES
+-- 1. Create a bucket "product-images"
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('product-images', 'product-images', true)
 ON CONFLICT (id) DO NOTHING;
 
--- Create policies for the product-images bucket
--- Policy for public read access
-DROP POLICY IF EXISTS "Public Read Access" ON storage.objects;
-CREATE POLICY "Public Read Access"
-ON storage.objects FOR SELECT
-USING ( bucket_id = 'product-images' );
+-- 2. Set up access policies for the bucket
+-- Allow public read access to all images
+CREATE POLICY "Allow public read access on product images" ON storage.objects
+FOR SELECT USING (bucket_id = 'product-images');
 
--- Policy for authenticated users to upload
-DROP POLICY IF EXISTS "Authenticated Upload" ON storage.objects;
-CREATE POLICY "Authenticated Upload"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK ( bucket_id = 'product-images' );
-
--- Policy for users to update their own images
-DROP POLICY IF EXISTS "Authenticated Update" ON storage.objects;
-CREATE POLICY "Authenticated Update"
-ON storage.objects FOR UPDATE
-TO authenticated
-USING ( auth.uid() = owner );
-
--- Policy for users to delete their own images
-DROP POLICY IF EXISTS "Authenticated Delete" ON storage.objects;
-CREATE POLICY "Authenticated Delete"
-ON storage.objects FOR DELETE
-TO authenticated
-USING ( auth.uid() = owner );
-
--- RLS for products table
-ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Products are viewable by everyone." ON public.products;
-CREATE POLICY "Products are viewable by everyone."
-ON public.products FOR SELECT
-TO public
-USING (true);
-
-DROP POLICY IF EXISTS "Admins can insert products." ON public.products;
-CREATE POLICY "Admins can insert products."
-ON public.products FOR INSERT
-TO authenticated
-WITH CHECK ( (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin' );
-
-DROP POLICY IF EXISTS "Admins can update products." ON public.products;
-CREATE POLICY "Admins can update products."
-ON public.products FOR UPDATE
-TO authenticated
-USING ( (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin' );
-
-DROP POLICY IF EXISTS "Admins can delete products." ON public.products;
-CREATE POLICY "Admins can delete products."
-ON public.products FOR DELETE
-TO authenticated
-USING ( (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin' );
-
-
--- Functions for stock management
-CREATE OR REPLACE FUNCTION decrease_stock(product_id UUID, quantity_to_decrease INT)
-RETURNS VOID AS $$
-BEGIN
-    UPDATE public.products
-    SET stock = stock - quantity_to_decrease
-    WHERE id = product_id;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION increase_stock(product_id UUID, quantity_to_increase INT)
-RETURNS VOID AS $$
-BEGIN
-    UPDATE public.products
-    SET stock = stock + quantity_to_increase
-    WHERE id = product_id;
-END;
-$$ LANGUAGE plpgsql;
+-- Allow authenticated users to upload, update, and delete their own images
+CREATE POLICY "Allow authenticated users to manage product images" ON storage.objects
+FOR ALL USING (
+  bucket_id = 'product-images' AND auth.role() = 'authenticated'
+);
