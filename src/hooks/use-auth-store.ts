@@ -58,17 +58,18 @@ export const useAuthStore = create<AuthState>()(
           });
         });
         
+        // Initial session check
         supabase.auth.getSession().then(({ data: { session } }) => {
-          if (session) {
-              const userRole = getUserRoleFromSession(session);
-              set({ 
-                  user: { id: session.user.id, email: session.user.email || '', role: userRole || 'cajero' },
-                  role: userRole, 
-                  isLoading: false 
-              });
-          } else {
-              set({ isLoading: false });
-          }
+            if (session) {
+                const userRole = getUserRoleFromSession(session);
+                set({ 
+                    user: { id: session.user.id, email: session.user.email || '', role: userRole || 'cajero' },
+                    role: userRole, 
+                    isLoading: false 
+                });
+            } else {
+                set({ isLoading: false, user: null, role: null });
+            }
         });
 
         return () => {
@@ -91,7 +92,7 @@ export const useAuthStore = create<AuthState>()(
           const { error } = await supabase.auth.signInWithPassword({ email, password });
           
           if (error) {
-            set({ isLoading: false });
+            set({ isLoading: false }); // Explicitly set loading to false on error
             if (error.message.includes('Invalid login credentials')) {
                 return 'Credenciales de inicio de sesión inválidas.';
             }
@@ -102,7 +103,7 @@ export const useAuthStore = create<AuthState>()(
           }
           
           // The onAuthStateChange listener will handle setting the user state and isLoading to false.
-          await supabase.auth.refreshSession();
+          // We don't set isLoading to false here to avoid race conditions.
           return null;
       },
 
@@ -111,6 +112,7 @@ export const useAuthStore = create<AuthState>()(
               await supabase.auth.signOut();
           }
           // This clears the state for both Supabase and local mode
+          // onAuthStateChange will set user/role to null and isLoading to false
           set({ user: null, role: null, isLoading: false });
       },
       
@@ -142,8 +144,13 @@ export const useAuthStore = create<AuthState>()(
       }
     }),
     {
-      name: 'auth-storage-v4', // Incremented version to clear old state
+      name: 'auth-storage-v5', // Incremented version to clear old state
       storage: createJSONStorage(() => localStorage), 
+      onRehydrateStorage: () => (state) => {
+          if (state) {
+              state.initializeSession();
+          }
+      },
     }
   )
 );
