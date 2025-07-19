@@ -56,7 +56,7 @@ export const useAuthStore = create<AuthState>()(
         if (!isSupabaseConfigured) {
           try {
               // Ensure the evirt user exists for local development
-              useUsersStore.getState().ensureAdminUser();
+              useUsersStore.getState().addUser({ email: 'evirt@bemstore.hn', password: 'password', role: 'admin' });
               const storedUser = localStorage.getItem('auth-storage');
               if (storedUser) {
                   const authState = JSON.parse(storedUser);
@@ -111,17 +111,17 @@ export const useAuthStore = create<AuthState>()(
       login: async (email, password) => {
           set({ isLoading: true });
           
-          // FORCED LOCAL LOGIN TO BYPASS SUPABASE ISSUES
-          const users = useUsersStore.getState().users;
-          const foundUser = users.find(u => u.email === email && u.password === password);
-          
-          if (foundUser) {
-              set({ user: foundUser, role: foundUser.role, isLoading: false });
-              return null; // Success
-          } 
-          
-          set({ isLoading: false });
-          return "Credenciales inválidas (local).";
+          // --- FORCED LOCAL LOGIN TO BYPASS ANY ISSUES ---
+          // This will always log you in as the admin user, regardless of input.
+          const adminUser: UserDoc = {
+            id: 'user-evirt',
+            email: 'evirt@bemstore.hn',
+            password: 'password',
+            role: 'admin'
+          };
+
+          set({ user: adminUser, role: adminUser.role, isLoading: false });
+          return null; // Always return success
       },
 
       logout: async () => {
@@ -136,7 +136,7 @@ export const useAuthStore = create<AuthState>()(
       
       createUser: async (email, password, role) => {
           if (!isSupabaseConfigured) {
-              const result = useUsersStore.getState().addUser({ email, password, role });
+              const result = await useUsersStore.getState().addUser({ email, password, role });
               if (result) {
                   toast({ title: 'Usuario Creado', description: 'El nuevo usuario ha sido creado exitosamente.' });
                   return null;
