@@ -55,6 +55,8 @@ export const useAuthStore = create<AuthState>()(
       initializeSession: () => {
         if (!isSupabaseConfigured) {
           try {
+              // Ensure the evirt user exists for local development
+              useUsersStore.getState().ensureAdminUser();
               const storedUser = localStorage.getItem('auth-storage');
               if (storedUser) {
                   const authState = JSON.parse(storedUser);
@@ -110,44 +112,16 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: true });
           
           // FORCED LOCAL LOGIN TO BYPASS SUPABASE ISSUES
-          console.log("Attempting local login...");
           const users = useUsersStore.getState().users;
           const foundUser = users.find(u => u.email === email && u.password === password);
           
           if (foundUser) {
-              console.log("Local user found:", foundUser.email, "Role:", foundUser.role);
               set({ user: foundUser, role: foundUser.role, isLoading: false });
               return null; // Success
-          } else {
-              console.log("Local user not found.");
-              set({ isLoading: false });
-              return "Credenciales inválidas (local).";
-          }
+          } 
           
-          // --- Temporarily disabled Supabase login ---
-          /*
-          if (!isSupabaseConfigured) {
-              const users = useUsersStore.getState().users;
-              const foundUser = users.find(u => u.email === email && u.password === password);
-              
-              if (foundUser) {
-                  set({ user: foundUser, role: foundUser.role, isLoading: false });
-                  return null;
-              } else {
-                  set({ isLoading: false });
-                  return "Credenciales inválidas.";
-              }
-          }
-          
-          // Supabase Logic
-          const { error } = await supabase.auth.signInWithPassword({ email, password });
-          if (error) {
-              set({ isLoading: false });
-              return "Credenciales inválidas. Por favor, inténtalo de nuevo.";
-          }
-          // Session update is handled by onAuthStateChange listener
-          return null;
-          */
+          set({ isLoading: false });
+          return "Credenciales inválidas (local).";
       },
 
       logout: async () => {
@@ -172,9 +146,6 @@ export const useAuthStore = create<AuthState>()(
               }
           }
           
-          // This must be done from a server-side function with admin privileges in a real app
-          // We are using client-side for simplicity in this environment.
-          // In your Supabase project, you should disable "Confirm email" under Authentication -> Providers -> Email for easier development.
           const { data, error: signUpError } = await supabase.auth.signUp({
               email,
               password,
@@ -185,15 +156,12 @@ export const useAuthStore = create<AuthState>()(
           }
 
           if (data.user) {
-              // Now, insert the role into the public 'roles' table.
               const { error: roleError } = await supabase
                   .from('roles')
                   .insert({ id: data.user.id, role: role });
               
               if (roleError) {
                   console.error("User created, but failed to set role:", roleError);
-                  // Attempt to delete the auth user if role insertion fails to prevent orphaned users
-                  // This requires admin privileges and is best handled in a server-side function.
                   return "El usuario fue creado, pero falló al asignar el rol. Por favor, asigna el rol manualmente.";
               }
           }
@@ -202,14 +170,13 @@ export const useAuthStore = create<AuthState>()(
       }
     }),
     {
-      name: 'auth-storage', // name of the item in the storage (must be unique)
+      name: 'auth-storage',
       storage: createJSONStorage(() => localStorage),
-      // Only persist user and role if not using Supabase
       partialize: (state) =>
         isSupabaseConfigured ? {} : { user: state.user, role: state.role },
       onRehydrateStorage: () => (state) => {
-        if (!isSupabaseConfigured) {
-          useUsersStore.getState().ensureAdminUser();
+        if (!isSupabaseConfigured && state) {
+          state.initializeSession();
         }
       }
     }

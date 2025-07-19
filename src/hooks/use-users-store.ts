@@ -45,8 +45,6 @@ export const useUsersStore = create<UsersState>()(
               return;
           }
           set({ isLoading: true });
-          // In Supabase, users come from auth, roles from 'roles' table.
-          // This is a simplified fetch. In a real app, you might need an admin function.
           const { data: rolesData, error: rolesError } = await supabase.from('roles').select('*');
           
           if (rolesError) {
@@ -54,12 +52,6 @@ export const useUsersStore = create<UsersState>()(
               set({ isLoading: false });
               return;
           }
-
-          // We can't easily get all users from Supabase Auth on the client,
-          // so we'll just use the roles data to populate emails (this is a simplification)
-          // A proper implementation uses a server-side function.
-          
-          // For now, we just mark as not loading. The user list will be managed differently.
           set({ isLoading: false });
       },
 
@@ -84,7 +76,6 @@ export const useUsersStore = create<UsersState>()(
                 toast({ title: 'Error al actualizar rol', description: error.message, variant: 'destructive' });
             } else {
                 toast({ title: 'Rol actualizado' });
-                // We need to refetch the users list to see the change
                 get().fetchUsers();
             }
       },
@@ -98,49 +89,41 @@ export const useUsersStore = create<UsersState>()(
               return;
            }
            
-           // Deleting a user should be a server-side admin action.
-           // This will not work with default RLS policies.
-           // For now, we just show a toast.
            toast({ title: 'Función no implementada', description: 'La eliminación de usuarios debe configurarse con funciones de administrador en Supabase.', variant: 'destructive'});
       },
 
       addUser: async (userData) => {
         const existingUser = get().users.find(u => u.email === userData.email);
         if (existingUser) {
-            return false; // User already exists
+            return false;
         }
 
         const newUser: UserDoc = { ...userData, id: uuidv4(), role: userData.role };
         set(produce(state => {
             state.users.push(newUser);
         }));
-        return true; // Success
+        return true;
       },
       
       ensureAdminUser: () => {
-         setTimeout(() => {
-            set(produce(state => {
-                const evirtUser = state.users.find((u: UserDoc) => u.email === 'evirt@bemstore.hn');
-                 if (!evirtUser) {
-                     state.users.push({ id: 'user-evirt', email: 'evirt@bemstore.hn', password: 'password', role: 'admin'});
-                 } else if (evirtUser.role !== 'admin') {
-                     evirtUser.role = 'admin';
-                 }
-            }));
-         }, 0)
+         set(produce(state => {
+             const evirtUser = state.users.find((u: UserDoc) => u.email === 'evirt@bemstore.hn');
+             if (!evirtUser) {
+                 state.users.push({ id: 'user-evirt', email: 'evirt@bemstore.hn', password: 'password', role: 'admin'});
+             } else {
+                 if(evirtUser.role !== 'admin') evirtUser.role = 'admin';
+                 if(evirtUser.password !== 'password') evirtUser.password = 'password';
+             }
+         }));
       }
     }),
     {
       name: 'users-storage',
       storage: createJSONStorage(() => localStorage),
-       onRehydrateStorage: (state: any) => {
-         // This function runs when the state is rehydrated from localStorage.
-         const hydratedState = state.state;
-         if (!isSupabaseConfigured) {
-             if (!hydratedState || !hydratedState.users || hydratedState.users.length === 0) {
-                 // If storage is empty or users array is missing, populate with initial data.
-                 set({ users: initialUsers });
-             }
+       onRehydrateStorage: () => (state) => {
+         if (state && !isSupabaseConfigured) {
+             state.ensureAdminUser();
+             state.isLoading = false;
          }
        }
     }
