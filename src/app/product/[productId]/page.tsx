@@ -57,7 +57,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   
   return (
     <div className="bg-muted h-screen overflow-hidden flex flex-col">
-      <div className="flex-1 overflow-y-auto pb-24">
         {/* Product Image Section */}
         <div className="relative w-full aspect-square flex-shrink-0">
           <Image
@@ -80,8 +79,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
           </div>
         </div>
 
-        {/* Product Details Section */}
-        <div className="bg-card rounded-t-3xl z-10 p-6 relative -mt-5">
+        {/* Product Details Section - This now fills remaining space */}
+        <div className="flex-1 bg-card rounded-t-3xl z-10 relative -mt-5 p-6">
           <div className="flex justify-between items-start">
               <div>
                   <h1 className="text-2xl font-bold">{product.name}</h1>
@@ -105,7 +104,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             {product.description}
           </p>
         </div>
-      </div>
       
        {/* Fixed Footer */}
       <div className="fixed bottom-0 left-0 right-0 z-20 bg-card p-4 border-t">
