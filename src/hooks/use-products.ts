@@ -71,26 +71,27 @@ export const useProductsStore = create<ProductsState>()((set, get) => ({
     fetchProducts: async () => {
         set({ isLoading: true });
         
-        let products: Product[] = [];
-
         if (isSupabaseConfigured) {
             const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+            
             if (error) {
                 toast({ title: 'Error al cargar productos', description: error.message, variant: 'destructive'});
-                 set({ products: [], featuredProducts: [], isLoading: false });
-                return;
+                set({ products: [], featuredProducts: [], isLoading: false });
+            } else {
+                set({ 
+                  products: data as Product[],
+                  featuredProducts: (data as Product[]).filter(p => p.featured),
+                  isLoading: false 
+                });
             }
-            products = data as Product[];
         } else {
             // Only use initial data if Supabase is not configured at all.
-            products = initialProducts;
+             set({ 
+                products: initialProducts,
+                featuredProducts: initialProducts.filter(p => p.featured),
+                isLoading: false 
+            });
         }
-
-        set({ 
-          products: products,
-          featuredProducts: products.filter(p => p.featured),
-          isLoading: false 
-        });
     },
 
     getProductById: (productId: string) => {
