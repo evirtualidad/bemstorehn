@@ -8,8 +8,8 @@ import {
   CarouselItem,
 } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
-import { ProductGridHomepage } from './product-grid-homepage';
-import { Product } from '@/lib/products';
+import { ProductGridHomepage } from './store/product-grid-homepage';
+import { type Product } from '@/lib/types';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 
@@ -46,7 +46,7 @@ export function FeaturedProductsCarousel({ products }: { products: Product[] }) 
                     <CarouselContent>
                         {products.map((product) => (
                             <CarouselItem key={product.id} className="basis-1/2 md:basis-1/3 lg:basis-1/4">
-                                <ProductGridHomepage.Card product={product} onAddToCart={handleAddToCart} />
+                                <ProductGridHomepage.Card product={product} />
                             </CarouselItem>
                         ))}
                     </CarouselContent>

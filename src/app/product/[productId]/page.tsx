@@ -13,11 +13,11 @@ import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
-import { Product } from '@/lib/products';
+import { Product } from '@/lib/types';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { ProductGridHomepage } from '@/components/product-grid-homepage';
+import { ProductGridHomepage } from '@/components/store/product-grid-homepage';
 
 
 interface ProductDetailPageProps {
