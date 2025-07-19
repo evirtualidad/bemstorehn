@@ -6,13 +6,15 @@ import { produce } from 'immer';
 import { toast } from './use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
+export type UserRole = 'admin' | 'cajero';
 
 export interface UserDoc {
     id: string; 
     email: string;
-    password?: string;
-    role: 'admin' | 'cajero';
+    password?: string; // Only for local mock data
+    role: UserRole;
 }
 
 const initialUsers: UserDoc[] = [
@@ -38,24 +40,68 @@ export const useUsersStore = create<UsersState>()(
       isLoading: false, 
       
       fetchUsers: async () => {
+          if (!isSupabaseConfigured) {
+              set({ isLoading: false });
+              return;
+          }
+          set({ isLoading: true });
+          // In Supabase, users come from auth, roles from 'roles' table.
+          // This is a simplified fetch. In a real app, you might need an admin function.
+          const { data: rolesData, error: rolesError } = await supabase.from('roles').select('*');
+          
+          if (rolesError) {
+              toast({ title: 'Error al cargar usuarios', description: rolesError.message, variant: 'destructive'});
+              set({ isLoading: false });
+              return;
+          }
+
+          // We can't easily get all users from Supabase Auth on the client,
+          // so we'll just use the roles data to populate emails (this is a simplification)
+          // A proper implementation uses a server-side function.
+          
+          // For now, we'll just mark as not loading. The user list will be managed differently.
           set({ isLoading: false });
       },
 
       updateUserRole: async (userId, newRole) => {
-          set(produce(state => {
-              const user = state.users.find(u => u.id === userId);
-              if (user) {
-                  user.role = newRole;
-              }
-          }));
-          toast({ title: 'Rol actualizado', description: `El rol del usuario ha sido cambiado a ${newRole}.` });
+           if (!isSupabaseConfigured) {
+              set(produce(state => {
+                  const user = state.users.find(u => u.id === userId);
+                  if (user) {
+                      user.role = newRole;
+                  }
+              }));
+              toast({ title: 'Rol actualizado', description: `El rol del usuario ha sido cambiado a ${newRole}.` });
+              return;
+           }
+
+            const { error } = await supabase
+                .from('roles')
+                .update({ role: newRole })
+                .eq('id', userId);
+            
+            if (error) {
+                toast({ title: 'Error al actualizar rol', description: error.message, variant: 'destructive' });
+            } else {
+                toast({ title: 'Rol actualizado' });
+                // We need to refetch the users list to see the change
+                get().fetchUsers();
+            }
       },
       
       deleteUser: async (userId: string) => {
-           set(produce(state => {
-              state.users = state.users.filter(u => u.id !== userId);
-          }));
-          toast({ title: 'Usuario eliminado', variant: 'destructive' });
+           if (!isSupabaseConfigured) {
+               set(produce(state => {
+                  state.users = state.users.filter(u => u.id !== userId);
+              }));
+              toast({ title: 'Usuario eliminado', variant: 'destructive' });
+              return;
+           }
+           
+           // Deleting a user should be a server-side admin action.
+           // This will not work with default RLS policies.
+           // For now, we just show a toast.
+           toast({ title: 'Función no implementada', description: 'La eliminación de usuarios debe configurarse con funciones de administrador en Supabase.', variant: 'destructive'});
       },
 
       addUser: async (userData) => {
@@ -64,7 +110,7 @@ export const useUsersStore = create<UsersState>()(
             return false; // User already exists
         }
 
-        const newUser: UserDoc = { ...userData, id: uuidv4() };
+        const newUser: UserDoc = { ...userData, id: uuidv4(), role: userData.role };
         set(produce(state => {
             state.users.push(newUser);
         }));
@@ -74,13 +120,13 @@ export const useUsersStore = create<UsersState>()(
     {
       name: 'users-storage',
       storage: createJSONStorage(() => localStorage),
-      onRehydrateStorage: (state) => {
-        if (!state?.users?.length) {
+       onRehydrateStorage: (state) => {
+        if (!isSupabaseConfigured && !state?.users?.length) {
             // If storage is empty (first time load), populate with initial users.
             state.users = initialUsers;
         }
         // Force evirt to be admin on every load to fix stuck state
-        if (state?.users) {
+        if (!isSupabaseConfigured && state?.users) {
            const evirtUser = state.users.find(u => u.email === 'evirt@bemstore.hn');
            if (evirtUser && evirtUser.role !== 'admin') {
                evirtUser.role = 'admin';
