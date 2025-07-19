@@ -1,5 +1,7 @@
+
 'use client';
 
+import * as React from 'react';
 import { Home, ShoppingCart, Bell, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -9,23 +11,32 @@ import { useCart } from '@/hooks/use-cart';
 export function BottomNav() {
   const pathname = usePathname();
   const { items } = useCart();
+  const [isClient, setIsClient] = React.useState(false);
 
-  if (pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/order-confirmation')) {
-    return null;
-  }
-  
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const navItems = [
     { href: '/', icon: Home, label: 'Home' },
     { href: '/cart', icon: ShoppingCart, label: 'Cart' },
     { href: '/notifications', icon: Bell, label: 'Notifications' },
     { href: '/profile', icon: User, label: 'Profile' },
   ];
+  
+  const shouldHideNav = pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/order-confirmation');
+
+  if (shouldHideNav) {
+    return null;
+  }
 
   return (
     <div className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] h-16 bg-background/90 backdrop-blur-lg border rounded-full z-50 shadow-lg">
       <div className="flex justify-around items-center h-full px-2">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          // Defer active check until client-side hydration is complete
+          const isActive = isClient && pathname === item.href;
+
           return (
             <Link
               key={item.href}
