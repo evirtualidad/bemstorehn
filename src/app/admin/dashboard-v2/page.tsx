@@ -52,8 +52,9 @@ export default function DashboardV2() {
   const { products, isLoading: isLoadingProducts } = useProductsStore();
   const { customers, isLoading: isLoadingCustomers } = useCustomersStore();
   const { currency } = useCurrencyStore();
-  const isLoading = isLoadingOrders || isLoadingProducts || isLoadingCustomers;
   
+  const isLoading = isLoadingOrders || isLoadingProducts || isLoadingCustomers;
+
   const dashboardData = React.useMemo(() => {
     if (isLoading) return null;
 

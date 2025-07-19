@@ -55,9 +55,10 @@ export const useBannersStore = create<BannersState>()(
   persist(
     (set) => ({
       banners: initialBanners,
-      isLoading: true,
+      isLoading: false,
       
       fetchBanners: async () => {
+          set({ isLoading: true });
           if (!isSupabaseConfigured) {
             set({ banners: initialBanners, isLoading: false });
             return;
@@ -92,14 +93,8 @@ export const useBannersStore = create<BannersState>()(
       },
     }),
     {
-      name: 'banners-storage-v2',
+      name: 'banners-storage-v3',
       storage: createJSONStorage(() => localStorage),
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.isLoading = true;
-          state.fetchBanners();
-        }
-      }
     }
   )
 );

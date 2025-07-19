@@ -13,7 +13,6 @@ import { products as initialProducts } from '@/lib/products';
 
 export type Product = ProductType;
 
-// --- Helper function for Supabase Storage ---
 const BUCKET_NAME = 'product-images';
 
 async function uploadProductImage(file: File): Promise<string | null> {
@@ -45,7 +44,6 @@ async function deleteProductImage(imageUrl: string): Promise<void> {
             await supabase.storage.from(BUCKET_NAME).remove([path]);
         }
     } catch (error) {
-        // Ignore errors (e.g., if it's a placehold.co URL)
         console.warn("Could not parse or delete image URL:", imageUrl);
     }
 }
@@ -67,16 +65,15 @@ type ProductsState = {
 export const useProductsStore = create<ProductsState>()(
   persist(
     (set, get) => ({
-      products: [],
-      isLoading: true,
+      products: initialProducts,
+      isLoading: false,
 
       fetchProducts: async () => {
+          set({ isLoading: true });
           if (!isSupabaseConfigured) {
               set({ products: initialProducts, isLoading: false });
               return;
           }
-          set({ isLoading: true });
-          // Removed ordering by 'created_at' to fix the error
           const { data, error } = await supabase.from('products').select('*');
           if (error) {
               toast({ title: 'Error al cargar productos', description: error.message, variant: 'destructive'});
@@ -98,13 +95,13 @@ export const useProductsStore = create<ProductsState>()(
 
         toast({ title: 'Añadiendo producto...' });
         
-        let imageUrl = productData.image; // Use existing placeholder
+        let imageUrl = productData.image;
         if (productData.imageFile) {
             const uploadedUrl = await uploadProductImage(productData.imageFile);
             if (uploadedUrl) {
                 imageUrl = uploadedUrl;
             } else {
-                return null; // Stop if upload fails
+                return null;
             }
         }
         
@@ -114,7 +111,6 @@ export const useProductsStore = create<ProductsState>()(
 
         if (error) {
             toast({ title: 'Error al añadir producto', description: error.message, variant: 'destructive' });
-            // Clean up uploaded image if DB insert fails
             if (imageUrl && productData.imageFile) {
                 await deleteProductImage(imageUrl);
             }
@@ -142,13 +138,12 @@ export const useProductsStore = create<ProductsState>()(
         if (productData.imageFile) {
             const uploadedUrl = await uploadProductImage(productData.imageFile);
             if (uploadedUrl) {
-                // If upload succeeds, delete the old image
                 if (originalProduct?.image) {
                     await deleteProductImage(originalProduct.image);
                 }
                 imageUrl = uploadedUrl;
             } else {
-                return; // Stop if upload fails
+                return;
             }
         }
         
@@ -199,7 +194,6 @@ export const useProductsStore = create<ProductsState>()(
 
       decreaseStock: async (productId, quantity) => {
           if (!isSupabaseConfigured) {
-              // Local fallback
               set(produce(state => {
                 const product = state.products.find(p => p.id === productId);
                 if (product) product.stock -= quantity;
@@ -219,7 +213,6 @@ export const useProductsStore = create<ProductsState>()(
 
       increaseStock: async (productId, quantity) => {
          if (!isSupabaseConfigured) {
-              // Local fallback
               set(produce(state => {
                 const product = state.products.find(p => p.id === productId);
                 if (product) product.stock += quantity;
@@ -238,14 +231,8 @@ export const useProductsStore = create<ProductsState>()(
       },
     }),
     {
-      name: 'products-storage-v3', // Updated name to avoid conflicts with old structure
+      name: 'products-storage-v4',
       storage: createJSONStorage(() => localStorage),
-      onRehydrateStorage: () => (state, error) => {
-        if (state) {
-          state.isLoading = true;
-          state.fetchProducts();
-        }
-      }
     }
   )
 );

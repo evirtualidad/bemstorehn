@@ -7,6 +7,7 @@ import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { initialOrders } from '@/lib/orders';
 
 export interface Payment {
     date: string;
@@ -24,7 +25,7 @@ export interface Address {
 }
 
 export interface Order {
-  id: string; // UUID from DB
+  id: string; 
   display_id: string; 
   created_at: string; 
   user_id: string | null;
@@ -69,19 +70,19 @@ type OrdersState = {
 export const useOrdersStore = create<OrdersState>()(
   persist(
     (set, get) => ({
-      orders: [],
-      isLoading: true,
+      orders: initialOrders,
+      isLoading: false,
 
       fetchOrders: async () => {
+          set({ isLoading: true });
           if (!isSupabaseConfigured) {
-            set({ orders: [], isLoading: false });
+            set({ orders: initialOrders, isLoading: false });
             return;
           }
-          set({ isLoading: true });
           const { data, error } = await supabase.from('orders').select('*');
            if (error) {
               toast({ title: 'Error al cargar pedidos', description: error.message, variant: 'destructive'});
-              set({ orders: [], isLoading: false });
+              set({ orders: initialOrders, isLoading: false });
           } else {
               set({ orders: data as any[], isLoading: false });
           }
@@ -165,14 +166,8 @@ export const useOrdersStore = create<OrdersState>()(
       },
     }),
     {
-      name: 'orders-storage-v2',
+      name: 'orders-storage-v3',
       storage: createJSONStorage(() => localStorage),
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.isLoading = true;
-          state.fetchOrders();
-        }
-      }
     }
   )
 );

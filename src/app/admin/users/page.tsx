@@ -76,7 +76,6 @@ import { cn } from '@/lib/utils';
 import { useUsersStore } from '@/hooks/use-users-store';
 
 
-// --- Create User Dialog ---
 const userFormSchema = z.object({
   email: z.string().email({ message: 'Por favor, ingresa un correo válido.' }),
   password: z.string().min(6, { message: 'La contraseña debe tener al menos 6 caracteres.' }),
@@ -107,7 +106,7 @@ function CreateUserDialog() {
         toast({ title: 'Error al crear usuario', description: error, variant: 'destructive' });
     } else {
         toast({ title: 'Usuario Creado', description: 'El nuevo usuario ha sido creado exitosamente.' });
-        await fetchUsers(); // Refresh the user list
+        await fetchUsers();
         setIsOpen(false);
         form.reset();
     }
@@ -192,7 +191,6 @@ function CreateUserDialog() {
   );
 }
 
-// --- Main Page Component ---
 export default function UsersPage() {
   const { users, isLoading, updateUserRole, deleteUser } = useUsersStore();
   const { role: adminRole, user: currentUser } = useAuthStore();
@@ -203,7 +201,7 @@ export default function UsersPage() {
 
   const isCurrentUser = (uid: string) => currentUser?.id === uid;
 
-  if (isLoading || !adminRole) {
+  if (isLoading) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
         <LoadingSpinner />

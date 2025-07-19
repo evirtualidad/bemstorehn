@@ -17,7 +17,6 @@ export interface UserDoc {
     password?: string; // Only for local fallback
 }
 
-// Initial user for local mode
 const initialUsers: UserDoc[] = [
     { id: 'user-1-admin', email: 'evirt@bemstore.hn', role: 'admin', password: 'password' },
     { id: 'user-2-cajero', email: 'cajero@bemstore.hn', role: 'cajero', password: 'password' },
@@ -34,26 +33,24 @@ type UsersState = {
 export const useUsersStore = create<UsersState>()(
   persist(
     (set, get) => ({
-      users: [],
-      isLoading: true,
+      users: initialUsers,
+      isLoading: false,
       
       fetchUsers: async () => {
+          set({ isLoading: true });
           if (!isSupabaseConfigured) {
               set({ users: initialUsers, isLoading: false });
               return;
           }
-          set({ isLoading: true });
 
-          // Call the secure database function instead of a direct SELECT
           const { data, error } = await supabase.rpc('get_all_users');
           
           if (error) {
               toast({ title: 'Error al cargar usuarios', description: error.message, variant: 'destructive'});
-              set({ isLoading: false, users: initialUsers });
-              return;
+              set({ isLoading: false });
+          } else {
+            set({ users: data as UserDoc[], isLoading: false });
           }
-
-          set({ users: data as UserDoc[], isLoading: false });
       },
 
       updateUserRole: async (userId, newRole) => {
@@ -62,10 +59,10 @@ export const useUsersStore = create<UsersState>()(
               return;
            }
 
-            const { error } = await supabase
-                .from('users')
-                .update({ role: newRole })
-                .eq('id', userId);
+            const { error } = await supabase.rpc('update_user_role', {
+                user_id: userId,
+                new_role: newRole,
+            });
             
             if (error) {
                 toast({ title: 'Error al actualizar rol', description: error.message, variant: 'destructive' });
@@ -81,27 +78,19 @@ export const useUsersStore = create<UsersState>()(
               return;
            }
            
-           // You would typically call a Supabase Edge Function to delete the auth user securely.
-           // For now, we'll just delete from our public table.
-           const { error } = await supabase.from('users').delete().eq('id', userId);
+           const { error } = await supabase.rpc('delete_auth_user', { user_id: userId });
            
             if (error) {
                 toast({ title: 'Error al eliminar usuario', description: error.message, variant: 'destructive' });
             } else {
-                toast({ title: 'Usuario eliminado de la lista', description: 'La cuenta de autenticación debe ser eliminada manually en Supabase.', variant: 'default' });
+                toast({ title: 'Usuario eliminado', variant: 'destructive' });
                 await get().fetchUsers();
             }
       },
     }),
     {
-      name: 'users-storage-v4',
+      name: 'users-storage-v5',
       storage: createJSONStorage(() => localStorage),
-       onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.isLoading = true;
-          state.fetchUsers();
-        }
-      }
     }
   )
 );

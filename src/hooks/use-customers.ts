@@ -8,6 +8,7 @@ import { toast } from './use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { initialCustomers } from '@/lib/customers';
 
 export interface Customer {
   id: string;
@@ -18,32 +19,6 @@ export interface Customer {
   total_spent: number;
   order_count: number;
 }
-
-const initialCustomers: Customer[] = [
-    {
-        id: 'cust-1',
-        created_at: '2023-01-15T10:00:00Z',
-        name: 'Elena Rodríguez',
-        phone: '9988-7766',
-        address: {
-            department: 'Francisco Morazán',
-            municipality: 'Distrito Central',
-            colony: 'Col. Palmira',
-            exactAddress: 'Frente a la embajada, casa 123'
-        },
-        total_spent: 1500,
-        order_count: 3
-    },
-    {
-        id: 'cust-2',
-        created_at: '2023-02-20T14:30:00Z',
-        name: 'Carlos Portillo',
-        phone: '3322-1100',
-        address: null,
-        total_spent: 850,
-        order_count: 1
-    }
-];
 
 type CustomersState = {
   customers: Customer[];
@@ -63,15 +38,15 @@ type CustomersState = {
 export const useCustomersStore = create<CustomersState>()(
   persist(
     (set, get) => ({
-      customers: [],
-      isLoading: true,
+      customers: initialCustomers,
+      isLoading: false,
       
       fetchCustomers: async () => {
+          set({ isLoading: true });
           if (!isSupabaseConfigured) {
             set({ customers: initialCustomers, isLoading: false });
             return;
           }
-          set({ isLoading: true });
           const { data, error } = await supabase.from('customers').select('*');
           if (error) {
             toast({ title: 'Error al cargar clientes', description: error.message, variant: 'destructive' });
@@ -89,7 +64,6 @@ export const useCustomersStore = create<CustomersState>()(
         const existingCustomer = phone ? get().customers.find(c => c.phone === phone) : null;
         
         if (existingCustomer) {
-            // Update customer
             const updatedCustomer = {
                 ...existingCustomer,
                 name,
@@ -103,7 +77,6 @@ export const useCustomersStore = create<CustomersState>()(
             }));
             return updatedCustomer.id;
         } else {
-            // Create customer
             const newCustomer: Customer = {
                 id: uuidv4(),
                 created_at: new Date().toISOString(),
@@ -136,14 +109,8 @@ export const useCustomersStore = create<CustomersState>()(
       },
     }),
     {
-      name: 'customers-storage-v2',
+      name: 'customers-storage-v3',
       storage: createJSONStorage(() => localStorage),
-       onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.isLoading = true;
-          state.fetchCustomers();
-        }
-      }
     }
   )
 );

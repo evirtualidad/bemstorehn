@@ -21,12 +21,6 @@ type AuthState = {
   createUser: (email: string, password: string, role: UserRole) => Promise<string | null>;
 };
 
-/**
- * Gets the user role ONLY from the session's JWT metadata.
- * This is the safest way to get the role on the client-side.
- * @param session The Supabase session object.
- * @returns The user role or null if not found.
- */
 function getUserRoleFromSession(session: Session | null): UserRole | null {
     if (!session?.user?.id) {
         return null;
@@ -59,7 +53,6 @@ export const useAuthStore = create<AuthState>()(
           });
         });
         
-        // Initial session check
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session) {
                 const userRole = getUserRoleFromSession(session);
@@ -68,7 +61,6 @@ export const useAuthStore = create<AuthState>()(
                     role: userRole, 
                 });
             }
-            // CRITICAL: Ensure loading is false after the check.
             set({ isLoading: false });
         });
 
@@ -79,23 +71,21 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (email, password) => {
           if (!isSupabaseConfigured) {
-            // Local fallback logic
-            const localUser = useUsersStore.getState().users.find(u => u.email === email && u.password === password);
+            const localUsers = useUsersStore.getState().users;
+            const localUser = localUsers.find(u => u.email === email && u.password === password);
             if(localUser) {
                 set({ user: localUser, role: localUser.role, isLoading: false });
                 return null;
             }
-            set({ isLoading: false }); // Ensure loading is false on failure
+            set({ isLoading: false });
             return "Credenciales inválidas (modo local).";
           }
           
           set({ isLoading: true });
           const { error } = await supabase.auth.signInWithPassword({ email, password });
           
-          // The onAuthStateChange listener will handle setting isLoading to false.
-          
           if (error) {
-            set({ isLoading: false }); // Explicitly set loading to false on error
+            set({ isLoading: false });
             if (error.message.includes('Invalid login credentials')) {
                 return 'Credenciales de inicio de sesión inválidas.';
             }
@@ -112,7 +102,6 @@ export const useAuthStore = create<AuthState>()(
           if (isSupabaseConfigured) {
               await supabase.auth.signOut();
           }
-          // The onAuthStateChange listener will set user/role to null and isLoading to false
           set({ user: null, role: null, isLoading: false });
       },
       
@@ -138,16 +127,15 @@ export const useAuthStore = create<AuthState>()(
           
           setTimeout(() => useUsersStore.getState().fetchUsers(), 2000);
           
-          return null; // Success
+          return null;
       }
     }),
     {
-      name: 'auth-storage-v10', // Incremented version to clear old state
+      name: 'auth-storage-v11',
       storage: createJSONStorage(() => localStorage), 
       onRehydrateStorage: () => (state) => {
           if (state) {
-            // onRehydrateStorage is for server-side hydration. We want initialization to run on the client.
-            // The actual initialization is now called from the AppProvider component.
+            state.initializeSession();
           }
       },
     }
