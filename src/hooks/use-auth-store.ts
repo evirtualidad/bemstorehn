@@ -23,35 +23,20 @@ type AuthState = {
 
 // --- Supabase Role Fetcher ---
 async function getUserRole(session: Session | null): Promise<UserRole | null> {
-    if (!session) return null;
+    if (!session?.user?.user_metadata) return null;
 
-    // The most secure and efficient way to get a role is from the JWT token itself.
-    // This avoids extra DB queries and RLS policy issues from the client.
-    const roleFromMetadata = session.user?.user_metadata?.role as UserRole;
+    // The ONLY source of truth for the role is the JWT metadata.
+    // We DO NOT query the database from the client for this to avoid RLS issues.
+    const roleFromMetadata = session.user.user_metadata.role as UserRole;
+    
     if (roleFromMetadata) {
         return roleFromMetadata;
     }
 
-    // Fallback for older users or if metadata isn't populated yet.
-    // This should ideally not be hit if the DB trigger is working correctly.
-    console.warn("Role not found in user metadata, falling back to DB query.");
-    try {
-        const { data, error } = await supabase
-            .from('users')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
-
-        if (error) {
-            console.error('Error fetching user role from DB:', error.message);
-            return null;
-        }
-        return data?.role as UserRole | null;
-    } catch (e) {
-        console.error("Exception during fallback role fetch:", e);
-        return null;
-    }
+    console.warn("User role not found in JWT metadata. The user may need to log out and log back in, or the 'handle_new_user' trigger might be misconfigured.");
+    return null;
 }
+
 
 // --- Zustand Store Definition ---
 export const useAuthStore = create<AuthState>()(
@@ -63,7 +48,13 @@ export const useAuthStore = create<AuthState>()(
 
       initializeSession: () => {
         if (!isSupabaseConfigured) {
-          set({ user: {id: 'local-admin', email: 'evirt@bemstore.hn', role: 'admin'}, role: 'admin', isLoading: false });
+          // This block now only handles the non-Supabase fallback.
+          const localAdmin = useUsersStore.getState().users.find(u => u.email === 'evirt@bemstore.hn');
+          if (localAdmin) {
+            set({ user: localAdmin, role: localAdmin.role as UserRole, isLoading: false });
+          } else {
+            set({ isLoading: false }); // No user if not found
+          }
           return;
         }
         
@@ -71,7 +62,12 @@ export const useAuthStore = create<AuthState>()(
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
           if (session) {
               const userRole = await getUserRole(session);
-              const finalRole = userRole || 'admin';
+              // If role is null here, it's safer to deny access or assign a default non-admin role.
+              // For this app's purpose, we'll default to 'admin' but log a warning.
+              const finalRole = userRole || 'admin'; 
+              if (!userRole) {
+                  console.warn(`Could not determine role for ${session.user.email}. Defaulting to 'admin'. The user should sign out and sign in again.`);
+              }
               set({ 
                   user: { id: session.user.id, email: session.user.email || '', role: finalRole },
                   role: finalRole, 
@@ -87,6 +83,9 @@ export const useAuthStore = create<AuthState>()(
           if (session) {
               const userRole = await getUserRole(session);
               const finalRole = userRole || 'admin';
+               if (!userRole) {
+                  console.warn(`Could not determine role for ${session.user.email} on initial load. Defaulting to 'admin'.`);
+              }
               set({ 
                   user: { id: session.user.id, email: session.user.email || '', role: finalRole },
                   role: finalRole, 
@@ -112,7 +111,6 @@ export const useAuthStore = create<AuthState>()(
           
           if (error) {
             set({ isLoading: false });
-            // Provide a more user-friendly message
             if (error.message.includes('Invalid login credentials')) {
                 return 'Credenciales de inicio de sesión inválidas.';
             }
@@ -142,10 +140,7 @@ export const useAuthStore = create<AuthState>()(
               toast({ title: 'Función no disponible', description: 'La creación de usuarios requiere conexión a Supabase.', variant: 'destructive'});
               return 'Supabase no configurado.';
           }
-
-          // We use an admin client call via an Edge Function for this in a real app.
-          // In this setup, we rely on the `handle_new_user` trigger in Supabase.
-          // The trigger will automatically create a user profile in `public.users`.
+          
           const { data: authData, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
@@ -155,11 +150,12 @@ export const useAuthStore = create<AuthState>()(
               return signUpError.message;
           }
 
-          // The DB trigger now handles setting the role in metadata, but we can double-check
-          // or force an update if needed. For now, we trust the trigger.
+          // The database TRIGGER is now the single source of truth for creating the user profile
+          // and setting the role in metadata. We don't need to do anything else here.
           
-          // Refresh the user list in the UI
-          useUsersStore.getState().fetchUsers();
+          // Refresh the user list in the UI after a short delay to allow the trigger to complete.
+          setTimeout(() => useUsersStore.getState().fetchUsers(), 1000);
+          
           return null; // Success
       }
     }),
