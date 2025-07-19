@@ -44,8 +44,8 @@ export const useUsersStore = create<UsersState>()(
           }
           set({ isLoading: true });
 
-          // Fetch users from the public 'users' table
-          const { data, error } = await supabase.from('users').select('id, email, role');
+          // Call the secure database function instead of a direct SELECT
+          const { data, error } = await supabase.rpc('get_all_users');
           
           if (error) {
               toast({ title: 'Error al cargar usuarios', description: error.message, variant: 'destructive'});
@@ -88,13 +88,13 @@ export const useUsersStore = create<UsersState>()(
             if (error) {
                 toast({ title: 'Error al eliminar usuario', description: error.message, variant: 'destructive' });
             } else {
-                toast({ title: 'Usuario eliminado de la lista', description: 'La cuenta de autenticación debe ser eliminada manually en Supabase.', variant: 'default' });
+                toast({ title: 'Usuario eliminado de la lista', description: 'La cuenta de autenticación debe ser eliminada manualmente en Supabase.', variant: 'default' });
                 await get().fetchUsers();
             }
       },
     }),
     {
-      name: 'users-storage-v2',
+      name: 'users-storage-v4',
       storage: createJSONStorage(() => localStorage),
        onRehydrateStorage: () => (state) => {
         if (state) {
