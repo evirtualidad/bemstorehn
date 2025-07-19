@@ -25,17 +25,15 @@ async function getUserRole(userId: string): Promise<UserRole | null> {
         .from('roles')
         .select('role')
         .eq('id', userId)
-        .single();
+        .maybeSingle(); // Use maybeSingle to gracefully handle cases where no role is found (0 rows)
 
     if (error) {
+        // We still log the error for debugging, but it won't be the "PGRST116" error anymore.
         console.error('Error fetching user role:', error.message);
-        // This can happen if the user exists in auth but not in roles table yet, or due to RLS.
-        if (error.code === 'PGRST116') {
-             console.log("User role not found, returning null.");
-             return null;
-        }
         return null;
     }
+    
+    // If data is null (no role found), it will correctly return null.
     return data?.role as UserRole | null;
 }
 
@@ -146,16 +144,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             }
         }
         
-        // Supabase Logic
-        const { data, error } = await supabase.auth.signUp({
+        // This must be done from a server-side function with admin privileges in a real app
+        const { data, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
         });
 
-        if (error) {
-            return error.message;
+        if (signUpError) {
+            return signUpError.message;
         }
 
+        // The user is created in auth, but not confirmed. The role must be set,
+        // typically via a server-side function triggered by the new user event.
+        // The policies we set up earlier allow an admin to do this.
         if (data.user) {
             // Now, insert the role into the public 'roles' table.
             const { error: roleError } = await supabase
@@ -164,6 +165,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             
             if (roleError) {
                 console.error("User created, but failed to set role:", roleError);
+                // Attempt to delete the user if role setting fails to avoid orphaned auth users
+                // This requires admin privileges, so it might fail on the client.
+                // await supabase.auth.admin.deleteUser(data.user.id); // This would be the server-side approach
                 return "El usuario fue creado, pero falló al asignar el rol. Por favor, asigna el rol manualmente.";
             }
         }
