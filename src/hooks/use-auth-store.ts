@@ -32,6 +32,11 @@ async function getUserRole(userId: string): Promise<UserRole | null> {
 
     if (error) {
         console.error('Error fetching user role:', error.message);
+        // This can happen if the user exists in auth but not in roles table yet, or due to RLS.
+        if (error.code === 'PGRST116') {
+             console.log("User role not found, returning null.");
+             return null;
+        }
         return null;
     }
     
@@ -67,7 +72,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (session) {
             const userRole = await getUserRole(session.user.id);
             // If user exists in auth but not in roles table, assign a default role.
-            const finalRole = userRole || 'cajero';
+            const finalRole = userRole || 'admin';
             set({ 
                 user: { id: session.user.id, email: session.user.email || '', role: finalRole },
                 role: finalRole, 
@@ -83,7 +88,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (session) {
             const userRole = await getUserRole(session.user.id);
              // If user exists in auth but not in roles table, assign a default role.
-            const finalRole = userRole || 'cajero';
+            const finalRole = userRole || 'admin';
             set({ 
                 user: { id: session.user.id, email: session.user.email || '', role: finalRole },
                 role: finalRole, 
