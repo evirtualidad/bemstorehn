@@ -57,70 +57,73 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   
   return (
     <div className="bg-muted h-screen overflow-hidden flex flex-col">
-      <ProductHeader />
-      
-      {/* Product Image Section */}
-      <div className="relative w-full aspect-square flex-shrink-0">
-        <Image
-          src={product.image || 'https://placehold.co/600x600.png'}
-          alt={product.name}
-          fill
-          className="object-cover"
-          data-ai-hint={product.aiHint}
-        />
-        <div className="absolute bottom-4 right-4">
-            <Button size="icon" variant="secondary" className="h-12 w-12 rounded-full shadow-md bg-white hover:bg-gray-100 text-black">
-                <Heart />
-            </Button>
+      <div className="flex-1 overflow-y-auto pb-24">
+        {/* Product Image Section */}
+        <div className="relative w-full aspect-square flex-shrink-0">
+          <Image
+            src={product.image || 'https://placehold.co/600x600.png'}
+            alt={product.name}
+            fill
+            className="object-cover"
+            data-ai-hint={product.aiHint}
+          />
+          <ProductHeader />
+          <div className="absolute bottom-4 right-4">
+              <Button size="icon" variant="secondary" className="h-12 w-12 rounded-full shadow-md bg-white hover:bg-gray-100 text-black">
+                  <Heart />
+              </Button>
+          </div>
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-black"></div>
+              <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+          </div>
         </div>
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-            <div className="w-2.5 h-2.5 rounded-full bg-black"></div>
-            <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+
+        {/* Product Details Section */}
+        <div className="bg-card rounded-t-3xl z-10 p-6 relative -mt-5">
+          <div className="flex justify-between items-start">
+              <div>
+                  <h1 className="text-2xl font-bold">{product.name}</h1>
+              </div>
+              <div className="flex items-center gap-3 bg-secondary p-1 rounded-full">
+                  <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => setQuantity(q => Math.max(1, q - 1))}>
+                      <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="font-bold w-5 text-center">{quantity}</span>
+                  <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => setQuantity(q => q + 1)}>
+                      <Plus className="h-4 w-4" />
+                  </Button>
+              </div>
+          </div>
+          
+          <div className='mt-5 mb-2'>
+              <h2 className="text-lg font-bold">Description</h2>
+          </div>
+
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            {product.description}
+          </p>
         </div>
       </div>
-
-      {/* Product Details Section - This will take the remaining space */}
-      <div className="bg-card rounded-t-3xl z-10 p-6 flex flex-col min-h-0">
-        <div className="flex justify-between items-start">
-            <div>
-                <h1 className="text-2xl font-bold">{product.name}</h1>
+      
+       {/* Fixed Footer */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 bg-card p-4 border-t">
+         <div className="flex items-center justify-between gap-4 container mx-auto px-0">
+             <div>
+                <p className="text-sm text-muted-foreground">Total Price</p>
+                <p className="text-2xl font-bold">{formatCurrency(product.price * quantity, currency.code)}</p>
             </div>
-            <div className="flex items-center gap-3 bg-secondary p-1 rounded-full">
-                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => setQuantity(q => Math.max(1, q - 1))}>
-                    <Minus className="h-4 w-4" />
-                </Button>
-                <span className="font-bold w-5 text-center">{quantity}</span>
-                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => setQuantity(q => q + 1)}>
-                    <Plus className="h-4 w-4" />
-                </Button>
-            </div>
-        </div>
-        
-        <div className='mt-5 mb-2'>
-            <h2 className="text-lg font-bold">Description</h2>
-        </div>
-
-        <p className="text-muted-foreground text-sm leading-relaxed flex-shrink">
-          {product.description}
-        </p>
-
-        {/* This will be pushed to the bottom of the details section */}
-        <div className="mt-auto pt-4 flex items-center justify-between gap-4">
-           <div>
-              <p className="text-sm text-muted-foreground">Total Price</p>
-              <p className="text-2xl font-bold">{formatCurrency(product.price * quantity, currency.code)}</p>
+            <Button 
+              size="lg"
+              className="w-full max-w-xs h-14 rounded-full text-md"
+              disabled={product.stock <= 0}
+              onClick={handleAddToCart}
+            >
+              <ShoppingCart className="mr-3 h-5 w-5" />
+              Add to cart
+            </Button>
           </div>
-          <Button 
-            size="lg"
-            className="w-full max-w-xs h-14 rounded-full text-md"
-            disabled={product.stock <= 0}
-            onClick={handleAddToCart}
-          >
-            <ShoppingCart className="mr-3 h-5 w-5" />
-            Add to cart
-          </Button>
-        </div>
       </div>
     </div>
   );
