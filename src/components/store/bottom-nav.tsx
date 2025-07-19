@@ -45,7 +45,7 @@ export function BottomNav() {
               )}
             >
               {isActive ? (
-                <div className='flex items-center justify-start bg-secondary text-secondary-foreground rounded-full px-2 py-2 w-full max-w-[120px]'>
+                <div className='flex items-center justify-start bg-gray-200 text-secondary-foreground rounded-full px-2 py-2 w-full max-w-[120px]'>
                   <div className="bg-primary text-primary-foreground rounded-full p-1.5 mr-2">
                     <item.icon className="w-5 h-5" />
                   </div>
