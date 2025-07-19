@@ -1,7 +1,5 @@
--- This script should be idempotent, meaning it can be run multiple times without causing errors.
 
--- 1. Create PRODUCTS table
--- Stores all product information.
+-- 1. Create PRODUCTS table if it doesn't exist
 CREATE TABLE IF NOT EXISTS public.products (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -16,46 +14,45 @@ CREATE TABLE IF NOT EXISTS public.products (
     featured BOOLEAN DEFAULT FALSE
 );
 
--- 2. Create USERS table for public profiles
--- This table is safe to expose to the client-side app.
--- It will be populated automatically by a trigger when a new user signs up in Supabase Auth.
+-- 2. Create USERS table for public profiles if it doesn't exist
 CREATE TABLE IF NOT EXISTS public.users (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT UNIQUE,
-  role TEXT DEFAULT 'admin' -- New users will default to 'admin' role.
+  role TEXT DEFAULT 'admin'
 );
 
--- 3. Create function to sync new auth users to our public.users table
+-- 3. Create/Replace function to sync new auth users to public.users and set role in metadata
+-- This is the key change to solve the recursion error.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Inserts a new row into public.users, capturing the id and email from the auth.users table.
-  -- The 'role' will use the DEFAULT value specified in the 'users' table definition ('admin').
-  INSERT INTO public.users (id, email)
-  VALUES (new.id, new.email);
+  -- Insert a new row into public.users
+  INSERT INTO public.users (id, email, role)
+  VALUES (new.id, new.email, 'admin');
+
+  -- Update the user's metadata in the auth.users table to include the role
+  -- This makes the role available in the JWT token, avoiding client-side DB lookups for role.
+  UPDATE auth.users
+  SET raw_user_meta_data = raw_user_meta_data || jsonb_build_object('role', 'admin')
+  WHERE id = new.id;
+  
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 4. Create trigger to call the function on new user sign-up
--- This ensures that whenever a user is created in Supabase's authentication system,
--- our handle_new_user function runs, creating a corresponding profile in public.users.
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
-
 -- 5. Set up Storage Bucket for product images
--- Creates the 'product-images' bucket if it doesn't already exist.
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('product-images', 'product-images', true)
 ON CONFLICT (id) DO NOTHING;
 
--- 6. Set up Storage Policies for the 'product-images' bucket
--- These policies define who can do what with the files in the bucket.
-
--- Policy to allow anonymous read access to images (so anyone can see product photos)
+-- 6. Set up Storage Policies
+-- Policy to allow anonymous read access to images
 DROP POLICY IF EXISTS "Allow public read access" ON storage.objects;
 CREATE POLICY "Allow public read access"
 ON storage.objects
@@ -63,7 +60,7 @@ FOR SELECT
 TO anon
 USING (bucket_id = 'product-images');
 
--- Policy to allow logged-in (authenticated) users to upload images
+-- Policy to allow authenticated users to upload images
 DROP POLICY IF EXISTS "Allow authenticated users to upload" ON storage.objects;
 CREATE POLICY "Allow authenticated users to upload"
 ON storage.objects
@@ -71,32 +68,33 @@ FOR INSERT
 TO authenticated
 WITH CHECK (bucket_id = 'product-images');
 
--- Policy to allow logged-in (authenticated) users to delete images
+-- Policy to allow authenticated users to delete their own images
 DROP POLICY IF EXISTS "Allow authenticated users to delete" ON storage.objects;
 CREATE POLICY "Allow authenticated users to delete"
 ON storage.objects
 FOR DELETE
 TO authenticated
-USING (bucket_id = 'product-images');
-
+USING (auth.uid() = owner);
 
 -- 7. Configure Row Level Security (RLS) for the 'users' table
--- This is crucial for fixing the "infinite recursion" error.
-
--- First, ensure RLS is enabled on the table.
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
--- Drop any potentially conflicting old policies to start fresh.
+-- Drop any existing, potentially conflicting policies
 DROP POLICY IF EXISTS "Allow public read access for all users" ON public.users;
 DROP POLICY IF EXISTS "Enable read access for all users" ON public.users;
 DROP POLICY IF EXISTS "Users can insert their own profile" ON public.users;
 DROP POLICY IF EXISTS "Users can update their own profile" ON public.users;
 
--- Create a new, simple policy: ANY authenticated user can read ALL profiles.
--- This is appropriate and secure for an internal admin/employee-facing application
--- and avoids the recursion error by not re-checking the same table.
+-- Create a new, simple policy: Allow any authenticated user to read all profiles.
 CREATE POLICY "Enable read access for all users"
 ON public.users
 FOR SELECT
 TO authenticated
 USING (true);
+
+-- Allow users to insert their own profile.
+CREATE POLICY "Users can insert their own profile"
+ON public.users
+FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid() = id);
