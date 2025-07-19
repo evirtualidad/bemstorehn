@@ -80,17 +80,13 @@ function AdminLayoutContent({
   const pathname = usePathname();
   const router = useRouter();
   
-  const { user, role, logout, initializeSession, isLoading: isAuthLoading } = useAuthStore();
+  const { user, role, logout, isLoading: isAuthLoading } = useAuthStore();
   const { orders, fetchOrders } = useOrdersStore();
   const { fetchProducts } = useProductsStore();
   const { fetchCategories } = useCategoriesStore();
   const { fetchCustomers } = useCustomersStore();
   const { fetchBanners } = useBannersStore();
   const { fetchUsers } = useUsersStore();
-
-  React.useEffect(() => {
-    initializeSession();
-  }, [initializeSession]);
 
   React.useEffect(() => {
     if (!isAuthLoading && !user) {
