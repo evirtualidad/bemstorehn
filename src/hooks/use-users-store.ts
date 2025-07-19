@@ -20,7 +20,6 @@ export interface UserDoc {
 const initialUsers: UserDoc[] = [
     { id: 'user-admin', email: 'admin@bemstore.hn', password: 'password', role: 'admin' },
     { id: 'user-cajero', email: 'cajero@bemstore.hn', password: 'password', role: 'cajero' },
-    { id: 'user-superadmin', email: 'superadmin@bemstore.hn', password: 'password', role: 'admin'},
     { id: 'user-evirt', email: 'evirt@bemstore.hn', password: 'password', role: 'admin'},
 ];
 
@@ -120,19 +119,26 @@ export const useUsersStore = create<UsersState>()(
     {
       name: 'users-storage',
       storage: createJSONStorage(() => localStorage),
-       onRehydrateStorage: (state) => {
-        if (!isSupabaseConfigured && !state?.users?.length) {
-            // If storage is empty (first time load), populate with initial users.
-            state.users = initialUsers;
-        }
-        // Force evirt to be admin on every load to fix stuck state
-        if (!isSupabaseConfigured && state?.users) {
-           const evirtUser = state.users.find(u => u.email === 'evirt@bemstore.hn');
-           if (evirtUser && evirtUser.role !== 'admin') {
-               evirtUser.role = 'admin';
-           }
-        }
-      }
+       onRehydrateStorage: (state: any) => {
+         // This function runs when the state is rehydrated from localStorage.
+         const hydratedState = state.state;
+         if (!isSupabaseConfigured) {
+             if (!hydratedState || !hydratedState.users || hydratedState.users.length === 0) {
+                 // If storage is empty or users array is missing, populate with initial data.
+                 set({ users: initialUsers });
+             } else {
+                 // Ensure the 'evirt' user always exists and is an admin in the local data.
+                 let users = hydratedState.users;
+                 const evirtUser = users.find((u: UserDoc) => u.email === 'evirt@bemstore.hn');
+                 if (!evirtUser) {
+                     users.push({ id: 'user-evirt', email: 'evirt@bemstore.hn', password: 'password', role: 'admin'});
+                 } else if (evirtUser.role !== 'admin') {
+                     evirtUser.role = 'admin';
+                 }
+                 set({ users });
+             }
+         }
+       }
     }
   )
 );

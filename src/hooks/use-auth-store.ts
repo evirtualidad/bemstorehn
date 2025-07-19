@@ -45,7 +45,7 @@ async function getUserRole(userId: string): Promise<UserRole | null> {
 
 
 // --- Zustand Store Definition ---
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>()((set, get) => ({
     user: null,
     role: null,
     isLoading: true, // Start as loading
@@ -53,17 +53,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     initializeSession: () => {
       if (!isSupabaseConfigured) {
         try {
-            const storedUser = localStorage.getItem('auth-user');
+            const storedUser = localStorage.getItem('auth-storage');
             if (storedUser) {
-                const user: UserDoc = JSON.parse(storedUser);
-                set({ user, role: user.role, isLoading: false });
-            } else {
-                set({ isLoading: false });
+                const authState = JSON.parse(storedUser);
+                if (authState.state.user) {
+                    set({ user: authState.state.user, role: authState.state.role, isLoading: false });
+                    return;
+                }
             }
         } catch (error) {
             console.error("Failed to parse auth user from localStorage", error);
-            set({ isLoading: false });
         }
+        set({ isLoading: false });
         return;
       }
       
@@ -87,7 +88,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       supabase.auth.getSession().then(async ({ data: { session } }) => {
         if (session) {
             const userRole = await getUserRole(session.user.id);
-             // If user exists in auth but not in roles table, assign a default role.
             const finalRole = userRole || 'admin';
             set({ 
                 user: { id: session.user.id, email: session.user.email || '', role: finalRole },
@@ -113,7 +113,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             
             if (foundUser) {
                 set({ user: foundUser, role: foundUser.role, isLoading: false });
-                localStorage.setItem('auth-user', JSON.stringify(foundUser));
                 return null;
             } else {
                 set({ isLoading: false });
@@ -133,7 +132,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     logout: async () => {
         if (!isSupabaseConfigured) {
-            localStorage.removeItem('auth-user');
             set({ user: null, role: null, isLoading: false });
             return;
         }
@@ -156,6 +154,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         
         // This must be done from a server-side function with admin privileges in a real app
         // We are using client-side for simplicity in this environment.
+        // NOTE: In your Supabase project, you might want to disable "Confirm email" under Authentication -> Providers -> Email for easier development.
         const { data, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
@@ -179,4 +178,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         
         return null; // Success
     }
-}));
+}),
+{
+    name: 'auth-storage', // name of the item in the storage (must be unique)
+    storage: createJSONStorage(() => localStorage),
+    // Only persist user and role if not using Supabase
+    partialize: (state) =>
+      isSupabaseConfigured ? {} : { user: state.user, role: state.role },
+}
+);
+
