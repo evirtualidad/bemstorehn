@@ -89,7 +89,7 @@ function AdminLayoutContent({
   const { fetchBanners } = useBannersStore();
   const { fetchUsers } = useUsersStore();
   const { fetchOrders } = useOrdersStore();
-
+  
   React.useEffect(() => {
     initializeSession();
   }, [initializeSession]);
@@ -190,7 +190,7 @@ function AdminLayoutContent({
     )
   };
 
-  if (isAuthLoading || !user || !role) {
+  if (isAuthLoading || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingSpinner />

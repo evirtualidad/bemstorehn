@@ -12,7 +12,7 @@ type AuthState = {
   user: UserDoc | null;
   role: UserRole | null;
   isAuthLoading: boolean;
-  initializeSession: () => void;
+  initializeSession: () => Promise<void>;
   login: (email: string, password: string) => Promise<string | null>;
   logout: () => void;
   createUser: (email: string, password: string, role: UserRole) => Promise<string | null>;
@@ -50,10 +50,13 @@ export const useAuthStore = create<AuthState>((set, get) => {
         role: null,
         isAuthLoading: true,
 
-        initializeSession: () => {
-            if (sessionInitialized) return;
+        initializeSession: async () => {
+            if (sessionInitialized) {
+                set({isAuthLoading: false});
+                return;
+            }
             sessionInitialized = true;
-
+            
             if (!isSupabaseConfigured) {
               console.log("Auth: Supabase not configured. Running in local mode.");
               set({ isAuthLoading: false });
@@ -64,9 +67,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
                 handleSession(session);
             });
             
-            supabase.auth.getSession().then(({ data: { session } }) => {
-                handleSession(session);
-            });
+            const { data: { session } } = await supabase.auth.getSession();
+            handleSession(session);
         },
 
         login: async (email, password) => {
