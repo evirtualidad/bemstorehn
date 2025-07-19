@@ -34,10 +34,11 @@ import { hondurasGeodata } from '@/lib/honduras-geodata';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCustomersStore, type Customer } from '@/hooks/use-customers';
 import { CustomerSearch } from '@/components/customer-search';
-import { paymentMethods } from '@/lib/payment-methods.tsx';
+import { paymentMethods, paymentMethodLabels } from '@/lib/payment-methods.tsx';
 import { usePosCart } from '@/hooks/use-pos-cart';
 import { ProductGrid } from '@/components/product-grid';
 import { useAuthStore } from '@/hooks/use-auth-store';
+import { parseISO } from 'date-fns';
 
 type SelectedFilter = { type: 'category' | 'offer'; value: string } | null;
 
@@ -862,51 +863,115 @@ function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, isInDialog, onOp
 }
 
 function OrderSuccessDialog({
-    isOpen,
-    onOpenChange,
-    orderData,
+  isOpen,
+  onOpenChange,
+  orderData,
 }: {
-    isOpen: boolean;
-    onOpenChange: (open: boolean) => void;
-    orderData: { displayId: string; total: number; change: number } | null;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  orderData: { order: Order; change: number } | null;
 }) {
-    const { currency } = useCurrencyStore();
+  const { currency } = useCurrencyStore();
+  const { taxRate } = useSettingsStore();
 
-    if (!orderData) return null;
+  if (!orderData) return null;
 
-    return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader className="items-center text-center">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                        <CheckCircle className="h-8 w-8 text-green-600" />
-                    </div>
-                    <DialogTitle className="text-2xl pt-4">¡Pedido Creado con Éxito!</DialogTitle>
-                </DialogHeader>
-                <div className="py-4 text-center space-y-4">
-                    <p className="text-lg">
-                        Pedido No:{" "}
-                        <span className="font-bold text-primary">{orderData.displayId}</span>
-                    </p>
-                    <div className="text-4xl font-bold tracking-tight">
-                        {formatCurrency(orderData.total, currency.code)}
-                    </div>
-                    {orderData.change > 0 && (
-                        <p className="text-lg text-muted-foreground">
-                            Cambio a devolver:{" "}
-                            <span className="font-bold text-foreground">{formatCurrency(orderData.change, currency.code)}</span>
-                        </p>
-                    )}
+  const { order, change } = orderData;
+  const subtotal = order.total / (1 + taxRate);
+  const tax = order.total - subtotal;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader className="items-center text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50">
+            <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+          </div>
+          <DialogTitle className="text-2xl pt-4">¡Pedido Creado con Éxito!</DialogTitle>
+        </DialogHeader>
+        <ScrollArea className="max-h-[60vh]">
+          <div className="p-1 pr-4">
+            <div className="py-4 space-y-4 text-sm">
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Pedido No:</span>
+                    <span className="font-bold text-primary">{order.display_id}</span>
                 </div>
-                <DialogFooter>
-                    <Button className="w-full" size="lg" onClick={() => onOpenChange(false)}>
-                        Nuevo Pedido
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Fecha:</span>
+                    <span className="font-medium">{format(parseISO(order.created_at), "d MMM, yyyy HH:mm", { locale: es })}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Cliente:</span>
+                    <span className="font-medium">{order.customer_name}</span>
+                </div>
+                 <div className="flex justify-between">
+                    <span className="text-muted-foreground">Teléfono:</span>
+                    <span className="font-medium">{order.customer_phone}</span>
+                </div>
+            </div>
+
+            <Separator className="my-2" />
+            
+            <div className="py-2 space-y-2">
+                {order.items.map(item => (
+                    <div key={item.id} className="flex justify-between items-center text-sm">
+                        <div className="flex-1">
+                            <span>{item.quantity} x {item.name}</span>
+                        </div>
+                        <span className="font-medium">{formatCurrency(item.price * item.quantity, currency.code)}</span>
+                    </div>
+                ))}
+            </div>
+
+            <Separator className="my-2" />
+
+            <div className="py-2 space-y-2 text-sm">
+                 <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subtotal:</span>
+                    <span className="font-medium">{formatCurrency(subtotal, currency.code)}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">ISV ({taxRate * 100}%):</span>
+                    <span className="font-medium">{formatCurrency(tax, currency.code)}</span>
+                </div>
+                {order.shipping_cost > 0 && (
+                     <div className="flex justify-between">
+                        <span className="text-muted-foreground">Envío:</span>
+                        <span className="font-medium">{formatCurrency(order.shipping_cost, currency.code)}</span>
+                    </div>
+                )}
+            </div>
+
+            <Separator className="my-2" />
+
+            <div className="py-2 space-y-2">
+                <div className="flex justify-between text-lg font-bold">
+                    <span>Total:</span>
+                    <span>{formatCurrency(order.total, currency.code)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Pagado con:</span>
+                    <span className="font-medium">{paymentMethodLabels[order.payment_method]}</span>
+                </div>
+                 {change > 0 && (
+                    <div className="flex justify-between text-md font-semibold text-primary">
+                        <span>Cambio:</span>
+                        <span>{formatCurrency(change, currency.code)}</span>
+                    </div>
+                )}
+            </div>
+          </div>
+        </ScrollArea>
+        <DialogFooter>
+          <Button className="w-full" size="lg" onClick={() => onOpenChange(false)}>
+            Nuevo Pedido
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
+
 
 export default function PosPage() {
   const products = useProductsStore(state => state.products);
@@ -925,7 +990,7 @@ export default function PosPage() {
   const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = React.useState(false);
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = React.useState(false);
-  const [lastOrderInfo, setLastOrderInfo] = React.useState<{displayId: string, total: number, change: number} | null>(null);
+  const [lastOrderInfo, setLastOrderInfo] = React.useState<{order: Order, change: number} | null>(null);
   const { user } = useAuthStore();
   
   const hasOfferProducts = React.useMemo(() => products.some(p => p.originalPrice && p.originalPrice > p.price), [products]);
@@ -1099,8 +1164,7 @@ export default function PosPage() {
     
     if(newOrder) {
         setLastOrderInfo({
-            displayId: newOrder.display_id,
-            total: newOrder.total,
+            order: newOrder,
             change: change
         });
     }
