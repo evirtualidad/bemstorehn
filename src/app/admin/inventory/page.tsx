@@ -20,7 +20,7 @@ export default function InventoryPage() {
 
   React.useEffect(() => {
     if (role && role !== 'admin') {
-      router.replace('/admin/dashboard');
+      router.replace('/admin/dashboard-v2');
     }
   }, [role, router]);
 

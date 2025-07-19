@@ -124,8 +124,7 @@ function AdminLayoutContent({
   };
   
   const allNavItems = [
-    // Dashboard is disabled for now
-    // { href: '/admin/dashboard', icon: Activity, label: 'Dashboard', roles: ['admin', 'cajero'] },
+    { href: '/admin/dashboard-v2', icon: Activity, label: 'Dashboard', roles: ['admin', 'cajero'] },
     { href: '/admin/pos', icon: Tablet, label: 'POS', roles: ['admin', 'cajero'] },
     { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos', badge: pendingApprovalCount > 0 ? pendingApprovalCount : null, roles: ['admin', 'cajero'] },
     { href: '/admin/inventory', icon: Archive, label: 'Inventario', roles: ['admin'] },

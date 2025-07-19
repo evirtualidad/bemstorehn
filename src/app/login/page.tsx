@@ -39,7 +39,7 @@ export default function LoginPage() {
 
   React.useEffect(() => {
     if (user) {
-      router.replace('/admin/dashboard');
+      router.replace('/admin/dashboard-v2');
     }
   }, [user, router]);
 

@@ -409,7 +409,7 @@ export default function SettingsPage() {
 
   React.useEffect(() => {
     if (role && role !== 'admin') {
-      router.replace('/admin/dashboard');
+      router.replace('/admin/dashboard-v2');
     }
   }, [role, router]);
 
