@@ -211,6 +211,11 @@ export default function UsersPage() {
     );
   }
 
+  const roles: { value: 'admin' | 'cajero'; label: string; badgeVariant: 'destructive' | 'secondary' }[] = [
+    { value: 'admin', label: 'Admin', badgeVariant: 'destructive' },
+    { value: 'cajero', label: 'Cajero', badgeVariant: 'secondary' },
+  ];
+
   return (
     <main className="grid flex-1 items-start gap-4">
       <div className="flex items-center">
@@ -254,12 +259,11 @@ export default function UsersPage() {
                             <SelectValue placeholder="Seleccionar rol" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="admin">
-                                <Badge variant="destructive">Admin</Badge>
-                            </SelectItem>
-                            <SelectItem value="cajero">
-                                <Badge variant="secondary">Cajero</Badge>
-                            </SelectItem>
+                            {roles.map(role => (
+                                <SelectItem key={role.value} value={role.value}>
+                                    <Badge variant={role.badgeVariant}>{role.label}</Badge>
+                                </SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                   </TableCell>
