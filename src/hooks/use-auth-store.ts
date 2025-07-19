@@ -19,7 +19,7 @@ type AuthState = {
 
 // --- Supabase Role Fetcher ---
 async function getUserRole(userId: string): Promise<UserRole | null> {
-    if (!isSupabaseConfigured) return 'admin'; // Default to admin in local mode
+    if (!isSupabaseConfigured) return 'admin'; 
 
     const { data, error } = await supabase
         .from('roles')
@@ -29,7 +29,7 @@ async function getUserRole(userId: string): Promise<UserRole | null> {
 
     if (error) {
         console.error('Error fetching user role:', error.message);
-        // This can happen if the user exists in auth but not in roles table yet
+        // This can happen if the user exists in auth but not in roles table yet, or due to RLS.
         if (error.code === 'PGRST116') {
              console.log("User role not found, returning null.");
              return null;
@@ -100,20 +100,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ isLoading: true });
         
         if (!isSupabaseConfigured) {
-             // This is a local-only authentication system.
-            await useUsersStore.getState().fetchUsers(); // Ensure users are loaded
             const users = useUsersStore.getState().users;
-            
             const foundUser = users.find(u => u.email === email && u.password === password);
             
             if (foundUser) {
                 set({ user: foundUser, role: foundUser.role, isLoading: false });
-                try {
-                    localStorage.setItem('auth-user', JSON.stringify(foundUser));
-                } catch (error) {
-                     console.error("Failed to save auth user to localStorage", error);
-                }
-                return null; // Success
+                localStorage.setItem('auth-user', JSON.stringify(foundUser));
+                return null;
             } else {
                 set({ isLoading: false });
                 return "Credenciales inválidas.";
@@ -132,11 +125,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     logout: async () => {
         if (!isSupabaseConfigured) {
-             try {
-                localStorage.removeItem('auth-user');
-            } catch (error) {
-                console.error("Failed to remove auth user from localStorage", error);
-            }
+            localStorage.removeItem('auth-user');
             set({ user: null, role: null, isLoading: false });
             return;
         }
@@ -147,12 +136,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     
     createUser: async (email, password, role) => {
         if (!isSupabaseConfigured) {
-            const result = await useUsersStore.getState().addUser({ email, password, role });
+            const result = useUsersStore.getState().addUser({ email, password, role });
             if (result) {
                 toast({ title: 'Usuario Creado', description: 'El nuevo usuario ha sido creado exitosamente.' });
                 return null;
             } else {
-                 toast({ title: 'Error al crear usuario', description: 'El correo electrónico ya está en uso.', variant: 'destructive' });
+                toast({ title: 'Error al crear usuario', description: 'El correo electrónico ya está en uso.', variant: 'destructive' });
                 return 'El correo electrónico ya está en uso.';
             }
         }
@@ -174,8 +163,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 .insert({ id: data.user.id, role: role });
             
             if (roleError) {
-                // This is a tricky state. User is created but role failed.
-                // For now, we'll just log it and inform the admin.
                 console.error("User created, but failed to set role:", roleError);
                 return "El usuario fue creado, pero falló al asignar el rol. Por favor, asigna el rol manualmente.";
             }
