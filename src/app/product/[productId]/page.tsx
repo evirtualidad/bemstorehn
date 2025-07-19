@@ -56,56 +56,54 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   }
   
   return (
-    <div className="bg-muted min-h-screen">
+    <div className="bg-muted min-h-screen pb-24">
         <ProductHeader />
         
-        <div className="pt-20 pb-28">
-            {/* Product Image Section */}
-            <div className="relative w-full aspect-square flex-shrink-0">
-            <Image
-                src={product.image || 'https://placehold.co/600x600.png'}
-                alt={product.name}
-                fill
-                className="object-cover"
-                data-ai-hint={product.aiHint}
-            />
-            <div className="absolute bottom-4 right-4">
-                <Button size="icon" variant="secondary" className="h-12 w-12 rounded-full shadow-md bg-white hover:bg-gray-100 text-black">
-                    <Heart />
+        {/* Product Image Section */}
+        <div className="relative w-full aspect-square flex-shrink-0">
+        <Image
+            src={product.image || 'https://placehold.co/600x600.png'}
+            alt={product.name}
+            fill
+            className="object-cover"
+            data-ai-hint={product.aiHint}
+        />
+        <div className="absolute bottom-4 right-4">
+            <Button size="icon" variant="secondary" className="h-12 w-12 rounded-full shadow-md bg-white hover:bg-gray-100 text-black">
+                <Heart />
+            </Button>
+        </div>
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-black"></div>
+            <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+        </div>
+        </div>
+
+        {/* Product Details Section */}
+        <div className="bg-card rounded-t-3xl z-10 relative -mt-5 p-6">
+        <div className="flex justify-between items-start">
+            <div>
+                <h1 className="text-2xl font-bold">{product.name}</h1>
+            </div>
+            <div className="flex items-center gap-3 bg-secondary p-1 rounded-full">
+                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => setQuantity(q => Math.max(1, q - 1))}>
+                    <Minus className="h-4 w-4" />
+                </Button>
+                <span className="font-bold w-5 text-center">{quantity}</span>
+                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => setQuantity(q => q + 1)}>
+                    <Plus className="h-4 w-4" />
                 </Button>
             </div>
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-black"></div>
-                <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-            </div>
-            </div>
+        </div>
+        
+        <div className='mt-5 mb-2'>
+            <h2 className="text-lg font-bold">Description</h2>
+        </div>
 
-            {/* Product Details Section */}
-            <div className="bg-card rounded-t-3xl z-10 relative -mt-5 p-6">
-            <div className="flex justify-between items-start">
-                <div>
-                    <h1 className="text-2xl font-bold">{product.name}</h1>
-                </div>
-                <div className="flex items-center gap-3 bg-secondary p-1 rounded-full">
-                    <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => setQuantity(q => Math.max(1, q - 1))}>
-                        <Minus className="h-4 w-4" />
-                    </Button>
-                    <span className="font-bold w-5 text-center">{quantity}</span>
-                    <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => setQuantity(q => q + 1)}>
-                        <Plus className="h-4 w-4" />
-                    </Button>
-                </div>
-            </div>
-            
-            <div className='mt-5 mb-2'>
-                <h2 className="text-lg font-bold">Description</h2>
-            </div>
-
-            <p className="text-muted-foreground text-sm leading-relaxed">
-                {product.description}
-            </p>
-            </div>
+        <p className="text-muted-foreground text-sm leading-relaxed">
+            {product.description}
+        </p>
         </div>
       
        {/* Fixed Footer */}
