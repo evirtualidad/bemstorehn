@@ -5,8 +5,7 @@ import { create } from 'zustand';
 import { toast } from './use-toast';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import type { UserDoc, UserRole } from './use-users-store';
-import { useUsersStore } from './use-users-store';
-import { initialUsers } from '@/lib/users';
+import { useUsersStore, initialUsers } from './use-users-store';
 import { Session } from '@supabase/supabase-js';
 
 type AuthState = {
