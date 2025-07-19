@@ -6,6 +6,7 @@ import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 
 export interface Payment {
     date: string;
@@ -72,6 +73,17 @@ export const useOrdersStore = create<OrdersState>()(
       isLoading: false,
 
       fetchOrders: async () => {
+          if (!isSupabaseConfigured) {
+            set({isLoading: false});
+            return;
+          }
+          set({ isLoading: true });
+          const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+           if (error) {
+              toast({ title: 'Error al cargar pedidos', description: error.message, variant: 'destructive'});
+          } else {
+              set({ orders: data as any[] });
+          }
           set({ isLoading: false });
       },
 

@@ -50,16 +50,12 @@ export const useAuthStore = create<AuthState>()(
         }
         
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (session) {
-              const userRole = getUserRoleFromSession(session);
-              set({ 
-                  user: { id: session.user.id, email: session.user.email || '', role: userRole || 'cajero' }, 
-                  role: userRole, 
-                  isLoading: false 
-              });
-          } else {
-              set({ user: null, role: null, isLoading: false });
-          }
+          const userRole = getUserRoleFromSession(session);
+          set({ 
+              user: session ? { id: session.user.id, email: session.user.email || '', role: userRole || 'cajero' } : null,
+              role: userRole,
+              isLoading: false 
+          });
         });
         
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -71,7 +67,7 @@ export const useAuthStore = create<AuthState>()(
                   isLoading: false 
               });
           } else {
-              set({isLoading: false });
+              set({ isLoading: false });
           }
         });
 

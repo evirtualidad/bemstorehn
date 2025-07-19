@@ -90,6 +90,11 @@ export const useUsersStore = create<UsersState>()(
     {
       name: 'users-storage',
       storage: createJSONStorage(() => localStorage),
+       onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.isLoading = false;
+        }
+      }
     }
   )
 );
