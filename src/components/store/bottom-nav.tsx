@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -31,10 +30,9 @@ export function BottomNav() {
   }
 
   return (
-    <div className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] h-16 bg-background/90 backdrop-blur-lg border rounded-full z-50 shadow-lg">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-background/90 backdrop-blur-lg border-t rounded-t-2xl z-50">
       <div className="flex justify-around items-center h-full px-2">
         {navItems.map((item) => {
-          // Defer active check until client-side hydration is complete
           const isActive = isClient && pathname === item.href;
 
           return (
