@@ -48,11 +48,12 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   }
 
   const handleAddToCart = () => {
-    // In a real app, you would pass quantity. The hook currently handles quantity internally.
-    addToCart(product);
+    for (let i = 0; i < quantity; i++) {
+        addToCart(product);
+    }
     toast({
       title: "Añadido al carrito",
-      description: `${product.name} ha sido añadido a tu carrito.`,
+      description: `${quantity} x ${product.name} ha sido añadido a tu carrito.`,
     });
   }
   
@@ -64,10 +65,11 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   ];
 
   return (
-    <div className="bg-muted min-h-screen flex flex-col">
+    <div className="bg-muted h-screen flex flex-col">
       <ProductHeader />
       
-      <div className="flex-1 overflow-y-auto pb-24">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto">
         {/* Product Image Section */}
         <div className="relative w-full aspect-square flex-shrink-0">
           <Image
@@ -149,8 +151,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         </div>
       </div>
       
-      {/* Footer / Add to Cart */}
-      <div className="sticky bottom-0 w-full bg-card border-t p-4 flex items-center justify-between gap-4">
+      {/* Fixed Footer / Add to Cart */}
+      <div className="flex-shrink-0 w-full bg-card border-t p-4 flex items-center justify-between gap-4">
         <div>
             <p className="text-sm text-muted-foreground">Total Price</p>
             <p className="text-2xl font-bold">{formatCurrency(product.price * quantity, currency.code)}</p>
