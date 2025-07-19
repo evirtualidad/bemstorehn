@@ -102,7 +102,7 @@ function AdminLayoutContent({
   }, [user, isAuthLoading, router]);
 
   React.useEffect(() => {
-      if(user) {
+      if(user && role) {
           fetchOrders();
           fetchProducts();
           fetchCategories();
@@ -190,7 +190,7 @@ function AdminLayoutContent({
     )
   };
 
-  if (isAuthLoading || !user) {
+  if (isAuthLoading || !user || !role) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingSpinner />
