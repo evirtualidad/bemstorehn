@@ -10,30 +10,54 @@ import { ShoppingCart, Trash2, Plus, Minus } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import Image from 'next/image';
+import { CheckoutDialog } from './checkout-dialog';
+import { useState } from 'react';
+import type { Customer } from '@/lib/types';
+import { useToast } from './ui/use-toast';
 
 interface PosCartProps {
-  onCheckoutSuccess: () => void;
+  // No props needed as it uses the hook internally
 }
 
-export function PosCart({ onCheckoutSuccess }: PosCartProps) {
+export function PosCart({}: PosCartProps) {
   const {
     items,
-    totalWithShipping,
+    total,
     increaseQuantity,
     decreaseQuantity,
     removeFromCart,
+    clearCart,
   } = usePosCart();
   const { currency } = useCurrencyStore();
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const { toast } = useToast();
 
-  const handleCheckout = () => {
-    // This will be replaced by a dialog later
-    console.log('Checkout:', items);
-    onCheckoutSuccess();
+  const handleOpenCheckout = () => {
+    if (items.length > 0) {
+      setIsCheckoutOpen(true);
+    }
   };
+  
+  const handleConfirmCheckout = (customer: Customer | null, paymentMethod: string) => {
+    // In a real app, you would save this order to a database.
+    console.log("Venta Confirmada:", {
+        customer: customer?.name ?? "Cliente Genérico",
+        paymentMethod,
+        total,
+        items
+    });
+
+    toast({
+      title: "Venta Registrada",
+      description: `Venta a ${customer?.name ?? "Cliente Genérico"} por L. ${total.toFixed(2)} con ${paymentMethod}.`,
+    });
+    clearCart();
+  }
 
   return (
+    <>
     <aside className="h-full w-full flex-shrink-0 flex flex-col bg-card rounded-lg shadow-lg">
-      <header className="p-4">
+      <header className="p-4 border-b">
         <h2 className="text-xl font-bold">Pedido Actual</h2>
       </header>
 
@@ -45,7 +69,7 @@ export function PosCart({ onCheckoutSuccess }: PosCartProps) {
           </div>
         ) : (
           <ScrollArea className="flex-1 -mr-4 pr-4">
-            <div className="space-y-4">
+            <div className="space-y-4 py-4">
               {items.map((item) => (
                 <div key={item.id} className="flex items-start gap-4">
                   <div className="relative h-16 w-16 flex-shrink-0">
@@ -102,23 +126,30 @@ export function PosCart({ onCheckoutSuccess }: PosCartProps) {
         )}
       </div>
 
-      <footer className="p-4">
+      <footer className="p-4 border-t">
         <div className="space-y-4">
-          <Separator />
           <div className="flex justify-between text-lg font-bold">
             <p>Total</p>
-            <p>{formatCurrency(totalWithShipping, currency.code)}</p>
+            <p>{formatCurrency(total, currency.code)}</p>
           </div>
           <Button
             size="lg"
             className="h-12 w-full text-base"
             disabled={items.length === 0}
-            onClick={handleCheckout}
+            onClick={handleOpenCheckout}
           >
             Completar Venta
           </Button>
         </div>
       </footer>
     </aside>
+     <CheckoutDialog
+        isOpen={isCheckoutOpen}
+        onOpenChange={setIsCheckoutOpen}
+        cart={items}
+        total={total}
+        onConfirm={handleConfirmCheckout}
+      />
+    </>
   );
 }
