@@ -17,13 +17,11 @@ import { usePathname } from 'next/navigation';
 
 interface ProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
   product: Product;
-  useLink?: boolean;
 }
 
 export function ProductCard({ 
   product, 
   className, 
-  useLink = true,
   ...props 
 }: ProductCardProps) {
   const { currency } = useCurrencyStore();
@@ -114,7 +112,7 @@ export function ProductCard({
 
   const cardElement = <CardContent />;
   
-  if (useLink && !isPos) {
+  if (!isPos) {
       return (
           <Link href={`/product/${product.id}`} className={cn("group", className)} {...props}>
             {cardElement}
