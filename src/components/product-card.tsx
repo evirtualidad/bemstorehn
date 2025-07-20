@@ -17,22 +17,17 @@ import { usePathname } from 'next/navigation';
 
 interface ProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
   product: Product;
-  onAddToCart?: (product: Product) => void;
-  useLink?: boolean;
 }
 
 export function ProductCard({ 
   product, 
   className, 
-  onAddToCart,
-  useLink = true,
   ...props 
 }: ProductCardProps) {
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
   const pathname = usePathname();
   
-  // Decide which cart to use based on the context (POS or Storefront)
   const isPos = pathname.startsWith('/admin/pos');
   const posAddToCart = usePosCart(state => state.addToCart);
   const storeAddToCart = useCart(state => state.addToCart);
@@ -43,11 +38,6 @@ export function ProductCard({
     e.preventDefault();
     e.stopPropagation();
     
-    if (onAddToCart) {
-        onAddToCart(product);
-        return;
-    }
-
     if (isPos) {
         posAddToCart(product);
     } else {
@@ -60,77 +50,69 @@ export function ProductCard({
   };
   
   const CardContent = () => (
-    <Card className="flex flex-col overflow-hidden h-full border-0 shadow-none rounded-lg bg-secondary">
+    <Card 
+        className="flex flex-col overflow-hidden h-full border-0 shadow-none rounded-lg bg-secondary cursor-pointer"
+        onClick={handleAddToCartClick}
+    >
         <div className="p-2">
-        <div className="relative overflow-hidden aspect-[4/5] rounded-lg">
-            <Image
-            src={product.image || 'https://placehold.co/400x500.png'}
-            alt={product.name}
-            fill
-            className="w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
-            data-ai-hint={product.aiHint}
-            />
-            {isDiscounted && (
-            <Badge variant="offer" className="absolute top-2 left-2 rounded-full">
-                Oferta
-            </Badge>
-            )}
-            {isPos && (
-                 <Badge 
-                    variant={product.stock <= 0 ? 'destructive' : product.stock < 10 ? 'secondary' : 'default'}
-                    className={cn(
-                        "absolute top-2 right-2 rounded-full",
-                        product.stock > 0 && product.stock < 10 && "bg-amber-400 text-amber-900 border-amber-400",
-                        product.stock > 9 && "bg-green-100 text-green-900 border-green-100"
-                    )}
-                >
-                    Stock: {product.stock}
-                </Badge>
-            )}
-        </div>
-        </div>
-        <div className="p-4 pt-0 flex-grow flex flex-col">
-        <h3 className="font-semibold text-sm leading-tight h-10 line-clamp-2">{product.name}</h3>
-        <div className="flex items-end justify-between mt-2">
-            <div className="flex flex-col">
-                <p className={cn("text-lg font-bold text-foreground", isDiscounted && "text-destructive")}>
-                    {formatCurrency(product.price, currency.code)}
-                </p>
+            <div className="relative overflow-hidden aspect-[4/5] rounded-lg">
+                <Image
+                src={product.image || 'https://placehold.co/400x500.png'}
+                alt={product.name}
+                fill
+                className="w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+                data-ai-hint={product.aiHint}
+                />
                 {isDiscounted && (
-                    <p className="text-xs text-muted-foreground line-through">
-                        {formatCurrency(product.original_price!, currency.code)}
-                    </p>
+                <Badge variant="offer" className="absolute top-2 left-2 rounded-full">
+                    Oferta
+                </Badge>
+                )}
+                {isPos && (
+                    <Badge 
+                        variant={product.stock <= 0 ? 'destructive' : product.stock < 10 ? 'secondary' : 'default'}
+                        className={cn(
+                            "absolute top-2 right-2 rounded-full",
+                            product.stock > 0 && product.stock < 10 && "bg-amber-400 text-amber-900 border-amber-400",
+                            product.stock > 9 && "bg-green-100 text-green-900 border-green-100"
+                        )}
+                    >
+                        Stock: {product.stock}
+                    </Badge>
                 )}
             </div>
-            <Button 
-                variant="default"
-                size="icon"
-                className="rounded-full h-9 w-9 shrink-0"
-                disabled={product.stock <= 0}
-                onClick={handleAddToCartClick}
-                aria-label={`Añadir ${product.name} al carrito`}
-            >
-                <Plus className="h-5 w-5" />
-            </Button>
         </div>
+        <div className="p-4 pt-0 flex-grow flex flex-col">
+            <h3 className="font-semibold text-sm leading-tight h-10 line-clamp-2">{product.name}</h3>
+            <div className="flex items-end justify-between mt-2">
+                <div className="flex flex-col">
+                    <p className={cn("text-lg font-bold text-foreground", isDiscounted && "text-destructive")}>
+                        {formatCurrency(product.price, currency.code)}
+                    </p>
+                    {isDiscounted && (
+                        <p className="text-xs text-muted-foreground line-through">
+                            {formatCurrency(product.original_price!, currency.code)}
+                        </p>
+                    )}
+                </div>
+                <Button 
+                    variant="default"
+                    size="icon"
+                    className="rounded-full h-9 w-9 shrink-0"
+                    disabled={product.stock <= 0}
+                    onClick={handleAddToCartClick}
+                    aria-label={`Añadir ${product.name} al carrito`}
+                >
+                    <Plus className="h-5 w-5" />
+                </Button>
+            </div>
         </div>
     </Card>
   );
 
   return (
-    <div 
-      {...props} 
-      className={cn("group", className)}
-      onClick={useLink ? undefined : (e) => handleAddToCartClick(e)}
-      style={!useLink ? { cursor: 'pointer' } : {}}
-    >
-        {useLink ? (
-             <Link href={`/product/${product.id}`} className="block">
-                <CardContent />
-             </Link>
-        ) : (
-            <CardContent />
-        )}
+    <div {...props} className={cn("group", className)}>
+        <CardContent />
     </div>
   );
 }

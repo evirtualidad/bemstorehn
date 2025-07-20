@@ -14,7 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useProductsStore } from '@/hooks/use-products';
 import Image from 'next/image';
-import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Receipt, CreditCard, X, BadgePercent, Truck, Store, MapPin, CheckCircle } from 'lucide-react';
+import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Receipt, CreditCard, X, BadgePercent, Truck, Store, MapPin, CheckCircle, Search, Shirt, Gem, Sparkles, Glasses, ShoppingCart } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -91,53 +91,52 @@ const checkoutFormSchema = z
   });
 
 
+const categoryIcons: { [key: string]: React.ElementType } = {
+  'skincare': Shirt,
+  'makeup': Gem,
+  'hair': Sparkles,
+  'body': Glasses,
+  'default': Tag,
+};
+
 function CategoryList({
   categories,
   onSelectFilter,
   selectedFilter,
-  hasOfferProducts,
 }: {
   categories: CategoryType[];
   onSelectFilter: (filter: SelectedFilter) => void;
   selectedFilter: SelectedFilter;
-  hasOfferProducts: boolean;
 }) {
-  const isSelected = (type: 'category' | 'offer' | null, value?: string) => {
-    if (!selectedFilter && !type) return true;
+  const isSelected = (value: string) => {
+    if (value === 'all' && !selectedFilter) return true;
     if (!selectedFilter) return false;
-    return selectedFilter.type === type && selectedFilter.value === value;
+    return selectedFilter.type === 'category' && selectedFilter.value === value;
   };
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <Button
-        variant={isSelected(null) ? 'default' : 'outline'}
-        className="justify-start h-11 px-4"
+        variant={isSelected('all') ? 'default' : 'outline'}
+        className="h-11 px-4 rounded-full"
         onClick={() => onSelectFilter(null)}
       >
-        <Tag className="mr-2 h-4 w-4" />
-        Todas
+        Todos
       </Button>
-      {hasOfferProducts && (
-        <Button
-          variant={isSelected('offer', 'all') ? 'default' : 'outline'}
-          className="justify-start h-11 px-4 border-offer text-offer hover:bg-offer hover:text-offer-foreground"
-          onClick={() => onSelectFilter({ type: 'offer', value: 'all' })}
-        >
-          <BadgePercent className="mr-2 h-4 w-4" />
-          Ofertas
-        </Button>
-      )}
-      {categories.map((category) => (
-        <Button
-          key={category.id}
-          variant={isSelected('category', category.name) ? 'default' : 'outline'}
-          className="justify-start h-11 px-4"
-          onClick={() => onSelectFilter({ type: 'category', value: category.name })}
-        >
-          {category.label}
-        </Button>
-      ))}
+      {categories.map((category) => {
+        const Icon = categoryIcons[category.name] || categoryIcons.default;
+        return (
+          <Button
+            key={category.id}
+            variant={isSelected(category.name) ? 'default' : 'outline'}
+            className="h-11 px-4 rounded-full"
+            onClick={() => onSelectFilter({ type: 'category', value: category.name })}
+          >
+            <Icon className="mr-2 h-4 w-4" />
+            {category.label}
+          </Button>
+        );
+      })}
     </div>
   );
 }
@@ -149,9 +148,6 @@ function TicketView({
 }) {
   const { 
     items: cart,
-    subtotal,
-    taxAmount,
-    shippingCost,
     totalWithShipping,
     increaseQuantity,
     decreaseQuantity,
@@ -160,208 +156,72 @@ function TicketView({
   } = usePosCart();
 
   const { currency } = useCurrencyStore();
-  const { taxRate } = useSettingsStore();
 
   return (
-    <aside className="sticky top-0 h-full w-full md:w-[380px] lg:w-[420px] hidden lg:flex flex-col border-l bg-muted/40">
-        <div className="p-4 border-b flex-shrink-0 bg-background">
-            <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Pedido Actual</h2>
-                <Button variant="ghost" size="sm" onClick={clearCart} disabled={cart.length === 0}>
-                    Borrar
+    <aside className="hidden lg:flex flex-col w-full max-w-sm bg-card p-6 rounded-xl shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold">Pedido Actual</h2>
+            {cart.length > 0 && (
+                 <Button variant="ghost" size="sm" onClick={clearCart}>
+                    Limpiar
                 </Button>
-            </div>
+            )}
         </div>
-        <div className="flex-grow overflow-hidden bg-background">
-            <ScrollArea className="h-full">
-                {cart.length === 0 ? (
-                <div className="flex items-center justify-center h-full">
-                    <p className="text-center text-muted-foreground p-10">
-                        Selecciona productos para empezar
-                    </p>
-                </div>
-                ) : (
-                <div className="p-4 space-y-4">
+        
+        {cart.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground">
+            <ShoppingCart className="h-12 w-12 mb-4" />
+            <p>El carrito está vacío</p>
+          </div>
+        ) : (
+          <ScrollArea className="flex-1 -mx-6">
+              <div className="px-6 space-y-4">
                 {cart.map((item) => (
-                    <div key={item.id} className="flex items-start gap-3">
+                    <div key={item.id} className="flex items-start gap-4">
                     <Image
                         src={item.image}
                         alt={item.name}
-                        width={48}
-                        height={48}
-                        className="rounded-md object-cover aspect-square"
+                        width={64}
+                        height={64}
+                        className="rounded-lg object-cover aspect-square border"
                     />
                     <div className="flex-1">
                         <p className="font-semibold text-sm leading-tight">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatCurrency(item.price, currency.code)}</p>
+                        <p className="text-sm text-muted-foreground">{formatCurrency(item.price, currency.code)}</p>
                         <div className="flex items-center gap-2 mt-2">
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => decreaseQuantity(item.id)}>
-                            <Minus className="h-4 w-4" />
-                        </Button>
-                        <span className="w-8 text-center text-md font-bold">{item.quantity}</span>
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => increaseQuantity(item.id)}>
-                            <Plus className="h-4 w-4" />
-                        </Button>
+                          <Button variant="outline" size="icon" className="h-7 w-7 rounded-full" onClick={() => decreaseQuantity(item.id)}>
+                              <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-5 text-center text-sm font-bold">{item.quantity}</span>
+                          <Button variant="outline" size="icon" className="h-7 w-7 rounded-full" onClick={() => increaseQuantity(item.id)}>
+                              <Plus className="h-3 w-3" />
+                          </Button>
                         </div>
                     </div>
-                    <p className="w-24 text-right font-medium text-sm">{formatCurrency(item.price * item.quantity, currency.code)}</p>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => removeFromCart(item.id)}>
-                        <Trash2 className="h-5 w-5" />
+                        <X className="h-4 w-4" />
                     </Button>
                     </div>
                 ))}
-                </div>
-                )}
-            </ScrollArea>
-        </div>
-        <div className="p-4 border-t bg-background space-y-4 flex-shrink-0">
-            <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                    <p className="text-muted-foreground">Subtotal</p>
-                    <p>{formatCurrency(subtotal, currency.code)}</p>
-                </div>
-                <div className="flex justify-between">
-                    <p className="text-muted-foreground">ISV ({taxRate * 100}%)</p>
-                    <p>{formatCurrency(taxAmount, currency.code)}</p>
-                </div>
-                 <div className="flex justify-between">
-                    <p className="text-muted-foreground">Envío</p>
-                    <p>{shippingCost > 0 ? formatCurrency(shippingCost, currency.code) : 'N/A'}</p>
-                </div>
-            </div>
-            <Separator />
-            <div className="flex justify-between text-xl font-bold">
+              </div>
+          </ScrollArea>
+        )}
+        
+        <div className="mt-auto pt-6 space-y-4">
+            <div className="flex justify-between items-center text-lg font-bold">
                 <p>Total</p>
                 <p>{formatCurrency(totalWithShipping, currency.code)}</p>
             </div>
             <Button
                 size="lg"
-                className="w-full h-12 text-lg"
+                className="w-full h-12 text-md rounded-full"
                 onClick={onCheckout}
                 disabled={cart.length === 0}
             >
-            <CreditCard className="mr-2 h-5 w-5" />
-            Facturar
+            Completar Venta
             </Button>
         </div>
     </aside>
-  );
-}
-
-function MobileTicketView({
-  onCheckout,
-  onClose,
-}: {
-  onCheckout: () => void;
-  onClose: () => void;
-}) {
-  const { 
-    items: cart,
-    subtotal,
-    taxAmount,
-    shippingCost,
-    totalWithShipping,
-    increaseQuantity,
-    decreaseQuantity,
-    removeFromCart,
-    clearCart,
-  } = usePosCart();
-  const { currency } = useCurrencyStore();
-  const { taxRate } = useSettingsStore();
-
-  return (
-    <div className="lg:hidden fixed inset-0 bg-black/60 z-30" onClick={onClose}>
-        <div 
-            className="fixed bottom-0 left-0 right-0 h-[60vh] flex flex-col bg-muted/40 rounded-t-2xl"
-            onClick={(e) => e.stopPropagation()}
-        >
-            <div className="p-4 border-b flex-shrink-0 bg-background rounded-t-2xl">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold">Pedido Actual</h2>
-                     <div className='flex items-center gap-2'>
-                        <Button variant="ghost" size="sm" onClick={clearCart} disabled={cart.length === 0}>
-                            Borrar
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={onClose}>
-                            <X className="h-5 w-5" />
-                        </Button>
-                    </div>
-                </div>
-            </div>
-            <div className="flex-grow overflow-hidden bg-background">
-                <ScrollArea className="h-full">
-                    {cart.length === 0 ? (
-                    <div className="flex items-center justify-center h-full">
-                        <p className="text-center text-muted-foreground p-10">
-                            Selecciona productos para empezar
-                        </p>
-                    </div>
-                    ) : (
-                    <div className="p-4 space-y-4">
-                    {cart.map((item) => (
-                        <div key={item.id} className="flex items-start gap-3">
-                        <Image
-                            src={item.image}
-                            alt={item.name}
-                            width={48}
-                            height={48}
-                            className="rounded-md object-cover aspect-square"
-                        />
-                        <div className="flex-1">
-                            <p className="font-semibold text-sm leading-tight">{item.name}</p>
-                            <p className="text-xs text-muted-foreground">{formatCurrency(item.price, currency.code)}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => decreaseQuantity(item.id)}>
-                                <Minus className="h-4 w-4" />
-                            </Button>
-                            <span className="w-8 text-center text-md font-bold">{item.quantity}</span>
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => increaseQuantity(item.id)}>
-                                <Plus className="h-4 w-4" />
-                            </Button>
-                            </div>
-                        </div>
-                        <p className="w-24 text-right font-medium text-sm">{formatCurrency(item.price * item.quantity, currency.code)}</p>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => removeFromCart(item.id)}>
-                            <Trash2 className="h-5 w-5" />
-                        </Button>
-                        </div>
-                    ))}
-                    </div>
-                    )}
-                </ScrollArea>
-            </div>
-            <div className="p-4 border-t bg-background space-y-4 flex-shrink-0">
-                <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                        <p className="text-muted-foreground">Subtotal</p>
-                        <p>{formatCurrency(subtotal, currency.code)}</p>
-                    </div>
-                    <div className="flex justify-between">
-                        <p className="text-muted-foreground">ISV ({taxRate * 100}%)</p>
-                        <p>{formatCurrency(taxAmount, currency.code)}</p>
-                    </div>
-                    <div className="flex justify-between">
-                        <p className="text-muted-foreground">Envío</p>
-                        <p>{shippingCost > 0 ? formatCurrency(shippingCost, currency.code) : 'N/A'}</p>
-                    </div>
-                </div>
-                <Separator />
-                <div className="flex justify-between text-xl font-bold">
-                    <p>Total</p>
-                    <p>{formatCurrency(totalWithShipping, currency.code)}</p>
-                </div>
-                <Button
-                    size="lg"
-                    className="w-full h-12 text-lg"
-                    onClick={onCheckout}
-                    disabled={cart.length === 0}
-                >
-                    <CreditCard className="mr-2 h-5 w-5" />
-                    Facturar
-                </Button>
-            </div>
-        </div>
-    </div>
   );
 }
 
@@ -986,23 +846,17 @@ export default function PosPage() {
   const { toast } = useToast();
   const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isTicketVisible, setIsTicketVisible] = React.useState(false);
   const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = React.useState(false);
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = React.useState(false);
   const [lastOrderInfo, setLastOrderInfo] = React.useState<{order: Order, change: number} | null>(null);
   const { user } = useAuthStore();
   
-  const hasOfferProducts = React.useMemo(() => products.some(p => p.original_price && p.original_price > p.price), [products]);
-  
   const filteredProducts = React.useMemo(() => {
     if (!selectedFilter) return products;
     
     if (selectedFilter.type === 'category') {
       return products.filter((p) => p.category === selectedFilter.value);
-    }
-    if (selectedFilter.type === 'offer') {
-      return products.filter(p => p.original_price && p.original_price > p.price);
     }
     return products;
   }, [selectedFilter, products]);
@@ -1116,7 +970,6 @@ export default function PosPage() {
         addPurchaseToCustomer(customerId, totalWithShipping);
     }
     
-    // Decrease stock for each item in the cart
     const stockPromises = cartItems.map(item => decreaseStock(item.id, item.quantity));
     await Promise.all(stockPromises);
 
@@ -1172,7 +1025,6 @@ export default function PosPage() {
     }
 
     setIsCheckoutOpen(false);
-    setIsTicketVisible(false);
     setIsSubmitting(false);
     setIsSuccessDialogOpen(true);
   }
@@ -1181,7 +1033,7 @@ export default function PosPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-screen bg-muted/40">
+      <div className="flex flex-col min-h-screen">
         <div className="flex-1 flex items-center justify-center">
             <LoadingSpinner />
         </div>
@@ -1190,86 +1042,68 @@ export default function PosPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-muted/40 lg:flex-row">
-      <main className="flex-1 flex flex-col min-h-0">
-          <header className="p-4 border-b flex flex-wrap items-center gap-4 bg-background z-20 flex-shrink-0">
-              <h1 className="text-xl font-bold flex-1 whitespace-nowrap">POS</h1>
-                <div className="w-full sm:w-auto sm:flex-initial">
-                  <ProductSearch onProductSelect={usePosCart.getState().addToCart} />
-                </div>
-          </header>
-          <div className="flex-1 flex flex-col min-h-0 bg-background">
-              <div className="p-4 space-y-4 flex-shrink-0">
-                    <CategoryList
-                      categories={categories}
-                      selectedFilter={selectedFilter}
-                      onSelectFilter={setSelectedFilter}
-                      hasOfferProducts={hasOfferProducts}
-                  />
-                  <Separator />
+    <div className="flex flex-row gap-8 min-h-screen">
+      <main className="flex-1 flex flex-col min-h-0 py-8">
+          <div className="px-8 space-y-6">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                    placeholder="Buscar productos..."
+                    className="bg-card rounded-full h-12 pl-12 text-base border-border"
+                />
               </div>
-                <div className="flex-1 p-4 pt-0 overflow-y-auto">
-                    <ProductGrid products={filteredProducts} />
-              </div>
+              <CategoryList
+                categories={categories}
+                selectedFilter={selectedFilter}
+                onSelectFilter={setSelectedFilter}
+              />
           </div>
+          <ScrollArea className="flex-1 mt-6">
+            <div className="px-8">
+                <ProductGrid products={filteredProducts} />
+            </div>
+          </ScrollArea>
       </main>
         
-        {/* Ticket View Area */}
-        <div className="lg:hidden fixed bottom-4 right-4 z-20" onClick={() => setIsTicketVisible(true)}>
-            <PosMobileCartButton />
-        </div>
-        
+      <div className="py-8 pr-8">
         <TicketView
-            onCheckout={() => {
-                setIsCheckoutOpen(true)
-                setIsTicketVisible(false)
-            }}
+            onCheckout={() => setIsCheckoutOpen(true)}
         />
+      </div>
         
-        {isTicketVisible && (
-            <MobileTicketView
-                onCheckout={() => {
-                    setIsCheckoutOpen(true);
-                    setIsTicketVisible(false);
-                }}
-                onClose={() => setIsTicketVisible(false)}
-            />
-        )}
-
-        <Dialog open={isCheckoutOpen} onOpenChange={handleOpenChangeCheckout}>
-            <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>Finalizar Pedido</DialogTitle>
-                </DialogHeader>
-                <ScrollArea className="max-h-[70vh] p-1">
-                    <div className="p-4">
-                        <CheckoutForm 
-                            form={form} 
-                            onSubmit={onSubmit} 
-                            isSubmitting={isSubmitting} 
-                            onCancel={handleCancelCheckout} 
-                            isInDialog={true}
-                            onOpenShipping={() => setIsShippingDialogOpen(true)}
-                            onCustomerSelect={handleCustomerSelect}
-                        />
-                    </div>
-                </ScrollArea>
-            </DialogContent>
-        </Dialog>
+      <Dialog open={isCheckoutOpen} onOpenChange={handleOpenChangeCheckout}>
+          <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                  <DialogTitle>Finalizar Pedido</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="max-h-[70vh] p-1">
+                  <div className="p-4">
+                      <CheckoutForm 
+                          form={form} 
+                          onSubmit={onSubmit} 
+                          isSubmitting={isSubmitting} 
+                          onCancel={handleCancelCheckout} 
+                          isInDialog={true}
+                          onOpenShipping={() => setIsShippingDialogOpen(true)}
+                          onCustomerSelect={handleCustomerSelect}
+                      />
+                  </div>
+              </ScrollArea>
+          </DialogContent>
+      </Dialog>
         
-        <ShippingDialog
-          isOpen={isShippingDialogOpen}
-          onOpenChange={setIsShippingDialogOpen}
-          onSave={handleSaveShippingInfo}
-          currentAddress={form.getValues('address')}
-        />
+      <ShippingDialog
+        isOpen={isShippingDialogOpen}
+        onOpenChange={setIsShippingDialogOpen}
+        onSave={handleSaveShippingInfo}
+        currentAddress={form.getValues('address')}
+      />
 
-        <OrderSuccessDialog
-            isOpen={isSuccessDialogOpen}
-            onOpenChange={handleSuccessDialogClose}
-            orderData={lastOrderInfo}
-        />
+      <OrderSuccessDialog
+          isOpen={isSuccessDialogOpen}
+          onOpenChange={handleSuccessDialogClose}
+          orderData={lastOrderInfo}
+      />
     </div>
   );
 }
-
