@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -47,13 +46,14 @@ const checkoutFormSchema = z.object({
 interface CheckoutDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  onCheckoutSuccess: () => void;
 }
 
-export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
-    const { items, total, clearCart } = usePosCart();
+export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: CheckoutDialogProps) {
+    const { items, total } = usePosCart();
     const { currency } = useCurrencyStore();
     const { addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
-    const { createOrder, fetchOrders } = useOrdersStore();
+    const { createOrder } = useOrdersStore();
     const { user } = useAuthStore();
     const { toast } = useToast();
     const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
@@ -121,7 +121,7 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
             payment_due_date: null,
         };
         
-        const newOrderId = await createOrder(newOrderData);
+        const newOrderId = createOrder(newOrderData);
 
         if (newOrderId) {
             toast({
@@ -129,12 +129,7 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
                 description: `Se completó la venta a ${values.name} por ${formatCurrency(total, currency.code)}.`
             });
             
-            clearCart();
-            onOpenChange(false);
-            // Refetch orders after a short delay to allow UI to update
-            setTimeout(() => {
-                fetchOrders();
-            }, 500);
+            onCheckoutSuccess();
         } else {
              toast({
                 title: "Error al registrar la venta",

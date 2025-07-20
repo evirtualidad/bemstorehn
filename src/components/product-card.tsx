@@ -59,8 +59,8 @@ export function ProductCard({
               data-ai-hint={product.aiHint}
             />
         </div>
-        <div className="flex flex-col p-2 text-center mt-2">
-            <h3 className="flex-grow font-semibold leading-tight text-sm">{product.name}</h3>
+        <div className="flex flex-col p-2 text-center mt-1">
+            <h3 className="flex-grow font-semibold leading-tight text-sm h-10">{product.name}</h3>
             <div className='flex items-center justify-between mt-2'>
               <p className="font-bold text-sm">
                   {formatCurrency(product.price, currency.code)}

@@ -42,12 +42,12 @@ const bottomNavItems = [
 function Sidebar() {
     return (
         <aside className="h-full bg-card flex flex-col items-center justify-between p-4">
-            <div className="flex flex-col items-center gap-6">
-                <div className="bg-primary text-primary-foreground h-12 w-12 flex items-center justify-center rounded-full text-2xl font-bold">
+            <div className="flex flex-col items-center gap-4">
+                <div className="bg-primary text-primary-foreground h-10 w-10 flex items-center justify-center rounded-full text-xl font-bold">
                     C
                 </div>
                  <TooltipProvider>
-                    <nav className="flex flex-col items-center gap-4">
+                    <nav className="flex flex-col items-center gap-3">
                         {navItems.map((item) => (
                              <Tooltip key={item.label}>
                                 <TooltipTrigger asChild>
@@ -55,9 +55,9 @@ function Sidebar() {
                                         <Button
                                             variant={item.href === '/admin/pos' ? 'default' : 'ghost'}
                                             size="icon"
-                                            className={cn("rounded-lg h-12 w-12", item.href === '/admin/pos' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}
+                                            className={cn("rounded-lg h-10 w-10", item.href === '/admin/pos' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}
                                         >
-                                            <item.icon className="h-6 w-6" />
+                                            <item.icon className="h-5 w-5" />
                                         </Button>
                                     </Link>
                                 </TooltipTrigger>
@@ -70,7 +70,7 @@ function Sidebar() {
                  </TooltipProvider>
             </div>
              <TooltipProvider>
-                <div className="flex flex-col items-center gap-4">
+                <div className="flex flex-col items-center gap-3">
                     {bottomNavItems.map((item) => (
                          <Tooltip key={item.label}>
                             <TooltipTrigger asChild>
@@ -78,9 +78,9 @@ function Sidebar() {
                                     <Button
                                         variant={'ghost'}
                                         size="icon"
-                                        className="rounded-lg h-12 w-12 text-muted-foreground"
+                                        className="rounded-lg h-10 w-10 text-muted-foreground"
                                     >
-                                        <item.icon className="h-6 w-6" />
+                                        <item.icon className="h-5 w-5" />
                                     </Button>
                                 </Link>
                             </TooltipTrigger>
@@ -113,14 +113,6 @@ export default function PosPage() {
 
   const filteredProducts = React.useMemo(() => {
     let prods = products;
-
-    const categoryMap: { [key: string]: string } = {
-        'all': 'Desserts',
-        'skincare': 'Cakes',
-        'makeup': 'Pastry',
-        'hair': 'Ice Cream',
-        'body': 'Pancakes'
-    };
 
     if (selectedCategory !== 'all') {
         prods = prods.filter(p => p.category === selectedCategory);
@@ -159,33 +151,41 @@ export default function PosPage() {
       <main className="flex flex-col gap-6 overflow-y-auto px-8 py-6">
         <header className="flex-shrink-0">
             <div className="flex items-center justify-between">
-                <Button variant="ghost" className="text-2xl font-bold p-0 h-auto">
-                    Items <ChevronDown className="ml-2 h-5 w-5" />
+                <Button variant="ghost" className="text-xl font-bold p-0 h-auto">
+                    Items <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
             </div>
             <div className="flex items-center gap-4 mt-4">
                 <div className="relative flex-grow">
-                    <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                    <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                     placeholder="Search..."
-                    className="h-12 rounded-lg bg-card pl-12 text-base"
+                    className="h-11 rounded-lg bg-card pl-10"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <Button variant="outline" size="icon" className="h-12 w-12 rounded-lg bg-card border-border">
-                    <ListFilter />
+                <Button variant="outline" size="icon" className="h-11 w-11 rounded-lg bg-card border-border">
+                    <ListFilter className="h-5 w-5" />
                 </Button>
             </div>
         </header>
 
         <div className="flex-shrink-0">
           <div className="flex items-center gap-3 overflow-x-auto pb-2">
+            <Button
+                key="all"
+                variant={selectedCategory === 'all' ? 'default' : 'secondary'}
+                className={cn("h-10 rounded-lg px-5 font-semibold", selectedCategory === 'all' ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground')}
+                onClick={() => setSelectedCategory('all')}
+              >
+                All
+            </Button>
             {categoryButtons.map((cat) => (
               <Button
                 key={cat.id}
                 variant={selectedCategory === cat.id ? 'default' : 'secondary'}
-                className={cn("h-11 rounded-lg px-6 font-semibold", selectedCategory === cat.id ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground')}
+                className={cn("h-10 rounded-lg px-5 font-semibold", selectedCategory === cat.id ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground')}
                 onClick={() => setSelectedCategory(cat.id)}
               >
                 {cat.label}
@@ -195,7 +195,7 @@ export default function PosPage() {
         </div>
         
         <ScrollArea className="flex-1 -mx-2">
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-6 px-2 pb-4">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-6 px-2 pb-4">
                 {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
@@ -204,7 +204,7 @@ export default function PosPage() {
       </main>
 
       {/* Cart Column */}
-      <div className="w-[380px] p-6 bg-card">
+      <div className="w-[360px] p-6 bg-card">
          <div className='h-full w-full'>
             <PosCart onCheckoutSuccess={clearCart} />
          </div>
