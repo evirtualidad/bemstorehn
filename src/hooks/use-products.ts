@@ -7,6 +7,7 @@ import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import { products as initialProducts } from '@/lib/products';
 import { type Product } from '@/lib/types';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export type UploadProductData = Omit<Product, 'id' | 'created_at'> & {
   imageFile?: File;
@@ -26,100 +27,102 @@ type ProductsState = {
 };
 
 
-export const useProductsStore = create<ProductsState>()((set, get) => ({
-    products: [],
-    featuredProducts: [],
-    isLoading: true,
+export const useProductsStore = create<ProductsState>()(
+  persist(
+    (set, get) => ({
+        products: initialProducts,
+        featuredProducts: initialProducts.filter(p => p.featured),
+        isLoading: true,
 
-    fetchProducts: () => {
-      set({ 
-          products: initialProducts,
-          featuredProducts: initialProducts.filter(p => p.featured),
-          isLoading: false 
-      });
-    },
+        fetchProducts: () => {
+          // With persist, we just need to recalculate derived state
+          set(produce((state: ProductsState) => {
+            state.featuredProducts = state.products.filter(p => p.featured);
+            state.isLoading = false;
+          }));
+        },
 
-    getProductById: (productId: string) => {
-      return get().products.find((p) => p.id === productId);
-    },
+        getProductById: (productId: string) => {
+          return get().products.find((p) => p.id === productId);
+        },
 
-    addProduct: (productData) => {
-      const { imageFile, ...rest } = productData;
-      
-      const newProduct: Product = {
-          ...rest,
-          id: uuidv4(),
-          created_at: new Date().toISOString(),
-          image: productData.image || 'https://placehold.co/400x400.png',
-      };
-      
-      if (imageFile instanceof File) {
-          newProduct.image = URL.createObjectURL(imageFile);
-      }
-      
-      initialProducts.unshift(newProduct);
-      
-      set(produce((state: ProductsState) => {
-          state.products.unshift(newProduct);
-          if (newProduct.featured) {
-            state.featuredProducts.unshift(newProduct);
+        addProduct: (productData) => {
+          const { imageFile, ...rest } = productData;
+          
+          const newProduct: Product = {
+              ...rest,
+              id: uuidv4(),
+              created_at: new Date().toISOString(),
+              image: productData.image || 'https://placehold.co/400x400.png',
+          };
+          
+          if (imageFile instanceof File) {
+              newProduct.image = URL.createObjectURL(imageFile);
           }
-      }));
-      
-      toast({ title: 'Producto añadido', description: `${newProduct.name} ha sido añadido.` });
-      return newProduct.id;
-    },
+          
+          set(produce((state: ProductsState) => {
+              state.products.unshift(newProduct);
+              if (newProduct.featured) {
+                state.featuredProducts.unshift(newProduct);
+              }
+          }));
+          
+          toast({ title: 'Producto añadido', description: `${newProduct.name} ha sido añadido.` });
+          return newProduct.id;
+        },
 
-    updateProduct: (productData) => {
-        const { imageFile, ...rest } = productData;
-        const index = initialProducts.findIndex(p => p.id === productData.id);
-
-        if (index !== -1) {
-            const updatedProduct = { ...initialProducts[index], ...rest };
-            if (imageFile instanceof File) {
-                updatedProduct.image = URL.createObjectURL(imageFile);
-            }
-            initialProducts[index] = updatedProduct;
+        updateProduct: (productData) => {
+            const { imageFile, ...rest } = productData;
             
-             set(produce((state: ProductsState) => {
-                const productIndex = state.products.findIndex(p => p.id === productData.id);
-                if (productIndex !== -1) {
-                    state.products[productIndex] = updatedProduct;
-                }
-                state.featuredProducts = state.products.filter(p => p.featured);
+            set(produce((state: ProductsState) => {
+              const productIndex = state.products.findIndex(p => p.id === productData.id);
+              if (productIndex !== -1) {
+                  const updatedProduct = { ...state.products[productIndex], ...rest };
+                  if (imageFile instanceof File) {
+                      updatedProduct.image = URL.createObjectURL(imageFile);
+                  }
+                  state.products[productIndex] = updatedProduct;
+                  state.featuredProducts = state.products.filter(p => p.featured);
+              }
             }));
 
             toast({ title: 'Producto actualizado', description: `Los cambios en ${productData.name} han sido guardados.` });
-        }
-    },
+        },
 
-    deleteProduct: (productId: string) => {
-        const index = initialProducts.findIndex(p => p.id === productId);
-        if (index !== -1) {
-            initialProducts.splice(index, 1);
-            
+        deleteProduct: (productId: string) => {
             set(produce((state: ProductsState) => {
                 state.products = state.products.filter(p => p.id !== productId);
                 state.featuredProducts = state.products.filter(p => p.featured);
             }));
-
             toast({ title: 'Producto eliminado', variant: 'destructive' });
-        }
-    },
+        },
 
-    decreaseStock: (productId, quantity) => {
-        const product = initialProducts.find(p => p.id === productId);
-        if (product) {
-            product.stock -= quantity;
-            set({ products: [...initialProducts] });
-        }
-    },
+        decreaseStock: (productId, quantity) => {
+            set(produce((state: ProductsState) => {
+              const product = state.products.find(p => p.id === productId);
+              if (product) {
+                  product.stock -= quantity;
+              }
+            }));
+        },
 
-    increaseStock: (productId, quantity) => {
-        const product = initialProducts.find(p => p.id === productId);
-        if (product) {
-            product.stock += quantity;
-            set({ products: [...initialProducts] });
+        increaseStock: (productId, quantity) => {
+            set(produce((state: ProductsState) => {
+              const product = state.products.find(p => p.id === productId);
+              if (product) {
+                  product.stock += quantity;
+              }
+            }));
+        },
+    }),
+    {
+      name: 'bem-products-storage',
+      storage: createJSONStorage(() => localStorage),
+       onRehydrateStorage: () => (state) => {
+        if (state) {
+            state.isLoading = false;
         }
-    },
-}));
+      },
+    }
+  )
+);

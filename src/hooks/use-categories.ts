@@ -7,6 +7,7 @@ import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import { initialCategories } from '@/lib/categories';
 import type { Category } from '@/lib/types';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 type CategoriesState = {
   categories: Category[];
@@ -19,44 +20,53 @@ type CategoriesState = {
   getCategoryByName: (categoryName: string) => Category | undefined;
 };
 
-export const useCategoriesStore = create<CategoriesState>()((set, get) => ({
-    categories: [],
-    isLoading: true,
-    
-    fetchCategories: () => {
-        set({ categories: initialCategories, isLoading: false });
-    },
-    
-    getCategoryById: (categoryId: string) => {
-      return get().categories.find((c) => c.id === categoryId);
-    },
-    
-    getCategoryByName: (categoryName: string) => {
-      return get().categories.find((c) => c.name === categoryName);
-    },
+export const useCategoriesStore = create<CategoriesState>()(
+  persist(
+    (set, get) => ({
+        categories: initialCategories,
+        isLoading: true,
+        
+        fetchCategories: () => {
+            // Data is now loaded from localStorage by persist middleware
+            set({ isLoading: false });
+        },
+        
+        getCategoryById: (categoryId: string) => {
+          return get().categories.find((c) => c.id === categoryId);
+        },
+        
+        getCategoryByName: (categoryName: string) => {
+          return get().categories.find((c) => c.name === categoryName);
+        },
 
-    addCategory: (categoryData) => {
-        const newCategory = { ...categoryData, id: uuidv4() };
-        initialCategories.push(newCategory);
-        set({ categories: [...initialCategories] });
-        toast({ title: 'Categoría añadida' });
-    },
+        addCategory: (categoryData) => {
+            const newCategory = { ...categoryData, id: uuidv4() };
+            set(state => ({ categories: [...state.categories, newCategory] }));
+            toast({ title: 'Categoría añadida' });
+        },
 
-    updateCategory: (category) => {
-        const index = initialCategories.findIndex(c => c.id === category.id);
-        if (index !== -1) {
-            initialCategories[index] = category;
-            set({ categories: [...initialCategories] });
+        updateCategory: (category) => {
+            set(state => ({
+              categories: state.categories.map(c => c.id === category.id ? category : c)
+            }));
             toast({ title: 'Categoría actualizada' });
-        }
-    },
+        },
 
-    deleteCategory: (categoryId: string) => {
-        const index = initialCategories.findIndex(c => c.id === categoryId);
-        if (index !== -1) {
-            initialCategories.splice(index, 1);
-            set({ categories: [...initialCategories] });
+        deleteCategory: (categoryId: string) => {
+            set(state => ({
+              categories: state.categories.filter(c => c.id !== categoryId)
+            }));
             toast({ title: 'Categoría eliminada' });
+        },
+    }),
+    {
+      name: 'bem-categories-storage',
+      storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+            state.isLoading = false;
         }
-    },
-}));
+      },
+    }
+  )
+);

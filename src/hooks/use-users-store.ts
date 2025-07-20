@@ -6,6 +6,7 @@ import { produce } from 'immer';
 import { toast } from './use-toast';
 import { useAuthStore } from './use-auth-store';
 import { v4 as uuidv4 } from 'uuid';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export type UserRole = 'admin' | 'cajero';
 
@@ -30,32 +31,48 @@ type UsersState = {
   deleteUser: (userId: string) => void;
 };
 
-export const useUsersStore = create<UsersState>()((set, get) => ({
-    users: [],
-    isLoading: false,
-    
-    fetchUsers: () => {
-        set({ users: initialUsers, isLoading: false });
-    },
+export const useUsersStore = create<UsersState>()(
+  persist(
+    (set, get) => ({
+        users: initialUsers,
+        isLoading: false,
+        
+        fetchUsers: () => {
+            set({ isLoading: false });
+        },
 
-    updateUserRole: (userId, newRole) => {
-        const { user: currentUser } = useAuthStore.getState();
-        if (currentUser?.id === userId) {
-            toast({ title: 'Acción no permitida', description: 'No puedes cambiar tu propio rol.', variant: 'destructive'});
-            return;
-        }
+        updateUserRole: (userId, newRole) => {
+            const { user: currentUser } = useAuthStore.getState();
+            if (currentUser?.id === userId) {
+                toast({ title: 'Acción no permitida', description: 'No puedes cambiar tu propio rol.', variant: 'destructive'});
+                return;
+            }
+            
+            set(produce((state: UsersState) => {
+              const userToUpdate = state.users.find((user) => user.id === userId);
+              if (userToUpdate) {
+                  userToUpdate.role = newRole;
+              }
+            }));
 
-        const userToUpdate = initialUsers.find((user) => user.id === userId);
-        if (userToUpdate) {
-            userToUpdate.role = newRole;
-            set({ users: [...initialUsers] });
             toast({ title: '¡Rol Actualizado!', description: `El rol del usuario ha sido cambiado a ${newRole}.` });
+        },
+        
+        deleteUser: (userId: string) => {
+            set(produce((state: UsersState) => {
+              state.users = state.users.filter(user => user.id !== userId);
+            }));
+            toast({ title: 'Usuario eliminado', variant: 'destructive' });
+        },
+    }),
+    {
+      name: 'bem-users-storage',
+      storage: createJSONStorage(() => localStorage),
+       onRehydrateStorage: () => (state) => {
+        if (state) {
+            state.isLoading = false;
         }
-    },
-    
-    deleteUser: (userId: string) => {
-        initialUsers = initialUsers.filter(user => user.id !== userId);
-        set({ users: [...initialUsers] });
-        toast({ title: 'Usuario eliminado', variant: 'destructive' });
-    },
-}));
+      },
+    }
+  )
+);

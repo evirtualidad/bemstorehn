@@ -6,6 +6,7 @@ import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import { initialBanners } from '@/lib/banners';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface Banner {
   id: string;
@@ -24,36 +25,45 @@ type BannersState = {
   deleteBanner: (bannerId: string) => void;
 };
 
-export const useBannersStore = create<BannersState>()((set) => ({
-    banners: [],
-    isLoading: true,
-    
-    fetchBanners: () => {
-        set({ banners: initialBanners, isLoading: false });
-    },
+export const useBannersStore = create<BannersState>()(
+  persist(
+    (set, get) => ({
+        banners: initialBanners,
+        isLoading: false,
+        
+        fetchBanners: () => {
+            // Data is now loaded from localStorage by persist middleware
+            set({ isLoading: false });
+        },
 
-    addBanner: (bannerData) => {
-      const newBanner: Banner = { ...bannerData, id: uuidv4() };
-      initialBanners.unshift(newBanner);
-      set({ banners: [...initialBanners] });
-      toast({ title: 'Banner añadido' });
-    },
+        addBanner: (bannerData) => {
+          const newBanner: Banner = { ...bannerData, id: uuidv4() };
+          set(state => ({ banners: [newBanner, ...state.banners] }));
+          toast({ title: 'Banner añadido' });
+        },
 
-    updateBanner: (banner) => {
-      const index = initialBanners.findIndex(b => b.id === banner.id);
-      if (index !== -1) {
-          initialBanners[index] = banner;
-          set({ banners: [...initialBanners] });
+        updateBanner: (banner) => {
+          set(state => ({
+            banners: state.banners.map(b => b.id === banner.id ? banner : b)
+          }));
           toast({ title: 'Banner actualizado' });
-      }
-    },
+        },
 
-    deleteBanner: (bannerId: string) => {
-      const index = initialBanners.findIndex(b => b.id === bannerId);
-      if (index !== -1) {
-          initialBanners.splice(index, 1);
-          set({ banners: [...initialBanners] });
+        deleteBanner: (bannerId: string) => {
+          set(state => ({
+            banners: state.banners.filter(b => b.id !== bannerId)
+          }));
           toast({ title: 'Banner eliminado' });
-      }
-    },
-}));
+        },
+    }),
+    {
+      name: 'bem-banners-storage',
+      storage: createJSONStorage(() => localStorage),
+       onRehydrateStorage: () => (state) => {
+        if (state) {
+            state.isLoading = false;
+        }
+      },
+    }
+  )
+);
