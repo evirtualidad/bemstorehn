@@ -3,128 +3,63 @@
 
 import { create } from 'zustand';
 import { toast } from './use-toast';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { isSupabaseConfigured } from '@/lib/supabase';
 import type { UserDoc, UserRole } from './use-users-store';
 import { useUsersStore, initialUsers } from './use-users-store';
-import { Session } from '@supabase/supabase-js';
 
 type AuthState = {
   user: UserDoc | null;
   role: UserRole | null;
   isAuthLoading: boolean;
-  initializeSession: () => Promise<void>;
+  initializeSession: () => void;
   login: (email: string, password: string) => Promise<string | null>;
-  logout: () => Promise<void>;
+  logout: () => void;
   createUser: (email: string, password: string, role: UserRole) => Promise<string | null>;
 };
 
 let sessionInitialized = false;
 
 // --- Zustand Store Definition ---
-export const useAuthStore = create<AuthState>((set, get) => {
-    
-    const handleSession = (session: Session | null) => {
-        if (session?.user) {
-            const { user } = session;
-            const role = (user.user_metadata?.role as UserRole) || 'cajero';
-            
-            set({
-                user: {
-                    id: user.id,
-                    email: user.email || '',
-                    role: role,
-                },
-                role: role,
-                isAuthLoading: false
-            });
-        } else {
-            set({ user: null, role: null, isAuthLoading: false });
+export const useAuthStore = create<AuthState>((set) => ({
+    user: null,
+    role: null,
+    isAuthLoading: true,
+
+    initializeSession: () => {
+        if (sessionInitialized) {
+            set({ isAuthLoading: false });
+            return;
         }
-    };
-
-    return {
-        user: null,
-        role: null,
-        isAuthLoading: true,
-
-        initializeSession: async () => {
-            if (sessionInitialized) {
-                set({isAuthLoading: false});
-                return;
-            }
-            sessionInitialized = true;
-            
-            if (!isSupabaseConfigured) {
-              const localUser = initialUsers.find(u => u.email === 'evirt@bemstore.hn');
-              if (localUser) {
-                  set({ user: localUser, role: localUser.role, isAuthLoading: false });
-              } else {
-                  set({ isAuthLoading: false });
-              }
-              return;
-            }
-            
-            supabase.auth.onAuthStateChange((_event, session) => {
-                handleSession(session);
-            });
-            
-            const { data: { session } } = await supabase.auth.getSession();
-            handleSession(session);
-        },
-
-        login: async (email, password) => {
-            if (!isSupabaseConfigured) {
-              const localUser = initialUsers.find(u => u.email === email && u.password === password);
-              if(localUser) {
-                  set({ user: localUser, role: localUser.role, isAuthLoading: false });
-                  return null;
-              }
-              return "Credenciales inválidas (modo local).";
-            }
-            
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            
-            if (error) {
-              if (error.message.includes('Invalid login credentials')) {
-                  return 'Credenciales de inicio de sesión inválidas.';
-              }
-               if (error.message.includes('Email not confirmed')) {
-                  return 'Por favor, confirma tu correo electrónico antes de iniciar sesión.';
-              }
-              return error.message;
-            }
-            
-            // The onAuthStateChange listener will handle setting the user state.
-            return null;
-        },
-
-        logout: async () => {
-            if (isSupabaseConfigured) {
-                await supabase.auth.signOut();
-            }
-            set({ user: null, role: null, isAuthLoading: false });
-        },
+        sessionInitialized = true;
         
-        createUser: async (email, password, role) => {
-            if (!isSupabaseConfigured) {
-                toast({ title: 'Función no disponible', description: 'La creación de usuarios requiere conexión a Supabase.', variant: 'destructive'});
-                return 'Supabase no configurado.';
-            }
-            
-            const { data, error } = await supabase.rpc('create_new_user', {
-              email_param: email,
-              password_param: password,
-              role_param: role
-            })
+        // For local mode, we check if a user is "logged in" via localStorage
+        const storedUser = localStorage.getItem('loggedInUser');
+        if (storedUser) {
+            const user: UserDoc = JSON.parse(storedUser);
+            set({ user, role: user.role, isAuthLoading: false });
+        } else {
+            set({ isAuthLoading: false });
+        }
+    },
 
-            if (error) {
-                return error.message;
-            }
-            
-            // Give Supabase a moment to process before refetching
-            setTimeout(() => useUsersStore.getState().fetchUsers(), 1500);
-            
+    login: async (email, password) => {
+        const localUser = initialUsers.find(u => u.email === email && u.password === password);
+        if (localUser) {
+            const userToSave = { id: localUser.id, email: localUser.email, role: localUser.role };
+            localStorage.setItem('loggedInUser', JSON.stringify(userToSave));
+            set({ user: userToSave, role: localUser.role, isAuthLoading: false });
             return null;
         }
+        return "Credenciales inválidas.";
+    },
+
+    logout: () => {
+        localStorage.removeItem('loggedInUser');
+        set({ user: null, role: null, isAuthLoading: false });
+    },
+    
+    createUser: async (email, password, role) => {
+        toast({ title: 'Función no disponible', description: 'La creación de usuarios debe simularse en el archivo `initialUsers` para el modo local.', variant: 'destructive'});
+        return 'Función no disponible en modo local.';
     }
-});
+}));

@@ -5,63 +5,19 @@ import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import { createOrderAction } from '@/actions/create-order-action';
 import { initialOrders } from '@/lib/orders';
+import type { Order, NewOrderData, Payment, Address } from '@/lib/types';
+import { useProductsStore } from './use-products';
 
-export interface Payment {
-    date: string;
-    amount: number;
-    method: 'efectivo' | 'tarjeta' | 'transferencia';
-    cash_received?: number | null;
-    change_given?: number | null;
-}
-
-export interface Address {
-  department: string;
-  municipality: string;
-  colony?: string;
-  exactAddress: string;
-}
-
-export interface Order {
-  id: string; 
-  display_id?: string; 
-  created_at: string; 
-  user_id: string | null;
-  customer_id: string | null;
-  customer_name: string;
-  customer_phone: string;
-  customer_address: Address | null;
-  items: Array<{
-    id: string;
-    name: string;
-    price: number;
-    quantity: number;
-    image: string;
-  }>;
-  total: number;
-  shipping_cost: number;
-  balance: number; 
-  payments: Payment[]; 
-  payment_method: 'efectivo' | 'tarjeta' | 'transferencia' | 'credito';
-  payment_reference: string | null;
-  status: 'pending-approval' | 'pending-payment' | 'paid' | 'cancelled';
-  source: 'pos' | 'online-store';
-  delivery_method: 'pickup' | 'delivery' | null;
-  payment_due_date: string | null;
-}
-
-export type NewOrderData = Omit<Order, 'id' | 'display_id' | 'created_at'>;
 
 type OrdersState = {
   orders: Order[];
   isLoading: boolean;
-  fetchOrders: () => Promise<void>;
-  createOrder: (order: NewOrderData) => Promise<string | null>; 
-  addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => Promise<void>;
-  approveOrder: (data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => Promise<void>;
-  cancelOrder: (orderId: string) => Promise<void>;
+  fetchOrders: () => void;
+  createOrder: (order: NewOrderData) => string; 
+  addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => void;
+  approveOrder: (data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => void;
+  cancelOrder: (orderId: string) => void;
   getOrderById: (orderId: string) => Order | undefined;
 };
 
@@ -69,116 +25,78 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
     orders: [],
     isLoading: true,
 
-    fetchOrders: async () => {
-        set({ isLoading: true });
-        if (!isSupabaseConfigured) {
-          // If not configured, load hardcoded data
-          set({ orders: initialOrders, isLoading: false });
-          return;
-        }
-        const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-         if (error) {
-            toast({ title: 'Error al cargar pedidos', description: error.message, variant: 'destructive'});
-            set({ orders: [], isLoading: false });
-        } else {
-            set({ orders: data as any[], isLoading: false });
-        }
+    fetchOrders: () => {
+        set({ orders: initialOrders, isLoading: false });
     },
 
-    createOrder: async (orderData) => {
-      // For local development, we simulate DB insertion by modifying the in-memory array.
-      if (!isSupabaseConfigured) {
-        const newOrder: Order = {
-          ...orderData,
-          id: uuidv4(),
-          created_at: new Date().toISOString(),
-          display_id: `BEM-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-        };
-        initialOrders.unshift(newOrder);
-        set({ orders: [...initialOrders] });
-        return newOrder.id;
-      }
-
-      // This logic is now primarily for the online store flow, which is less sensitive to timeouts
-      // The POS flow uses a more direct approach.
+    createOrder: (orderData) => {
       const newOrder: Order = {
         ...orderData,
         id: uuidv4(),
+        display_id: `BEM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
         created_at: new Date().toISOString(),
       };
       
-      const { success, error } = await createOrderAction(newOrder);
-
-      if (!success) {
-        toast({
-          title: 'Error al guardar el pedido',
-          description: error || 'No se pudo guardar el pedido en la base de datos.',
-          variant: 'destructive'
-        });
-        return null;
-      }
-
-      // Fetch all orders again to ensure perfect sync
-      await get().fetchOrders();
+      initialOrders.unshift(newOrder);
+      set({ orders: [...initialOrders] });
+      
       return newOrder.id;
     },
 
-    addPayment: async (orderId, amount, method) => {
-      const order = get().orders.find(o => o.id === orderId);
+    addPayment: (orderId, amount, method) => {
+      const order = initialOrders.find(o => o.id === orderId);
       if (!order) return;
 
       const newBalance = order.balance - amount;
-      const newStatus = newBalance <= 0 ? 'paid' : order.status;
-      const newPayment: Payment = { amount, method, date: new Date().toISOString() };
-      const updatedPayments = [...order.payments, newPayment];
+      order.balance = newBalance;
+      order.status = newBalance <= 0 ? 'paid' : order.status;
+      order.payments.push({ amount, method, date: new Date().toISOString() });
 
-      set(produce(state => {
-          const orderToUpdate = state.orders.find(o => o.id === orderId);
-          if (orderToUpdate) {
-              orderToUpdate.balance = newBalance;
-              orderToUpdate.status = newStatus;
-              orderToUpdate.payments = updatedPayments;
-          }
-      }));
+      set({ orders: [...initialOrders] });
       toast({ title: 'Pago Registrado', description: 'El pago se registró con éxito.' });
     },
 
-    approveOrder: async ({ orderId, paymentMethod, paymentDueDate, paymentReference }) => {
-        const order = get().orders.find(o => o.id === orderId);
+    approveOrder: ({ orderId, paymentMethod, paymentDueDate, paymentReference }) => {
+        const order = initialOrders.find(o => o.id === orderId);
         if (!order) return;
 
-        const updateData: Partial<Order> = {
-            payment_method: paymentMethod,
-            payment_due_date: paymentDueDate ? paymentDueDate.toISOString() : null,
-            payment_reference: paymentReference || null,
-        };
+        order.payment_method = paymentMethod;
+        order.payment_due_date = paymentDueDate ? paymentDueDate.toISOString() : null;
+        order.payment_reference = paymentReference || null;
 
         if (paymentMethod === 'credito') {
-            updateData.status = 'pending-payment';
-            updateData.balance = order.total;
+            order.status = 'pending-payment';
+            order.balance = order.total;
         } else {
-            updateData.status = 'paid';
-            updateData.balance = 0;
-            updateData.payments = [{ amount: order.total, date: new Date().toISOString(), method: paymentMethod }];
+            order.status = 'paid';
+            order.balance = 0;
+            order.payments = [{ amount: order.total, date: new Date().toISOString(), method: paymentMethod }];
+        }
+        
+        // Decrease stock
+        const { decreaseStock } = useProductsStore.getState();
+        for (const item of order.items) {
+          decreaseStock(item.id, item.quantity);
         }
 
-        set(produce(state => {
-            const orderToUpdate = state.orders.find(o => o.id === orderId);
-            if (orderToUpdate) {
-                Object.assign(orderToUpdate, updateData);
-            }
-        }));
+        set({ orders: [...initialOrders] });
         toast({ title: 'Pedido Aprobado', description: 'El pedido ha sido facturado.' });
     },
 
-    cancelOrder: async (orderId: string) => {
-        set(produce(state => {
-            const order = state.orders.find(o => o.id === orderId);
-            if (order) {
-                order.status = 'cancelled';
+    cancelOrder: (orderId: string) => {
+        const order = initialOrders.find(o => o.id === orderId);
+        if (order) {
+            // Only return stock if the order was not 'pending-approval' or already 'cancelled'
+            if (order.status !== 'pending-approval' && order.status !== 'cancelled') {
+                const { increaseStock } = useProductsStore.getState();
+                for (const item of order.items) {
+                    increaseStock(item.id, item.quantity);
+                }
             }
-        }));
-        toast({ title: 'Pedido Cancelado', variant: 'destructive' });
+            order.status = 'cancelled';
+            set({ orders: [...initialOrders] });
+            toast({ title: 'Pedido Cancelado', variant: 'destructive' });
+        }
     },
 
     getOrderById: (orderId: string) => {

@@ -5,7 +5,7 @@ import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { initialBanners } from '@/lib/banners';
 
 export interface Banner {
   id: string;
@@ -15,84 +15,45 @@ export interface Banner {
   aiHint?: string;
 }
 
-const initialBanners: Banner[] = [
-    {
-      id: 'banner-1',
-      title: 'Colección Verano Radiante',
-      description: 'Descubre nuestros nuevos iluminadores y bronzers para un look de verano perfecto.',
-      image: 'https://placehold.co/1200x600.png',
-      aiHint: 'summer cosmetics',
-    },
-    {
-      id: 'banner-2',
-      title: 'Cuidado de la Piel Natural',
-      description: 'Ingredientes puros para una piel sana y luminosa. ¡Explora nuestra línea de skincare!',
-      image: 'https://placehold.co/1200x600.png',
-      aiHint: 'natural skincare',
-    },
-    {
-      id: 'banner-3',
-      title: 'Labiales que Enamoran',
-      description: 'Nuevos tonos mate y gloss para cada ocasión. Larga duración y colores vibrantes.',
-      image: 'https://placehold.co/1200x600.png',
-      aiHint: 'lipstick collection',
-    },
-];
-
-
 type BannersState = {
   banners: Banner[];
   isLoading: boolean;
-  fetchBanners: () => Promise<void>;
-  addBanner: (bannerData: Omit<Banner, 'id'>) => Promise<void>;
-  updateBanner: (banner: Banner) => Promise<void>;
-  deleteBanner: (bannerId: string) => Promise<void>;
+  fetchBanners: () => void;
+  addBanner: (bannerData: Omit<Banner, 'id'>) => void;
+  updateBanner: (banner: Banner) => void;
+  deleteBanner: (bannerId: string) => void;
 };
-
 
 export const useBannersStore = create<BannersState>()((set) => ({
     banners: [],
     isLoading: true,
     
-    fetchBanners: async () => {
-        set({ isLoading: true });
-        if (!isSupabaseConfigured) {
-          // In local mode, we assume the data is already there.
-          set({ banners: initialBanners, isLoading: false });
-          return;
-        }
-        
-        const { data, error } = await supabase.from('banners').select('*');
-         if (error) {
-            toast({ title: 'Error al cargar banners', description: error.message, variant: 'destructive'});
-            set({ banners: [], isLoading: false });
-        } else {
-            set({ banners: data, isLoading: false });
-        }
+    fetchBanners: () => {
+        set({ banners: initialBanners, isLoading: false });
     },
 
-    addBanner: async (bannerData) => {
-      const newBanner = { ...bannerData, id: uuidv4() };
-      set(produce(state => {
-          state.banners.unshift(newBanner);
-      }));
+    addBanner: (bannerData) => {
+      const newBanner: Banner = { ...bannerData, id: uuidv4() };
+      initialBanners.unshift(newBanner);
+      set({ banners: [...initialBanners] });
       toast({ title: 'Banner añadido' });
     },
 
-    updateBanner: async (banner) => {
-      set(produce(state => {
-          const index = state.banners.findIndex(b => b.id === banner.id);
-          if (index !== -1) {
-              state.banners[index] = banner;
-          }
-      }));
-      toast({ title: 'Banner actualizado' });
+    updateBanner: (banner) => {
+      const index = initialBanners.findIndex(b => b.id === banner.id);
+      if (index !== -1) {
+          initialBanners[index] = banner;
+          set({ banners: [...initialBanners] });
+          toast({ title: 'Banner actualizado' });
+      }
     },
 
-    deleteBanner: async (bannerId: string) => {
-      set(produce(state => {
-          state.banners = state.banners.filter(b => b.id !== bannerId);
-      }));
-      toast({ title: 'Banner eliminado' });
+    deleteBanner: (bannerId: string) => {
+      const index = initialBanners.findIndex(b => b.id === bannerId);
+      if (index !== -1) {
+          initialBanners.splice(index, 1);
+          set({ banners: [...initialBanners] });
+          toast({ title: 'Banner eliminado' });
+      }
     },
 }));

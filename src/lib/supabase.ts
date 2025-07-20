@@ -1,28 +1,14 @@
 
-import { createPagesBrowserClient, type SupabaseClient } from '@supabase/auth-helpers-nextjs';
-import type { Database } from '@/lib/database.types';
+import { type SupabaseClient } from '@supabase/supabase-js';
 
-// NOTE: This file is now used to initialize the Supabase client.
-// The previous content related to local data has been removed.
+// This file is adapted for a fully local development environment.
+// All Supabase interactions are disabled.
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+console.warn("Application is running in a fully local mode. No data will be sent to Supabase.");
 
-let supabase: SupabaseClient<Database>;
-let isSupabaseConfigured = false;
+// This constant will be checked by hooks to determine if they should use local data.
+export const isSupabaseConfigured = false;
 
-if (supabaseUrl && supabaseAnonKey) {
-  supabase = createPagesBrowserClient<Database>({
-    supabaseUrl,
-    supabaseKey: supabaseAnonKey,
-  });
-  isSupabaseConfigured = true;
-} else {
-  console.warn("Supabase credentials are not set. App will run in a simulated/local mode.");
-  // Assign a mock object if Supabase is not configured to avoid runtime errors
-  supabase = {} as SupabaseClient<Database>;
-  isSupabaseConfigured = false;
-}
-
-
-export { supabase, isSupabaseConfigured };
+// We export a null/mock object to prevent runtime errors in components
+// that might still import `supabase`.
+export const supabase = {} as SupabaseClient;

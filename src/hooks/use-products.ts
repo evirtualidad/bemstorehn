@@ -5,7 +5,6 @@ import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { products as initialProducts } from '@/lib/products';
 import { type Product } from '@/lib/types';
 
@@ -13,53 +12,17 @@ export type UploadProductData = Omit<Product, 'id' | 'created_at'> & {
   imageFile?: File;
 };
 
-const BUCKET_NAME = 'product-images';
-
-async function uploadProductImage(file: File): Promise<string | null> {
-    if (!isSupabaseConfigured) return null;
-
-    const fileName = `${uuidv4()}-${file.name}`;
-    const { data, error } = await supabase.storage
-        .from(BUCKET_NAME)
-        .upload(fileName, file);
-
-    if (error) {
-        toast({ title: 'Error al subir imagen', description: error.message, variant: 'destructive' });
-        return null;
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-        .from(BUCKET_NAME)
-        .getPublicUrl(data.path);
-        
-    return publicUrl;
-}
-
-async function deleteProductImage(imageUrl: string): Promise<void> {
-    if (!isSupabaseConfigured || !imageUrl) return;
-    try {
-        const url = new URL(imageUrl);
-        const path = url.pathname.split(`/${BUCKET_NAME}/`)[1];
-        if (path) {
-            await supabase.storage.from(BUCKET_NAME).remove([path]);
-        }
-    } catch (error) {
-        console.warn("Could not parse or delete image URL:", imageUrl);
-    }
-}
-
-
 type ProductsState = {
   products: Product[];
   featuredProducts: Product[];
   isLoading: boolean;
-  fetchProducts: () => Promise<void>;
-  addProduct: (productData: UploadProductData) => Promise<string | null>;
-  updateProduct: (product: UploadProductData & { id: string }) => Promise<void>;
-  deleteProduct: (productId: string) => Promise<void>;
+  fetchProducts: () => void;
+  addProduct: (productData: UploadProductData) => string | null;
+  updateProduct: (product: UploadProductData & { id: string }) => void;
+  deleteProduct: (productId: string) => void;
   getProductById: (productId: string) => Product | undefined;
-  decreaseStock: (productId: string, quantity: number) => Promise<void>;
-  increaseStock: (productId: string, quantity: number) => Promise<void>;
+  decreaseStock: (productId: string, quantity: number) => void;
+  increaseStock: (productId: string, quantity: number) => void;
 };
 
 
@@ -68,182 +31,95 @@ export const useProductsStore = create<ProductsState>()((set, get) => ({
     featuredProducts: [],
     isLoading: true,
 
-    fetchProducts: async () => {
-        set({ isLoading: true });
-        
-        if (isSupabaseConfigured) {
-            const { data, error } = await supabase.from('products').select('*');
-            
-            if (error) {
-                toast({ title: 'Error al cargar productos', description: error.message, variant: 'destructive'});
-                set({ products: [], featuredProducts: [], isLoading: false });
-            } else {
-                set({ 
-                  products: data as Product[],
-                  featuredProducts: (data as Product[]).filter(p => p.featured),
-                  isLoading: false 
-                });
-            }
-        } else {
-            // Only use initial data if Supabase is not configured at all.
-             set({ 
-                products: initialProducts,
-                featuredProducts: initialProducts.filter(p => p.featured),
-                isLoading: false 
-            });
-        }
+    fetchProducts: () => {
+      set({ 
+          products: initialProducts,
+          featuredProducts: initialProducts.filter(p => p.featured),
+          isLoading: false 
+      });
     },
 
     getProductById: (productId: string) => {
       return get().products.find((p) => p.id === productId);
     },
 
-    addProduct: async (productData) => {
-      if (!isSupabaseConfigured) {
-          toast({ title: 'Función no disponible sin Supabase'});
-          return null;
-      }
-
-      toast({ title: 'Añadiendo producto...' });
+    addProduct: (productData) => {
+      const { imageFile, ...rest } = productData;
       
-      let imageUrl = productData.image;
-      if (productData.imageFile) {
-          const uploadedUrl = await uploadProductImage(productData.imageFile);
-          if (uploadedUrl) {
-              imageUrl = uploadedUrl;
-          } else {
-              return null;
-          }
+      const newProduct: Product = {
+          ...rest,
+          id: uuidv4(),
+          created_at: new Date().toISOString(),
+          image: productData.image || 'https://placehold.co/400x400.png',
+      };
+      
+      if (imageFile instanceof File) {
+          newProduct.image = URL.createObjectURL(imageFile);
       }
       
-      const { imageFile, ...dbData } = { ...productData, image: imageUrl };
-
-      const { data, error } = await supabase.from('products').insert(dbData).select().single();
-
-      if (error) {
-          toast({ title: 'Error al añadir producto', description: error.message, variant: 'destructive' });
-          if (imageUrl && productData.imageFile) {
-              await deleteProductImage(imageUrl);
-          }
-          return null;
-      }
+      initialProducts.unshift(newProduct);
       
-      set(produce((state) => {
-          state.products.unshift(data as Product);
-          if (data.featured) {
-            state.featuredProducts.unshift(data as Product);
+      set(produce((state: ProductsState) => {
+          state.products.unshift(newProduct);
+          if (newProduct.featured) {
+            state.featuredProducts.unshift(newProduct);
           }
       }));
       
-      toast({ title: 'Producto añadido', description: `${productData.name} ha sido añadido.` });
-      return data.id;
+      toast({ title: 'Producto añadido', description: `${newProduct.name} ha sido añadido.` });
+      return newProduct.id;
     },
 
-    updateProduct: async (productData) => {
-       if (!isSupabaseConfigured) {
-          toast({ title: 'Función no disponible sin Supabase'});
-          return;
-      }
-      toast({ title: 'Actualizando producto...' });
+    updateProduct: (productData) => {
+        const { imageFile, ...rest } = productData;
+        const index = initialProducts.findIndex(p => p.id === productData.id);
 
-      const originalProduct = get().products.find(p => p.id === productData.id);
-      let imageUrl = productData.image;
-
-      if (productData.imageFile) {
-          const uploadedUrl = await uploadProductImage(productData.imageFile);
-          if (uploadedUrl) {
-              if (originalProduct?.image) {
-                  await deleteProductImage(originalProduct.image);
-              }
-              imageUrl = uploadedUrl;
-          } else {
-              return;
-          }
-      }
-      
-      const { imageFile, ...dbData } = { ...productData, image: imageUrl };
-      
-      const { data, error } = await supabase
-          .from('products')
-          .update(dbData)
-          .eq('id', productData.id)
-          .select()
-          .single();
-
-      if (error) {
-          toast({ title: 'Error al actualizar', description: error.message, variant: 'destructive' });
-      } else {
-          set(produce(state => {
-              const index = state.products.findIndex(p => p.id === productData.id);
-              if (index !== -1) {
-                  state.products[index] = data as Product;
-              }
-              // Update featured products list
-              state.featuredProducts = state.products.filter(p => p.featured);
-          }));
-          toast({ title: 'Producto actualizado', description: `Los cambios en ${productData.name} han sido guardados.` });
-      }
-    },
-
-    deleteProduct: async (productId: string) => {
-      if (!isSupabaseConfigured) {
-          toast({ title: 'Función no disponible sin Supabase'});
-          return;
-      }
-
-      const productToDelete = get().products.find(p => p.id === productId);
-
-      const { error } = await supabase.from('products').delete().eq('id', productId);
-      
-      if (error) {
-          toast({ title: 'Error al eliminar', description: error.message, variant: 'destructive'});
-      } else {
-          if (productToDelete?.image) {
-              await deleteProductImage(productToDelete.image);
-          }
-          set(produce(state => {
-              state.products = state.products.filter(p => p.id !== productId);
-              state.featuredProducts = state.products.filter(p => p.featured);
-          }));
-          toast({ title: 'Producto eliminado', variant: 'destructive' });
-      }
-    },
-
-    decreaseStock: async (productId, quantity) => {
-        if (!isSupabaseConfigured) {
-            set(produce(state => {
-              const product = state.products.find(p => p.id === productId);
-              if (product) product.stock -= quantity;
+        if (index !== -1) {
+            const updatedProduct = { ...initialProducts[index], ...rest };
+            if (imageFile instanceof File) {
+                updatedProduct.image = URL.createObjectURL(imageFile);
+            }
+            initialProducts[index] = updatedProduct;
+            
+             set(produce((state: ProductsState) => {
+                const productIndex = state.products.findIndex(p => p.id === productData.id);
+                if (productIndex !== -1) {
+                    state.products[productIndex] = updatedProduct;
+                }
+                state.featuredProducts = state.products.filter(p => p.featured);
             }));
-            return;
-        }
-        const { error } = await supabase.rpc('decrease_stock', { product_id: productId, quantity_to_decrease: quantity });
-        if (error) {
-            toast({ title: 'Error al actualizar stock', description: error.message, variant: 'destructive'});
-        } else {
-            set(produce(state => {
-                const product = state.products.find(p => p.id === productId);
-                if (product) product.stock -= quantity;
-            }));
+
+            toast({ title: 'Producto actualizado', description: `Los cambios en ${productData.name} han sido guardados.` });
         }
     },
 
-    increaseStock: async (productId, quantity) => {
-       if (!isSupabaseConfigured) {
-            set(produce(state => {
-              const product = state.products.find(p => p.id === productId);
-              if (product) product.stock += quantity;
+    deleteProduct: (productId: string) => {
+        const index = initialProducts.findIndex(p => p.id === productId);
+        if (index !== -1) {
+            initialProducts.splice(index, 1);
+            
+            set(produce((state: ProductsState) => {
+                state.products = state.products.filter(p => p.id !== productId);
+                state.featuredProducts = state.products.filter(p => p.featured);
             }));
-            return;
+
+            toast({ title: 'Producto eliminado', variant: 'destructive' });
         }
-         const { error } = await supabase.rpc('increase_stock', { product_id: productId, quantity_to_increase: quantity });
-          if (error) {
-              toast({ title: 'Error al devolver stock', description: error.message, variant: 'destructive'});
-          } else {
-              set(produce(state => {
-                  const product = state.products.find(p => p.id === productId);
-                  if (product) product.stock += quantity;
-              }));
-          }
+    },
+
+    decreaseStock: (productId, quantity) => {
+        const product = initialProducts.find(p => p.id === productId);
+        if (product) {
+            product.stock -= quantity;
+            set({ products: [...initialProducts] });
+        }
+    },
+
+    increaseStock: (productId, quantity) => {
+        const product = initialProducts.find(p => p.id === productId);
+        if (product) {
+            product.stock += quantity;
+            set({ products: [...initialProducts] });
+        }
     },
 }));
