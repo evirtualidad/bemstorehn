@@ -21,17 +21,15 @@ export function BottomNav() {
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  const shouldHideNav = 
-    pathname.startsWith('/admin') || 
-    pathname.startsWith('/checkout') || 
-    pathname.startsWith('/order-confirmation') || 
-    pathname.startsWith('/login') ||
-    pathname.startsWith('/cart');
-
-  if (shouldHideNav || !isClient) {
+  const isAdminPage = pathname.startsWith('/admin') || pathname.startsWith('/login');
+  
+  // Hide on admin pages, checkout, and if cart is empty
+  const shouldHideNav = isAdminPage || pathname.startsWith('/checkout') || pathname.startsWith('/order-confirmation') || pathname.startsWith('/cart');
+  
+  if (shouldHideNav || !isClient || totalItems === 0) {
     return null;
   }
-
+  
   return (
     <div className="md:hidden fixed bottom-6 right-6 z-50">
       <Button
