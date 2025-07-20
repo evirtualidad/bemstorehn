@@ -76,9 +76,9 @@ export default function PosPage() {
   }
 
   return (
-    <div className="h-full flex">
+    <div className="grid h-[calc(100vh_-_9rem)] grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 overflow-hidden">
       {/* Main Content (Products Grid) */}
-      <main className="flex-1 flex flex-col gap-4 overflow-y-auto pr-4 md:pr-0">
+      <main className="flex flex-col gap-4 overflow-y-auto">
         <header className="flex-shrink-0 pt-4 px-4">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
@@ -127,8 +127,10 @@ export default function PosPage() {
       </main>
 
       {/* Cart Column */}
-      <div className="hidden lg:block fixed top-16 right-0 bottom-0 w-[420px] p-4">
-         <PosCart onCheckoutSuccess={clearCart} />
+      <div className="hidden lg:block w-[380px] pr-4 pb-4">
+         <div className='h-full w-full'>
+            <PosCart onCheckoutSuccess={clearCart} />
+         </div>
       </div>
     </div>
   );
