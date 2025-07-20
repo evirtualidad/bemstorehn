@@ -116,6 +116,9 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
         return null;
       }
 
+      // Explicitly fetch orders to ensure UI is in sync after successful save
+      await get().fetchOrders();
+
       return newOrder.id;
     },
 

@@ -101,7 +101,7 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
             customer_id: customerId,
             customer_name: values.name,
             customer_phone: values.phone || '',
-            customer_address: null,
+            customer_address: null, // Always null for POS
             items: items.map(item => ({
                 id: item.id,
                 name: item.name,
@@ -118,7 +118,7 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
             source: 'pos',
             balance: values.paymentMethod === 'credito' ? total : 0,
             payments: values.paymentMethod !== 'credito' ? [{ amount: total, date: new Date().toISOString(), method: values.paymentMethod }] : [],
-            payment_due_date: null,
+            payment_due_date: null, // Explicitly null for non-credit
         };
 
         const newOrderId = await createOrder(newOrderData);
@@ -132,12 +132,6 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
             await fetchOrders(); 
             clearCart();
             onOpenChange(false);
-        } else {
-             toast({
-                title: "Error al registrar venta",
-                description: `Hubo un problema al procesar el pedido.`,
-                variant: 'destructive',
-            });
         }
     }
     
