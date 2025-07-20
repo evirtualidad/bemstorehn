@@ -56,7 +56,7 @@ export function ProductCard({
         className="flex h-full flex-col overflow-hidden rounded-xl bg-card"
         onClick={isPos ? handleAddToCartClick : undefined}
       >
-        <div className="relative overflow-hidden bg-secondary p-2 rounded-xl">
+        <div className="relative overflow-hidden bg-secondary rounded-xl">
             <Badge
                 variant="stock"
                 className={cn(
@@ -92,7 +92,7 @@ export function ProductCard({
         </div>
          <div className="p-3 pt-0 mt-auto">
             <Button
-                className="h-10 w-full rounded-full text-sm font-bold bg-black text-white hover:bg-black/80"
+                className="h-10 w-full rounded-full text-sm font-bold bg-emerald-950 text-white hover:bg-emerald-900"
                 disabled={product.stock <= 0}
                 onClick={handleAddToCartClick}
                 aria-label={`Añadir ${product.name} al carrito`}
