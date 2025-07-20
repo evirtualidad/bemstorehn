@@ -20,13 +20,12 @@ import {
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { usePosCart } from '@/hooks/use-pos-cart';
 
-// Map category names to icons
 const categoryIcons: { [key: string]: React.ElementType } = {
   skincare: Sparkles,
   makeup: Gem,
   hair: Scissors,
   body: Bone,
-  default: Shirt, // Fallback icon
+  default: Shirt,
 };
 
 const getIconForCategory = (categoryName: string) => {
@@ -34,12 +33,18 @@ const getIconForCategory = (categoryName: string) => {
 };
 
 export default function PosPage() {
-  const { products, isLoading: isLoadingProducts } = useProductsStore();
-  const { categories, isLoading: isLoadingCategories } = useCategoriesStore();
+  const { products, isLoading: isLoadingProducts, fetchProducts } = useProductsStore();
+  const { categories, isLoading: isLoadingCategories, fetchCategories } = useCategoriesStore();
   const { clearCart } = usePosCart();
 
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
+  
+  React.useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+  }, [fetchProducts, fetchCategories]);
+
 
   const isLoading = isLoadingProducts || isLoadingCategories;
 
@@ -61,20 +66,19 @@ export default function PosPage() {
 
     return prods;
   }, [products, categories, selectedCategory, searchQuery]);
-
+  
   if (isLoading) {
     return (
-      <div className="flex h-[calc(100vh-80px)] items-center justify-center">
+      <div className="flex h-screen items-center justify-center">
         <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div className="flex h-full gap-6 overflow-hidden">
-      {/* Main Content (Products Grid) */}
-      <main className="flex flex-1 flex-col gap-4 overflow-y-auto">
-        <header className="flex-shrink-0">
+    <div className="flex h-full w-full">
+      <main className="flex-1 flex flex-col gap-4 overflow-y-auto pr-4 md:pr-[404px]">
+        <header className="flex-shrink-0 pt-4">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -120,7 +124,7 @@ export default function PosPage() {
       </main>
 
       {/* Cart Column */}
-      <aside className="hidden w-[380px] flex-shrink-0 flex-col border-l bg-card lg:flex">
+      <aside className="fixed right-0 top-0 hidden h-screen w-[380px] flex-shrink-0 flex-col border-l bg-card p-4 md:flex">
         <PosCart onCheckoutSuccess={clearCart} />
       </aside>
     </div>

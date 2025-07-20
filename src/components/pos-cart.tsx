@@ -33,7 +33,7 @@ export function PosCart({ onCheckoutSuccess }: PosCartProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="border-b p-4">
+      <header className="p-4 pl-0">
         <h2 className="text-xl font-bold">Pedido Actual</h2>
       </header>
 
@@ -44,8 +44,8 @@ export function PosCart({ onCheckoutSuccess }: PosCartProps) {
             <p className="text-lg font-medium">El carrito está vacío</p>
           </div>
         ) : (
-          <ScrollArea className="flex-1">
-            <div className="space-y-4 p-4">
+          <ScrollArea className="flex-1 -mr-4 pr-4">
+            <div className="space-y-4">
               {items.map((item) => (
                 <div key={item.id} className="flex items-start gap-4">
                   <div className="relative h-16 w-16 flex-shrink-0">
@@ -102,7 +102,7 @@ export function PosCart({ onCheckoutSuccess }: PosCartProps) {
         )}
       </div>
 
-      <footer className="border-t bg-card p-4">
+      <footer className="pt-4">
         <div className="space-y-4">
           <Separator />
           <div className="flex justify-between text-lg font-bold">
