@@ -10,16 +10,16 @@ import { ShoppingCart, Trash2, Plus, Minus } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import Image from 'next/image';
-import { CheckoutDialog } from './checkout-dialog';
+import { CheckoutDialog } from '@/components/checkout-dialog';
 import { useState } from 'react';
 import type { Customer } from '@/lib/types';
 import { useToast } from './ui/use-toast';
 
 interface PosCartProps {
-  // No props needed as it uses the hook internally
+  onCheckoutSuccess: () => void;
 }
 
-export function PosCart({}: PosCartProps) {
+export function PosCart({ onCheckoutSuccess }: PosCartProps) {
   const {
     items,
     total,
@@ -39,18 +39,8 @@ export function PosCart({}: PosCartProps) {
   };
   
   const handleConfirmCheckout = (customer: Customer | null, paymentMethod: string) => {
-    // In a real app, you would save this order to a database.
-    console.log("Venta Confirmada:", {
-        customer: customer?.name ?? "Cliente Genérico",
-        paymentMethod,
-        total,
-        items
-    });
-
-    toast({
-      title: "Venta Registrada",
-      description: `Venta a ${customer?.name ?? "Cliente Genérico"} por L. ${total.toFixed(2)} con ${paymentMethod}.`,
-    });
+    // This is where you would typically create the order
+    onCheckoutSuccess();
     clearCart();
   }
 
@@ -146,9 +136,6 @@ export function PosCart({}: PosCartProps) {
      <CheckoutDialog
         isOpen={isCheckoutOpen}
         onOpenChange={setIsCheckoutOpen}
-        cart={items}
-        total={total}
-        onConfirm={handleConfirmCheckout}
       />
     </>
   );
