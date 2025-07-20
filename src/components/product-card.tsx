@@ -2,7 +2,7 @@
 'use client';
 
 import Image from 'next/image';
-import type { Product } from '@/lib/types';
+import type { Product } from '@/lib/products';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -17,11 +17,13 @@ import { usePathname } from 'next/navigation';
 
 interface ProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
   product: Product;
+  useLink?: boolean;
 }
 
 export function ProductCard({ 
   product, 
   className, 
+  useLink = true,
   ...props 
 }: ProductCardProps) {
   const { currency } = useCurrencyStore();
@@ -112,7 +114,7 @@ export function ProductCard({
 
   const cardElement = <CardContent />;
   
-  if (!isPos) {
+  if (!isPos && useLink) {
       return (
           <Link href={`/product/${product.id}`} className={cn("group", className)} {...props}>
             {cardElement}
