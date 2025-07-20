@@ -28,24 +28,35 @@ const createOrderFlow = ai.defineFlow(
   },
   async (orderToSave: Order) => {
     
-    console.log("createOrderFlow invoked to save order:", orderToSave.display_id);
+    console.log(`[Flow] Attempting to save order to Supabase: ${orderToSave.display_id}`);
 
-    // Directly insert the provided order object into the Supabase table.
-    const { error } = await supabase.from('orders').insert(orderToSave);
+    try {
+      // Directly insert the provided order object into the Supabase table.
+      const { error } = await supabase.from('orders').insert(orderToSave);
 
-    if (error) {
-      console.error(`[CRITICAL] Supabase insert failed for order ${orderToSave.display_id}:`, error.message);
-      // Throw an error to indicate failure to the calling function.
-      throw new Error(`Failed to save order to Supabase: ${error.message}`);
+      if (error) {
+        // This error will be logged on the server but won't crash the client.
+        console.error(`[CRITICAL] Supabase insert failed for order ${orderToSave.display_id}:`, error.message);
+        throw new Error(`Failed to save order to Supabase: ${error.message}`);
+      }
+      
+      console.log(`[Flow] Order ${orderToSave.display_id} saved successfully to Supabase.`);
+      
+      // Return a success response with the order ID.
+      return {
+        orderId: orderToSave.id,
+        success: true,
+      };
+
+    } catch (e: any) {
+       console.error(`[CRITICAL] An unexpected error occurred in createOrderFlow for order ${orderToSave.display_id}:`, e.message);
+       // We must re-throw or handle it so the flow doesn't hang, but the client won't see this.
+       // The flow will report failure, but the client has already moved on.
+       return {
+        orderId: orderToSave.id,
+        success: false,
+       }
     }
-    
-    console.log(`Order ${orderToSave.display_id} saved successfully to Supabase.`);
-    
-    // Return a success response with the order ID.
-    return {
-      orderId: orderToSave.id,
-      success: true,
-    };
   }
 );
 

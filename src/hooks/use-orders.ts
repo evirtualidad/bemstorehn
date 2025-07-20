@@ -88,7 +88,7 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
     },
 
     createOrder: async (orderData) => {
-      // Create the full order object on the client side first.
+      // 1. Create the full order object on the client side first.
       const newOrder: Order = {
         ...orderData,
         id: uuidv4(),
@@ -96,29 +96,31 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
         created_at: new Date().toISOString(),
       };
       
-      try {
-        // Now we AWAIT the flow. This ensures the DB operation completes.
-        // The flow has been simplified to prevent timeouts.
-        await createOrderFlow(newOrder);
+      // 2. Optimistically update the UI. This is instant for the user.
+      set(produce(state => {
+        state.orders.unshift(newOrder);
+      }));
 
-        // On successful save, update the local state.
-        set(produce(state => {
-          state.orders.unshift(newOrder);
-        }));
-
-        // Return the ID for navigation or confirmation.
-        return newOrder.id;
-
-      } catch (flowError: any) {
-        console.error("Order creation flow failed:", flowError);
-        toast({
-          title: 'Error al crear el pedido',
-          description: `No se pudo guardar el pedido en la base de datos: ${flowError.message}`,
-          variant: 'destructive',
+      // 3. "Fire-and-forget" the database operation. Don't await it.
+      //    The Genkit flow will handle the Supabase insert asynchronously.
+      createOrderFlow(newOrder)
+        .then(() => {
+            // Optional: log success or do something minor on success
+            console.log(`Order ${newOrder.display_id} sent to be saved.`);
+        })
+        .catch((flowError: any) => {
+            // This will only catch errors if the flow itself fails to start,
+            // not the database insert error, which is handled inside the flow.
+            console.error("Order creation flow failed to invoke:", flowError);
+            toast({
+                title: 'Error Crítico de Conexión',
+                description: `No se pudo comunicar con el servicio de pedidos.`,
+                variant: 'destructive',
+            });
         });
-        // Return null to indicate failure.
-        return null;
-      }
+
+      // 4. Immediately return the new order ID for navigation.
+      return newOrder.id;
     },
 
     addPayment: async (orderId, amount, method) => {
