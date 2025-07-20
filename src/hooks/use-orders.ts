@@ -25,7 +25,7 @@ export interface Address {
 
 export interface Order {
   id: string; 
-  display_id: string; 
+  display_id?: string; 
   created_at: string; 
   user_id: string | null;
   customer_id: string | null;
@@ -52,8 +52,6 @@ export interface Order {
 }
 
 export type NewOrderData = Omit<Order, 'id' | 'display_id' | 'created_at'>;
-
-const generateDisplayId = () => `BEM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
 type OrdersState = {
   orders: Order[];
@@ -92,7 +90,6 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
       const newOrder: Order = {
         ...orderData,
         id: uuidv4(),
-        display_id: generateDisplayId(),
         created_at: new Date().toISOString(),
       };
       

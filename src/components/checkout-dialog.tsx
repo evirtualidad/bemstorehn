@@ -100,7 +100,6 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
         
         const newOrder: Order = {
             id: uuidv4(),
-            display_id: `BEM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
             created_at: new Date().toISOString(),
             user_id: user?.id || null,
             customer_id: customerId,
@@ -125,7 +124,7 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
             payment_due_date: null,
         };
         
-        // Don't await. Fire-and-forget to avoid timeout.
+        // Fire and forget
         createOrderAction(newOrder).then(result => {
              if (!result.success) {
                 console.error("Failed to save order in background:", result.error);
