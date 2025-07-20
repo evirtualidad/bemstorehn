@@ -33,7 +33,7 @@ import {
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Banknote, CreditCard, Landmark, Coins } from 'lucide-react';
 import { useOrdersStore } from '@/hooks/use-orders';
-import { useToast } from './ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/hooks/use-auth-store';
 
 const checkoutFormSchema = z.object({
