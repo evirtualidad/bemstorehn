@@ -118,7 +118,7 @@ export default function PosPage() {
         </div>
         
         <ScrollArea className="flex-1">
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 px-4">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 px-4 pb-4">
                 {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
@@ -127,7 +127,7 @@ export default function PosPage() {
       </main>
 
       {/* Cart Column */}
-      <div className="hidden lg:block w-[380px] pr-4 pb-4">
+      <div className="hidden lg:block w-[450px] p-4 pl-0">
          <div className='h-full w-full'>
             <PosCart onCheckoutSuccess={clearCart} />
          </div>
