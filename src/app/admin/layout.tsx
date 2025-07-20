@@ -33,7 +33,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useCurrencyStore } from '@/hooks/use-currency';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useOrdersStore } from '@/hooks/use-orders';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -45,32 +44,6 @@ import { useProductsStore } from '@/hooks/use-products';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { useCustomersStore } from '@/hooks/use-customers';
 import { useBannersStore } from '@/hooks/use-banners';
-
-function CurrencySelector() {
-    const { currency, currencies, setCurrency } = useCurrencyStore();
-
-    const handleCurrencyChange = (currencyCode: string) => {
-        const newCurrency = currencies.find(c => c.code === currencyCode);
-        if (newCurrency) {
-            setCurrency(newCurrency);
-        }
-    };
-
-    return (
-        <Select value={currency.code} onValueChange={handleCurrencyChange}>
-            <SelectTrigger className="w-auto h-9 text-xs">
-                <SelectValue placeholder="Moneda" />
-            </SelectTrigger>
-            <SelectContent>
-                {currencies.map(c => (
-                    <SelectItem key={c.code} value={c.code}>
-                        {c.code} ({c.symbol})
-                    </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
-    );
-}
 
 function AdminLayoutContent({
   children,
@@ -249,7 +222,6 @@ function AdminLayoutContent({
         <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
            <div className="ml-auto flex items-center gap-4">
              <ThemeToggle />
-             <CurrencySelector />
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -9,31 +9,12 @@ export interface Currency {
   symbol: string;
 }
 
-const currencies: Currency[] = [
-  // Major Currencies
-  { code: 'USD', name: 'US Dollar', symbol: '$' },
-  { code: 'EUR', name: 'Euro', symbol: '€' },
-  { code: 'GBP', name: 'British Pound', symbol: '£' },
-  { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
-  // Central American Currencies
-  { code: 'BZD', name: 'Belize Dollar', symbol: 'BZ$' },
-  { code: 'CRC', name: 'Costa Rican Colón', symbol: '₡' },
-  { code: 'GTQ', name: 'Guatemalan Quetzal', symbol: 'Q' },
-  { code: 'HNL', name: 'Honduran Lempira', symbol: 'L' },
-  { code: 'NIO', name: 'Nicaraguan Córdoba', symbol: 'C$' },
-  { code: 'PAB', name: 'Panamanian Balboa', symbol: 'B/.' },
-];
-
-const initialCurrency = currencies.find(c => c.code === 'HNL') || currencies[0];
+const honduranLempira: Currency = { code: 'HNL', name: 'Honduran Lempira', symbol: 'L' };
 
 type CurrencyState = {
-  currencies: Currency[];
   currency: Currency;
-  setCurrency: (currency: Currency) => void;
 };
 
 export const useCurrencyStore = create<CurrencyState>()((set) => ({
-    currencies: currencies,
-    currency: initialCurrency,
-    setCurrency: (currency) => set({ currency }),
+    currency: honduranLempira,
 }));
