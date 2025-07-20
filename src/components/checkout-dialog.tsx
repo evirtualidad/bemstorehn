@@ -171,23 +171,20 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
                                 <FormItem className="space-y-3">
                                     <FormLabel>Método de Pago</FormLabel>
                                     <FormControl>
-                                        <RadioGroup
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                            className="grid grid-cols-2 gap-4"
-                                        >
+                                        <div className="grid grid-cols-2 gap-4">
                                             {paymentMethods.map(method => (
-                                                <FormItem key={method.value}>
-                                                     <FormControl>
-                                                        <RadioGroupItem value={method.value} id={method.value} className="sr-only" />
-                                                     </FormControl>
-                                                     <Label htmlFor={method.value} className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
-                                                        <method.icon className="mb-3 h-6 w-6" />
-                                                        {method.label}
-                                                     </Label>
-                                                </FormItem>
+                                                 <Button
+                                                    key={method.value}
+                                                    type="button"
+                                                    variant={field.value === method.value ? 'secondary' : 'outline'}
+                                                    className="flex flex-col h-20"
+                                                    onClick={() => field.onChange(method.value)}
+                                                  >
+                                                     <method.icon className="mb-2 h-6 w-6" />
+                                                     {method.label}
+                                                 </Button>
                                             ))}
-                                        </RadioGroup>
+                                        </div>
                                     </FormControl>
                                 <FormMessage />
                                 </FormItem>
