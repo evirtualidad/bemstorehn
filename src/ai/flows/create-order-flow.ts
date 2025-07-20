@@ -8,6 +8,7 @@
 
 import { ai } from '@/ai/genkit';
 import { CreateOrderInputSchema, CreateOrderOutputSchema, type CreateOrderInput, type CreateOrderOutput } from '@/ai/schemas';
+import type { NewOrderData } from '@/hooks/use-orders';
 
 const createOrderFlow = ai.defineFlow(
   {
@@ -15,7 +16,7 @@ const createOrderFlow = ai.defineFlow(
     inputSchema: CreateOrderInputSchema,
     outputSchema: CreateOrderOutputSchema,
   },
-  async (input) => {
+  async (input: NewOrderData) => {
     
     console.log("SIMULATION: createOrderFlow invoked with input:", JSON.stringify(input, null, 2));
 
@@ -43,6 +44,6 @@ const createOrderFlow = ai.defineFlow(
 );
 
 
-export async function createOrder(input: CreateOrderInput): Promise<CreateOrderOutput> {
+export async function createOrder(input: NewOrderData): Promise<CreateOrderOutput> {
   return createOrderFlow(input);
 }

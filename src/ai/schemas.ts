@@ -1,5 +1,6 @@
 
 import { z } from 'zod';
+import type { NewOrderData } from '@/hooks/use-orders';
 
 /**
  * @fileOverview This file contains the Zod schemas for the application's AI flows.
@@ -18,9 +19,6 @@ export const ProductSchema = z.object({
   price: z.number(),
   quantity: z.number(),
   image: z.string(),
-  category: z.string(),
-  description: z.string(),
-  stock: z.number(),
 });
 
 export const AddressSchema = z.object({
@@ -31,20 +29,24 @@ export const AddressSchema = z.object({
 });
 
 export const CreateOrderInputSchema = z.object({
-  customer: z.object({
-    name: z.string().optional(),
-    phone: z.string().optional(),
-    address: AddressSchema.optional(),
-  }),
+  user_id: z.string().nullable(),
+  customer_id: z.string().nullable(),
+  customer_name: z.string(),
+  customer_phone: z.string(),
+  customer_address: AddressSchema.nullable(),
   items: z.array(ProductSchema),
   total: z.number(),
-  shippingCost: z.number().optional(),
-  paymentMethod: z.enum(['efectivo', 'tarjeta', 'transferencia', 'credito']),
-  deliveryMethod: z.enum(['pickup', 'delivery']).optional(),
-  paymentDueDate: z.string().optional(),
-  cashAmount: z.number().optional(),
-  paymentReference: z.string().optional(),
-});
+  shipping_cost: z.number(),
+  payment_method: z.enum(['efectivo', 'tarjeta', 'transferencia', 'credito']),
+  payment_reference: z.string().nullable(),
+  delivery_method: z.enum(['pickup', 'delivery']).nullable(),
+  status: z.enum(['pending-approval', 'pending-payment', 'paid', 'cancelled']),
+  source: z.enum(['pos', 'online-store']),
+  balance: z.number(),
+  payments: z.array(z.any()), // Simplified for now
+  payment_due_date: z.string().nullable(),
+}) as z.ZodType<NewOrderData>;
+
 
 export type CreateOrderInput = z.infer<typeof CreateOrderInputSchema>;
 

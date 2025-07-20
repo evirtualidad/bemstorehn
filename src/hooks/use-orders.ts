@@ -7,6 +7,7 @@ import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { initialOrders } from '@/lib/orders';
+import { createOrder as createOrderFlow } from '@/ai/flows/create-order-flow';
 
 export interface Payment {
     date: string;
@@ -92,20 +93,26 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
           display_id: generateDisplayId(),
           created_at: new Date().toISOString(),
         };
-        
-        if (isSupabaseConfigured) {
-            const { error } = await supabase.from('orders').insert([newOrder]);
-            if (error) {
-                toast({ title: 'Error al crear el pedido', description: error.message, variant: 'destructive'});
-                return null;
-            }
-        }
-        
-        set(produce(state => {
-            state.orders.unshift(newOrder);
-        }));
 
-        return newOrder.id;
+        try {
+            // Use the Genkit flow to handle order creation
+            await createOrderFlow(orderData);
+            
+            // Optimistically update the local state
+            set(produce(state => {
+                state.orders.unshift(newOrder);
+            }));
+
+            return newOrder.id;
+
+        } catch (error: any) {
+            toast({ 
+                title: 'Error al crear el pedido', 
+                description: error.message || 'Ocurrió un error inesperado.', 
+                variant: 'destructive'
+            });
+            return null;
+        }
     },
 
     addPayment: async (orderId, amount, method) => {
