@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -53,7 +54,7 @@ export function PosCart({ onCheckoutSuccess }: { onCheckoutSuccess: () => void }
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {items.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
             <p className="font-medium">Your cart is empty</p>
