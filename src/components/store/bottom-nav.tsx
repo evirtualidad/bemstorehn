@@ -23,10 +23,7 @@ export function BottomNav() {
 
   const isAdminPage = pathname.startsWith('/admin') || pathname.startsWith('/login');
   
-  // Hide on admin pages, checkout, and if cart is empty
-  const shouldHideNav = isAdminPage || pathname.startsWith('/checkout') || pathname.startsWith('/order-confirmation') || pathname.startsWith('/cart');
-  
-  if (shouldHideNav || !isClient || totalItems === 0) {
+  if (isAdminPage || !isClient || totalItems === 0) {
     return null;
   }
   

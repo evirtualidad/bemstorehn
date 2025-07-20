@@ -35,8 +35,8 @@ export default function RootLayout({
             <main className="flex-1">{children}</main>
           </div>
           <Toaster />
-          <BottomNav />
         </ThemeProvider>
+        <BottomNav />
       </body>
     </html>
   );
