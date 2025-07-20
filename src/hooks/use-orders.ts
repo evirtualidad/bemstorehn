@@ -88,6 +88,7 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
     },
 
     createOrder: async (orderData) => {
+      // This function is now primarily for the online store's optimistic update flow.
       const newOrder: Order = {
         ...orderData,
         id: uuidv4(),
@@ -95,12 +96,12 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
         created_at: new Date().toISOString(),
       };
       
-      // Optimistic update
+      // Optimistic update for UI responsiveness
       set(produce(state => {
         state.orders.unshift(newOrder);
       }));
 
-      // Persist to Supabase via Server Action
+      // Asynchronously persist to Supabase via Server Action
       const { success, error } = await createOrderAction(newOrder);
 
       if (!success) {
@@ -113,13 +114,13 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
           description: error || 'No se pudo guardar el pedido en la base de datos.',
           variant: 'destructive'
         });
-        return null;
+        return null; // Indicate failure
       }
 
-      // Explicitly fetch orders to ensure UI is in sync after successful save
+      // Optionally, fetch all orders again to ensure perfect sync
       await get().fetchOrders();
 
-      return newOrder.id;
+      return newOrder.id; // Indicate success
     },
 
     addPayment: async (orderId, amount, method) => {

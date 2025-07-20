@@ -32,9 +32,11 @@ import {
 } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Banknote, CreditCard, Landmark, Coins } from 'lucide-react';
-import { useOrdersStore, type NewOrderData } from '@/hooks/use-orders';
+import { useOrdersStore, type NewOrderData, type Order } from '@/hooks/use-orders';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/hooks/use-auth-store';
+import { v4 as uuidv4 } from 'uuid';
+import { createOrderAction } from '@/actions/create-order-action';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(1, "El nombre del cliente es obligatorio."),
@@ -53,7 +55,7 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
     const { items, total, clearCart } = usePosCart();
     const { currency } = useCurrencyStore();
     const { addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
-    const { createOrder, fetchOrders } = useOrdersStore();
+    const { fetchOrders } = useOrdersStore();
     const { user } = useAuthStore();
     const { toast } = useToast();
     const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
@@ -96,12 +98,15 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
             await addPurchaseToCustomer(customerId, total);
         }
         
-        const newOrderData: NewOrderData = {
+        const newOrder: Order = {
+            id: uuidv4(),
+            display_id: `BEM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+            created_at: new Date().toISOString(),
             user_id: user?.id || null,
             customer_id: customerId,
             customer_name: values.name,
             customer_phone: values.phone || '',
-            customer_address: null, // Always null for POS
+            customer_address: null,
             items: items.map(item => ({
                 id: item.id,
                 name: item.name,
@@ -118,20 +123,25 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
             source: 'pos',
             balance: values.paymentMethod === 'credito' ? total : 0,
             payments: values.paymentMethod !== 'credito' ? [{ amount: total, date: new Date().toISOString(), method: values.paymentMethod }] : [],
-            payment_due_date: null, // Explicitly null for non-credit
+            payment_due_date: null,
         };
 
-        const newOrderId = await createOrder(newOrderData);
+        const result = await createOrderAction(newOrder);
 
-        if (newOrderId) {
+        if (result.success) {
             toast({
                 title: "¡Venta Registrada!",
                 description: `Se completó la venta a ${values.name} por ${formatCurrency(total, currency.code)}.`
             });
-            
             await fetchOrders(); 
             clearCart();
             onOpenChange(false);
+        } else {
+            toast({
+                title: "Error al guardar el pedido",
+                description: result.error || 'Ocurrió un error inesperado.',
+                variant: 'destructive',
+            });
         }
     }
     
