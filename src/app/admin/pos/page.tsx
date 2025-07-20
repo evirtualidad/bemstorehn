@@ -14,13 +14,11 @@ import {
   Shirt,
   Sparkles,
   Gem,
-  ShoppingBag,
-  Bone,
   Scissors,
+  Bone,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { usePosCart } from '@/hooks/use-pos-cart';
-import type { Product, Category } from '@/lib/types';
 
 // Map category names to icons
 const categoryIcons: { [key: string]: React.ElementType } = {
@@ -73,10 +71,10 @@ export default function PosPage() {
   }
 
   return (
-    <div className="grid h-full grid-cols-1 lg:grid-cols-[1fr_auto]">
+    <div className="flex h-full gap-6 overflow-hidden">
       {/* Main Content (Products Grid) */}
-      <div className="flex flex-col overflow-hidden">
-        <header className="flex-shrink-0 border-b p-4">
+      <main className="flex flex-1 flex-col gap-4 overflow-y-auto">
+        <header className="flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -87,8 +85,9 @@ export default function PosPage() {
             />
           </div>
         </header>
-        <div className="flex-shrink-0 overflow-x-auto border-b p-4">
-          <div className="flex items-center gap-2">
+
+        <div className="flex-shrink-0">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
             <Button
               variant={selectedCategory === 'all' ? 'default' : 'outline'}
               className="h-11 rounded-lg px-6"
@@ -112,17 +111,16 @@ export default function PosPage() {
             })}
           </div>
         </div>
-        <ScrollArea className="flex-1">
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 p-4">
+        
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
             {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
-          </div>
-        </ScrollArea>
-      </div>
+        </div>
+      </main>
 
       {/* Cart Column */}
-      <aside className="hidden w-[380px] flex-col border-l bg-card lg:flex">
+      <aside className="hidden w-[380px] flex-shrink-0 flex-col border-l bg-card lg:flex">
         <PosCart onCheckoutSuccess={clearCart} />
       </aside>
     </div>

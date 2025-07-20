@@ -37,14 +37,14 @@ export function PosCart({ onCheckoutSuccess }: PosCartProps) {
         <h2 className="text-xl font-bold">Pedido Actual</h2>
       </header>
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden">
         {items.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
             <ShoppingCart className="mb-4 h-16 w-16" />
             <p className="text-lg font-medium">El carrito está vacío</p>
           </div>
         ) : (
-          <ScrollArea className="h-full">
+          <ScrollArea className="flex-1">
             <div className="space-y-4 p-4">
               {items.map((item) => (
                 <div key={item.id} className="flex items-start gap-4">
@@ -122,4 +122,3 @@ export function PosCart({ onCheckoutSuccess }: PosCartProps) {
     </div>
   );
 }
-
