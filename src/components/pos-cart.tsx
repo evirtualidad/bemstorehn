@@ -32,12 +32,12 @@ export function PosCart({ onCheckoutSuccess }: PosCartProps) {
   };
 
   return (
-    <aside className="h-full w-full flex-shrink-0 flex-col border bg-card p-4 flex rounded-lg shadow-lg">
-      <header className="p-4 pl-0">
+    <aside className="h-full w-full flex-shrink-0 flex flex-col bg-card rounded-lg shadow-lg">
+      <header className="p-4">
         <h2 className="text-xl font-bold">Pedido Actual</h2>
       </header>
 
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden px-4">
         {items.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
             <ShoppingCart className="mb-4 h-16 w-16" />
@@ -102,7 +102,7 @@ export function PosCart({ onCheckoutSuccess }: PosCartProps) {
         )}
       </div>
 
-      <footer className="pt-4">
+      <footer className="p-4">
         <div className="space-y-4">
           <Separator />
           <div className="flex justify-between text-lg font-bold">

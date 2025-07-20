@@ -52,7 +52,7 @@ export default function PosPage() {
     let prods = products;
 
     if (selectedCategory !== 'all') {
-      const categoryObject = categories.find((c) => c.id === selectedCategory);
+      const categoryObject = categories.find((c) => c.name === selectedCategory);
       if (categoryObject) {
         prods = prods.filter((p) => p.category === categoryObject.name);
       }
@@ -64,7 +64,7 @@ export default function PosPage() {
       );
     }
 
-    return prods;
+    return prods.filter(p => p.stock > 0);
   }, [products, categories, selectedCategory, searchQuery]);
   
   if (isLoading) {
@@ -76,9 +76,10 @@ export default function PosPage() {
   }
 
   return (
-    <div className="flex h-full w-full">
+    <div className="h-full flex">
+      {/* Main Content (Products Grid) */}
       <main className="flex-1 flex flex-col gap-4 overflow-y-auto pr-4 md:pr-0">
-        <header className="flex-shrink-0 pt-4">
+        <header className="flex-shrink-0 pt-4 px-4">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -90,7 +91,7 @@ export default function PosPage() {
           </div>
         </header>
 
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 px-4">
           <div className="flex items-center gap-2 overflow-x-auto pb-2">
             <Button
               variant={selectedCategory === 'all' ? 'default' : 'outline'}
@@ -104,9 +105,9 @@ export default function PosPage() {
               return (
                 <Button
                   key={cat.id}
-                  variant={selectedCategory === cat.id ? 'default' : 'outline'}
+                  variant={selectedCategory === cat.name ? 'default' : 'outline'}
                   className="h-11 gap-2 rounded-lg px-4"
-                  onClick={() => setSelectedCategory(cat.id)}
+                  onClick={() => setSelectedCategory(cat.name)}
                 >
                   <Icon className="h-5 w-5" />
                   <span>{cat.label}</span>
@@ -116,15 +117,17 @@ export default function PosPage() {
           </div>
         </div>
         
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-        </div>
+        <ScrollArea className="flex-1">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 px-4">
+                {filteredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+            </div>
+        </ScrollArea>
       </main>
 
       {/* Cart Column */}
-      <div className="hidden md:block w-[400px] flex-shrink-0 p-4 pl-0 h-full">
+      <div className="hidden lg:block fixed top-16 right-0 bottom-0 w-[420px] p-4">
          <PosCart onCheckoutSuccess={clearCart} />
       </div>
     </div>
