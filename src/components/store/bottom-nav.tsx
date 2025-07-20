@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -21,9 +20,11 @@ export function BottomNav() {
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
+  // Conditions to hide the button
   const isAdminPage = pathname.startsWith('/admin') || pathname.startsWith('/login');
   
-  if (isAdminPage || !isClient || totalItems === 0) {
+  // Do not render on the server, or if it's an admin page, or if cart is empty
+  if (!isClient || isAdminPage || totalItems === 0) {
     return null;
   }
   
