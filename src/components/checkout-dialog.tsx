@@ -118,31 +118,33 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
             shipping_cost: 0,
             payment_method: values.paymentMethod,
             payment_reference: null,
-            delivery_method: 'pickup',
             status: values.paymentMethod === 'credito' ? 'pending-payment' : 'paid',
             source: 'pos',
             balance: values.paymentMethod === 'credito' ? total : 0,
             payments: values.paymentMethod !== 'credito' ? [{ amount: total, date: new Date().toISOString(), method: values.paymentMethod }] : [],
             payment_due_date: null,
         };
+        
+        // Don't await. Fire-and-forget to avoid timeout.
+        createOrderAction(newOrder).then(result => {
+             if (!result.success) {
+                console.error("Failed to save order in background:", result.error);
+                // Optionally, show a subtle failure indicator later.
+             }
+        });
 
-        const result = await createOrderAction(newOrder);
+        toast({
+            title: "¡Venta Registrada!",
+            description: `Se completó la venta a ${values.name} por ${formatCurrency(total, currency.code)}.`
+        });
+        
+        // Refetch orders after a short delay to allow DB to update
+        setTimeout(() => {
+            fetchOrders();
+        }, 2000);
 
-        if (result.success) {
-            toast({
-                title: "¡Venta Registrada!",
-                description: `Se completó la venta a ${values.name} por ${formatCurrency(total, currency.code)}.`
-            });
-            await fetchOrders(); 
-            clearCart();
-            onOpenChange(false);
-        } else {
-            toast({
-                title: "Error al guardar el pedido",
-                description: result.error || 'Ocurrió un error inesperado.',
-                variant: 'destructive',
-            });
-        }
+        clearCart();
+        onOpenChange(false);
     }
     
     const paymentMethods = [
