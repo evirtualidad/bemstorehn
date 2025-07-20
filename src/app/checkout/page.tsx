@@ -296,7 +296,7 @@ function ShippingDialog({
 export default function CheckoutPage() {
   const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart } = useCart();
   const { createOrder, fetchOrders } = useOrdersStore();
-  const { addOrUpdateCustomer, fetchCustomers } = useCustomersStore();
+  const { addOrUpdateCustomer, addPurchaseToCustomer, fetchCustomers } = useCustomersStore();
   const { taxRate, pickupAddress } = useSettingsStore();
   const { toast } = useToast();
   const router = useRouter();
