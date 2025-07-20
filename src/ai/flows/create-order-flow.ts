@@ -8,47 +8,55 @@
 
 import { ai } from '@/ai/genkit';
 import { CreateOrderInputSchema, CreateOrderOutputSchema, type CreateOrderOutput } from '@/ai/schemas';
-import type { NewOrderData, Order } from '@/hooks/use-orders';
+import type { Order } from '@/hooks/use-orders';
 import { supabase } from '@/lib/supabase';
-import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
 
-const generateDisplayId = () => `BEM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
+// The flow now accepts the full Order object, as it's created on the client first.
+const FullOrderSchema = CreateOrderInputSchema.extend({
+    id: z.string(),
+    display_id: z.string(),
+    created_at: z.string(),
+});
 
 const createOrderFlow = ai.defineFlow(
   {
     name: 'createOrderFlow',
-    inputSchema: CreateOrderInputSchema,
+    inputSchema: FullOrderSchema,
     outputSchema: CreateOrderOutputSchema,
   },
-  async (input: NewOrderData) => {
+  async (orderToSave: Order) => {
     
-    console.log("createOrderFlow invoked with input:", JSON.stringify(input, null, 2));
+    console.log("createOrderFlow invoked to save order:", JSON.stringify(orderToSave.display_id, null, 2));
 
-    const newOrder: Order = {
-      ...input,
-      id: uuidv4(),
-      display_id: generateDisplayId(),
-      created_at: new Date().toISOString(),
-    };
-    
-    const { error } = await supabase.from('orders').insert(newOrder);
+    try {
+      const { error } = await supabase.from('orders').insert(orderToSave);
 
-    if (error) {
-      console.error('Error inserting order into Supabase:', error);
-      throw new Error(`Failed to save order: ${error.message}`);
+      if (error) {
+        console.error('Error inserting order into Supabase:', error);
+        // We throw the error so the calling `catch` block can log it,
+        // but the client won't be waiting for this response.
+        throw new Error(`Failed to save order: ${error.message}`);
+      }
+      
+      console.log(`Order ${orderToSave.display_id} saved successfully to Supabase.`);
+      
+      return {
+        orderId: orderToSave.id,
+        success: true,
+      };
+    } catch (e: any) {
+        console.error("[CRITICAL] Supabase insert failed in background:", e.message);
+         return {
+            orderId: orderToSave.id,
+            success: false,
+        };
     }
-    
-    console.log(`Order with Display ID ${newOrder.display_id} created successfully in Supabase.`);
-    
-    return {
-      orderId: newOrder.id,
-      success: true,
-    };
   }
 );
 
 
-export async function createOrder(input: NewOrderData): Promise<CreateOrderOutput> {
+export async function createOrder(input: Order): Promise<CreateOrderOutput> {
   return createOrderFlow(input);
 }

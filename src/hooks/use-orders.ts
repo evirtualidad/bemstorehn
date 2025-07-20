@@ -6,7 +6,6 @@ import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import { initialOrders } from '@/lib/orders';
 import { createOrder as createOrderFlow } from '@/ai/flows/create-order-flow';
 
 export interface Payment {
@@ -74,6 +73,8 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
     fetchOrders: async () => {
         set({ isLoading: true });
         if (!isSupabaseConfigured) {
+          // If not configured, load hardcoded data
+          const { initialOrders } = await import('@/lib/orders');
           set({ orders: initialOrders, isLoading: false });
           return;
         }
@@ -87,23 +88,30 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
     },
 
     createOrder: async (orderData) => {
-        try {
-            // Use the Genkit flow to handle order creation
-            const result = await createOrderFlow(orderData);
-            
-            // After successful creation in DB, refetch orders to update the UI
-            await get().fetchOrders();
+      // Create the order object for an optimistic update
+      const newOrder: Order = {
+        ...orderData,
+        id: uuidv4(),
+        display_id: generateDisplayId(),
+        created_at: new Date().toISOString(),
+      };
+      
+      // Optimistically update the UI so the user doesn't have to wait
+      set(produce(state => {
+        state.orders.unshift(newOrder);
+      }));
 
-            return result.orderId;
-
-        } catch (error: any) {
-            toast({ 
-                title: 'Error al crear el pedido', 
-                description: error.message || 'Ocurrió un error inesperado.', 
-                variant: 'destructive'
-            });
-            return null;
-        }
+      // Call the Genkit flow to persist to DB, but DO NOT await it.
+      // This is "fire-and-forget" from the client's perspective.
+      // Error handling will be done within the flow itself.
+      createOrderFlow(newOrder).catch(flowError => {
+        // Log the error on the client for debugging, but don't bother the user
+        // as they have already proceeded.
+        console.error("Background order creation failed:", flowError);
+      });
+      
+      // Immediately return the new order ID for navigation
+      return newOrder.id;
     },
 
     addPayment: async (orderId, amount, method) => {
