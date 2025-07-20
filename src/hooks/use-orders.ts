@@ -88,7 +88,7 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
     },
 
     createOrder: async (orderData) => {
-      // Create the order object for an optimistic update
+      // Create the full order object on the client side first.
       const newOrder: Order = {
         ...orderData,
         id: uuidv4(),
@@ -96,22 +96,29 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
         created_at: new Date().toISOString(),
       };
       
-      // Optimistically update the UI so the user doesn't have to wait
-      set(produce(state => {
-        state.orders.unshift(newOrder);
-      }));
+      try {
+        // Now we AWAIT the flow. This ensures the DB operation completes.
+        // The flow has been simplified to prevent timeouts.
+        await createOrderFlow(newOrder);
 
-      // Call the Genkit flow to persist to DB, but DO NOT await it.
-      // This is "fire-and-forget" from the client's perspective.
-      // Error handling will be done within the flow itself.
-      createOrderFlow(newOrder).catch(flowError => {
-        // Log the error on the client for debugging, but don't bother the user
-        // as they have already proceeded.
-        console.error("Background order creation failed:", flowError);
-      });
-      
-      // Immediately return the new order ID for navigation
-      return newOrder.id;
+        // On successful save, update the local state.
+        set(produce(state => {
+          state.orders.unshift(newOrder);
+        }));
+
+        // Return the ID for navigation or confirmation.
+        return newOrder.id;
+
+      } catch (flowError: any) {
+        console.error("Order creation flow failed:", flowError);
+        toast({
+          title: 'Error al crear el pedido',
+          description: `No se pudo guardar el pedido en la base de datos: ${flowError.message}`,
+          variant: 'destructive',
+        });
+        // Return null to indicate failure.
+        return null;
+      }
     },
 
     addPayment: async (orderId, amount, method) => {

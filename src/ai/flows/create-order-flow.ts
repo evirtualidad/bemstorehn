@@ -28,31 +28,24 @@ const createOrderFlow = ai.defineFlow(
   },
   async (orderToSave: Order) => {
     
-    console.log("createOrderFlow invoked to save order:", JSON.stringify(orderToSave.display_id, null, 2));
+    console.log("createOrderFlow invoked to save order:", orderToSave.display_id);
 
-    try {
-      const { error } = await supabase.from('orders').insert(orderToSave);
+    // Directly insert the provided order object into the Supabase table.
+    const { error } = await supabase.from('orders').insert(orderToSave);
 
-      if (error) {
-        console.error('Error inserting order into Supabase:', error);
-        // We throw the error so the calling `catch` block can log it,
-        // but the client won't be waiting for this response.
-        throw new Error(`Failed to save order: ${error.message}`);
-      }
-      
-      console.log(`Order ${orderToSave.display_id} saved successfully to Supabase.`);
-      
-      return {
-        orderId: orderToSave.id,
-        success: true,
-      };
-    } catch (e: any) {
-        console.error("[CRITICAL] Supabase insert failed in background:", e.message);
-         return {
-            orderId: orderToSave.id,
-            success: false,
-        };
+    if (error) {
+      console.error(`[CRITICAL] Supabase insert failed for order ${orderToSave.display_id}:`, error.message);
+      // Throw an error to indicate failure to the calling function.
+      throw new Error(`Failed to save order to Supabase: ${error.message}`);
     }
+    
+    console.log(`Order ${orderToSave.display_id} saved successfully to Supabase.`);
+    
+    // Return a success response with the order ID.
+    return {
+      orderId: orderToSave.id,
+      success: true,
+    };
   }
 );
 
