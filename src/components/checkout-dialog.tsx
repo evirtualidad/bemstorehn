@@ -32,9 +32,11 @@ import {
 } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Banknote, CreditCard, Landmark, Coins } from 'lucide-react';
-import { useOrdersStore } from '@/hooks/use-orders';
+import { useOrdersStore, type NewOrderData } from '@/hooks/use-orders';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/hooks/use-auth-store';
+import { supabase } from '@/lib/supabase';
+import { v4 as uuidv4 } from 'uuid';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(1, "El nombre del cliente es obligatorio."),
@@ -49,11 +51,13 @@ interface CheckoutDialogProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
+const generateDisplayId = () => `BEM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
 export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
     const { items, total, clearCart } = usePosCart();
     const { currency } = useCurrencyStore();
     const { addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
-    const { createOrder } = useOrdersStore();
+    const { fetchOrders } = useOrdersStore();
     const { user } = useAuthStore();
     const { toast } = useToast();
     const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
@@ -96,7 +100,7 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
             await addPurchaseToCustomer(customerId, total);
         }
         
-        await createOrder({
+        const newOrderData: NewOrderData = {
             user_id: user?.id || null,
             customer_id: customerId,
             customer_name: values.name,
@@ -119,13 +123,32 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
             balance: values.paymentMethod === 'credito' ? total : 0,
             payments: values.paymentMethod !== 'credito' ? [{ amount: total, date: new Date().toISOString(), method: values.paymentMethod }] : [],
             payment_due_date: null,
-        });
+        };
+
+        const finalOrder = {
+          ...newOrderData,
+          id: uuidv4(),
+          display_id: generateDisplayId(),
+          created_at: new Date().toISOString(),
+        };
+
+        const { error } = await supabase.from('orders').insert(finalOrder);
+
+        if (error) {
+            toast({
+                title: "Error al registrar venta",
+                description: `Hubo un problema al guardar el pedido en la base de datos: ${error.message}`,
+                variant: 'destructive',
+            });
+            return;
+        }
         
         toast({
             title: "¡Venta Registrada!",
             description: `Se completó la venta a ${values.name} por ${formatCurrency(total, currency.code)}.`
         });
         
+        await fetchOrders(); // Refetch orders to update the admin panel
         clearCart();
         onOpenChange(false);
     }
