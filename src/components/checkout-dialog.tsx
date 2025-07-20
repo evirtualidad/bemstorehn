@@ -35,8 +35,6 @@ import { Banknote, CreditCard, Landmark, Coins } from 'lucide-react';
 import { useOrdersStore, type NewOrderData } from '@/hooks/use-orders';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/hooks/use-auth-store';
-import { supabase } from '@/lib/supabase';
-import { v4 as uuidv4 } from 'uuid';
 
 const checkoutFormSchema = z.object({
   name: z.string().min(1, "El nombre del cliente es obligatorio."),
@@ -51,13 +49,11 @@ interface CheckoutDialogProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const generateDisplayId = () => `BEM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-
 export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
     const { items, total, clearCart } = usePosCart();
     const { currency } = useCurrencyStore();
     const { addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
-    const { fetchOrders } = useOrdersStore();
+    const { createOrder, fetchOrders } = useOrdersStore();
     const { user } = useAuthStore();
     const { toast } = useToast();
     const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
@@ -86,7 +82,7 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
         setSelectedCustomer(customer);
         if (customer) {
             form.setValue('name', customer.name);
-            form.setValue('phone', customer.phone);
+            form.setValue('phone', customer.phone || '');
         }
     };
 
@@ -125,30 +121,23 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
             payment_due_date: null,
         };
 
-        const finalOrder = {
-          ...newOrderData,
-          id: uuidv4(),
-          display_id: generateDisplayId(),
-          created_at: new Date().toISOString(),
-        };
+        const newOrderId = await createOrder(newOrderData);
 
-        const { error } = await supabase.from('orders').insert(finalOrder);
-
-        if (error) {
-            toast({
+        if (!newOrderId) {
+             toast({
                 title: "Error al registrar venta",
-                description: `Hubo un problema al guardar el pedido en la base de datos: ${error.message}`,
+                description: `Hubo un problema al procesar el pedido.`,
                 variant: 'destructive',
             });
             return;
         }
-        
+
         toast({
             title: "¡Venta Registrada!",
             description: `Se completó la venta a ${values.name} por ${formatCurrency(total, currency.code)}.`
         });
         
-        await fetchOrders(); // Refetch orders to update the admin panel
+        await fetchOrders(); 
         clearCart();
         onOpenChange(false);
     }
@@ -194,7 +183,7 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
                                 <FormItem className="space-y-3">
                                     <FormLabel>Método de Pago</FormLabel>
                                     <FormControl>
-                                        <div className="grid grid-cols-2 gap-4">
+                                         <div className="grid grid-cols-2 gap-4">
                                             {paymentMethods.map(method => (
                                                  <Button
                                                     key={method.value}
