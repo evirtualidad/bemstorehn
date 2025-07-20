@@ -20,16 +20,16 @@ interface ProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
   useLink?: boolean;
 }
 
-export function ProductCard({ 
-  product, 
-  className, 
+export function ProductCard({
+  product,
+  className,
   useLink = true,
-  ...props 
+  ...props
 }: ProductCardProps) {
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
   const pathname = usePathname();
-  
+
   const isPos = pathname.startsWith('/admin/pos');
   const posAddToCart = usePosCart(state => state.addToCart);
   const storeAddToCart = useCart(state => state.addToCart);
@@ -39,7 +39,7 @@ export function ProductCard({
   const handleAddToCartClick = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (isPos) {
         posAddToCart(product);
     } else {
@@ -50,9 +50,9 @@ export function ProductCard({
         });
     }
   };
-  
+
   const CardContent = () => (
-    <Card 
+    <Card
         className="flex flex-col overflow-hidden h-full border-0 shadow-none rounded-lg bg-secondary cursor-pointer"
         onClick={isPos ? handleAddToCartClick : undefined}
     >
@@ -71,7 +71,7 @@ export function ProductCard({
                 </Badge>
                 )}
                 {isPos && (
-                    <Badge 
+                    <Badge
                         variant={product.stock <= 0 ? 'destructive' : product.stock < 10 ? 'secondary' : 'default'}
                         className={cn(
                             "absolute top-2 right-2 rounded-full",
@@ -97,7 +97,7 @@ export function ProductCard({
                         </p>
                     )}
                 </div>
-                <Button 
+                <Button
                     variant="default"
                     size="icon"
                     className="rounded-full h-9 w-9 shrink-0"
@@ -113,7 +113,7 @@ export function ProductCard({
   );
 
   const cardElement = <CardContent />;
-  
+
   if (!isPos && useLink) {
       return (
           <Link href={`/product/${product.id}`} className={cn("group", className)} {...props}>
