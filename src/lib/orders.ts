@@ -1,7 +1,7 @@
 
 import type { Order } from '@/hooks/use-orders';
 
-// This is now exported so it can be modified by the create-order-flow, simulating a database.
+// This is now exported so it can be modified by hooks, simulating a database.
 export let initialOrders: Order[] = [
     {
       id: "ord-1",

@@ -7,6 +7,7 @@ import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { createOrderAction } from '@/actions/create-order-action';
+import { initialOrders } from '@/lib/orders';
 
 export interface Payment {
     date: string;
@@ -72,7 +73,6 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
         set({ isLoading: true });
         if (!isSupabaseConfigured) {
           // If not configured, load hardcoded data
-          const { initialOrders } = await import('@/lib/orders');
           set({ orders: initialOrders, isLoading: false });
           return;
         }
@@ -86,38 +86,41 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
     },
 
     createOrder: async (orderData) => {
-      // This function is now primarily for the online store's optimistic update flow.
+      // For local development, we simulate DB insertion by modifying the in-memory array.
+      if (!isSupabaseConfigured) {
+        const newOrder: Order = {
+          ...orderData,
+          id: uuidv4(),
+          created_at: new Date().toISOString(),
+          display_id: `BEM-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+        };
+        initialOrders.unshift(newOrder);
+        set({ orders: [...initialOrders] });
+        return newOrder.id;
+      }
+
+      // This logic is now primarily for the online store flow, which is less sensitive to timeouts
+      // The POS flow uses a more direct approach.
       const newOrder: Order = {
         ...orderData,
         id: uuidv4(),
         created_at: new Date().toISOString(),
       };
       
-      // Optimistic update for UI responsiveness
-      set(produce(state => {
-        state.orders.unshift(newOrder);
-      }));
-
-      // Asynchronously persist to Supabase via Server Action
       const { success, error } = await createOrderAction(newOrder);
 
       if (!success) {
-        // Rollback on failure
-        set(produce(state => {
-          state.orders = state.orders.filter(o => o.id !== newOrder.id);
-        }));
         toast({
           title: 'Error al guardar el pedido',
           description: error || 'No se pudo guardar el pedido en la base de datos.',
           variant: 'destructive'
         });
-        return null; // Indicate failure
+        return null;
       }
 
-      // Optionally, fetch all orders again to ensure perfect sync
+      // Fetch all orders again to ensure perfect sync
       await get().fetchOrders();
-
-      return newOrder.id; // Indicate success
+      return newOrder.id;
     },
 
     addPayment: async (orderId, amount, method) => {
