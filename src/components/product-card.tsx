@@ -1,9 +1,7 @@
-
 'use client';
 
 import Image from 'next/image';
 import type { Product } from '@/lib/products';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
@@ -11,10 +9,8 @@ import { useCurrencyStore } from '@/hooks/use-currency';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { Badge } from './ui/badge';
 import { usePosCart } from '@/hooks/use-pos-cart';
 import { usePathname } from 'next/navigation';
-import { useCategoriesStore } from '@/hooks/use-categories';
 
 interface ProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
   product: Product;
@@ -28,13 +24,10 @@ export function ProductCard({
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
   const pathname = usePathname();
-  const { getCategoryByName } = useCategoriesStore();
 
   const isPos = pathname.startsWith('/admin/pos');
   const posAddToCart = usePosCart((state) => state.addToCart);
   const storeAddToCart = useCart((state) => state.addToCart);
-
-  const category = getCategoryByName(product.category);
 
   const handleAddToCartClick = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
@@ -57,49 +50,31 @@ export function ProductCard({
         onClick={isPos ? handleAddToCartClick : undefined}
       >
         <div className="relative overflow-hidden bg-secondary rounded-xl">
-            <Badge
-                variant="stock"
-                className={cn(
-                    'absolute left-2 top-2 z-10',
-                    product.stock <= 0
-                    ? 'bg-red-500/80 text-white'
-                    : product.stock < 10
-                        ? 'bg-amber-400/80 text-black'
-                        : 'bg-green-500/80 text-white'
-                )}
-            >
-                En Stock: {product.stock}
-            </Badge>
             <Image
-            src={product.image || 'https://placehold.co/400x500.png'}
-            alt={product.name}
-            width={400}
-            height={500}
-            className="aspect-[4/5] w-full rounded-md object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
-            data-ai-hint={product.aiHint}
+              src={product.image || 'https://placehold.co/400x500.png'}
+              alt={product.name}
+              width={400}
+              height={500}
+              className="aspect-square w-full rounded-md object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+              data-ai-hint={product.aiHint}
             />
         </div>
-        <div className="flex flex-grow flex-col p-3">
-             {category && (
-                <Badge variant="secondary" className="mb-2 w-fit rounded-md">
-                    {category.label}
-                </Badge>
-            )}
-            <h3 className="flex-grow font-semibold leading-tight">{product.name}</h3>
-            <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                {product.description}
-            </p>
-        </div>
-         <div className="p-3 pt-0 mt-auto">
-            <Button
-                className="h-10 w-full rounded-full text-sm font-bold bg-emerald-950 text-white hover:bg-emerald-900"
-                disabled={product.stock <= 0}
-                onClick={handleAddToCartClick}
-                aria-label={`Añadir ${product.name} al carrito`}
-            >
-                <Plus className="mr-2 h-4 w-4" />
-                Añadir {formatCurrency(product.price, currency.code)}
-            </Button>
+        <div className="flex flex-col p-2 text-center mt-2">
+            <h3 className="flex-grow font-semibold leading-tight text-sm">{product.name}</h3>
+            <div className='flex items-center justify-between mt-2'>
+              <p className="font-bold text-sm">
+                  {formatCurrency(product.price, currency.code)}
+              </p>
+              <Button
+                  size="icon"
+                  className="h-8 w-8 rounded-lg text-lg bg-primary text-primary-foreground hover:bg-primary/90"
+                  disabled={product.stock <= 0}
+                  onClick={handleAddToCartClick}
+                  aria-label={`Añadir ${product.name} al carrito`}
+              >
+                  <Plus className="h-4 w-4" />
+              </Button>
+            </div>
         </div>
       </div>
   );
