@@ -32,7 +32,7 @@ export function PosCart({ onCheckoutSuccess }: PosCartProps) {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <aside className="h-full w-full flex-shrink-0 flex-col border bg-card p-4 flex rounded-lg shadow-lg">
       <header className="p-4 pl-0">
         <h2 className="text-xl font-bold">Pedido Actual</h2>
       </header>
@@ -119,6 +119,6 @@ export function PosCart({ onCheckoutSuccess }: PosCartProps) {
           </Button>
         </div>
       </footer>
-    </div>
+    </aside>
   );
 }
