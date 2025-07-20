@@ -123,23 +123,22 @@ export function CheckoutDialog({ isOpen, onOpenChange }: CheckoutDialogProps) {
 
         const newOrderId = await createOrder(newOrderData);
 
-        if (!newOrderId) {
+        if (newOrderId) {
+            toast({
+                title: "¡Venta Registrada!",
+                description: `Se completó la venta a ${values.name} por ${formatCurrency(total, currency.code)}.`
+            });
+            
+            await fetchOrders(); 
+            clearCart();
+            onOpenChange(false);
+        } else {
              toast({
                 title: "Error al registrar venta",
                 description: `Hubo un problema al procesar el pedido.`,
                 variant: 'destructive',
             });
-            return;
         }
-
-        toast({
-            title: "¡Venta Registrada!",
-            description: `Se completó la venta a ${values.name} por ${formatCurrency(total, currency.code)}.`
-        });
-        
-        await fetchOrders(); 
-        clearCart();
-        onOpenChange(false);
     }
     
     const paymentMethods = [
