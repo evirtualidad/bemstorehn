@@ -2,1108 +2,129 @@
 'use client';
 
 import * as React from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, Controller } from 'react-hook-form';
-import { z } from 'zod';
-import { format } from 'date-fns/format';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
 import { useProductsStore } from '@/hooks/use-products';
-import Image from 'next/image';
-import { CalendarIcon, Loader2, Minus, Plus, Tag, Trash2, Receipt, CreditCard, X, BadgePercent, Truck, Store, MapPin, CheckCircle, Search, Shirt, Gem, Sparkles, Glasses, ShoppingCart } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { cn, formatCurrency } from '@/lib/utils';
-import { es } from 'date-fns/locale/es';
-import { ProductSearch } from '@/components/product-search';
-import { useCategoriesStore, type Category as CategoryType } from '@/hooks/use-categories';
-import { useCurrencyStore } from '@/hooks/use-currency';
-import { Badge } from '@/components/ui/badge';
+import { useCategoriesStore } from '@/hooks/use-categories';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ProductCard } from '@/components/product-card';
+import { PosCart } from '@/components/pos-cart';
+import {
+  Search,
+  Shirt,
+  Sparkles,
+  Gem,
+  ShoppingBag,
+  Bone,
+  Scissors,
+} from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { useOrdersStore, type Address, type NewOrderData, type Order } from '@/hooks/use-orders';
-import { useSettingsStore } from '@/hooks/use-settings-store';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Textarea } from '@/components/ui/textarea';
-import { hondurasGeodata } from '@/lib/honduras-geodata';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCustomersStore, type Customer } from '@/hooks/use-customers';
-import { CustomerSearch } from '@/components/customer-search';
-import { paymentMethods, paymentMethodLabels } from '@/lib/payment-methods.tsx';
 import { usePosCart } from '@/hooks/use-pos-cart';
-import { ProductGrid } from '@/components/product-grid';
-import { useAuthStore } from '@/hooks/use-auth-store';
-import { parseISO } from 'date-fns';
+import type { Product, Category } from '@/lib/types';
 
-type SelectedFilter = { type: 'category' | 'offer'; value: string } | null;
-
-const checkoutFormSchema = z
-  .object({
-    name: z.string().optional(),
-    phone: z.string().optional(),
-    deliveryMethod: z.enum(['pickup', 'delivery']),
-    address: z.custom<Address>().optional(),
-    paymentMethod: z.enum(['efectivo', 'tarjeta', 'transferencia', 'credito'], {
-      required_error: 'Debes seleccionar una forma de pago.',
-    }),
-    paymentDueDate: z.date().optional(),
-    cashAmount: z.string().optional(),
-    totalWithShipping: z.number().optional(),
-    paymentReference: z.string().optional(),
-  })
-  .refine(data => data.deliveryMethod !== 'delivery' || !!data.address, {
-    message: 'La dirección de envío es obligatoria.',
-    path: ['address'],
-  })
-  .refine(data => data.deliveryMethod !== 'delivery' || (!!data.name && data.name.trim() !== ''), {
-    message: 'El nombre del cliente es obligatorio para envíos a domicilio.',
-    path: ['name'],
-  })
-  .refine(data => data.deliveryMethod !== 'delivery' || (!!data.phone && data.phone.trim() !== ''), {
-    message: 'El teléfono del cliente es obligatorio para envíos a domicilio.',
-    path: ['phone'],
-  })
-  .refine(data => data.paymentMethod !== 'credito' || !!data.paymentDueDate, {
-    message: 'La fecha de pago es obligatoria para pagos a crédito.',
-    path: ['paymentDueDate'],
-  })
-  .refine(data => {
-    if (data.paymentMethod === 'efectivo' && data.cashAmount && data.totalWithShipping) {
-      return Number(data.cashAmount) >= data.totalWithShipping;
-    }
-    return true;
-  }, {
-    message: 'El efectivo recibido debe ser mayor o igual al total.',
-    path: ['cashAmount'],
-  })
-  .refine(data => data.paymentMethod !== 'credito' || (!!data.name && data.name.trim() !== ''), {
-    message: 'El nombre del cliente es obligatorio para pagos a crédito.',
-    path: ['name'],
-  })
-  .refine(data => data.paymentMethod !== 'credito' || (!!data.phone && data.phone.trim() !== ''), {
-    message: 'El teléfono del cliente es obligatorio para pagos a crédito.',
-    path: ['phone'],
-  });
-
-
+// Map category names to icons
 const categoryIcons: { [key: string]: React.ElementType } = {
-  'skincare': Shirt,
-  'makeup': Gem,
-  'hair': Sparkles,
-  'body': Glasses,
-  'default': Tag,
+  skincare: Sparkles,
+  makeup: Gem,
+  hair: Scissors,
+  body: Bone,
+  default: Shirt, // Fallback icon
 };
 
-function CategoryList({
-  categories,
-  onSelectFilter,
-  selectedFilter,
-}: {
-  categories: CategoryType[];
-  onSelectFilter: (filter: SelectedFilter) => void;
-  selectedFilter: SelectedFilter;
-}) {
-  const isSelected = (value: string) => {
-    if (value === 'all' && !selectedFilter) return true;
-    if (!selectedFilter) return false;
-    return selectedFilter.type === 'category' && selectedFilter.value === value;
-  };
-
-  return (
-    <div className="flex items-center gap-2 flex-wrap">
-      <Button
-        variant={isSelected('all') ? 'default' : 'outline'}
-        className="h-11 px-4 rounded-full"
-        onClick={() => onSelectFilter(null)}
-      >
-        Todos
-      </Button>
-      {categories.map((category) => {
-        const Icon = categoryIcons[category.name] || categoryIcons.default;
-        return (
-          <Button
-            key={category.id}
-            variant={isSelected(category.name) ? 'default' : 'outline'}
-            className="h-11 px-4 rounded-full"
-            onClick={() => onSelectFilter({ type: 'category', value: category.name })}
-          >
-            <Icon className="mr-2 h-4 w-4" />
-            {category.label}
-          </Button>
-        );
-      })}
-    </div>
-  );
-}
-
-function TicketView({
-  onCheckout,
-}: {
-  onCheckout: () => void;
-}) {
-  const { 
-    items: cart,
-    totalWithShipping,
-    increaseQuantity,
-    decreaseQuantity,
-    removeFromCart,
-    clearCart,
-  } = usePosCart();
-
-  const { currency } = useCurrencyStore();
-
-  return (
-    <aside className="hidden lg:flex flex-col w-full max-w-sm bg-card p-6 rounded-xl shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold">Pedido Actual</h2>
-            {cart.length > 0 && (
-                 <Button variant="ghost" size="sm" onClick={clearCart}>
-                    Limpiar
-                </Button>
-            )}
-        </div>
-        
-        {cart.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground">
-            <ShoppingCart className="h-12 w-12 mb-4" />
-            <p>El carrito está vacío</p>
-          </div>
-        ) : (
-          <ScrollArea className="flex-1 -mx-6">
-              <div className="px-6 space-y-4">
-                {cart.map((item) => (
-                    <div key={item.id} className="flex items-start gap-4">
-                    <Image
-                        src={item.image}
-                        alt={item.name}
-                        width={64}
-                        height={64}
-                        className="rounded-lg object-cover aspect-square border"
-                    />
-                    <div className="flex-1">
-                        <p className="font-semibold text-sm leading-tight">{item.name}</p>
-                        <p className="text-sm text-muted-foreground">{formatCurrency(item.price, currency.code)}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Button variant="outline" size="icon" className="h-7 w-7 rounded-full" onClick={() => decreaseQuantity(item.id)}>
-                              <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-5 text-center text-sm font-bold">{item.quantity}</span>
-                          <Button variant="outline" size="icon" className="h-7 w-7 rounded-full" onClick={() => increaseQuantity(item.id)}>
-                              <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                    </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => removeFromCart(item.id)}>
-                        <X className="h-4 w-4" />
-                    </Button>
-                    </div>
-                ))}
-              </div>
-          </ScrollArea>
-        )}
-        
-        <div className="mt-auto pt-6 space-y-4">
-            <div className="flex justify-between items-center text-lg font-bold">
-                <p>Total</p>
-                <p>{formatCurrency(totalWithShipping, currency.code)}</p>
-            </div>
-            <Button
-                size="lg"
-                className="w-full h-12 text-md rounded-full"
-                onClick={onCheckout}
-                disabled={cart.length === 0}
-            >
-            Completar Venta
-            </Button>
-        </div>
-    </aside>
-  );
-}
-
-function PosMobileCartButton() {
-    const { currency } = useCurrencyStore();
-    const { totalWithShipping, items } = usePosCart();
-    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  
-    return (
-        <Button
-            size="lg"
-            className="relative h-24 w-24 rounded-2xl shadow-lg flex flex-col items-center justify-center p-2 gap-1 bg-primary text-primary-foreground hover:bg-primary/90 border-4 border-background"
-        >
-            <Receipt className="h-7 w-7" />
-            <span className="text-md font-bold">{formatCurrency(totalWithShipping, currency.code)}</span>
-            {totalItems > 0 && (
-                <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-8 w-8 flex items-center justify-center border-4 border-background">
-                    {totalItems}
-                </div>
-            )}
-        </Button>
-    );
-}
-
-function ShippingDialog({
-  isOpen,
-  onOpenChange,
-  onSave,
-  currentAddress,
-}: {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSave: (address: Address, cost: number, type: 'local' | 'national') => void;
-  currentAddress: Address | undefined;
-}) {
-  const { shippingLocalCost, shippingNationalCost } = useSettingsStore();
-
-  const shippingFormSchema = z
-    .object({
-      shippingOption: z.enum(['local', 'national'], {
-        required_error: 'Debes seleccionar una opción de envío.',
-      }),
-      department: z.string().optional(),
-      municipality: z.string().optional(),
-      colony: z.string().min(3, { message: 'La colonia/residencial debe tener al menos 3 caracteres.' }),
-      exactAddress: z.string().min(10, { message: 'La dirección debe tener al menos 10 caracteres.' }),
-    })
-    .refine(
-      (data) => {
-        if (data.shippingOption === 'national') {
-          return !!data.department && !!data.municipality;
-        }
-        return true;
-      },
-      {
-        message: 'Departamento y municipio son obligatorios para envíos nacionales.',
-        path: ['department'],
-      }
-    );
-
-  const form = useForm<z.infer<typeof shippingFormSchema>>({
-    resolver: zodResolver(shippingFormSchema),
-    defaultValues: {
-      shippingOption: 'local',
-      department: undefined,
-      municipality: undefined,
-      colony: '',
-      exactAddress: '',
-    },
-  });
-  
-  React.useEffect(() => {
-    if (isOpen) {
-      form.reset({
-        shippingOption: (currentAddress as any)?.type || 'local',
-        department: currentAddress?.department,
-        municipality: currentAddress?.municipality,
-        colony: currentAddress?.colony || '',
-        exactAddress: currentAddress?.exactAddress || '',
-      });
-    }
-  }, [isOpen, currentAddress, form]);
-
-
-  const selectedDepartment = form.watch('department');
-  const selectedShippingOption = form.watch('shippingOption');
-
-  const handleSave = (values: z.infer<typeof shippingFormSchema>) => {
-    const cost = values.shippingOption === 'local' ? shippingLocalCost : shippingNationalCost;
-    const finalDepartment = values.shippingOption === 'local' ? 'Francisco Morazán' : values.department!;
-    const finalMunicipality = values.shippingOption === 'local' ? 'Distrito Central' : values.municipality!;
-
-    onSave(
-      {
-        department: finalDepartment,
-        municipality: finalMunicipality,
-        colony: values.colony,
-        exactAddress: values.exactAddress,
-      },
-      cost,
-      values.shippingOption
-    );
-    onOpenChange(false);
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Información de Envío</DialogTitle>
-          <DialogDescription>Completa los detalles para la entrega a domicilio.</DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSave)} id="shipping-form" className="space-y-4 pt-4">
-            <FormField
-              control={form.control}
-              name="shippingOption"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Tipo de Envío</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                    >
-                      <FormItem>
-                        <FormControl>
-                          <label className={cn('flex flex-col justify-center items-center gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50 min-h-[100px]', field.value === 'local' && 'bg-accent border-primary')}>
-                            <RadioGroupItem value="local" className="sr-only" />
-                            <MapPin className="h-6 w-6 text-primary" />
-                            <div className="text-center">
-                              <p className="font-semibold">Local</p>
-                              <p className="text-xs text-muted-foreground">(TGU)</p>
-                            </div>
-                          </label>
-                        </FormControl>
-                      </FormItem>
-                      <FormItem>
-                        <FormControl>
-                           <label className={cn('flex flex-col justify-center items-center gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50 min-h-[100px]', field.value === 'national' && 'bg-accent border-primary')}>
-                            <RadioGroupItem value="national" className="sr-only"/>
-                            <Truck className="h-6 w-6 text-primary" />
-                             <div className="text-center">
-                              <p className="font-semibold">Nacional</p>
-                            </div>
-                          </label>
-                        </FormControl>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {selectedShippingOption === 'national' ? (
-              <>
-                <FormField
-                  control={form.control}
-                  name="department"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Departamento</FormLabel>
-                      <Select
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          form.setValue('municipality', undefined);
-                        }}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un departamento" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {hondurasGeodata.map((depto) => (
-                            <SelectItem key={depto.id} value={depto.nombre}>
-                              {depto.nombre}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="municipality"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Municipio</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value} disabled={!selectedDepartment}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un municipio" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {selectedDepartment &&
-                            hondurasGeodata
-                              .find((d) => d.nombre === selectedDepartment)
-                              ?.municipios.map((muni) => (
-                                <SelectItem key={muni.id} value={muni.nombre}>
-                                  {muni.nombre}
-                                </SelectItem>
-                              ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
-            ) : null}
-            <FormField
-              control={form.control}
-              name="colony"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Colonia / Residencial</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ej: Colonia Kennedy" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="exactAddress"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Dirección Exacta</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Bloque, número de casa, referencias, etc." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
-        <DialogFooter className="pt-4">
-          <DialogClose asChild>
-            <Button variant="outline">Cancelar</Button>
-          </DialogClose>
-          <Button type="submit" form="shipping-form">
-            Guardar Dirección
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function CheckoutForm({ form, onSubmit, isSubmitting, onCancel, isInDialog, onOpenShipping, onCustomerSelect }: { form: any, onSubmit: (values: any) => void, isSubmitting: boolean, onCancel: () => void, isInDialog?: boolean, onOpenShipping: () => void, onCustomerSelect: (customer: Customer | null) => void }) {
-    const { items: cart, subtotal, taxAmount, shippingCost, totalWithShipping } = usePosCart();
-    const paymentMethod = form.watch('paymentMethod');
-    const deliveryMethod = form.watch('deliveryMethod');
-    const address = form.watch('address');
-    const cashAmount = form.watch('cashAmount');
-    const { currency } = useCurrencyStore();
-    const { taxRate, pickupAddress } = useSettingsStore();
-
-    const [today, setToday] = React.useState<Date | null>(null);
-
-    React.useEffect(() => {
-        setToday(new Date());
-    }, []);
-
-    const change = React.useMemo(() => {
-      if (paymentMethod === 'efectivo' && cashAmount) {
-        const cash = parseFloat(cashAmount);
-        if (!isNaN(cash) && cash > totalWithShipping) {
-          return cash - totalWithShipping;
-        }
-      }
-      return 0;
-    }, [paymentMethod, cashAmount, totalWithShipping]);
-
-
-    const CancelButton = () => {
-        return (
-            <Button type="button" variant="outline" size="lg" className='w-full sm:w-auto' onClick={onCancel} disabled={isSubmitting}>
-                Cancelar
-            </Button>
-        );
-    };
-
-
-    return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="space-y-3 p-4 rounded-lg border bg-muted/50">
-                    <div className="flex justify-between items-center text-md">
-                        <span className="text-muted-foreground">Subtotal:</span>
-                        <span className="font-medium">{formatCurrency(subtotal, currency.code)}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-md">
-                        <span className="text-muted-foreground">ISV ({taxRate * 100}%):</span>
-                        <span className="font-medium">{formatCurrency(taxAmount, currency.code)}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-md">
-                        <span className="text-muted-foreground">Envío:</span>
-                        <span className="font-medium">{shippingCost > 0 ? formatCurrency(shippingCost, currency.code) : (deliveryMethod === 'pickup' ? 'GRATIS' : 'N/A')}</span>
-                    </div>
-                     <Separator />
-                    <div className="flex justify-between items-center text-lg">
-                        <span className="text-muted-foreground">Total a Pagar:</span>
-                        <span className="font-bold text-2xl">{formatCurrency(totalWithShipping, currency.code)}</span>
-                    </div>
-                </div>
-
-                <div className='space-y-6'>
-                    <CustomerSearch onCustomerSelect={onCustomerSelect} form={form}/>
-                    <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Teléfono</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Número de teléfono" {...field} className="h-11"/>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-
-                <Controller
-                    control={form.control}
-                    name="deliveryMethod"
-                    render={({ field }) => (
-                        <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 gap-4">
-                            <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'pickup' && "bg-accent border-primary")}>
-                                <div className="flex items-center gap-4">
-                                    <RadioGroupItem value="pickup" id="pickup"/>
-                                    <div className="flex-1 flex items-center gap-2">
-                                        <Store className="h-5 w-5"/>
-                                        <p className="font-semibold">Recoger en Tienda</p>
-                                    </div>
-                                </div>
-                                {field.value === 'pickup' && (
-                                    <div className="pl-8 pt-2 text-sm text-muted-foreground">
-                                        <p className='font-medium'>Dirección de Recogida:</p>
-                                        <p>{pickupAddress}</p>
-                                    </div>
-                                )}
-                            </label>
-
-                            <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'delivery' && "bg-accent border-primary")}>
-                                <div className="flex items-center gap-4">
-                                    <RadioGroupItem value="delivery" id="delivery"/>
-                                    <div className="flex-1 flex items-center gap-2">
-                                        <Truck className="h-5 w-5"/>
-                                        <p className="font-semibold">Envío a Domicilio</p>
-                                    </div>
-                                </div>
-                                {field.value === 'delivery' && (
-                                    <div className="pl-8 pt-2 text-sm">
-                                        {address ? (
-                                            <div className='text-muted-foreground space-y-2'>
-                                                <div className='flex items-center gap-2 text-green-600 font-semibold'>
-                                                    <CheckCircle className="h-5 w-5"/> Dirección guardada
-                                                </div>
-                                                <p className='font-medium'>{address.exactAddress}</p>
-                                                <p>{address.colony}</p>
-                                                <p>{address.municipality}, {address.department}</p>
-                                                <Button variant="link" className="p-0 h-auto" type="button" onClick={onOpenShipping}>Editar Dirección</Button>
-                                            </div>
-                                        ) : (
-                                            <Button type="button" onClick={onOpenShipping}>Añadir Dirección de Envío</Button>
-                                        )}
-                                         <FormMessage>{form.formState.errors.address?.message}</FormMessage>
-                                    </div>
-                                )}
-                            </label>
-                        </RadioGroup>
-                    )}
-                />
-
-                <FormField
-                    control={form.control}
-                    name="paymentMethod"
-                    render={({ field }) => (
-                        <FormItem className="space-y-3">
-                            <FormLabel>Forma de Pago</FormLabel>
-                            <FormControl>
-                                <div className='grid grid-cols-2 gap-3'>
-                                   {paymentMethods.map(method => (
-                                     <Button
-                                         key={method.value}
-                                         type="button"
-                                         variant={field.value === method.value ? 'secondary' : 'outline'}
-                                         className="h-16 text-md flex items-center justify-start gap-3"
-                                         onClick={() => field.onChange(method.value)}
-                                     >
-                                         <method.icon />
-                                         {method.label}
-                                     </Button>
-                                   ))}
-                                </div>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                {paymentMethod === 'efectivo' && (
-                    <FormField
-                        control={form.control}
-                        name="cashAmount"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Efectivo Recibido</FormLabel>
-                                <FormControl>
-                                    <Input type="number" placeholder="Ej: 50.00" {...field} className="h-11" onChange={(e) => {
-                                        const value = e.target.value;
-                                        field.onChange(value === '' ? '' : value);
-                                    }}/>
-                                </FormControl>
-                                <FormMessage />
-                                {change > 0 && (
-                                    <p className="text-sm text-muted-foreground pt-1">Cambio a devolver: {formatCurrency(change, currency.code)}</p>
-                                )}
-                            </FormItem>
-                        )}
-                    />
-                )}
-                {(paymentMethod === 'tarjeta' || paymentMethod === 'transferencia') && (
-                    <FormField
-                        control={form.control}
-                        name="paymentReference"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Referencia de Pago</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Ej: 123456" {...field} className="h-11" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                )}
-                {paymentMethod === 'credito' && (
-                    <FormField
-                        control={form.control}
-                        name="paymentDueDate"
-                        render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                                <FormLabel>Fecha de Pago</FormLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button
-                                                variant={'outline'}
-                                                className={cn(
-                                                    'w-full pl-3 text-left font-normal h-11',
-                                                    !field.value && 'text-muted-foreground'
-                                                )}
-                                            >
-                                                {field.value ? (
-                                                    format(field.value, 'PPP', { locale: es })
-                                                ) : (
-                                                    <span>Selecciona una fecha</span>
-                                                )}
-                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                            </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar
-                                            locale={es}
-                                            mode="single"
-                                            selected={field.value}
-                                            onSelect={field.onChange}
-                                            disabled={(date) => today ? date < today : true}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                )}
-                <DialogFooter className='pt-4 sm:justify-between'>
-                    <CancelButton />
-                    <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={isSubmitting || cart.length === 0}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Crear Pedido
-                    </Button>
-                </DialogFooter>
-            </form>
-        </Form>
-    )
-}
-
-function OrderSuccessDialog({
-  isOpen,
-  onOpenChange,
-  orderData,
-}: {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  orderData: { order: Order; change: number } | null;
-}) {
-  const { currency } = useCurrencyStore();
-  const { taxRate } = useSettingsStore();
-
-  if (!orderData) return null;
-
-  const { order, change } = orderData;
-  const subtotal = order.total / (1 + taxRate);
-  const tax = order.total - subtotal;
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader className="items-center text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50">
-            <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
-          </div>
-          <DialogTitle className="text-2xl pt-4">¡Pedido Creado con Éxito!</DialogTitle>
-        </DialogHeader>
-        <ScrollArea className="max-h-[60vh]">
-          <div className="p-1 pr-4">
-            <div className="py-4 space-y-4 text-sm">
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">Pedido No:</span>
-                    <span className="font-bold text-primary">{order.display_id}</span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">Fecha:</span>
-                    <span className="font-medium">{format(parseISO(order.created_at), "d MMM, yyyy HH:mm", { locale: es })}</span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">Cliente:</span>
-                    <span className="font-medium">{order.customer_name}</span>
-                </div>
-                 <div className="flex justify-between">
-                    <span className="text-muted-foreground">Teléfono:</span>
-                    <span className="font-medium">{order.customer_phone}</span>
-                </div>
-            </div>
-
-            <Separator className="my-2" />
-            
-            <div className="py-2 space-y-2">
-                {order.items.map(item => (
-                    <div key={item.id} className="flex justify-between items-center text-sm">
-                        <div className="flex-1">
-                            <span>{item.quantity} x {item.name}</span>
-                        </div>
-                        <span className="font-medium">{formatCurrency(item.price * item.quantity, currency.code)}</span>
-                    </div>
-                ))}
-            </div>
-
-            <Separator className="my-2" />
-
-            <div className="py-2 space-y-2 text-sm">
-                 <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal:</span>
-                    <span className="font-medium">{formatCurrency(subtotal, currency.code)}</span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">ISV ({taxRate * 100}%):</span>
-                    <span className="font-medium">{formatCurrency(taxAmount, currency.code)}</span>
-                </div>
-                {order.shipping_cost > 0 && (
-                     <div className="flex justify-between">
-                        <span className="text-muted-foreground">Envío:</span>
-                        <span className="font-medium">{formatCurrency(order.shipping_cost, currency.code)}</span>
-                    </div>
-                )}
-            </div>
-
-            <Separator className="my-2" />
-
-            <div className="py-2 space-y-2">
-                <div className="flex justify-between text-lg font-bold">
-                    <span>Total:</span>
-                    <span>{formatCurrency(order.total, currency.code)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Pagado con:</span>
-                    <span className="font-medium">{paymentMethodLabels[order.payment_method]}</span>
-                </div>
-                 {change > 0 && (
-                    <div className="flex justify-between text-md font-semibold text-primary">
-                        <span>Cambio:</span>
-                        <span>{formatCurrency(change, currency.code)}</span>
-                    </div>
-                )}
-            </div>
-          </div>
-        </ScrollArea>
-        <DialogFooter>
-          <Button className="w-full" size="lg" onClick={() => onOpenChange(false)}>
-            Nuevo Pedido
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
+const getIconForCategory = (categoryName: string) => {
+  return categoryIcons[categoryName] || categoryIcons.default;
+};
 
 export default function PosPage() {
-  const products = useProductsStore(state => state.products);
-  const isLoadingProducts = useProductsStore(state => state.isLoading);
-  const decreaseStock = useProductsStore(state => state.decreaseStock);
+  const { products, isLoading: isLoadingProducts } = useProductsStore();
+  const { categories, isLoading: isLoadingCategories } = useCategoriesStore();
+  const { clearCart } = usePosCart();
 
-  const { setShippingCost, clearCart, items: cartItems, totalWithShipping } = usePosCart();
-  const { createOrder, getOrderById } = useOrdersStore();
-  const { isLoading: isLoadingCustomers, addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
-  const categories = useCategoriesStore(state => state.categories);
-  const isLoadingCategories = useCategoriesStore(state => state.isLoading);
-  const { toast } = useToast();
-  const [isCheckoutOpen, setIsCheckoutOpen] = React.useState(false);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [selectedFilter, setSelectedFilter] = React.useState<SelectedFilter>(null);
-  const [isShippingDialogOpen, setIsShippingDialogOpen] = React.useState(false);
-  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = React.useState(false);
-  const [lastOrderInfo, setLastOrderInfo] = React.useState<{order: Order, change: number} | null>(null);
-  const { user } = useAuthStore();
-  
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [selectedCategory, setSelectedCategory] = React.useState('all');
+
+  const isLoading = isLoadingProducts || isLoadingCategories;
+
   const filteredProducts = React.useMemo(() => {
-    if (!selectedFilter) return products;
-    
-    if (selectedFilter.type === 'category') {
-      return products.filter((p) => p.category === selectedFilter.value);
-    }
-    return products;
-  }, [selectedFilter, products]);
+    let prods = products;
 
-  const form = useForm<z.infer<typeof checkoutFormSchema>>({
-    resolver: zodResolver(checkoutFormSchema),
-    defaultValues: {
-      name: '',
-      phone: '',
-      deliveryMethod: 'pickup',
-      address: undefined,
-      paymentMethod: 'efectivo',
-      cashAmount: '',
-      paymentReference: '',
-      paymentDueDate: undefined,
-    },
-  });
-  
-  React.useEffect(() => {
-    form.setValue('totalWithShipping', totalWithShipping);
-  }, [totalWithShipping, form]);
-
-  const deliveryMethod = form.watch('deliveryMethod');
-
-  React.useEffect(() => {
-    if (deliveryMethod === 'pickup') {
-      setShippingCost(0);
-      form.setValue('address', undefined);
-      form.clearErrors('address');
-    } else if (deliveryMethod === 'delivery' && !form.getValues('address')) {
-      setShippingCost(0);
-    }
-  }, [deliveryMethod, form, setShippingCost]);
-
-  const handleSaveShippingInfo = (address: Address, cost: number, type: 'local' | 'national') => {
-    const addressWithType = { ...address, type };
-    form.setValue('address', addressWithType as Address);
-    setShippingCost(cost);
-  };
-  
-  const handleCustomerSelect = (customer: Customer | null) => {
-    form.setValue('address', undefined);
-    setShippingCost(0);
-        
-    if (customer) {
-        form.setValue('name', customer.name);
-        form.setValue('phone', customer.phone || '');
-        if (customer.address) {
-            form.setValue('address', customer.address as Address);
-            // This part is new: automatically set shipping cost if address exists
-            const { shippingLocalCost, shippingNationalCost } = useSettingsStore.getState();
-            const addressType = (customer.address as any).type || 'local';
-            const cost = addressType === 'local' ? shippingLocalCost : shippingNationalCost;
-            setShippingCost(cost);
-        }
-    } else {
-       form.setValue('name', form.getValues('name') || '');
-       form.setValue('phone', form.getValues('phone') || '');
-    }
-  };
-
-  const clearCartAndForm = () => {
-    clearCart();
-    form.reset({ name: '', phone: '', deliveryMethod: 'pickup', address: undefined, paymentMethod: 'efectivo', paymentDueDate: undefined, cashAmount: '', paymentReference: '' });
-  }
-  
-  const handleSuccessDialogClose = () => {
-    setIsSuccessDialogOpen(false);
-    clearCartAndForm();
-  }
-
-  const handleOpenChangeCheckout = (open: boolean) => {
-    if (!open && !isSubmitting) {
-        // handleCancelCheckout();
-    }
-    setIsCheckoutOpen(open);
-  };
-  
-  const handleCancelCheckout = () => {
-    form.reset({
-      name: '',
-      phone: '',
-      deliveryMethod: 'pickup',
-      address: undefined,
-      paymentMethod: 'efectivo',
-      cashAmount: '',
-      paymentReference: '',
-      paymentDueDate: undefined,
-    });
-    setIsCheckoutOpen(false);
-  };
-
-  async function onSubmit(values: z.infer<typeof checkoutFormSchema>) {
-    if (cartItems.length === 0) {
-      toast({ title: 'Carrito Vacío', description: 'Añade productos antes de crear un pedido.', variant: 'destructive' });
-      return;
-    }
-    
-    setIsSubmitting(true);
-
-    const customerName = values.name || 'Consumidor Final';
-    const customerPhone = values.phone || 'N/A';
-    
-    const customerId = await addOrUpdateCustomer({
-        name: customerName,
-        phone: customerPhone,
-        address: values.address,
-    });
-    
-    if (customerId) {
-        addPurchaseToCustomer(customerId, totalWithShipping);
-    }
-    
-    const stockPromises = cartItems.map(item => decreaseStock(item.id, item.quantity));
-    await Promise.all(stockPromises);
-
-    let change = 0;
-    if (values.paymentMethod === 'efectivo' && values.cashAmount) {
-        const cash = parseFloat(values.cashAmount);
-        if (!isNaN(cash) && cash > totalWithShipping) {
-            change = cash - totalWithShipping;
-        }
+    if (selectedCategory !== 'all') {
+      const categoryObject = categories.find((c) => c.id === selectedCategory);
+      if (categoryObject) {
+        prods = prods.filter((p) => p.category === categoryObject.name);
+      }
     }
 
-    const newOrderData: NewOrderData = {
-        user_id: user?.id || null,
-        customer_id: customerId || null,
-        customer_name: customerName,
-        customer_phone: customerPhone,
-        customer_address: values.address || null,
-        items: cartItems.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            image: item.image,
-        })),
-        total: totalWithShipping,
-        shipping_cost: deliveryMethod === 'delivery' ? usePosCart.getState().shippingCost : 0,
-        payment_method: values.paymentMethod,
-        payment_due_date: values.paymentDueDate?.toISOString() || null,
-        payment_reference: values.paymentReference || null,
-        balance: values.paymentMethod === 'credito' ? totalWithShipping : 0,
-        payments: values.paymentMethod !== 'credito' ? [{
-            amount: totalWithShipping,
-            method: values.paymentMethod,
-            date: new Date().toISOString(),
-            cash_received: values.cashAmount ? Number(values.cashAmount) : undefined,
-            change_given: change > 0 ? change : undefined,
-        }] : [],
-        status: values.paymentMethod === 'credito' ? 'pending-payment' : 'paid',
-        source: 'pos',
-        delivery_method: values.deliveryMethod,
-    };
-    
-    const newOrderId = await createOrder(newOrderData);
-    
-    if(newOrderId) {
-        const newOrder = getOrderById(newOrderId);
-        if(newOrder) {
-            setLastOrderInfo({
-                order: newOrder,
-                change: change
-            });
-        }
+    if (searchQuery) {
+      prods = prods.filter((product) =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
 
-    setIsCheckoutOpen(false);
-    setIsSubmitting(false);
-    setIsSuccessDialogOpen(true);
-  }
-  
-  const isLoading = isLoadingProducts || isLoadingCategories || isLoadingCustomers;
+    return prods;
+  }, [products, categories, selectedCategory, searchQuery]);
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <div className="flex-1 flex items-center justify-center">
-            <LoadingSpinner />
-        </div>
+      <div className="flex h-[calc(100vh-80px)] items-center justify-center">
+        <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-row gap-8 min-h-screen">
-      <main className="flex-1 flex flex-col min-h-0 py-8">
-          <div className="px-8 space-y-6">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                    placeholder="Buscar productos..."
-                    className="bg-card rounded-full h-12 pl-12 text-base border-border"
-                />
-              </div>
-              <CategoryList
-                categories={categories}
-                selectedFilter={selectedFilter}
-                onSelectFilter={setSelectedFilter}
-              />
+    <div className="grid h-full grid-cols-1 lg:grid-cols-[1fr_auto]">
+      {/* Main Content (Products Grid) */}
+      <div className="flex flex-col overflow-hidden">
+        <header className="flex-shrink-0 border-b p-4">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar productos..."
+              className="h-12 rounded-lg bg-background pl-12 text-base"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-          <ScrollArea className="flex-1 mt-6">
-            <div className="px-8">
-                <ProductGrid products={filteredProducts} />
-            </div>
-          </ScrollArea>
-      </main>
-        
-      <div className="py-8 pr-8">
-        <TicketView
-            onCheckout={() => setIsCheckoutOpen(true)}
-        />
+        </header>
+        <div className="flex-shrink-0 overflow-x-auto border-b p-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant={selectedCategory === 'all' ? 'default' : 'outline'}
+              className="h-11 rounded-lg px-6"
+              onClick={() => setSelectedCategory('all')}
+            >
+              Todos
+            </Button>
+            {categories.map((cat) => {
+              const Icon = getIconForCategory(cat.name);
+              return (
+                <Button
+                  key={cat.id}
+                  variant={selectedCategory === cat.id ? 'default' : 'outline'}
+                  className="h-11 gap-2 rounded-lg px-4"
+                  onClick={() => setSelectedCategory(cat.id)}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span>{cat.label}</span>
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+        <ScrollArea className="flex-1">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 p-4">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </ScrollArea>
       </div>
-        
-      <Dialog open={isCheckoutOpen} onOpenChange={handleOpenChangeCheckout}>
-          <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
-                  <DialogTitle>Finalizar Pedido</DialogTitle>
-              </DialogHeader>
-              <ScrollArea className="max-h-[70vh] p-1">
-                  <div className="p-4">
-                      <CheckoutForm 
-                          form={form} 
-                          onSubmit={onSubmit} 
-                          isSubmitting={isSubmitting} 
-                          onCancel={handleCancelCheckout} 
-                          isInDialog={true}
-                          onOpenShipping={() => setIsShippingDialogOpen(true)}
-                          onCustomerSelect={handleCustomerSelect}
-                      />
-                  </div>
-              </ScrollArea>
-          </DialogContent>
-      </Dialog>
-        
-      <ShippingDialog
-        isOpen={isShippingDialogOpen}
-        onOpenChange={setIsShippingDialogOpen}
-        onSave={handleSaveShippingInfo}
-        currentAddress={form.getValues('address')}
-      />
 
-      <OrderSuccessDialog
-          isOpen={isSuccessDialogOpen}
-          onOpenChange={handleSuccessDialogClose}
-          orderData={lastOrderInfo}
-      />
+      {/* Cart Column */}
+      <aside className="hidden w-[380px] flex-col border-l bg-card lg:flex">
+        <PosCart onCheckoutSuccess={clearCart} />
+      </aside>
     </div>
   );
 }
