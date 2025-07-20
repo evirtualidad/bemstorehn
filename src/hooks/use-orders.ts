@@ -87,23 +87,14 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
     },
 
     createOrder: async (orderData) => {
-        const newOrder: Order = {
-          ...orderData,
-          id: uuidv4(),
-          display_id: generateDisplayId(),
-          created_at: new Date().toISOString(),
-        };
-
         try {
             // Use the Genkit flow to handle order creation
-            await createOrderFlow(orderData);
+            const result = await createOrderFlow(orderData);
             
-            // Optimistically update the local state
-            set(produce(state => {
-                state.orders.unshift(newOrder);
-            }));
+            // After successful creation in DB, refetch orders to update the UI
+            await get().fetchOrders();
 
-            return newOrder.id;
+            return result.orderId;
 
         } catch (error: any) {
             toast({ 
