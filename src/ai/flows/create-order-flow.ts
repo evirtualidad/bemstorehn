@@ -7,8 +7,13 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { CreateOrderInputSchema, CreateOrderOutputSchema, type CreateOrderInput, type CreateOrderOutput } from '@/ai/schemas';
-import type { NewOrderData } from '@/hooks/use-orders';
+import { CreateOrderInputSchema, CreateOrderOutputSchema, type CreateOrderOutput } from '@/ai/schemas';
+import type { NewOrderData, Order } from '@/hooks/use-orders';
+import { initialOrders } from '@/lib/orders';
+import { v4 as uuidv4 } from 'uuid';
+
+const generateDisplayId = () => `BEM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
 
 const createOrderFlow = ai.defineFlow(
   {
@@ -20,26 +25,23 @@ const createOrderFlow = ai.defineFlow(
     
     console.log("SIMULATION: createOrderFlow invoked with input:", JSON.stringify(input, null, 2));
 
-    // Simulate network delay and processing
-    await new Promise(res => setTimeout(res, 1000));
-
-    // In a real scenario, this is where you'd interact with a database (Firebase, Supabase, etc.)
-    // For now, we'll just simulate a successful creation and return a mock order ID.
+    const newOrder: Order = {
+      ...input,
+      id: uuidv4(),
+      display_id: generateDisplayId(),
+      created_at: new Date().toISOString(),
+    };
     
-    try {
-      const displayId = `MOCK-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-      
-      console.log(`SIMULATION: Order with Display ID ${displayId} created successfully.`);
-      
-      return {
-        orderId: displayId,
-        success: true,
-      };
-    } catch (error: any) {
-      console.error("[createOrderFlow SIMULATION Error]", error);
-      // Re-throw the error so it can be caught by the client-side caller
-      throw error;
-    }
+    // Simulate saving to the database by adding it to our initial mock data array.
+    // In a real app, this would be a database insert operation.
+    initialOrders.unshift(newOrder);
+    
+    console.log(`SIMULATION: Order with Display ID ${newOrder.display_id} created successfully.`);
+    
+    return {
+      orderId: newOrder.id, // Return the actual UUID of the newly created order
+      success: true,
+    };
   }
 );
 
