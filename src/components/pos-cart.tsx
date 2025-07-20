@@ -13,7 +13,7 @@ import Image from 'next/image';
 import { CheckoutDialog } from '@/components/checkout-dialog';
 import { useState } from 'react';
 import type { Customer } from '@/lib/types';
-import { useToast } from './ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface PosCartProps {
   onCheckoutSuccess: () => void;
