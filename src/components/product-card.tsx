@@ -17,11 +17,13 @@ import { usePathname } from 'next/navigation';
 
 interface ProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
   product: Product;
+  useLink?: boolean;
 }
 
 export function ProductCard({ 
   product, 
   className, 
+  useLink = true,
   ...props 
 }: ProductCardProps) {
   const { currency } = useCurrencyStore();
@@ -52,7 +54,7 @@ export function ProductCard({
   const CardContent = () => (
     <Card 
         className="flex flex-col overflow-hidden h-full border-0 shadow-none rounded-lg bg-secondary cursor-pointer"
-        onClick={handleAddToCartClick}
+        onClick={isPos ? handleAddToCartClick : undefined}
     >
         <div className="p-2">
             <div className="relative overflow-hidden aspect-[4/5] rounded-lg">
@@ -110,9 +112,19 @@ export function ProductCard({
     </Card>
   );
 
+  const cardElement = <CardContent />;
+  
+  if (useLink && !isPos) {
+      return (
+          <Link href={`/product/${product.id}`} className={cn("group", className)} {...props}>
+            {cardElement}
+          </Link>
+      )
+  }
+
   return (
     <div {...props} className={cn("group", className)}>
-        <CardContent />
+        {cardElement}
     </div>
   );
 }
