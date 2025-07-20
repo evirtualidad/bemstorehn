@@ -31,11 +31,11 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
         >
-          <div className="pb-20 md:pb-0">
-            {children}
+          <div className="relative flex min-h-screen flex-col">
+            <main className="flex-1">{children}</main>
+            <Toaster />
+            <BottomNav />
           </div>
-          <Toaster />
-          <BottomNav />
         </ThemeProvider>
       </body>
     </html>
