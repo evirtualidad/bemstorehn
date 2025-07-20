@@ -6,7 +6,7 @@ import { toast } from './use-toast';
 import { produce } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import { createOrder as createOrderFlow } from '@/ai/flows/create-order-flow';
+import { createOrderAction } from '@/actions/create-order-action';
 
 export interface Payment {
     date: string;
@@ -88,7 +88,6 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
     },
 
     createOrder: async (orderData) => {
-      // 1. Create the full order object on the client side first.
       const newOrder: Order = {
         ...orderData,
         id: uuidv4(),
@@ -96,30 +95,27 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
         created_at: new Date().toISOString(),
       };
       
-      // 2. Optimistically update the UI. This is instant for the user.
+      // Optimistic update
       set(produce(state => {
         state.orders.unshift(newOrder);
       }));
 
-      // 3. "Fire-and-forget" the database operation. Don't await it.
-      //    The Genkit flow will handle the Supabase insert asynchronously.
-      createOrderFlow(newOrder)
-        .then(() => {
-            // Optional: log success or do something minor on success
-            console.log(`Order ${newOrder.display_id} sent to be saved.`);
-        })
-        .catch((flowError: any) => {
-            // This will only catch errors if the flow itself fails to start,
-            // not the database insert error, which is handled inside the flow.
-            console.error("Order creation flow failed to invoke:", flowError);
-            toast({
-                title: 'Error Crítico de Conexión',
-                description: `No se pudo comunicar con el servicio de pedidos.`,
-                variant: 'destructive',
-            });
-        });
+      // Persist to Supabase via Server Action
+      const { success, error } = await createOrderAction(newOrder);
 
-      // 4. Immediately return the new order ID for navigation.
+      if (!success) {
+        // Rollback on failure
+        set(produce(state => {
+          state.orders = state.orders.filter(o => o.id !== newOrder.id);
+        }));
+        toast({
+          title: 'Error al guardar el pedido',
+          description: error || 'No se pudo guardar el pedido en la base de datos.',
+          variant: 'destructive'
+        });
+        return null;
+      }
+
       return newOrder.id;
     },
 
