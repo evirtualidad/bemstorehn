@@ -7,25 +7,25 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 220 10% 10%;
+    --background: 84 25% 97%; /* F7F8F3 */
+    --foreground: 199 100% 12%; /* 002C3E */
     --card: 0 0% 100%;
-    --card-foreground: 220 10% 10%;
+    --card-foreground: 199 100% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 10% 10%;
-    --primary: 0 0% 0%; /* Pure Black */
-    --primary-foreground: 0 0% 98%;
+    --popover-foreground: 199 100% 12%;
+    --primary: 199 100% 12%; /* 002C3E */
+    --primary-foreground: 84 25% 97%; /* F7F8F3 */
     --secondary: 220 10% 93%;
-    --secondary-foreground: 220 10% 20%;
+    --secondary-foreground: 199 100% 12%;
     --muted: 220 10% 93%;
     --muted-foreground: 220 5% 45%;
-    --accent: 90 100% 50%; /* Lime Green */
-    --accent-foreground: 90 100% 15%; /* Darker green for text on lime */
-    --destructive: 0 84.2% 60.2%;
+    --accent: 188 38% 62%; /* 78BCC4 */
+    --accent-foreground: 199 100% 12%;
+    --destructive: 357 91% 61%; /* F7444E */
     --destructive-foreground: 0 0% 98%;
     --border: 220 10% 90%;
     --input: 220 10% 93%;
-    --ring: 240 10% 12%;
+    --ring: 199 100% 12%;
     --radius: 0.75rem;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
@@ -35,25 +35,25 @@
   }
  
   .dark {
-    --background: 240 10% 12%;
-    --foreground: 220 20% 98%;
-    --card: 240 10% 16%;
-    --card-foreground: 220 20% 98%;
-    --popover: 240 10% 12%;
-    --popover-foreground: 220 20% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 10% 12%;
+    --background: 199 100% 12%; /* 002C3E */
+    --foreground: 84 25% 97%; /* F7F8F3 */
+    --card: 199 100% 15%;
+    --card-foreground: 84 25% 97%;
+    --popover: 199 100% 12%;
+    --popover-foreground: 84 25% 97%;
+    --primary: 84 25% 97%; /* F7F8F3 */
+    --primary-foreground: 199 100% 12%; /* 002C3E */
     --secondary: 220 10% 25%;
-    --secondary-foreground: 220 20% 98%;
+    --secondary-foreground: 84 25% 97%;
     --muted: 220 10% 25%;
     --muted-foreground: 220 5% 65%;
-    --accent: 90 100% 50%; /* Lime Green */
-    --accent-foreground: 90 100% 15%;
-    --destructive: 0 62.8% 30.6%;
+    --accent: 188 38% 62%; /* 78BCC4 */
+    --accent-foreground: 199 100% 12%;
+    --destructive: 357 91% 61%; /* F7444E */
     --destructive-foreground: 0 0% 98%;
     --border: 220 10% 30%;
     --input: 220 10% 25%;
-    --ring: 0 0% 98%;
+    --ring: 84 25% 97%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
