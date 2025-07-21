@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { usePosCart } from '@/hooks/use-pos-cart';
 import { usePathname } from 'next/navigation';
-import { Card } from './ui/card';
+import { Card, CardContent } from './ui/card';
 
 interface ProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
   product: Product;
@@ -50,11 +50,11 @@ export function ProductCard({
 
   const cardContent = (
       <Card 
-        className={cn("flex items-center gap-4 p-3 overflow-hidden rounded-xl border group cursor-pointer", className)}
+        className={cn("flex flex-col h-full overflow-hidden rounded-xl border group cursor-pointer", className)}
         onClick={isPos ? handleAddToCartClick : undefined}
         {...props}
       >
-        <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md">
+        <div className="relative w-full aspect-square overflow-hidden">
             <Image
               src={product.image || 'https://placehold.co/400x400.png'}
               alt={product.name}
@@ -63,19 +63,25 @@ export function ProductCard({
               data-ai-hint={product.aiHint}
             />
         </div>
-        <div className="flex-1 min-w-0">
-            <h3 className="font-semibold leading-tight text-sm truncate">{product.name}</h3>
-            <p className="font-bold text-lg text-foreground mt-1">
-                {formatCurrency(product.price, currency.code)}
+        <CardContent className="p-4 flex flex-col flex-1">
+            <h3 className="font-semibold leading-tight text-sm line-clamp-2 flex-grow">{product.name}</h3>
+            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                {product.description}
             </p>
-        </div>
-         <Button
-            size="icon"
-            className="w-10 h-10 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 flex-shrink-0"
-            onClick={isPos ? handleAddToCartClick : undefined}
-          >
-            <Plus className="h-5 w-5" />
-          </Button>
+            <div className="flex items-end justify-between mt-3">
+                <span className="font-bold text-lg text-foreground">
+                    {formatCurrency(product.price, currency.code)}
+                </span>
+                 <Button
+                    size="icon"
+                    className="w-9 h-9 rounded-full bg-primary/10 text-primary hover:bg-primary/20 flex-shrink-0"
+                    onClick={handleAddToCartClick}
+                    aria-label={`Añadir ${product.name} al carrito`}
+                  >
+                    <Plus className="h-5 w-5" />
+                  </Button>
+            </div>
+        </CardContent>
       </Card>
   );
 
