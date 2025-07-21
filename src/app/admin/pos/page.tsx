@@ -10,54 +10,69 @@ import { ProductCard } from '@/components/product-card';
 import { PosCart } from '@/components/pos-cart';
 import {
   Search,
-  Home,
   LayoutGrid,
-  Bookmark,
-  ShoppingCart,
-  MessageSquare,
-  Settings,
+  Clock,
+  ListOrdered,
   LogOut,
   ListFilter,
-  ChevronDown
+  User,
+  Coffee,
+  IceCream,
+  Pizza,
+  Sandwich
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { usePosCart } from '@/hooks/use-pos-cart';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuthStore } from '@/hooks/use-auth-store';
 
 const navItems = [
-  { href: '#', icon: Home, label: 'Home' },
-  { href: '/admin/pos', icon: LayoutGrid, label: 'Products' },
-  { href: '#', icon: Bookmark, label: 'Saved' },
-  { href: '#', icon: ShoppingCart, label: 'Cart' },
-  { href: '#', icon: MessageSquare, label: 'Messages' },
+  { href: '/admin/dashboard-v2', icon: LayoutGrid, label: 'Dashboard' },
+  { href: '/admin/pos', icon: Coffee, label: 'POS' },
+  { href: '/admin/orders', icon: ListOrdered, label: 'Orders' },
+  { href: '#', icon: Clock, label: 'History' },
 ];
 
 const bottomNavItems = [
-    { href: '/admin/settings', icon: Settings, label: 'Settings' },
     { href: '/login', icon: LogOut, label: 'Logout' }
 ];
 
+const categoryIcons = {
+    'skincare': Coffee,
+    'makeup': IceCream,
+    'hair': Pizza,
+    'body': Sandwich,
+    'default': Coffee,
+}
+
+const OrangeIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="hsl(var(--primary))"/>
+    </svg>
+)
+
 function Sidebar() {
+    const pathname = '/admin/pos'; // Hardcoded for now to show active state
     return (
-        <aside className="h-full bg-card flex flex-col items-center justify-between p-4">
-            <div className="flex flex-col items-center gap-4">
-                <div className="bg-primary text-primary-foreground h-10 w-10 flex items-center justify-center rounded-full text-xl font-bold">
-                    C
-                </div>
+        <aside className="h-full bg-card flex flex-col items-center justify-between py-5 px-3">
+            <div className="flex flex-col items-center gap-5">
+                <OrangeIcon />
                  <TooltipProvider>
-                    <nav className="flex flex-col items-center gap-3">
+                    <nav className="flex flex-col items-center gap-4">
                         {navItems.map((item) => (
                              <Tooltip key={item.label}>
                                 <TooltipTrigger asChild>
                                     <Link href={item.href}>
                                         <Button
-                                            variant={item.href === '/admin/pos' ? 'default' : 'ghost'}
+                                            variant={pathname === item.href ? 'secondary' : 'ghost'}
                                             size="icon"
-                                            className={cn("rounded-lg h-10 w-10", item.href === '/admin/pos' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}
+                                            className={cn("rounded-lg h-11 w-11", pathname === item.href ? 'bg-accent text-accent-foreground' : 'text-muted-foreground')}
                                         >
-                                            <item.icon className="h-5 w-5" />
+                                            <item.icon className="h-6 w-6" />
                                         </Button>
                                     </Link>
                                 </TooltipTrigger>
@@ -70,7 +85,7 @@ function Sidebar() {
                  </TooltipProvider>
             </div>
              <TooltipProvider>
-                <div className="flex flex-col items-center gap-3">
+                <div className="flex flex-col items-center gap-4">
                     {bottomNavItems.map((item) => (
                          <Tooltip key={item.label}>
                             <TooltipTrigger asChild>
@@ -78,9 +93,9 @@ function Sidebar() {
                                     <Button
                                         variant={'ghost'}
                                         size="icon"
-                                        className="rounded-lg h-10 w-10 text-muted-foreground"
+                                        className="rounded-lg h-11 w-11 text-muted-foreground"
                                     >
-                                        <item.icon className="h-5 w-5" />
+                                        <item.icon className="h-6 w-6" />
                                     </Button>
                                 </Link>
                             </TooltipTrigger>
@@ -98,6 +113,7 @@ function Sidebar() {
 export default function PosPage() {
   const { products, isLoading: isLoadingProducts, fetchProducts } = useProductsStore();
   const { categories, isLoading: isLoadingCategories, fetchCategories } = useCategoriesStore();
+  const { user } = useAuthStore();
   const { clearCart } = usePosCart();
 
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -125,7 +141,7 @@ export default function PosPage() {
     }
 
     return prods.filter(p => p.stock > 0);
-  }, [products, categories, selectedCategory, searchQuery]);
+  }, [products, selectedCategory, searchQuery]);
   
   if (isLoading) {
     return (
@@ -135,76 +151,88 @@ export default function PosPage() {
     );
   }
 
-  const categoryButtons = [
-      { id: 'skincare', label: 'Cakes' },
-      { id: 'makeup', label: 'Pastry' },
-      { id: 'hair', label: 'Ice Cream' },
-      { id: 'body', label: 'Pancakes' }
-  ]
-
   return (
     <div className="grid h-screen grid-cols-[auto_1fr_auto] gap-0 bg-background overflow-hidden">
       {/* Sidebar */}
       <Sidebar />
 
       {/* Main Content (Products Grid) */}
-      <main className="flex flex-col gap-6 overflow-y-auto px-8 py-6">
+      <main className="flex flex-col gap-5 overflow-y-auto p-6">
         <header className="flex-shrink-0">
             <div className="flex items-center justify-between">
-                <Button variant="ghost" className="text-xl font-bold p-0 h-auto">
-                    Items <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-            </div>
-            <div className="flex items-center gap-4 mt-4">
-                <div className="relative flex-grow">
-                    <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <div className="relative flex-grow max-w-lg">
+                    <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                    placeholder="Search..."
-                    className="h-11 rounded-lg bg-card pl-10"
+                    placeholder="Search menu..."
+                    className="h-11 rounded-lg bg-card pl-11 text-base"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <Button variant="outline" size="icon" className="h-11 w-11 rounded-lg bg-card border-border">
-                    <ListFilter className="h-5 w-5" />
-                </Button>
+                <div className='flex items-center gap-4'>
+                   <div className='text-right'>
+                        <p className='font-bold'>BEM Store</p>
+                        <p className='text-sm text-muted-foreground'>{new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric'})}</p>
+                   </div>
+                   <Avatar>
+                        <AvatarImage src='https://github.com/shadcn.png' alt='user' />
+                        <AvatarFallback>
+                            {user?.email?.[0].toUpperCase()}
+                        </AvatarFallback>
+                   </Avatar>
+                </div>
             </div>
         </header>
+        
+        <Separator />
 
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 space-y-4">
+          <h3 className="text-xl font-bold">Categories</h3>
           <div className="flex items-center gap-3 overflow-x-auto pb-2">
             <Button
                 key="all"
-                variant={selectedCategory === 'all' ? 'default' : 'secondary'}
-                className={cn("h-10 rounded-lg px-5 font-semibold", selectedCategory === 'all' ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground')}
+                variant={selectedCategory === 'all' ? 'secondary' : 'outline'}
+                className={cn("h-auto rounded-lg p-3 flex flex-col items-center justify-center gap-2 border-2", selectedCategory === 'all' ? 'border-primary bg-accent' : 'bg-card')}
                 onClick={() => setSelectedCategory('all')}
               >
-                All
+                <LayoutGrid className={cn("h-7 w-7", selectedCategory === 'all' ? 'text-primary' : 'text-muted-foreground')} />
+                <span className='font-semibold text-sm'>All Items</span>
             </Button>
-            {categoryButtons.map((cat) => (
+            {categories.map((cat) => {
+              const Icon = categoryIcons[cat.name as keyof typeof categoryIcons] || categoryIcons.default;
+              return (
               <Button
                 key={cat.id}
-                variant={selectedCategory === cat.id ? 'default' : 'secondary'}
-                className={cn("h-10 rounded-lg px-5 font-semibold", selectedCategory === cat.id ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground')}
-                onClick={() => setSelectedCategory(cat.id)}
+                variant={selectedCategory === cat.name ? 'secondary' : 'outline'}
+                className={cn("h-auto rounded-lg p-3 flex flex-col items-center justify-center gap-2 border-2", selectedCategory === cat.name ? 'border-primary bg-accent' : 'bg-card')}
+                onClick={() => setSelectedCategory(cat.name)}
               >
-                {cat.label}
+                <Icon className={cn("h-7 w-7", selectedCategory === cat.name ? 'text-primary' : 'text-muted-foreground')} />
+                <span className='font-semibold text-sm'>{cat.label}</span>
               </Button>
-            ))}
+            )})}
           </div>
         </div>
         
-        <ScrollArea className="flex-1 -mx-2">
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-6 px-2 pb-4">
-                {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-            </div>
-        </ScrollArea>
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className='flex items-center justify-between mb-4'>
+             <h3 className="text-xl font-bold">Select Menu</h3>
+             <Button variant='outline' className='bg-card'>
+                <ListFilter className="mr-2 h-4 w-4" /> Filter
+             </Button>
+          </div>
+          <ScrollArea className="flex-1 -mx-2">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-5 px-2 pb-4">
+                  {filteredProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+              </div>
+          </ScrollArea>
+        </div>
       </main>
 
       {/* Cart Column */}
-      <div className="w-[360px] p-6 bg-card">
+      <div className="w-[380px] p-6 bg-card border-l">
          <div className='h-full w-full'>
             <PosCart onCheckoutSuccess={clearCart} />
          </div>

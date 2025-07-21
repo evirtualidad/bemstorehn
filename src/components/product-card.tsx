@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { usePosCart } from '@/hooks/use-pos-cart';
 import { usePathname } from 'next/navigation';
+import { Badge } from './ui/badge';
 
 interface ProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
   product: Product;
@@ -43,37 +44,41 @@ export function ProductCard({
       });
     }
   };
+  
+  const isDiscounted = product.original_price && product.original_price > product.price;
 
   const cardContent = (
       <div 
-        className="flex h-full flex-col overflow-hidden rounded-xl bg-card"
+        className="flex h-full flex-col overflow-hidden rounded-xl bg-card border"
         onClick={isPos ? handleAddToCartClick : undefined}
       >
-        <div className="relative overflow-hidden bg-secondary rounded-xl">
+        <div className="relative overflow-hidden bg-secondary rounded-xl aspect-square">
             <Image
-              src={product.image || 'https://placehold.co/400x500.png'}
+              src={product.image || 'https://placehold.co/400x400.png'}
               alt={product.name}
               width={400}
-              height={500}
-              className="aspect-square w-full rounded-md object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+              height={400}
+              className="w-full h-full rounded-md object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
               data-ai-hint={product.aiHint}
             />
+            {isDiscounted && (
+                <Badge variant="offer" className="absolute top-3 left-3 bg-blue-500 text-white hover:bg-blue-500/90">
+                    20% OFF
+                </Badge>
+            )}
         </div>
-        <div className="flex flex-col p-2 text-center mt-1">
+        <div className="flex flex-col p-3">
             <h3 className="flex-grow font-semibold leading-tight text-sm h-10">{product.name}</h3>
-            <div className='flex items-center justify-between mt-2'>
-              <p className="font-bold text-sm">
-                  {formatCurrency(product.price, currency.code)}
-              </p>
-              <Button
-                  size="icon"
-                  className="h-8 w-8 rounded-lg text-lg bg-primary text-primary-foreground hover:bg-primary/90"
-                  disabled={product.stock <= 0}
-                  onClick={handleAddToCartClick}
-                  aria-label={`Añadir ${product.name} al carrito`}
-              >
-                  <Plus className="h-4 w-4" />
-              </Button>
+            <p className='text-xs text-muted-foreground'>{product.stock} Available • 12 sold</p>
+            <div className='flex items-baseline gap-2 mt-2'>
+                <p className="font-bold text-lg text-primary">
+                    {formatCurrency(product.price, currency.code)}
+                </p>
+                {isDiscounted && (
+                    <p className="text-sm text-muted-foreground line-through">
+                        {formatCurrency(product.original_price!, currency.code)}
+                    </p>
+                )}
             </div>
         </div>
       </div>
