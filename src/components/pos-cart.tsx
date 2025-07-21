@@ -42,7 +42,7 @@ export function PosCart({ onCheckoutSuccess }: { onCheckoutSuccess: () => void }
   
   return (
     <>
-      <aside className="h-full w-full flex-shrink-0 flex flex-col bg-card">
+      <aside className="h-full w-full flex flex-col bg-card">
         <header className="pb-4 flex-shrink-0">
           <h2 className="text-xl font-bold">Current Order</h2>
           <div className='flex items-center gap-3 mt-4'>
