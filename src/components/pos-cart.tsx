@@ -66,11 +66,11 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
               </div>
           </DialogHeader>
           
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto bg-muted/30">
             {items.length > 0 ? (
-                <div className="p-4 flex flex-col gap-5">
+                <div className="p-4 flex flex-col gap-4">
                     {items.map((item) => (
-                        <div key={item.id} className="flex items-start gap-4">
+                        <div key={item.id} className="flex items-start gap-4 bg-background p-3 rounded-lg shadow-sm">
                             <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border bg-secondary">
                                 <Image
                                 src={item.image}
@@ -87,18 +87,16 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
                                 <div className="mt-2 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Button
-                                    variant="outline"
                                     size="icon"
-                                    className="h-7 w-7 rounded-full"
+                                    className="h-7 w-7 rounded-full bg-red-100 text-red-700 hover:bg-red-200"
                                     onClick={() => decreaseQuantity(item.id)}
                                     >
                                     <Minus className="h-4 w-4" />
                                     </Button>
                                     <span className="font-bold w-5 text-center">{item.quantity}</span>
                                     <Button
-                                    variant="outline"
                                     size="icon"
-                                    className="h-7 w-7 rounded-full"
+                                    className="h-7 w-7 rounded-full bg-green-100 text-green-700 hover:bg-green-200"
                                     onClick={() => increaseQuantity(item.id)}
                                     >
                                     <Plus className="h-4 w-4" />
@@ -107,7 +105,7 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="text-muted-foreground hover:text-destructive h-7 w-7"
+                                    className="text-red-500 bg-red-100 hover:bg-red-200 hover:text-red-600 h-7 w-7"
                                     onClick={() => removeFromCart(item.id)}
                                 >
                                     <Trash2 className="h-4 w-4" />
