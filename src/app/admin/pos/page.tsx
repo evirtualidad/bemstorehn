@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -70,12 +71,12 @@ export default function PosPage() {
     <div className="h-full flex flex-col gap-5 overflow-hidden">
       {/* Header section with Search and Categories */}
       <header className="flex-shrink-0">
+        <div className="hidden sm:block">
+          <h1 className='text-2xl font-bold mb-1'>Menu</h1>
+          <p className="text-muted-foreground">Hola, {user?.email?.split('@')[0]}. ¡Felices ventas!</p>
+        </div>
         <div className="flex items-center justify-between gap-4">
-            <div className="flex-grow hidden sm:block">
-              <h1 className='text-2xl font-bold mb-1'>Menu</h1>
-              <p className="text-muted-foreground">Hola, {user?.email?.split('@')[0]}. ¡Felices ventas!</p>
-            </div>
-            <div className="relative flex-grow">
+            <div className="relative flex-grow hidden sm:block">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar por comida, café, etc.."
@@ -84,24 +85,37 @@ export default function PosPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-             <div className="sm:hidden">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className='h-12 w-12 rounded-lg'>
-                      <ListFilter className="h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56">
-                    <DropdownMenuLabel>Categorías</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuRadioGroup value={selectedCategory} onValueChange={setSelectedCategory}>
-                      <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
-                      {categories.map((cat) => (
-                        <DropdownMenuRadioItem key={cat.id} value={cat.name}>{cat.label}</DropdownMenuRadioItem>
-                      ))}
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+            <div className="flex-grow sm:hidden">
+              <div className="flex items-center justify-between gap-2">
+                  <div className="relative flex-grow">
+                    <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por comida, café, etc.."
+                      className="h-12 rounded-lg bg-card pl-12 text-base"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <div className="sm:hidden">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="icon" className='h-12 w-12 rounded-lg'>
+                            <ListFilter className="h-5 w-5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-56">
+                          <DropdownMenuLabel>Categorías</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuRadioGroup value={selectedCategory} onValueChange={setSelectedCategory}>
+                            <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
+                            {categories.map((cat) => (
+                              <DropdownMenuRadioItem key={cat.id} value={cat.name}>{cat.label}</DropdownMenuRadioItem>
+                            ))}
+                          </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                  </div>
+              </div>
             </div>
         </div>
         <div className="mt-6 hidden sm:flex flex-row flex-nowrap items-center gap-3 overflow-x-auto pb-2 -mx-2 px-2">
@@ -137,8 +151,8 @@ export default function PosPage() {
       
       {/* Products Grid */}
       <div className="flex-1 min-h-0">
-        <ScrollArea className="h-full">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-5 pb-4">
+        <ScrollArea className="h-full pb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-5">
                 {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
