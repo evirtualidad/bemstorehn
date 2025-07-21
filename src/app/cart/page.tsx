@@ -12,6 +12,7 @@ import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
 import { useSettingsStore } from '@/hooks/use-settings-store';
 import { useRouter } from 'next/navigation';
+import { ScrollArea } from '../ui/scroll-area';
 
 export default function CartPage() {
   const {
@@ -49,59 +50,61 @@ export default function CartPage() {
       </header>
       
       {items.length > 0 ? (
-        <div className="flex-1 flex flex-col min-h-0">
-          <main className="flex-1 overflow-y-auto p-4 container mx-auto">
-            <div className="flex flex-col gap-5">
-              {items.map((item) => (
-                <div key={item.id} className="flex items-start gap-4 bg-background p-4 rounded-lg shadow-sm">
-                  <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border bg-secondary">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm leading-tight line-clamp-2">{item.name}</p>
-                    <p className="font-bold text-sm text-foreground mt-1">
-                      {formatCurrency(item.price, currency.code)}
-                    </p>
-                    <div className="mt-2 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7 rounded-full"
-                          onClick={() => decreaseQuantity(item.id)}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <span className="font-bold w-5 text-center">{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7 rounded-full"
-                          onClick={() => increaseQuantity(item.id)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive h-7 w-7"
-                        onClick={() => removeFromCart(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+        <>
+          <main className="flex-1 overflow-y-auto">
+            <div className="container mx-auto p-4">
+                <div className="flex flex-col gap-5">
+                {items.map((item) => (
+                    <div key={item.id} className="flex items-start gap-4 bg-background p-4 rounded-lg shadow-sm">
+                    <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border bg-secondary">
+                        <Image
+                        src={item.image}
+                        alt={item.name}
+                        fill
+                        className="object-cover"
+                        />
                     </div>
-                  </div>
+                    <div className="flex-1">
+                        <p className="font-semibold text-sm leading-tight line-clamp-2">{item.name}</p>
+                        <p className="font-bold text-sm text-foreground mt-1">
+                        {formatCurrency(item.price, currency.code)}
+                        </p>
+                        <div className="mt-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7 rounded-full"
+                            onClick={() => decreaseQuantity(item.id)}
+                            >
+                            <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="font-bold w-5 text-center">{item.quantity}</span>
+                            <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7 rounded-full"
+                            onClick={() => increaseQuantity(item.id)}
+                            >
+                            <Plus className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-destructive h-7 w-7"
+                            onClick={() => removeFromCart(item.id)}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                        </div>
+                    </div>
+                    </div>
+                ))}
                 </div>
-              ))}
             </div>
           </main>
-          <footer className="border-t p-4 space-y-4 bg-background flex-shrink-0">
+          <footer className="border-t p-4 space-y-4 bg-background">
             <div className="container mx-auto p-0 space-y-4">
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
@@ -127,7 +130,7 @@ export default function CartPage() {
               </Button>
             </div>
           </footer>
-        </div>
+        </>
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center p-6">
           <ShoppingBag className="w-24 h-24 text-muted-foreground/50" />
