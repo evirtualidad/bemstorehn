@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { usePosCart } from '@/hooks/use-pos-cart';
 import { usePathname } from 'next/navigation';
 import { Card, CardContent } from './ui/card';
+import { Badge } from './ui/badge';
 
 interface ProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
   product: Product;
@@ -54,8 +55,8 @@ export function ProductCard({
 
   const cardContent = (
       <Card 
-        className={cn("flex flex-col h-full overflow-hidden rounded-xl border group cursor-pointer bg-card", className)}
-        onClick={isPos ? handleAddToCartClick : undefined}
+        className={cn("flex flex-col h-full overflow-hidden rounded-xl border group cursor-pointer bg-card", className, product.stock <= 0 && "opacity-60")}
+        onClick={isPos && product.stock > 0 ? handleAddToCartClick : undefined}
         {...props}
       >
         <div className="relative w-full aspect-square overflow-hidden bg-secondary">
@@ -66,6 +67,16 @@ export function ProductCard({
               className="w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-105 p-4"
               data-ai-hint={product.aiHint}
             />
+            <div className="absolute top-2 left-2">
+                <Badge variant={product.stock > 0 ? 'default' : 'destructive'} className={cn(product.stock > 0 && 'bg-green-100 text-green-800 border-green-200')}>
+                    {product.stock > 0 ? 'En Stock' : 'Agotado'}
+                </Badge>
+            </div>
+             {isDiscounted && (
+                <div className="absolute top-2 right-2">
+                    <Badge variant="offer">Oferta</Badge>
+                </div>
+            )}
         </div>
         <CardContent className="p-4 flex flex-col flex-1">
             <h3 className="font-bold leading-tight text-md line-clamp-2 flex-grow">{product.name}</h3>
@@ -73,14 +84,22 @@ export function ProductCard({
                 {product.description}
             </p>
             <div className="flex items-end justify-between mt-3">
-                <span className="font-bold text-lg text-foreground">
-                    {formatCurrency(product.price, currency.code)}
-                </span>
+                <div className="flex flex-col items-start">
+                    <span className="font-bold text-lg text-foreground">
+                        {formatCurrency(product.price, currency.code)}
+                    </span>
+                    {isDiscounted && (
+                        <span className="text-xs text-muted-foreground line-through">
+                            {formatCurrency(product.original_price!, currency.code)}
+                        </span>
+                    )}
+                </div>
                  <Button
                     size="icon"
                     className="w-9 h-9 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0"
                     onClick={handleAddToCartClick}
                     aria-label={`Añadir ${product.name} al carrito`}
+                    disabled={product.stock <= 0}
                   >
                     <Plus className="h-5 w-5" />
                   </Button>
