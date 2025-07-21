@@ -54,7 +54,7 @@ export function PosCart({ onCheckoutSuccess }: { onCheckoutSuccess: () => void }
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           {items.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
               <p className="font-medium">Your cart is empty</p>
