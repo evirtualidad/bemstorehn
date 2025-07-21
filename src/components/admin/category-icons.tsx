@@ -1,5 +1,5 @@
 
-import { Coffee, IceCream, Pizza, Sandwich, Shirt, Bot, Sparkles, ShoppingBasket } from "lucide-react";
+import { Bot, Palette, Shirt, ShoppingBasket, Sparkles } from "lucide-react";
 
 export const categoryIcons = {
     'skincare': Sparkles,
