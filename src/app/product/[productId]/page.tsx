@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { useProductsStore } from '@/hooks/use-products';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart, Minus, Plus, Heart } from 'lucide-react';
@@ -14,14 +14,10 @@ import { useCurrencyStore } from '@/hooks/use-currency';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ProductHeader } from '@/components/product-header';
 
-interface ProductDetailPageProps {
-    params: {
-        productId: string;
-    }
-}
+export default function ProductDetailPage() {
+  const params = useParams();
+  const productId = params.productId as string;
 
-export default function ProductDetailPage({ params }: ProductDetailPageProps) {
-  const { productId } = params;
   const { getProductById, isLoading: isLoadingProducts, fetchProducts } = useProductsStore();
   const addToCart = useCart.getState().addToCart;
   const { toast } = useToast();
