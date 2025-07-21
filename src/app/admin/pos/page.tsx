@@ -109,7 +109,7 @@ export default function PosPage() {
       {/* Products Grid */}
       <div className="flex-1 flex flex-col min-h-0 pt-4">
         <ScrollArea className="flex-1 -mx-3">
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-5 px-3 pb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-5 px-3 pb-4">
                 {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
