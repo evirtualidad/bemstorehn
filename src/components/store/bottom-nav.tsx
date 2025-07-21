@@ -20,8 +20,8 @@ export function BottomNav() {
   const { items } = useCart();
   const totalCartItems = items.reduce((acc, item) => acc + item.quantity, 0);
 
-  // Hide on admin pages or checkout
-  if (pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/order-confirmation')) {
+  // Hide on admin pages, checkout, product details, or order confirmation
+  if (pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/product/') || pathname.startsWith('/order-confirmation')) {
     return null;
   }
   
