@@ -22,6 +22,7 @@ export default function CartPage() {
     removeFromCart,
     increaseQuantity,
     decreaseQuantity,
+    clearCart,
   } = useCart();
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
@@ -44,7 +45,9 @@ export default function CartPage() {
             <ArrowLeft />
           </Button>
           <h1 className="text-xl font-bold">Carrito de Compras</h1>
-          <div className="w-10"></div>
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={clearCart}>
+            <Trash2 />
+          </Button>
         </div>
       </header>
       
@@ -52,50 +55,48 @@ export default function CartPage() {
         <>
           <main className="flex-1 overflow-y-auto p-4 flex flex-col gap-5">
             {items.map((item) => (
-              <div key={item.id} className="bg-background p-3 rounded-lg shadow-sm">
-                  <div className="flex items-start gap-4">
-                    <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md">
-                        <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                        />
-                    </div>
-                    <div className="flex-1">
-                        <p className="font-semibold text-sm leading-tight line-clamp-2">{item.name}</p>
-                        <p className="font-bold text-sm text-foreground mt-1">
-                        {formatCurrency(item.price, currency.code)}
-                        </p>
-                        <div className="mt-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Button
-                                size="icon"
-                                className="h-7 w-7 rounded-full bg-red-100 text-red-700 hover:bg-red-200"
-                                onClick={() => decreaseQuantity(item.id)}
-                                >
-                                <Minus className="h-4 w-4" />
-                            </Button>
-                            <span className="font-bold w-5 text-center">{item.quantity}</span>
-                            <Button
-                                size="icon"
-                                className="h-7 w-7 rounded-full bg-green-100 text-green-700 hover:bg-green-200"
-                                onClick={() => increaseQuantity(item.id)}
-                                >
-                                <Plus className="h-4 w-4" />
-                            </Button>
-                        </div>
+              <div key={item.id} className="flex items-start gap-4 bg-background p-3 rounded-lg shadow-sm">
+                <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md">
+                    <Image
+                    src={item.image}
+                    alt={item.name}
+                    fill
+                    className="object-cover"
+                    />
+                </div>
+                <div className="flex-1">
+                    <p className="font-semibold text-sm leading-tight line-clamp-2">{item.name}</p>
+                    <p className="font-bold text-sm text-foreground mt-1">
+                    {formatCurrency(item.price, currency.code)}
+                    </p>
+                    <div className="mt-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
                         <Button
-                            variant="ghost"
                             size="icon"
-                            className="text-muted-foreground hover:text-destructive h-7 w-7"
-                            onClick={() => removeFromCart(item.id)}
-                        >
-                            <Trash2 className="h-4 w-4" />
+                            className="h-7 w-7 rounded-full bg-red-100 text-red-700 hover:bg-red-200"
+                            onClick={() => decreaseQuantity(item.id)}
+                            >
+                            <Minus className="h-4 w-4" />
                         </Button>
-                        </div>
+                        <span className="font-bold w-5 text-center">{item.quantity}</span>
+                        <Button
+                            size="icon"
+                            className="h-7 w-7 rounded-full bg-green-100 text-green-700 hover:bg-green-200"
+                            onClick={() => increaseQuantity(item.id)}
+                            >
+                            <Plus className="h-4 w-4" />
+                        </Button>
                     </div>
-                  </div>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive h-7 w-7"
+                        onClick={() => removeFromCart(item.id)}
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                    </div>
+                </div>
               </div>
             ))}
           </main>
