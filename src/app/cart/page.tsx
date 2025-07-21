@@ -12,7 +12,6 @@ import { useCurrencyStore } from '@/hooks/use-currency';
 import { formatCurrency } from '@/lib/utils';
 import { useSettingsStore } from '@/hooks/use-settings-store';
 import { useRouter } from 'next/navigation';
-import { ScrollArea } from '../ui/scroll-area';
 
 export default function CartPage() {
   const {
