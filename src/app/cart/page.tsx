@@ -59,7 +59,7 @@ export default function CartPage() {
                       src={item.image}
                       alt={item.name}
                       fill
-                      className="object-cover p-1"
+                      className="object-cover"
                     />
                   </div>
                   <div className="flex-1">
