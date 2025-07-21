@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import { Sheet, SheetContent, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetClose, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -40,6 +40,12 @@ export function MobileSidebar() {
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="left" className="p-0 pt-6">
+        <SheetHeader>
+            <SheetTitle className="sr-only">Menú Principal</SheetTitle>
+            <SheetDescription className="sr-only">
+              Navegación principal para el panel de administración.
+            </SheetDescription>
+        </SheetHeader>
         <div className="flex flex-col h-full">
             <Link href="/admin/dashboard-v2" className="flex items-center gap-2 px-4 mb-6">
                 <Leaf className="w-8 h-8 text-primary" />
