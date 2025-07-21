@@ -50,7 +50,7 @@ export default function CartPage() {
       
       {items.length > 0 ? (
         <>
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto pb-32">
             <div className="container mx-auto p-4">
                 <div className="flex flex-col gap-5">
                 {items.map((item) => (
@@ -103,7 +103,7 @@ export default function CartPage() {
                 </div>
             </div>
           </main>
-          <footer className="border-t p-4 space-y-4 bg-background">
+          <footer className="fixed bottom-0 left-0 right-0 border-t p-4 space-y-4 bg-background">
             <div className="container mx-auto p-0 space-y-4">
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
@@ -144,3 +144,4 @@ export default function CartPage() {
       )}
     </div>
   );
+}
