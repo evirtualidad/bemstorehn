@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useCart } from '@/hooks/use-cart';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { Minus, Plus, ShoppingBag, Trash2, ArrowLeft } from 'lucide-react';
+import { Minus, Plus, ShoppingBag, Trash2, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { useCurrencyStore } from '@/hooks/use-currency';
@@ -124,8 +124,11 @@ export default function CartPage() {
                 <p>Total</p>
                 <p>{formatCurrency(total, currency.code)}</p>
               </div>
-              <Button asChild className="w-full text-md" size="lg">
-                <Link href="/checkout">Finalizar Compra</Link>
+              <Button asChild className="w-full text-md h-14 rounded-full" size="lg">
+                <Link href="/checkout">
+                  Finalizar Compra
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
               </Button>
             </div>
           </footer>
