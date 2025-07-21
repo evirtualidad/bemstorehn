@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useTheme } from 'next-themes';
@@ -39,7 +38,7 @@ const ThemeToggleButton = () => {
 
 export function Header() {
   return (
-    <header className="px-4 pt-6 pb-2 bg-background">
+    <header className="px-4 py-2 bg-background/80 backdrop-blur-sm sticky top-0 z-10 border-b">
       <div className="container mx-auto flex items-center justify-between gap-4 p-0">
         <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full">
             <BurgerIcon />
