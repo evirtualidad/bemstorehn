@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -76,7 +75,7 @@ export default function PosPage() {
               />
           </div>
         </div>
-          <div className="mt-6 flex items-center gap-3 overflow-x-auto pb-2 -mx-2 px-2">
+        <div className="mt-6 flex flex-row flex-nowrap items-center gap-3 overflow-x-auto pb-2 -mx-2 px-2">
             <Card
                 key="all"
                 className={cn(
@@ -104,11 +103,11 @@ export default function PosPage() {
                   </Card>
                 )
             })}
-          </div>
+        </div>
       </header>
       
       {/* Products Grid */}
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-1 flex flex-col min-h-0 pt-4">
         <ScrollArea className="flex-1 -mx-3">
             <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-5 px-3 pb-4">
                 {filteredProducts.map((product) => (
