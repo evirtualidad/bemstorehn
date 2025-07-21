@@ -40,7 +40,7 @@ export default function CartPage() {
     <div className="flex flex-col h-screen bg-muted/40">
       <header className="p-4 border-b bg-background sticky top-0 z-10">
         <div className="container mx-auto flex items-center justify-between p-0">
-          <Button variant="ghost" size="icon" className="rounded-full bg-accent/50 text-accent-foreground" onClick={() => router.back()}>
+          <Button variant="ghost" size="icon" className="rounded-full bg-primary/20 text-primary" onClick={() => router.back()}>
             <ArrowLeft />
           </Button>
           <h1 className="text-xl font-bold">Carrito de Compras</h1>
