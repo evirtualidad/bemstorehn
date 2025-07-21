@@ -436,7 +436,7 @@ export default function CheckoutPage() {
             <div className="flex-grow flex items-center justify-center">
               <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-12">
                 <div className="space-y-8">
-                  <Card>
+                  <Card className="rounded-lg">
                     <CardHeader>
                       <CardTitle>1. Información de Contacto</CardTitle>
                     </CardHeader>
@@ -470,7 +470,7 @@ export default function CheckoutPage() {
                     </CardContent>
                   </Card>
                   
-                  <Card>
+                  <Card className="rounded-lg">
                     <CardHeader>
                       <CardTitle>2. Método de Entrega</CardTitle>
                     </CardHeader>
@@ -533,7 +533,7 @@ export default function CheckoutPage() {
                      </CardContent>
                   </Card>
 
-                   <Card>
+                   <Card className="rounded-lg">
                     <CardHeader>
                       <CardTitle>3. Método de Pago</CardTitle>
                        <FormMessage>{form.formState.errors.paymentMethod?.message}</FormMessage>
