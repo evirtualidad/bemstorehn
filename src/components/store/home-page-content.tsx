@@ -13,6 +13,15 @@ import { cn } from '@/lib/utils';
 import { useBannersStore } from '@/hooks/use-banners';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const FilterIcon = () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -60,26 +69,11 @@ export function HomePageContent({
 
     return (
         <main className="px-4 pt-4 pb-8 space-y-8">
-            <div className="flex items-center gap-2 fade-in" style={{ animationDelay: '100ms' }}>
-                <div className="relative flex-grow">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input 
-                        placeholder="Search..." 
-                        className="bg-secondary rounded-full h-14 pl-12 text-base border-none" 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </div>
-                <Button size="icon" className="w-14 h-14 rounded-full bg-primary text-primary-foreground shrink-0">
-                    <FilterIcon />
-                </Button>
-            </div>
-            
             <Carousel
               opts={{ loop: true }}
               plugins={[autoplayPlugin.current]}
               className="w-full fade-in"
-              style={{ animationDelay: '200ms' }}
+              style={{ animationDelay: '100ms' }}
             >
               <CarouselContent>
                 {banners.map((banner) => (
@@ -101,40 +95,38 @@ export function HomePageContent({
                 ))}
               </CarouselContent>
             </Carousel>
-
-            <div className="space-y-4 fade-in" style={{ animationDelay: '300ms' }}>
-                <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold">Categories</h2>
-                    <Link href="#" className="text-sm font-semibold text-muted-foreground">See all</Link>
+            
+            <div className="flex items-center gap-2 fade-in" style={{ animationDelay: '200ms' }}>
+                <div className="relative flex-grow">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input 
+                        placeholder="Search..." 
+                        className="bg-secondary rounded-full h-14 pl-12 text-base border-none" 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                 </div>
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4">
-                     <Button 
-                        onClick={() => setSelectedCategory('all')} 
-                        variant={selectedCategory === 'all' ? 'default' : 'secondary'}
-                        className={cn(
-                            'rounded-full px-5 h-11 whitespace-nowrap text-base font-bold',
-                            selectedCategory === 'all' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
-                        )}
-                    >
-                        All
-                    </Button>
-                    {categories.map((cat) => (
-                        <Button 
-                            key={cat.id} 
-                            onClick={() => setSelectedCategory(cat.name)}
-                            variant={selectedCategory === cat.name ? 'default' : 'secondary'}
-                            className={cn(
-                                'rounded-full px-5 h-11 whitespace-nowrap text-base font-bold',
-                                selectedCategory === cat.name ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
-                            )}
-                        >
-                            {cat.label}
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button className="w-auto h-14 rounded-full bg-primary text-primary-foreground shrink-0 px-5 text-base">
+                            <FilterIcon />
+                            <span className="ml-2 hidden sm:inline">Categorías</span>
                         </Button>
-                    ))}
-                </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56">
+                        <DropdownMenuLabel>Filtrar por Categoría</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuRadioGroup value={selectedCategory} onValueChange={setSelectedCategory}>
+                            <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
+                            {categories.map((cat) => (
+                                <DropdownMenuRadioItem key={cat.id} value={cat.name}>{cat.label}</DropdownMenuRadioItem>
+                            ))}
+                        </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
             
-            <div className="space-y-4 fade-in" style={{ animationDelay: '400ms' }}>
+            <div className="space-y-4 fade-in" style={{ animationDelay: '300ms' }}>
                  <div className="flex justify-between items-center">
                     <h2 className="text-xl font-bold">New Catalogs</h2>
                     <Link href="#" className="text-sm font-semibold text-muted-foreground">See all</Link>
