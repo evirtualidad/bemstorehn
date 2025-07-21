@@ -180,7 +180,7 @@ function ShippingDialog({
                                 >
                                   <FormItem>
                                     <FormControl>
-                                      <label className={cn('flex flex-col justify-center items-center gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50 min-h-[100px]', field.value === 'local' && 'bg-accent border-primary')}>
+                                      <label className={cn('flex flex-col justify-center items-center gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50 min-h-[100px]', field.value === 'local' && 'bg-primary/10')}>
                                         <RadioGroupItem value="local" className="sr-only" />
                                         <MapPin className="h-6 w-6 text-primary" />
                                         <div className="text-center">
@@ -192,7 +192,7 @@ function ShippingDialog({
                                   </FormItem>
                                   <FormItem>
                                     <FormControl>
-                                      <label className={cn('flex flex-col justify-center items-center gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50 min-h-[100px]', field.value === 'national' && 'bg-accent border-primary')}>
+                                      <label className={cn('flex flex-col justify-center items-center gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50 min-h-[100px]', field.value === 'national' && 'bg-primary/10')}>
                                         <RadioGroupItem value="national" className="sr-only"/>
                                         <Truck className="h-6 w-6 text-primary" />
                                         <div className="text-center">
@@ -484,7 +484,7 @@ export default function CheckoutPage() {
                                     value={field.value}
                                     className="grid grid-cols-1 gap-4"
                                 >
-                                    <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'pickup' && "bg-accent border-primary")}>
+                                    <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'pickup' && "bg-primary/10")}>
                                         <div className="flex items-center gap-4">
                                             <RadioGroupItem value="pickup" id="pickup"/>
                                             <div className="flex-1 flex items-center gap-2">
@@ -501,7 +501,7 @@ export default function CheckoutPage() {
                                         )}
                                     </label>
 
-                                     <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'delivery' && "bg-accent border-primary")}>
+                                     <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'delivery' && "bg-primary/10")}>
                                         <div className="flex items-center gap-4">
                                             <RadioGroupItem value="delivery" id="delivery"/>
                                             <div className="flex-1 flex items-center gap-2">
@@ -548,7 +548,7 @@ export default function CheckoutPage() {
                                     value={field.value}
                                     className="grid grid-cols-1 gap-4"
                                 >
-                                    <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer", field.value === 'tarjeta' && "bg-accent border-primary", "has-[input:disabled]:opacity-50 has-[input:disabled]:cursor-not-allowed")}>
+                                    <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer", field.value === 'tarjeta' && "bg-primary/10", "has-[input:disabled]:opacity-50 has-[input:disabled]:cursor-not-allowed")}>
                                         <div className="flex items-center gap-4">
                                             <RadioGroupItem value="tarjeta" id="tarjeta" disabled/>
                                             <div className="flex-1 flex items-center gap-2">
@@ -560,7 +560,7 @@ export default function CheckoutPage() {
                                            Serás contactado para completar el pago de forma segura.
                                         </p>
                                     </label>
-                                     <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'transferencia' && "bg-accent border-primary")}>
+                                     <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'transferencia' && "bg-primary/10")}>
                                         <div className="flex items-center gap-4">
                                             <RadioGroupItem value="transferencia" id="transferencia"/>
                                             <div className="flex-1 flex items-center gap-2">
@@ -586,7 +586,7 @@ export default function CheckoutPage() {
                                             </div>
                                         )}
                                     </label>
-                                     <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'efectivo' && "bg-accent border-primary")}>
+                                     <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'efectivo' && "bg-primary/10")}>
                                         <div className="flex items-center gap-4">
                                             <RadioGroupItem value="efectivo" id="efectivo"/>
                                             <div className="flex-1 flex items-center gap-2">
