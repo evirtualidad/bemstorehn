@@ -21,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { cn } from '@/lib/utils';
 
 interface HomePageContentProps {
   products: Product[];
@@ -103,7 +104,10 @@ export function HomePageContent({
                 </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button className="w-auto h-14 rounded-full bg-primary text-primary-foreground shrink-0 px-6 text-base">
+                        <Button className={cn(
+                          "w-auto h-14 rounded-full text-primary-foreground shrink-0 px-6 text-base",
+                          selectedCategory !== 'all' ? 'bg-accent text-accent-foreground' : 'bg-primary'
+                          )}>
                             {selectedCategoryLabel}
                         </Button>
                     </DropdownMenuTrigger>
