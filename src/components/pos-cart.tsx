@@ -55,13 +55,13 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
           <DialogHeader className="p-4 border-b flex-shrink-0">
              <div className='flex items-center justify-between'>
                 <DialogClose asChild>
-                    <Button variant="ghost" size="sm" className="gap-2">
+                    <Button variant="ghost" size="sm" className="gap-2 text-base">
                         <ArrowLeft className='h-5 w-5'/>
                         Atrás
                     </Button>
                 </DialogClose>
                 <DialogTitle className="text-xl font-bold">Pedido Actual</DialogTitle>
-                <Button variant="ghost" size="sm" className='text-muted-foreground gap-2' onClick={clearCart}>
+                <Button variant="ghost" size="sm" className='text-muted-foreground gap-2 text-base' onClick={clearCart}>
                     <Trash2 className='h-5 w-5'/>
                     <span>Limpiar</span>
                 </Button>
