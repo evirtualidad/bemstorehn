@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -11,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { usePosCart } from '@/hooks/use-pos-cart';
 import { usePathname } from 'next/navigation';
-import { Badge } from './ui/badge';
+import { Card } from './ui/card';
 
 interface ProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
   product: Product;
@@ -48,40 +49,34 @@ export function ProductCard({
   const isDiscounted = product.original_price && product.original_price > product.price;
 
   const cardContent = (
-      <div 
-        className="flex h-full flex-col overflow-hidden rounded-xl bg-card border"
+      <Card 
+        className={cn("flex items-center gap-4 p-3 overflow-hidden rounded-xl border group cursor-pointer", className)}
         onClick={isPos ? handleAddToCartClick : undefined}
+        {...props}
       >
-        <div className="relative overflow-hidden bg-secondary rounded-xl aspect-square">
+        <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md">
             <Image
               src={product.image || 'https://placehold.co/400x400.png'}
               alt={product.name}
-              width={400}
-              height={400}
-              className="w-full h-full rounded-md object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+              fill
+              className="w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
               data-ai-hint={product.aiHint}
             />
-            {isDiscounted && (
-                <Badge variant="offer" className="absolute top-3 left-3 bg-blue-500 text-white hover:bg-blue-500/90">
-                    20% OFF
-                </Badge>
-            )}
         </div>
-        <div className="flex flex-col p-3">
-            <h3 className="flex-grow font-semibold leading-tight text-sm h-10">{product.name}</h3>
-            <p className='text-xs text-muted-foreground'>{product.stock} Available • 12 sold</p>
-            <div className='flex items-baseline gap-2 mt-2'>
-                <p className="font-bold text-lg text-primary">
-                    {formatCurrency(product.price, currency.code)}
-                </p>
-                {isDiscounted && (
-                    <p className="text-sm text-muted-foreground line-through">
-                        {formatCurrency(product.original_price!, currency.code)}
-                    </p>
-                )}
-            </div>
+        <div className="flex-1 min-w-0">
+            <h3 className="font-semibold leading-tight text-sm truncate">{product.name}</h3>
+            <p className="font-bold text-lg text-foreground mt-1">
+                {formatCurrency(product.price, currency.code)}
+            </p>
         </div>
-      </div>
+         <Button
+            size="icon"
+            className="w-10 h-10 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 flex-shrink-0"
+            onClick={isPos ? handleAddToCartClick : undefined}
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
+      </Card>
   );
 
   if (!isPos) {
@@ -92,9 +87,5 @@ export function ProductCard({
     );
   }
 
-  return (
-    <div {...props} className={cn('group cursor-pointer', className)}>
-      {cardContent}
-    </div>
-  );
+  return cardContent;
 }
