@@ -1,56 +1,47 @@
+
 'use client';
 
 import * as React from 'react';
-import { ShoppingCart } from 'lucide-react';
+import { Home, ShoppingCart, User, Percent } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useCart } from '@/hooks/use-cart';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
+
+const navItems = [
+  { href: '/', label: 'Home', icon: Home },
+  { href: '/cart', label: 'Cart', icon: ShoppingCart },
+  { href: '/#deals', label: 'Deals', icon: Percent },
+  { href: '/login', label: 'Profile', icon: User },
+];
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { items } = useCart();
-  const [isClient, setIsClient] = React.useState(false);
 
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-
-  // Conditions to hide the button
-  const isAdminPage = pathname.startsWith('/admin') || pathname.startsWith('/login');
-  
-  // Do not render on the server, or if it's an admin page, or if cart is empty
-  if (!isClient || isAdminPage || totalItems === 0) {
+  // Hide on admin pages
+  if (pathname.startsWith('/admin')) {
     return null;
   }
   
   return (
-    <div className="md:hidden fixed bottom-6 right-6 z-50">
-      <Button
-        asChild
-        className="rounded-full w-16 h-16 shadow-lg"
-      >
-        <Link
-          href="/cart"
-          className={cn(
-            'relative flex items-center justify-center'
-          )}
-        >
-          <ShoppingCart className="w-7 h-7" />
-          {totalItems > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 rounded-full h-6 w-6 flex items-center justify-center text-xs border-2 border-background"
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm">
+      <div className="bg-primary text-primary-foreground rounded-full p-2 flex items-center justify-around shadow-lg">
+        {navItems.map((item) => {
+          const isActive = (pathname === '/' && item.href === '/') || (item.href !== '/' && pathname.startsWith(item.href));
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                'flex items-center justify-center gap-2 rounded-full px-4 py-2 transition-colors duration-200',
+                isActive ? 'bg-primary-foreground text-primary' : 'text-primary-foreground/70 hover:bg-primary-foreground/10'
+              )}
             >
-              {totalItems}
-            </Badge>
-          )}
-        </Link>
-      </Button>
+              <item.icon className="h-5 w-5" />
+              {isActive && <span className="text-sm font-bold">{item.label}</span>}
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -13,8 +13,8 @@ const fontSans = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Cosmetica Catalog',
-  description: 'AI-powered cosmetic recommendations.',
+  title: 'Fashion Store',
+  description: 'AI-powered fashion recommendations.',
 };
 
 export default function RootLayout({
@@ -32,11 +32,11 @@ export default function RootLayout({
             disableTransitionOnChange
         >
           <div className="relative flex min-h-screen flex-col">
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 pb-24">{children}</main>
           </div>
           <Toaster />
+          <BottomNav />
         </ThemeProvider>
-        <BottomNav />
       </body>
     </html>
   );

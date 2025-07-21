@@ -37,16 +37,9 @@ export default function Home() {
     <div className="bg-background min-h-screen">
       <Header />
       <HomePageContent 
-        banners={banners}
         products={products}
-        featuredProducts={featuredProducts}
         categories={categories}
       />
-      <footer className="py-6 border-t bg-secondary/50">
-        <div className="container mx-auto text-center text-muted-foreground">
-          <p className="text-sm font-body">&copy; 2024 BEM Store HN. Todos los derechos reservados.</p>
-        </div>
-      </footer>
     </div>
   );
 }
