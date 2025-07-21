@@ -157,7 +157,7 @@ function ShippingDialog({
     
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md rounded-lg">
                 <DialogHeader>
                     <DialogTitle>Información de Envío</DialogTitle>
                     <DialogDescription>
@@ -217,7 +217,7 @@ function ShippingDialog({
                                         <FormLabel>Departamento</FormLabel>
                                         <Select onValueChange={(value) => { field.onChange(value); form.setValue('municipality', undefined); }} value={field.value}>
                                         <FormControl>
-                                            <SelectTrigger>
+                                            <SelectTrigger className="rounded-lg">
                                             <SelectValue placeholder="Selecciona un departamento" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -239,7 +239,7 @@ function ShippingDialog({
                                         <FormLabel>Municipio</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value} disabled={!selectedDepartment}>
                                         <FormControl>
-                                            <SelectTrigger>
+                                            <SelectTrigger className="rounded-lg">
                                             <SelectValue placeholder="Selecciona un municipio" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -262,7 +262,7 @@ function ShippingDialog({
                             <FormItem>
                                 <FormLabel>Colonia / Residencial</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Ej: Colonia Kennedy" {...field}/>
+                                    <Input placeholder="Ej: Colonia Kennedy" {...field} className="rounded-lg"/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -275,7 +275,7 @@ function ShippingDialog({
                             <FormItem>
                                 <FormLabel>Dirección Exacta</FormLabel>
                                 <FormControl>
-                                <Textarea placeholder="Bloque, número de casa, referencias, etc." {...field}/>
+                                <Textarea placeholder="Bloque, número de casa, referencias, etc." {...field} className="rounded-lg"/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -284,8 +284,8 @@ function ShippingDialog({
                     </form>
                 </Form>
                 <DialogFooter className="pt-4">
-                    <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
-                    <Button type="submit" form="shipping-form">Guardar Dirección</Button>
+                    <DialogClose asChild><Button variant="outline" className="rounded-full">Cancelar</Button></DialogClose>
+                    <Button type="submit" form="shipping-form" className="rounded-full">Guardar Dirección</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -417,7 +417,7 @@ export default function CheckoutPage() {
           <p className="text-muted-foreground mb-8">
             Parece que aún no has añadido nada a tu carrito.
           </p>
-          <Button asChild>
+          <Button asChild className="rounded-full">
             <Link href="/">Continuar Comprando</Link>
           </Button>
         </div>
@@ -448,7 +448,7 @@ export default function CheckoutPage() {
                           <FormItem>
                             <FormLabel>Nombre Completo</FormLabel>
                             <FormControl>
-                              <Input placeholder="Jane Doe" {...field} />
+                              <Input placeholder="Jane Doe" {...field} className="rounded-lg"/>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -461,7 +461,7 @@ export default function CheckoutPage() {
                           <FormItem>
                             <FormLabel>Teléfono</FormLabel>
                             <FormControl>
-                              <Input placeholder="(123) 456-7890" {...field} />
+                              <Input placeholder="(123) 456-7890" {...field} className="rounded-lg"/>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -522,7 +522,7 @@ export default function CheckoutPage() {
                                                         <Button variant="link" className="p-0 h-auto" type="button" onClick={() => setIsShippingDialogOpen(true)}>Editar Dirección</Button>
                                                     </div>
                                                 ) : (
-                                                    <Button type="button" onClick={() => setIsShippingDialogOpen(true)}>Añadir Dirección de Envío</Button>
+                                                    <Button type="button" className="rounded-full" onClick={() => setIsShippingDialogOpen(true)}>Añadir Dirección de Envío</Button>
                                                 )}
                                             </div>
                                         )}
@@ -577,7 +577,7 @@ export default function CheckoutPage() {
                                                         <FormItem>
                                                             <FormLabel>Número de Referencia</FormLabel>
                                                             <FormControl>
-                                                            <Input placeholder="Ej: 987654321" {...field} />
+                                                            <Input placeholder="Ej: 987654321" {...field} className="rounded-lg"/>
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
@@ -659,10 +659,10 @@ export default function CheckoutPage() {
 
             <footer className="py-6 flex flex-col items-center gap-4">
               <div className="flex flex-col sm:flex-row gap-4 w-full max-w-lg">
-                <Link href="/" className={cn(buttonVariants({ variant: 'outline', size: 'lg'}), 'w-full')}>
+                <Link href="/" className={cn(buttonVariants({ variant: 'outline', size: 'lg'}), 'w-full rounded-full')}>
                   Continuar Comprando
                 </Link>
-                <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                <Button type="submit" size="lg" className="w-full rounded-full" disabled={isSubmitting}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Enviar Pedido
                 </Button>
@@ -684,3 +684,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
