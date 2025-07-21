@@ -75,7 +75,7 @@ export default function UsersPage() {
   ];
 
   return (
-    <main className="grid flex-1 items-start gap-4">
+    <div className="grid flex-1 items-start gap-4">
       <div className="flex items-center">
         <h1 className="text-2xl font-bold">Usuarios</h1>
       </div>
@@ -177,6 +177,6 @@ export default function UsersPage() {
           </Table>
         </CardContent>
       </Card>
-    </main>
+    </div>
   );
 }

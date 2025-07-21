@@ -422,13 +422,15 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="grid flex-1 items-start gap-8">
-      <h1 className="text-2xl font-bold">Ajustes</h1>
-       <Tabs defaultValue="general">
-        <TabsList className='mb-4'>
-          <TabsTrigger value="general">Generales</TabsTrigger>
-          <TabsTrigger value="banners">Banners</TabsTrigger>
-        </TabsList>
+    <div className="grid flex-1 items-start gap-8">
+      <Tabs defaultValue="general">
+        <div className='flex justify-between items-center mb-4'>
+            <h1 className="text-2xl font-bold">Ajustes</h1>
+            <TabsList>
+            <TabsTrigger value="general">Generales</TabsTrigger>
+            <TabsTrigger value="banners">Banners</TabsTrigger>
+            </TabsList>
+        </div>
         <TabsContent value="general">
             <GeneralSettings />
         </TabsContent>
@@ -436,6 +438,6 @@ export default function SettingsPage() {
             <BannersManager />
         </TabsContent>
       </Tabs>
-    </main>
+    </div>
   );
 }

@@ -545,7 +545,7 @@ export default function OrdersPage() {
   const isFiltered = dateRange || statusFilter.length > 0 || channelFilter.length > 0 || paymentMethodFilter.length > 0 || deliveryMethodFilter.length > 0;
 
   return (
-    <main className="grid flex-1 items-start gap-4">
+    <div className="grid flex-1 items-start gap-4">
       <div className="flex items-center">
         <h1 className="text-2xl font-bold">Pedidos</h1>
       </div>
@@ -778,6 +778,6 @@ export default function OrdersPage() {
       </Card>
       
       <OrderDetailsDialog order={detailsOrder} isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} />
-    </main>
+    </div>
   );
 }

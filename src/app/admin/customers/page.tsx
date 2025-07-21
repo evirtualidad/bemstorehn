@@ -73,7 +73,7 @@ export default function CustomersPage() {
   }
 
   return (
-    <main className="grid flex-1 items-start gap-4">
+    <div className="grid flex-1 items-start gap-4">
       <div className="flex items-center">
         <h1 className="text-2xl font-bold">Clientes</h1>
       </div>
@@ -144,6 +144,6 @@ export default function CustomersPage() {
           </div>
         </CardFooter>
       </Card>
-    </main>
+    </div>
   );
 }

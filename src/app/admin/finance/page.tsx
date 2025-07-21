@@ -476,31 +476,26 @@ export default function FinancePage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
-      <div className="flex flex-col sm:gap-4">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 mb-4">
-          <h1 className="text-2xl font-bold">Finanzas</h1>
-        </header>
-
-        <main className="flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-            <Tabs defaultValue="summary">
+    <div className="flex min-h-full w-full flex-col">
+        <Tabs defaultValue="summary">
+            <div className='flex justify-between items-center mb-4'>
+                <h1 className="text-2xl font-bold">Finanzas</h1>
                 <TabsList>
                     <TabsTrigger value="summary">Resumen</TabsTrigger>
                     <TabsTrigger value="accounts-receivable">Cuentas por Cobrar</TabsTrigger>
                     <TabsTrigger value="transactions">Transacciones</TabsTrigger>
                 </TabsList>
-                <TabsContent value="summary" className="mt-6">
-                    <FinancialSummary orders={orders} currencyCode={currency.code} />
+            </div>
+            <TabsContent value="summary">
+                <FinancialSummary orders={orders} currencyCode={currency.code} />
+            </TabsContent>
+            <TabsContent value="accounts-receivable">
+                <AccountsReceivable orders={orders} currencyCode={currency.code} />
+            </TabsContent>
+                <TabsContent value="transactions">
+                <Transactions orders={orders} currencyCode={currency.code} />
                 </TabsContent>
-                <TabsContent value="accounts-receivable" className="mt-6">
-                    <AccountsReceivable orders={orders} currencyCode={currency.code} />
-                </TabsContent>
-                 <TabsContent value="transactions" className="mt-6">
-                    <Transactions orders={orders} currencyCode={currency.code} />
-                 </TabsContent>
-            </Tabs>
-        </main>
-      </div>
+        </Tabs>
     </div>
   );
 }

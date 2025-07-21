@@ -123,7 +123,7 @@ export default function DashboardV2() {
 
   if (isLoading || !dashboardData) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <LoadingSpinner />
       </div>
     );
@@ -140,7 +140,7 @@ export default function DashboardV2() {
   } = dashboardData;
 
   return (
-    <main className="flex flex-1 flex-col gap-4 md:gap-8">
+    <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -315,6 +315,6 @@ export default function DashboardV2() {
             </Table>
           </CardContent>
         </Card>
-    </main>
+    </div>
   );
 }

@@ -33,12 +33,15 @@ export default function InventoryPage() {
   }
 
   return (
-    <main className="grid flex-1 items-start gap-4">
+    <div className="grid flex-1 items-start gap-4">
       <Tabs defaultValue="products">
-        <TabsList className='mb-4'>
-          <TabsTrigger value="products">Productos</TabsTrigger>
-          <TabsTrigger value="categories">Categorías</TabsTrigger>
-        </TabsList>
+        <div className='flex justify-between items-center mb-4'>
+            <h1 className="text-2xl font-bold">Inventario</h1>
+            <TabsList>
+            <TabsTrigger value="products">Productos</TabsTrigger>
+            <TabsTrigger value="categories">Categorías</TabsTrigger>
+            </TabsList>
+        </div>
         <TabsContent value="products">
             <ProductsManager />
         </TabsContent>
@@ -46,6 +49,6 @@ export default function InventoryPage() {
             <CategoriesManager />
         </TabsContent>
       </Tabs>
-    </main>
+    </div>
   );
 }
