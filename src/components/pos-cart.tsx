@@ -50,19 +50,18 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md w-full h-[90vh] flex flex-col p-0 gap-0 rounded-lg">
+        <DialogContent className="max-w-md w-full h-[90vh] flex flex-col p-0 gap-0 rounded-lg" hideClose>
           <DialogHeader className="p-4 border-b flex-shrink-0">
              <div className='flex items-center justify-between'>
                 <DialogClose asChild>
-                    <Button variant="ghost" className='p-2'>
+                    <Button variant="ghost" size="sm">
                         <ArrowLeft className='h-5 w-5'/>
-                        <span className="sr-only">Cerrar</span>
                     </Button>
                 </DialogClose>
-                <DialogTitle className="text-xl font-bold text-center">Pedido Actual</DialogTitle>
-                <Button variant="ghost" className='text-muted-foreground p-2' onClick={clearCart}>
-                    <Trash2 className='h-5 w-5 mr-2'/>
-                    <span className="hidden sm:inline-block">Limpiar</span>
+                <DialogTitle className="text-xl font-bold">Pedido Actual</DialogTitle>
+                <Button variant="ghost" size="sm" className='text-muted-foreground' onClick={clearCart}>
+                    <Trash2 className='h-5 w-5'/>
+                    <span>Limpiar</span>
                 </Button>
               </div>
           </DialogHeader>
