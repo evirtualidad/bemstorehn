@@ -49,7 +49,7 @@ export default function CartPage() {
       </header>
       
       {items.length > 0 ? (
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           <main className="flex-1 overflow-y-auto p-4 container mx-auto">
             <div className="flex flex-col gap-5">
               {items.map((item) => (
@@ -101,7 +101,7 @@ export default function CartPage() {
               ))}
             </div>
           </main>
-          <footer className="border-t p-4 space-y-4 bg-background">
+          <footer className="border-t p-4 space-y-4 bg-background flex-shrink-0">
             <div className="container mx-auto p-0 space-y-4">
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
