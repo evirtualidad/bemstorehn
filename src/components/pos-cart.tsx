@@ -4,9 +4,8 @@
 import * as React from 'react';
 import { usePosCart } from '@/hooks/use-pos-cart';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { Minus, Plus, ShoppingBag, Trash2, ArrowLeft } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import Image from 'next/image';
@@ -51,13 +50,19 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md w-full h-[90vh] flex flex-col p-0 gap-0">
+        <DialogContent className="max-w-md w-full h-[90vh] flex flex-col p-0 gap-0 rounded-lg">
           <DialogHeader className="p-4 border-b flex-shrink-0">
              <div className='flex items-center justify-between'>
-                <DialogTitle className="text-xl">Pedido Actual</DialogTitle>
-                <Button variant="ghost" size="icon" className='text-muted-foreground' onClick={clearCart}>
+                <DialogClose asChild>
+                    <Button variant="ghost" size="icon">
+                        <ArrowLeft className='h-5 w-5'/>
+                        <span className="sr-only">Cerrar</span>
+                    </Button>
+                </DialogClose>
+                <DialogTitle className="text-xl font-bold text-center">Pedido Actual</DialogTitle>
+                <Button variant="ghost" className='text-muted-foreground' onClick={clearCart}>
                     <Trash2 className='h-5 w-5'/>
-                    <span className="sr-only">Vaciar pedido</span>
+                    <span className="hidden sm:inline-block">Limpiar</span>
                 </Button>
               </div>
           </DialogHeader>
