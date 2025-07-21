@@ -36,22 +36,39 @@ export function HomePageContent({
     categories 
 }: HomePageContentProps) {
     const [selectedCategory, setSelectedCategory] = React.useState('all');
+    const [searchQuery, setSearchQuery] = React.useState('');
     const { banners } = useBannersStore();
     const autoplayPlugin = React.useRef(
         Autoplay({ delay: 5000, stopOnInteraction: true })
     );
 
     const filteredProducts = React.useMemo(() => {
-        if (selectedCategory === 'all') return products;
-        return products.filter(p => p.category === selectedCategory);
-    }, [products, selectedCategory]);
+        let prods = products;
+
+        if (selectedCategory !== 'all') {
+            prods = prods.filter(p => p.category === selectedCategory);
+        }
+
+        if (searchQuery) {
+            prods = prods.filter((product) =>
+                product.name.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }
+        
+        return prods;
+    }, [products, selectedCategory, searchQuery]);
 
     return (
         <main className="px-4 pt-4 pb-8 space-y-8">
             <div className="flex items-center gap-2 fade-in" style={{ animationDelay: '100ms' }}>
                 <div className="relative flex-grow">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input placeholder="Search..." className="bg-secondary rounded-full h-14 pl-12 text-base border-none" />
+                    <Input 
+                        placeholder="Search..." 
+                        className="bg-secondary rounded-full h-14 pl-12 text-base border-none" 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                 </div>
                 <Button size="icon" className="w-14 h-14 rounded-full bg-primary text-primary-foreground shrink-0">
                     <FilterIcon />
@@ -122,11 +139,17 @@ export function HomePageContent({
                     <h2 className="text-xl font-bold">New Catalogs</h2>
                     <Link href="#" className="text-sm font-semibold text-muted-foreground">See all</Link>
                  </div>
-                 <div className="grid grid-cols-2 gap-4">
-                     {filteredProducts.slice(0, 4).map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                     ))}
-                 </div>
+                 {filteredProducts.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-4">
+                        {filteredProducts.map((product) => (
+                            <ProductCard key={product.id} product={product} />
+                        ))}
+                    </div>
+                 ) : (
+                    <div className="text-center py-10 text-muted-foreground">
+                        <p>No se encontraron productos que coincidan con tu búsqueda.</p>
+                    </div>
+                 )}
             </div>
         </main>
     );
