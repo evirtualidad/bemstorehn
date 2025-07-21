@@ -7,6 +7,7 @@ import { useAuthStore } from '@/hooks/use-auth-store';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AdminHeader } from '@/components/admin/header';
+import { MobileSidebar } from '@/components/admin/mobile-sidebar';
 
 export default function AdminLayout({
   children,
@@ -47,6 +48,7 @@ export default function AdminLayout({
                 {children}
             </main>
         </div>
+        <MobileSidebar />
     </ThemeProvider>
   );
 }

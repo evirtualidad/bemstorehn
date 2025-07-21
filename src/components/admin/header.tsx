@@ -16,12 +16,15 @@ import {
     ShoppingBag,
     Leaf,
     ShoppingCart,
+    Menu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { usePosCart } from '@/hooks/use-pos-cart';
 import { PosCart } from '@/components/pos-cart';
+import { useMobileSidebarStore } from '@/hooks/use-mobile-sidebar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 const navItems = [
     { href: '/admin/dashboard-v2', icon: BarChart2, label: 'Dashboard' },
@@ -37,6 +40,7 @@ const navItems = [
 export function AdminHeader() {
     const { user, role, logout } = useAuthStore();
     const { items, clearCart } = usePosCart();
+    const { onOpen } = useMobileSidebarStore();
     const [isCartOpen, setIsCartOpen] = React.useState(false);
     const pathname = usePathname();
 
@@ -55,25 +59,40 @@ export function AdminHeader() {
     return (
         <>
             <header className='flex items-center justify-between p-4 border-b bg-card'>
+                 <div className="md:hidden">
+                    <Button onClick={onOpen} variant="ghost" size="icon">
+                        <Menu />
+                    </Button>
+                </div>
                 <div className='flex items-center gap-6'>
                      <Link href="/admin/dashboard-v2" className="flex items-center gap-2">
                         <Leaf className="w-8 h-8 text-primary" />
-                        <span className="text-xl font-bold">BEM STORE</span>
+                        <span className="text-xl font-bold hidden md:inline-block">BEM STORE</span>
                      </Link>
-                    <nav className='hidden md:flex items-center gap-2'>
-                        {navItems.map((item) => {
-                            if (item.role && item.role !== role) {
-                                return null;
-                            }
-                            return (
-                                <Button key={item.label} asChild variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'} size="sm">
-                                    <Link href={item.href}>
-                                        <item.icon className="h-4 w-4 mr-2" />
-                                        {item.label}
-                                    </Link>
-                                </Button>
-                            )
-                        })}
+                    <nav className='hidden md:flex items-center gap-1'>
+                        <TooltipProvider>
+                            {navItems.map((item) => {
+                                if (item.role && item.role !== role) {
+                                    return null;
+                                }
+                                const isActive = pathname.startsWith(item.href);
+                                return (
+                                    <Tooltip key={item.label} delayDuration={0}>
+                                        <TooltipTrigger asChild>
+                                             <Button asChild variant={isActive ? 'secondary' : 'ghost'} size="sm" className="h-9 justify-start md:w-auto md:px-3 lg:w-auto lg:px-4">
+                                                <Link href={item.href} className='flex items-center'>
+                                                    <item.icon className="h-4 w-4" />
+                                                    <span className="md:hidden lg:inline-block lg:ml-2">{item.label}</span>
+                                                </Link>
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="bottom" className='lg:hidden'>
+                                            <p>{item.label}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )
+                            })}
+                        </TooltipProvider>
                     </nav>
                 </div>
                 <div className='flex items-center gap-4'>
@@ -92,7 +111,7 @@ export function AdminHeader() {
                             </div>
                         )}
                     </div>
-                    <div className='text-right'>
+                    <div className='text-right hidden sm:block'>
                         <p className='font-semibold'>{user?.email}</p>
                         <p className='text-xs text-muted-foreground'>{user?.role}</p>
                     </div>
