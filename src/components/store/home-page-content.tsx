@@ -108,9 +108,8 @@ export function HomePageContent({
                 </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button className="w-auto h-14 rounded-full bg-primary text-primary-foreground shrink-0 px-5 text-base">
-                            <FilterIcon />
-                            <span className="ml-2 hidden sm:inline">Categorías</span>
+                        <Button className="w-auto h-14 rounded-full bg-primary text-primary-foreground shrink-0 px-6 text-base">
+                            Categorías
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56">
