@@ -36,7 +36,7 @@ export function BottomNav() {
               href={item.href}
               className={cn(
                 'flex items-center justify-center h-12 transition-all duration-300 ease-in-out relative',
-                isActive ? 'bg-accent text-accent-foreground rounded-lg px-5 gap-2 font-bold' : 'text-primary-foreground/80 w-12'
+                isActive ? 'bg-accent text-accent-foreground rounded-xl px-5 gap-2 font-bold' : 'text-primary-foreground/80 w-12'
               )}
             >
               <item.icon className="h-7 w-7 shrink-0" />
