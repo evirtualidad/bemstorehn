@@ -79,14 +79,14 @@ export function AdminHeader() {
                                 return (
                                     <Tooltip key={item.label} delayDuration={0}>
                                         <TooltipTrigger asChild>
-                                             <Button asChild variant={isActive ? 'secondary' : 'ghost'} size="sm" className="h-9 justify-start md:w-auto md:px-3 lg:w-auto lg:px-4">
+                                             <Button asChild variant={isActive ? 'secondary' : 'ghost'} size="sm" className="h-9 justify-start md:px-3">
                                                 <Link href={item.href} className='flex items-center'>
                                                     <item.icon className="h-4 w-4" />
-                                                    <span className="md:hidden lg:inline-block lg:ml-2">{item.label}</span>
+                                                    <span className="hidden 2xl:inline-block 2xl:ml-2">{item.label}</span>
                                                 </Link>
                                             </Button>
                                         </TooltipTrigger>
-                                        <TooltipContent side="bottom" className='lg:hidden'>
+                                        <TooltipContent side="bottom" className='2xl:hidden'>
                                             <p>{item.label}</p>
                                         </TooltipContent>
                                     </Tooltip>
