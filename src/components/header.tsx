@@ -66,7 +66,7 @@ export function Header() {
               variant="ghost"
               size="icon"
               className={cn(
-                'relative h-12 w-12 rounded-full hidden md:inline-flex',
+                'relative h-12 w-12 rounded-full hidden xl:inline-flex',
               )}
             >
               <Link href="/cart">
