@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/product-card';
 import {
   Search,
+  ListFilter,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,15 @@ import { useAuthStore } from '@/hooks/use-auth-store';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { categoryIcons } from '@/components/admin/category-icons';
 import { Card } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export default function PosPage() {
   const { products, isLoading: isLoadingProducts, fetchProducts } = useProductsStore();
@@ -60,22 +70,41 @@ export default function PosPage() {
     <div className="h-full flex flex-col gap-5 overflow-hidden">
       {/* Header section with Search and Categories */}
       <header className="flex-shrink-0">
-        <div className="flex items-center justify-between">
-            <div className="flex-grow">
+        <div className="flex items-center justify-between gap-4">
+            <div className="flex-grow hidden sm:block">
               <h1 className='text-2xl font-bold mb-1'>Menu</h1>
               <p className="text-muted-foreground">Hola, {user?.email?.split('@')[0]}. ¡Felices ventas!</p>
             </div>
-            <div className="relative flex-grow max-w-sm">
+            <div className="relative flex-grow">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <Input
-              placeholder="Buscar por comida, café, etc.."
-              className="h-12 rounded-lg bg-card pl-12 text-base"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar por comida, café, etc.."
+                className="h-12 rounded-lg bg-card pl-12 text-base"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
-          </div>
+            </div>
+             <div className="sm:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" className='h-12 w-12 rounded-lg'>
+                      <ListFilter className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56">
+                    <DropdownMenuLabel>Categorías</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup value={selectedCategory} onValueChange={setSelectedCategory}>
+                      <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
+                      {categories.map((cat) => (
+                        <DropdownMenuRadioItem key={cat.id} value={cat.name}>{cat.label}</DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
         </div>
-        <div className="mt-6 flex flex-row flex-nowrap items-center gap-3 overflow-x-auto pb-2 -mx-2 px-2">
+        <div className="mt-6 hidden sm:flex flex-row flex-nowrap items-center gap-3 overflow-x-auto pb-2 -mx-2 px-2">
             <Card
                 key="all"
                 className={cn(
