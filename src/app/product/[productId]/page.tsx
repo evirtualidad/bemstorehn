@@ -21,7 +21,7 @@ interface ProductDetailPageProps {
 }
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
-  const { productId } = React.use(params);
+  const { productId } = params;
   const { getProductById, isLoading: isLoadingProducts, fetchProducts } = useProductsStore();
   const addToCart = useCart.getState().addToCart;
   const { toast } = useToast();
