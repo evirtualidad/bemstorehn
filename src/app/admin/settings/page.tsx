@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useSettingsStore } from '@/hooks/use-settings-store';
 import { useToast } from '@/hooks/use-toast';
-import { Percent, DollarSign, Store, MoreHorizontal, PlusCircle } from 'lucide-react';
+import { Percent, DollarSign, Store, MoreHorizontal, PlusCircle, Upload, X } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useBannersStore, type Banner } from '@/hooks/use-banners';
@@ -43,6 +43,7 @@ import {
 } from '@/components/ui/table';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { useRouter } from 'next/navigation';
+import { useLogoStore } from '@/hooks/use-logo-store';
 
 
 const settingsFormSchema = z.object({
@@ -199,7 +200,6 @@ function BannersManager() {
   const { toast } = useToast();
 
   const uploadImage = async (file: File): Promise<string | null> => {
-    // Simulate upload by creating a blob URL
     return new Promise(resolve => {
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -402,6 +402,92 @@ function BannersManager() {
   );
 }
 
+function LogoManager() {
+    const { logoUrl, setLogoUrl } = useLogoStore();
+    const { toast } = useToast();
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [preview, setPreview] = React.useState<string | null>(logoUrl);
+
+    React.useEffect(() => {
+        setPreview(logoUrl);
+    }, [logoUrl]);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const newLogoUrl = reader.result as string;
+                setPreview(newLogoUrl);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSave = () => {
+        if (preview) {
+            setLogoUrl(preview);
+            toast({ title: 'Logo actualizado' });
+        }
+    };
+    
+    const clearImage = () => {
+        setPreview(null);
+        if(fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    }
+    
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Logo de la Tienda</CardTitle>
+                <CardDescription>
+                    Sube y actualiza el logo que aparece en la cabecera de la tienda online.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept="image/png, image/jpeg, image/svg+xml, image/webp"
+                />
+                 {preview ? (
+                    <div className="relative group w-full max-w-sm h-32 rounded-md border border-dashed flex items-center justify-center">
+                        <Image src={preview} alt="Vista previa del logo" fill className="object-contain rounded-md p-4"/>
+                         <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={clearImage}
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                  ) : (
+                     <div
+                        className="w-full max-w-sm h-32 rounded-md border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-accent/50 transition-colors"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                        <p className="mt-2 text-sm text-muted-foreground">Haz clic para subir un logo</p>
+                    </div>
+                  )}
+
+                  <Button type="button" onClick={() => fileInputRef.current?.click()}>
+                    Cambiar Logo
+                  </Button>
+            </CardContent>
+            <CardFooter>
+                 <Button onClick={handleSave} disabled={!preview}>Guardar Logo</Button>
+            </CardFooter>
+        </Card>
+    )
+}
+
 
 export default function SettingsPage() {
   const { role } = useAuthStore();
@@ -429,6 +515,7 @@ export default function SettingsPage() {
             <TabsList>
             <TabsTrigger value="general">Generales</TabsTrigger>
             <TabsTrigger value="banners">Banners</TabsTrigger>
+            <TabsTrigger value="logo">Logo</TabsTrigger>
             </TabsList>
         </div>
         <TabsContent value="general">
@@ -436,6 +523,9 @@ export default function SettingsPage() {
         </TabsContent>
         <TabsContent value="banners">
             <BannersManager />
+        </TabsContent>
+        <TabsContent value="logo">
+            <LogoManager />
         </TabsContent>
       </Tabs>
     </div>
