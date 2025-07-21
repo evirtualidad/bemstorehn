@@ -45,7 +45,7 @@ export default function CartPage() {
             <ArrowLeft />
           </Button>
           <h1 className="text-xl font-bold">Carrito de Compras</h1>
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={clearCart}>
+          <Button variant="ghost" size="icon" className="rounded-full bg-destructive/20 text-destructive hover:bg-destructive/20" onClick={clearCart}>
             <Trash2 />
           </Button>
         </div>
