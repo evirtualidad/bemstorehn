@@ -7,15 +7,15 @@
 
 @layer base {
   :root {
-    --background: 60 43% 95%; /* F2F2E6 */
+    --background: 0 0% 100%; /* Pure White */
     --foreground: 240 10% 19%; /* 292939 */
-    --card: 0 0% 100%;
+    --card: 240 5% 96%; /* Light Grey for cards */
     --card-foreground: 240 10% 19%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 19%;
     --primary: 326 30% 36%; /* 793F5C */
     --primary-foreground: 60 43% 95%;
-    --secondary: 240 5% 96%;
+    --secondary: 240 5% 93%; /* Grey for search bar */
     --secondary-foreground: 240 10% 19%;
     --muted: 240 5% 93%;
     --muted-foreground: 240 5% 45%;
