@@ -7,12 +7,12 @@ import { type Product, type Category } from '@/lib/types';
 import { ProductCard } from './product-card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { ChevronRight, Search } from 'lucide-react';
-import { Card } from '../ui/card';
+import { Search } from 'lucide-react';
 import Link from 'next/link';
-import { useCurrencyStore } from '@/hooks/use-currency';
-import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { useBannersStore } from '@/hooks/use-banners';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
+import Autoplay from 'embla-carousel-autoplay';
 
 const FilterIcon = () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -36,6 +36,10 @@ export function HomePageContent({
     categories 
 }: HomePageContentProps) {
     const [selectedCategory, setSelectedCategory] = React.useState('all');
+    const { banners } = useBannersStore();
+    const autoplayPlugin = React.useRef(
+        Autoplay({ delay: 5000, stopOnInteraction: true })
+    );
 
     const filteredProducts = React.useMemo(() => {
         if (selectedCategory === 'all') return products;
@@ -54,23 +58,32 @@ export function HomePageContent({
                 </Button>
             </div>
             
-            <Card className="p-4 flex flex-col sm:flex-row items-center gap-4 rounded-3xl shadow-sm bg-accent border-none fade-in" style={{ animationDelay: '200ms' }}>
-                <div className="relative w-40 h-32 sm:w-48 sm:h-40 flex-shrink-0 -mt-10 sm:-ml-8">
-                    <Image 
-                        src={'https://placehold.co/300x200.png'} 
-                        alt={"Special Offer"} 
+            <Carousel
+              opts={{ loop: true }}
+              plugins={[autoplayPlugin.current]}
+              className="w-full fade-in"
+              style={{ animationDelay: '200ms' }}
+            >
+              <CarouselContent>
+                {banners.map((banner) => (
+                  <CarouselItem key={banner.id}>
+                    <div className="relative w-full h-52 md:h-64 rounded-3xl overflow-hidden">
+                      <Image
+                        src={banner.image}
+                        alt={banner.title}
                         fill
-                        className="object-contain"
-                        data-ai-hint={"sneakers"}
-                    />
-                </div>
-                <div className="flex-1 text-center sm:text-left">
-                    <p className="font-bold text-lg">Good regulation</p>
-                    <p className="text-sm">For Jan 2025</p>
-                    <p className="font-extrabold text-4xl text-red-500 mt-1">50<span className='text-sm'>% OFF</span></p>
-                    <Button className="rounded-full mt-2 bg-primary text-primary-foreground">I discover</Button>
-                </div>
-            </Card>
+                        className="object-cover"
+                        data-ai-hint={banner.aiHint || 'fashion banner'}
+                      />
+                      <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-center p-4">
+                        <h2 className="text-2xl md:text-4xl font-extrabold text-white">{banner.title}</h2>
+                        <p className="text-sm md:text-lg text-white/90 mt-2 max-w-xl">{banner.description}</p>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
 
             <div className="space-y-4 fade-in" style={{ animationDelay: '300ms' }}>
                 <div className="flex justify-between items-center">
