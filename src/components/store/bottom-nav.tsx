@@ -6,6 +6,7 @@ import { Home, ShoppingCart, User, Percent } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useCart } from '@/hooks/use-cart';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -16,15 +17,17 @@ const navItems = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { items } = useCart();
+  const totalCartItems = items.reduce((acc, item) => acc + item.quantity, 0);
 
-  // Hide on admin pages
-  if (pathname.startsWith('/admin')) {
+  // Hide on admin pages or checkout
+  if (pathname.startsWith('/admin') || pathname.startsWith('/checkout') || pathname.startsWith('/order-confirmation')) {
     return null;
   }
   
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm">
-      <div className="bg-primary text-primary-foreground rounded-full p-2 flex items-center justify-around shadow-lg">
+    <div className="fixed bottom-0 left-0 right-0 z-50 p-2 md:hidden">
+      <div className="bg-primary text-primary-foreground rounded-2xl p-2 flex items-center justify-around shadow-lg h-16">
         {navItems.map((item) => {
           const isActive = (pathname === '/' && item.href === '/') || (item.href !== '/' && pathname.startsWith(item.href));
           return (
@@ -32,12 +35,17 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center justify-center gap-2 rounded-full px-4 py-2 transition-colors duration-200',
-                isActive ? 'bg-primary-foreground text-primary' : 'text-primary-foreground/70 hover:bg-primary-foreground/10'
+                'flex items-center justify-center h-10 transition-all duration-300 ease-in-out relative',
+                isActive ? 'bg-accent text-accent-foreground rounded-lg px-4 gap-2 font-bold' : 'text-primary-foreground/80 w-10'
               )}
             >
-              <item.icon className="h-5 w-5" />
-              {isActive && <span className="text-sm font-bold">{item.label}</span>}
+              <item.icon className="h-6 w-6 shrink-0" />
+              {isActive && <span className="text-sm">{item.label}</span>}
+              {item.href === '/cart' && totalCartItems > 0 && (
+                 <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-primary">
+                    {totalCartItems}
+                </div>
+              )}
             </Link>
           );
         })}

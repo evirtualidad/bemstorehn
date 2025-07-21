@@ -13,13 +13,13 @@
     --card-foreground: 220 10% 10%;
     --popover: 0 0% 100%;
     --popover-foreground: 220 10% 10%;
-    --primary: 240 10% 12%;
+    --primary: 240 10% 12%; /* Dark primary for text and nav */
     --primary-foreground: 0 0% 98%;
     --secondary: 220 10% 93%;
     --secondary-foreground: 220 10% 20%;
     --muted: 220 10% 93%;
     --muted-foreground: 220 5% 45%;
-    --accent: 120 40% 90%;
+    --accent: 120 40% 90%; /* Light green for active nav item */
     --accent-foreground: 120 40% 20%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -47,7 +47,7 @@
     --secondary-foreground: 220 20% 98%;
     --muted: 220 10% 25%;
     --muted-foreground: 220 5% 65%;
-    --accent: 120 40% 15%;
+    --accent: 120 40% 15%; /* Darker green for dark mode active */
     --accent-foreground: 120 40% 80%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
