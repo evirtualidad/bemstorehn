@@ -64,7 +64,7 @@ export function ProductCard({
               src={product.image || 'https://placehold.co/400x400.png'}
               alt={product.name}
               fill
-              className="w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-105 p-4"
+              className="w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
               data-ai-hint={product.aiHint}
             />
             <div className="absolute top-2 left-2">
