@@ -15,6 +15,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { usePosCart } from '@/hooks/use-pos-cart';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/hooks/use-auth-store';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function PosPage() {
   const { products, isLoading: isLoadingProducts, fetchProducts } = useProductsStore();
