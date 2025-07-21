@@ -46,7 +46,6 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
   const taxRate = 0.15; // Example tax rate
   const subtotal = total / (1 + taxRate);
   const tax = total - subtotal;
-  const discount = 0; // Example discount
 
   return (
     <>
@@ -130,32 +129,30 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
             )}
             
             {items.length > 0 && (
-                <div className="flex-shrink-0">
-                    <DialogFooter className="p-4 space-y-4 bg-card border-t flex-col !space-x-0">
-                        <div className="w-full space-y-2 text-sm">
-                            <div className="flex justify-between">
-                                <p className="text-muted-foreground">Subtotal</p>
-                                <p className="font-medium">{formatCurrency(subtotal, currency.code)}</p>
-                            </div>
-                            <div className="flex justify-between">
-                                <p className="text-muted-foreground">ISV ({ (taxRate * 100).toFixed(0) }%)</p>
-                                <p className="font-medium">{formatCurrency(tax, currency.code)}</p>
-                            </div>
+                <div className="flex-shrink-0 p-4 space-y-4 bg-card border-t">
+                    <div className="w-full space-y-2 text-sm">
+                        <div className="flex justify-between">
+                            <p className="text-muted-foreground">Subtotal</p>
+                            <p className="font-medium">{formatCurrency(subtotal, currency.code)}</p>
                         </div>
-                        <Separator />
-                        <div className="w-full flex justify-between text-lg font-bold">
-                            <p>Total</p>
-                            <p>{formatCurrency(total, currency.code)}</p>
+                        <div className="flex justify-between">
+                            <p className="text-muted-foreground">ISV ({ (taxRate * 100).toFixed(0) }%)</p>
+                            <p className="font-medium">{formatCurrency(tax, currency.code)}</p>
                         </div>
-                        <Button 
-                            size="lg" 
-                            className="w-full text-md" 
-                            onClick={handleOpenCheckout}
-                            disabled={items.length === 0}
-                        >
-                            Continuar al Pago
-                        </Button>
-                    </DialogFooter>
+                    </div>
+                    <Separator />
+                    <div className="w-full flex justify-between text-lg font-bold">
+                        <p>Total</p>
+                        <p>{formatCurrency(total, currency.code)}</p>
+                    </div>
+                    <Button 
+                        size="lg" 
+                        className="w-full text-md" 
+                        onClick={handleOpenCheckout}
+                        disabled={items.length === 0}
+                    >
+                        Continuar al Pago
+                    </Button>
                 </div>
             )}
           </div>
