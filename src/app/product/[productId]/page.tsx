@@ -70,16 +70,6 @@ export default function ProductDetailPage() {
               className="object-cover"
               data-ai-hint={product.aiHint}
           />
-          <div className="absolute bottom-4 right-4">
-              <Button size="icon" variant="secondary" className="h-12 w-12 rounded-full shadow-md bg-white hover:bg-gray-100 text-black">
-                  <Heart />
-              </Button>
-          </div>
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-              <div className="w-2.5 h-2.5 rounded-full bg-black"></div>
-              <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-          </div>
         </div>
 
         {/* Product Details Section */}
