@@ -45,7 +45,7 @@ export function ProductCard({
                 alt={product.name}
                 width={150}
                 height={150}
-                className="w-full h-full object-contain transition-transform duration-300 ease-in-out group-hover:scale-105 p-4"
+                className="w-full h-full object-contain transition-transform duration-300 ease-in-out group-hover:scale-105"
                 data-ai-hint={product.aiHint || "fashion product"}
               />
                <Button 
