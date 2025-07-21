@@ -37,6 +37,10 @@ export function ProductCard({
 
     if (isPos) {
       posAddToCart(product);
+       toast({
+        title: 'Añadido al pedido',
+        description: `${product.name} ha sido añadido.`,
+      });
     } else {
       storeAddToCart(product);
       toast({
@@ -50,21 +54,21 @@ export function ProductCard({
 
   const cardContent = (
       <Card 
-        className={cn("flex flex-col h-full overflow-hidden rounded-xl border group cursor-pointer", className)}
+        className={cn("flex flex-col h-full overflow-hidden rounded-xl border group cursor-pointer bg-card", className)}
         onClick={isPos ? handleAddToCartClick : undefined}
         {...props}
       >
-        <div className="relative w-full aspect-square overflow-hidden">
+        <div className="relative w-full aspect-square overflow-hidden bg-secondary">
             <Image
               src={product.image || 'https://placehold.co/400x400.png'}
               alt={product.name}
               fill
-              className="w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+              className="w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-105 p-4"
               data-ai-hint={product.aiHint}
             />
         </div>
         <CardContent className="p-4 flex flex-col flex-1">
-            <h3 className="font-semibold leading-tight text-sm line-clamp-2 flex-grow">{product.name}</h3>
+            <h3 className="font-bold leading-tight text-md line-clamp-2 flex-grow">{product.name}</h3>
             <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
                 {product.description}
             </p>
@@ -74,7 +78,7 @@ export function ProductCard({
                 </span>
                  <Button
                     size="icon"
-                    className="w-9 h-9 rounded-full bg-primary/10 text-primary hover:bg-primary/20 flex-shrink-0"
+                    className="w-9 h-9 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0"
                     onClick={handleAddToCartClick}
                     aria-label={`Añadir ${product.name} al carrito`}
                   >

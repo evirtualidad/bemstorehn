@@ -2,63 +2,62 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ThemeProvider } from '@/components/theme-provider';
-import Link from 'next/link';
-import { Home, ListOrdered, Package, ShoppingBag, Users2, Settings, User } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import Image from 'next/image';
-
-const navItems = [
-    { href: '/admin/dashboard-v2', icon: Home, label: 'Home' },
-    { href: '/admin/pos', icon: ShoppingBag, label: 'POS' },
-    { href: '/admin/orders', icon: ListOrdered, label: 'Orders' },
-    { href: '/admin/inventory', icon: Package, label: 'Products' },
-    { href: '/admin/customers', icon: Users2, label: 'Customers' },
-    { href: '/admin/settings', icon: Settings, label: 'Settings' },
-];
-
+import { AdminSidebar } from '@/components/admin/sidebar';
+import { usePosCart } from '@/hooks/use-pos-cart';
+import { Button } from '@/components/ui/button';
+import { ShoppingCart } from 'lucide-react';
+import { PosCart } from '@/components/pos-cart';
 
 function AdminHeader() {
-    const pathname = usePathname();
-    const { user, logout } = useAuthStore();
+    const { user } = useAuthStore();
+    const { items, clearCart } = usePosCart();
+    const [isCartOpen, setIsCartOpen] = React.useState(false);
+    
+    const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+
+    const handleCheckoutSuccess = () => {
+        clearCart();
+        setIsCartOpen(false);
+    };
 
     return (
-        <header className='flex items-center justify-between p-4 border-b bg-background'>
-            <div className='flex items-center gap-2'>
-                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="32" height="32" rx="8" fill="hsl(var(--primary))"/>
-                </svg>
-                <h1 className='text-xl font-bold'>Resto</h1>
-            </div>
-            <nav className='flex items-center gap-2 bg-card p-1 rounded-lg'>
-                {navItems.map(item => (
-                    <Link key={item.href} href={item.href} className={cn(
-                        'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors',
-                        pathname.startsWith(item.href) ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                    )}>
-                        <item.icon className="h-5 w-5" />
-                        <span>{item.label}</span>
-                    </Link>
-                ))}
-            </nav>
-            <div className='flex items-center gap-4'>
-                <div className='text-right'>
-                    <p className='font-semibold'>{user?.email}</p>
-                    <p className='text-xs text-muted-foreground'>{user?.role}</p>
+        <>
+            <header className='flex items-center justify-between p-4 border-b bg-background'>
+                <div className='flex items-center gap-2'>
+                    {/* Placeholder for a potential sidebar trigger if needed in the future */}
                 </div>
-                <Image
-                    src="https://placehold.co/40x40.png"
-                    alt="user avatar"
-                    width={40}
-                    height={40}
-                    className='rounded-full'
-                    data-ai-hint="man avatar"
-                />
-            </div>
-        </header>
+                <div className='flex items-center gap-4'>
+                    <div className='relative'>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className='rounded-lg'
+                            onClick={() => setIsCartOpen(true)}
+                        >
+                            <ShoppingCart className="h-5 w-5" />
+                        </Button>
+                        {totalItems > 0 && (
+                            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-background">
+                                {totalItems}
+                            </div>
+                        )}
+                    </div>
+                    <div className='text-right'>
+                        <p className='font-semibold'>{user?.email}</p>
+                        <p className='text-xs text-muted-foreground'>{user?.role}</p>
+                    </div>
+                </div>
+            </header>
+            <PosCart
+                isOpen={isCartOpen}
+                onOpenChange={setIsCartOpen}
+                onCheckoutSuccess={handleCheckoutSuccess}
+            />
+        </>
     )
 }
 
@@ -95,13 +94,15 @@ export default function AdminLayout({
       enableSystem
       disableTransitionOnChange
     >
-        <div className="flex flex-col h-screen bg-muted/40">
-            <AdminHeader />
-            <main className="flex-1 overflow-y-auto p-6">
-                {children}
-            </main>
+        <div className="grid h-screen w-full pl-[5.3rem]">
+            <AdminSidebar />
+            <div className="flex flex-col">
+                <AdminHeader />
+                <main className="flex-1 overflow-y-auto p-6 bg-muted/30">
+                    {children}
+                </main>
+            </div>
         </div>
     </ThemeProvider>
   );
 }
-
