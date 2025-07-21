@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -27,7 +26,7 @@ export function BottomNav() {
   
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 p-2 md:hidden">
-      <div className="bg-primary text-primary-foreground rounded-2xl p-2 flex items-center justify-around shadow-lg h-20">
+      <div className="bg-primary text-primary-foreground rounded-2xl p-2 flex items-center justify-around shadow-lg h-16">
         {navItems.map((item) => {
           const isActive = (pathname === '/' && item.href === '/') || (item.href !== '/' && pathname.startsWith(item.href));
           return (
