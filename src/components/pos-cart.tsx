@@ -10,7 +10,7 @@ import { formatCurrency } from '@/lib/utils';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import Image from 'next/image';
 import { CheckoutDialog } from '@/components/checkout-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from './ui/scroll-area';
 
 interface PosCartProps {
@@ -46,19 +46,35 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
   const taxRate = 0.15; // Example tax rate
   const subtotal = total / (1 + taxRate);
   const tax = total - subtotal;
+  
+  const CartSummary = () => (
+    <div className="w-full space-y-2 text-sm">
+        <div className="flex justify-between">
+            <p className="text-muted-foreground">Subtotal</p>
+            <p className="font-medium">{formatCurrency(subtotal, currency.code)}</p>
+        </div>
+        <div className="flex justify-between">
+            <p className="text-muted-foreground">ISV ({ (taxRate * 100).toFixed(0) }%)</p>
+            <p className="font-medium">{formatCurrency(tax, currency.code)}</p>
+        </div>
+        <Separator className="my-2"/>
+        <div className="w-full flex justify-between text-lg font-bold">
+            <p>Total</p>
+            <p>{formatCurrency(total, currency.code)}</p>
+        </div>
+    </div>
+  );
 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md w-full h-[90vh] flex flex-col p-0 gap-0 rounded-lg" hideClose>
+        <DialogContent className="max-w-md w-full h-[90vh] flex flex-col p-0 gap-0 rounded-lg sm:max-w-3xl" hideClose>
           <DialogHeader className="p-4 border-b flex-shrink-0">
              <div className='flex items-center justify-between'>
-                <DialogClose asChild>
-                    <Button variant="ghost" size="sm" className="gap-2 text-base">
-                        <ArrowLeft className='h-5 w-5'/>
-                        Atrás
-                    </Button>
-                </DialogClose>
+                <Button variant="ghost" size="sm" className="gap-2 text-base" onClick={() => onOpenChange(false)}>
+                    <ArrowLeft className='h-5 w-5'/>
+                    <span>Atrás</span>
+                </Button>
                 <DialogTitle className="text-xl font-bold">Pedido Actual</DialogTitle>
                 <Button variant="ghost" size="sm" className='text-muted-foreground gap-2 text-base' onClick={clearCart}>
                     <Trash2 className='h-5 w-5'/>
@@ -67,9 +83,10 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
               </div>
           </DialogHeader>
           
-          <div className="flex-1 flex flex-col min-h-0 bg-muted/30">
+          <div className="flex-1 flex flex-col landscape:flex-row min-h-0 bg-muted/30">
             {items.length > 0 ? (
-                <ScrollArea className="flex-1">
+              <>
+                <ScrollArea className="flex-1 landscape:w-3/5">
                     <div className="p-4 flex flex-col gap-4">
                         {items.map((item) => (
                             <div key={item.id} className="flex items-start gap-4 bg-background p-3 rounded-lg shadow-sm">
@@ -118,33 +135,10 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
                         ))}
                     </div>
                 </ScrollArea>
-            ) : (
-                 <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center p-6 h-full">
-                    <ShoppingBag className="w-24 h-24 text-muted-foreground/30" />
-                    <h2 className="text-xl font-bold">El pedido está vacío</h2>
-                    <p className="text-muted-foreground max-w-xs text-sm">
-                        Añade productos desde el menú para empezar una nueva venta.
-                    </p>
-                </div>
-            )}
-            
-            {items.length > 0 && (
-                <div className="flex-shrink-0 p-4 space-y-4 bg-card border-t">
-                    <div className="w-full space-y-2 text-sm">
-                        <div className="flex justify-between">
-                            <p className="text-muted-foreground">Subtotal</p>
-                            <p className="font-medium">{formatCurrency(subtotal, currency.code)}</p>
-                        </div>
-                        <div className="flex justify-between">
-                            <p className="text-muted-foreground">ISV ({ (taxRate * 100).toFixed(0) }%)</p>
-                            <p className="font-medium">{formatCurrency(tax, currency.code)}</p>
-                        </div>
-                    </div>
-                    <Separator />
-                    <div className="w-full flex justify-between text-lg font-bold">
-                        <p>Total</p>
-                        <p>{formatCurrency(total, currency.code)}</p>
-                    </div>
+                
+                {/* --- Portrait Footer --- */}
+                <div className="flex-shrink-0 p-4 space-y-4 bg-card border-t landscape:hidden">
+                    <CartSummary />
                     <Button 
                         size="lg" 
                         className="w-full text-md" 
@@ -153,6 +147,33 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
                     >
                         Continuar al Pago
                     </Button>
+                </div>
+                
+                {/* --- Landscape Sidebar --- */}
+                <div className="hidden landscape:flex landscape:flex-col landscape:w-2/5 border-l bg-card">
+                   <div className="flex-1 p-4 space-y-4">
+                        <h3 className="text-lg font-semibold">Resumen del Pedido</h3>
+                        <CartSummary />
+                   </div>
+                   <div className="flex-shrink-0 p-4 border-t">
+                        <Button 
+                            size="lg" 
+                            className="w-full text-md" 
+                            onClick={handleOpenCheckout}
+                            disabled={items.length === 0}
+                        >
+                            Continuar al Pago
+                        </Button>
+                   </div>
+                </div>
+              </>
+            ) : (
+                 <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center p-6 h-full w-full">
+                    <ShoppingBag className="w-24 h-24 text-muted-foreground/30" />
+                    <h2 className="text-xl font-bold">El pedido está vacío</h2>
+                    <p className="text-muted-foreground max-w-xs text-sm">
+                        Añade productos desde el menú para empezar una nueva venta.
+                    </p>
                 </div>
             )}
           </div>
