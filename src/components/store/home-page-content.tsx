@@ -4,12 +4,11 @@
 import * as React from 'react';
 import Image from 'next/image';
 import { type Product, type Category } from '@/lib/types';
-import { ProductCard } from './product-card';
+import { ProductGridHomepage } from './product-grid-homepage';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Search } from 'lucide-react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
 import { useBannersStore } from '@/hooks/use-banners';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
@@ -22,18 +21,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
-const FilterIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M14 6L20 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M4 6L10 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M10 18L4 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M20 18L14 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        <circle cx="12" cy="6" r="2" transform="rotate(90 12 6)" stroke="currentColor" strokeWidth="2"/>
-        <circle cx="12" cy="18" r="2" transform="rotate(90 12 18)" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-);
-
 
 interface HomePageContentProps {
   products: Product[];
@@ -66,6 +53,14 @@ export function HomePageContent({
         
         return prods;
     }, [products, selectedCategory, searchQuery]);
+
+    const selectedCategoryLabel = React.useMemo(() => {
+        if (selectedCategory === 'all') {
+            return 'Categorías';
+        }
+        const category = categories.find(c => c.name === selectedCategory);
+        return category ? category.label : 'Categorías';
+    }, [selectedCategory, categories]);
 
     return (
         <main className="px-4 pt-4 pb-8 space-y-8">
@@ -109,7 +104,7 @@ export function HomePageContent({
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button className="w-auto h-14 rounded-full bg-primary text-primary-foreground shrink-0 px-6 text-base">
-                            Categorías
+                            {selectedCategoryLabel}
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56">
@@ -131,11 +126,7 @@ export function HomePageContent({
                     <Link href="#" className="text-sm font-semibold text-muted-foreground">See all</Link>
                  </div>
                  {filteredProducts.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-4">
-                        {filteredProducts.map((product) => (
-                            <ProductCard key={product.id} product={product} />
-                        ))}
-                    </div>
+                    <ProductGridHomepage products={filteredProducts} />
                  ) : (
                     <div className="text-center py-10 text-muted-foreground">
                         <p>No se encontraron productos que coincidan con tu búsqueda.</p>

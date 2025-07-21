@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import type { Product } from '@/lib/types';
-import { ProductCard } from './product-card';
+import { ProductCard } from '../product-card';
 
 // Namespace component for better organization
 const ProductGridHomepage = ({ products }: { products: Product[] }) => {
