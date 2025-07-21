@@ -53,9 +53,9 @@ export default function CartPage() {
           <main className="flex-1 overflow-y-auto p-4">
             <div className="container mx-auto p-0 flex flex-col gap-5">
               {items.map((item) => (
-                <div key={item.id} className="bg-background p-4 rounded-lg shadow-sm">
-                    <div className="flex items-start gap-4">
-                      <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden">
+                <div key={item.id} className="bg-background rounded-lg shadow-sm">
+                    <div className="flex items-start gap-4 p-4">
+                      <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md">
                           <Image
                           src={item.image}
                           alt={item.name}
