@@ -24,9 +24,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       isAuthLoading: true,
 
       initializeSession: () => {
+        // Set loading to true whenever we start checking auth
+        set({ isAuthLoading: true });
+        
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (_event, session) => {
-                if (session) {
+                if (session?.user) {
                     const { data: userData, error } = await supabase
                         .from('users')
                         .select('role')
@@ -35,46 +38,37 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
                     if (error) {
                         console.error('Error fetching user role:', error);
+                        // Still set the user, but with a null role
                         set({ user: session.user, role: null, isAuthLoading: false });
                     } else {
                         set({ user: session.user, role: userData.role, isAuthLoading: false });
                     }
                 } else {
+                    // No session or user, clear everything and stop loading
                     set({ user: null, role: null, isAuthLoading: false });
                 }
             }
         );
 
-        // Fetch initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session) {
-                 supabase.from('users').select('role').eq('id', session.user.id).single().then(({ data, error }) => {
-                     if (!error) {
-                        set({ user: session.user, role: data.role, isAuthLoading: false });
-                     } else {
-                        console.error('Error fetching initial session role:', error);
-                        set({ user: session.user, role: null, isAuthLoading: false });
-                     }
-                 })
-            } else {
-                set({ isAuthLoading: false });
-            }
-        });
-
-        return () => subscription.unsubscribe();
+        return () => {
+            subscription.unsubscribe();
+        };
       },
 
       login: async (email, password) => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
+          // Return the error message to be displayed in the toast
           return error.message;
         }
-        // The onAuthStateChange listener will handle setting the user and role.
+        // If login is successful, onAuthStateChange will handle setting user and role.
+        // Return null to indicate success.
         return null;
       },
 
       logout: async () => {
         await supabase.auth.signOut();
-        set({ user: null, role: null, isAuthLoading: false });
+        // The onAuthStateChange listener will clear the user and role.
+        set({ user: null, role: null });
       },
 }));
