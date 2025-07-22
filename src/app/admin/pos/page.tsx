@@ -113,7 +113,7 @@ export default function PosPage() {
               </div>
             </div>
         </div>
-        <div className="mt-6 hidden sm:flex flex-row flex-nowrap items-center gap-3 overflow-x-auto pb-2 -mx-2 px-2">
+        <div className="mt-6 hidden sm:flex flex-row flex-nowrap items-center gap-3 overflow-x-auto pb-2 -mx-2 px-2 no-scrollbar">
             <Button
                 key="all"
                 variant={selectedCategory === 'all' ? 'default' : 'secondary'}
@@ -137,7 +137,7 @@ export default function PosPage() {
       
       {/* Products Grid */}
       <div className="flex-1 min-h-0">
-        <ScrollArea className="h-full pb-4">
+        <ScrollArea className="h-full pb-4 no-scrollbar">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-5">
                 {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
