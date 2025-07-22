@@ -389,10 +389,11 @@ function BannersManager() {
 }
 
 function LogoManager() {
-    const { logoUrl, setLogoUrl } = useLogoStore();
+    const { logoUrl, isLoading, updateLogo } = useLogoStore();
     const { toast } = useToast();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
-    const [preview, setPreview] = React.useState<string | null>(logoUrl);
+    const [preview, setPreview] = React.useState<string | null>(null);
+    const [fileToUpload, setFileToUpload] = React.useState<File | null>(null);
 
     React.useEffect(() => {
         setPreview(logoUrl);
@@ -401,24 +402,26 @@ function LogoManager() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            setFileToUpload(file);
             const reader = new FileReader();
             reader.onloadend = () => {
-                const newLogoUrl = reader.result as string;
-                setPreview(newLogoUrl);
+                setPreview(reader.result as string);
             };
             reader.readAsDataURL(file);
         }
     };
 
-    const handleSave = () => {
-        if (preview) {
-            setLogoUrl(preview);
+    const handleSave = async () => {
+        if (fileToUpload) {
+            await updateLogo(fileToUpload);
             toast({ title: 'Logo actualizado' });
+            setFileToUpload(null);
         }
     };
     
     const clearImage = () => {
         setPreview(null);
+        setFileToUpload(null);
         if(fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -468,7 +471,10 @@ function LogoManager() {
                   </Button>
             </CardContent>
             <CardFooter>
-                 <Button onClick={handleSave} disabled={!preview}>Guardar Logo</Button>
+                 <Button onClick={handleSave} disabled={!fileToUpload || isLoading}>
+                    {isLoading && <LoadingSpinner className='mr-2 h-4 w-4'/>}
+                    Guardar Logo
+                 </Button>
             </CardFooter>
         </Card>
     )
@@ -521,5 +527,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
