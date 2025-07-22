@@ -40,23 +40,32 @@ export const useOrdersStore = create<OrdersState>()(
         },
 
         createOrder: async (orderData) => {
-            const display_id = `BEM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-            const { data, error } = await supabase
-                .from('orders')
-                .insert({ ...orderData, display_id })
-                .select()
-                .single();
+            // This now calls a Supabase Edge Function to handle the entire process securely.
+            const { data, error } = await supabase.functions.invoke('create-order', {
+                body: { orderData },
+            });
 
             if (error) {
-                toast({ title: 'Error al crear pedido', description: error.message, variant: 'destructive' });
+                toast({ title: 'Error al crear pedido', description: `Error del servidor: ${error.message}`, variant: 'destructive' });
+                return null;
+            }
+
+            if (data.error) {
+                toast({ title: 'Error al procesar pedido', description: data.error, variant: 'destructive' });
                 return null;
             }
             
+            const newOrder = data.order;
+            
+            // The function handles stock deduction, so we just need to update the client state for products
+            const { fetchProducts } = useProductsStore.getState();
+            fetchProducts();
+
             set(produce((state: OrdersState) => {
-                state.orders.unshift(data as Order);
+                state.orders.unshift(newOrder as Order);
             }));
             
-            return data.id;
+            return newOrder.id;
         },
 
         addPayment: async (orderId, amount, method) => {
@@ -98,33 +107,39 @@ export const useOrdersStore = create<OrdersState>()(
                 payment_reference: paymentReference || null,
             };
 
+            // This logic is simplified because the 'create-order' function now handles initial stock deduction for 'paid' POS orders.
+            // This function is primarily for 'pending-approval' orders from the online store.
+            if (order.status === 'pending-approval') {
+                const { decreaseStock } = useProductsStore.getState();
+                for (const item of order.items) {
+                    await decreaseStock(item.id, item.quantity);
+                }
+            }
+            
             if (paymentMethod === 'credito') {
                 updateData.status = 'pending-payment';
                 updateData.balance = order.total;
+                 updateData.payments = [];
             } else {
                 updateData.status = 'paid';
                 updateData.balance = 0;
                 updateData.payments = [{ amount: order.total, date: new Date().toISOString(), method: paymentMethod }];
             }
 
-            const { error } = await supabase
+            const { data: updatedOrder, error } = await supabase
                 .from('orders')
                 .update(updateData)
-                .eq('id', orderId);
+                .eq('id', orderId)
+                .select()
+                .single();
 
             if (error) {
                 toast({ title: 'Error al aprobar pedido', description: error.message, variant: 'destructive' });
             } else {
-                // Decrease stock after successful approval
-                const { decreaseStock } = useProductsStore.getState();
-                for (const item of order.items) {
-                    await decreaseStock(item.id, item.quantity);
-                }
-
                 set(produce((state: OrdersState) => {
                     const orderToUpdate = state.orders.find(o => o.id === orderId);
                     if (orderToUpdate) {
-                        Object.assign(orderToUpdate, updateData);
+                        Object.assign(orderToUpdate, updatedOrder);
                     }
                 }));
 
@@ -165,3 +180,4 @@ export const useOrdersStore = create<OrdersState>()(
         },
     })
 );
+

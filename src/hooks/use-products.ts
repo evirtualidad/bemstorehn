@@ -36,7 +36,7 @@ const uploadProductImage = async (file: File): Promise<string | null> => {
 };
 
 const deleteProductImage = async (imageUrl: string) => {
-    if (!imageUrl.includes(PRODUCTS_STORAGE_PATH)) return; // Don't delete placeholders
+    if (!imageUrl || !imageUrl.includes(PRODUCTS_STORAGE_PATH)) return; // Don't delete placeholders
     const fileName = imageUrl.split('/').pop();
     if (!fileName) return;
 
@@ -95,7 +95,7 @@ export const useProductsStore = create<ProductsState>()(
         },
 
         addProduct: async (productData) => {
-            const { imageFile, category, ...rest } = productData as any; // Exclude category from rest
+            const { imageFile, ...rest } = productData;
             let imageUrl = `https://placehold.co/400x400.png?text=${encodeURIComponent(rest.name)}`;
 
             if (imageFile) {
@@ -132,7 +132,7 @@ export const useProductsStore = create<ProductsState>()(
         },
 
         updateProduct: async (productData) => {
-            const { imageFile, id, category, ...rest } = productData as any; // Exclude category
+            const { imageFile, id, ...rest } = productData;
             let imageUrl = rest.image; // Keep original image by default
 
             if (imageFile) {
@@ -224,3 +224,4 @@ export const useProductsStore = create<ProductsState>()(
         },
     })
 );
+
