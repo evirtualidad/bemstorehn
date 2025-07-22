@@ -1,3 +1,6 @@
+
+import type { User as SupabaseUser } from '@supabase/supabase-js'
+
 export type Product = {
   id: string;
   created_at?: string;
@@ -37,6 +40,13 @@ export type Address = {
   exactAddress: string;
 }
 
+export type Payment = {
+    amount: number;
+    date: string;
+    method: Order['payment_method'];
+    reference?: string;
+}
+
 export type Order = {
   id: string; 
   display_id: string; 
@@ -56,11 +66,29 @@ export type Order = {
   total: number;
   shipping_cost: number;
   balance: number; 
-  payments: any[]; // Define a proper payment type if needed
+  payments: Payment[];
   payment_method: 'efectivo' | 'tarjeta' | 'transferencia' | 'credito';
   payment_reference: string | null;
   status: 'pending-approval' | 'pending-payment' | 'paid' | 'cancelled';
   source: 'pos' | 'online-store';
   delivery_method: 'pickup' | 'delivery' | null;
   payment_due_date: string | null;
+}
+
+export type NewOrderData = Omit<Order, 'id' | 'display_id' | 'created_at'>;
+
+export type Customer = {
+  id: string;
+  created_at: string;
+  name: string;
+  phone: string;
+  address: Address | null;
+  total_spent: number;
+  order_count: number;
+}
+
+export type UserRole = 'admin' | 'cajero';
+
+export type User = SupabaseUser & {
+    role: UserRole;
 }

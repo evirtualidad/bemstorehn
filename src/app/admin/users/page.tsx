@@ -52,8 +52,12 @@ import { useUsersStore } from '@/hooks/use-users-store';
 
 
 export default function UsersPage() {
-  const { users, isLoading, updateUserRole, deleteUser } = useUsersStore();
+  const { users, isLoading, fetchUsers, updateUserRole, deleteUser } = useUsersStore();
   const { role: adminRole, user: currentUser } = useAuthStore();
+  
+  React.useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleRoleChange = async (userId: string, newRole: 'admin' | 'cajero') => {
     await updateUserRole(userId, newRole);
@@ -76,16 +80,12 @@ export default function UsersPage() {
 
   return (
     <div className="grid flex-1 items-start gap-4">
-      <div className="flex items-center">
-        <h1 className="text-2xl font-bold">Usuarios</h1>
-      </div>
-
       <Card>
         <CardHeader>
             <div>
               <CardTitle>Lista de Usuarios</CardTitle>
               <CardDescription>
-                Administra los usuarios y sus roles en el sistema. Los usuarios se crean desde el panel de Supabase.
+                Administra los usuarios y sus roles en el sistema. Los usuarios se crean desde el panel de Supabase Auth.
               </CardDescription>
             </div>
         </CardHeader>
@@ -180,3 +180,4 @@ export default function UsersPage() {
     </div>
   );
 }
+

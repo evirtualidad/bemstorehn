@@ -18,7 +18,14 @@ export default function AdminLayout({
   const router = useRouter();
 
   React.useEffect(() => {
-    initializeSession();
+    // This now sets up the Supabase auth listener
+    const unsubscribe = initializeSession();
+    // Cleanup subscription on unmount
+    return () => {
+        if (typeof unsubscribe === 'function') {
+            unsubscribe();
+        }
+    };
   }, [initializeSession]);
 
   React.useEffect(() => {

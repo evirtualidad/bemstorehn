@@ -28,20 +28,27 @@ const loginFormSchema = z.object({
 });
 
 export default function LoginPage() {
-  const { login, user, isLoading, initializeSession } = useAuthStore();
+  const { login, user, isAuthLoading, initializeSession } = useAuthStore();
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   
   React.useEffect(() => {
-      initializeSession();
+      // This now sets up the Supabase auth listener
+      const unsubscribe = initializeSession();
+      // Cleanup subscription on unmount
+      return () => {
+        if (typeof unsubscribe === 'function') {
+            unsubscribe();
+        }
+      };
   }, [initializeSession]);
 
   React.useEffect(() => {
-    if (user) {
+    if (!isAuthLoading && user) {
       router.replace('/admin/dashboard-v2');
     }
-  }, [user, router]);
+  }, [user, isAuthLoading, router]);
 
   const form = useForm<z.infer<typeof loginFormSchema>>({
     resolver: zodResolver(loginFormSchema),
@@ -58,7 +65,7 @@ export default function LoginPage() {
     if (error) {
       toast({
         title: 'Error de Autenticación',
-        description: error,
+        description: 'Credenciales inválidas. Por favor, intenta de nuevo.',
         variant: 'destructive',
       });
       setIsSubmitting(false);
@@ -71,7 +78,7 @@ export default function LoginPage() {
     }
   };
   
-  if (isLoading || user) {
+  if (isAuthLoading || user) {
       return (
           <div className="flex h-screen items-center justify-center">
             <LoadingSpinner />

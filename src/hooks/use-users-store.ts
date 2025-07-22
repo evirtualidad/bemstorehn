@@ -7,21 +7,15 @@ import { toast } from './use-toast';
 import { useAuthStore } from './use-auth-store';
 import { v4 as uuidv4 } from 'uuid';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { supabase } from '@/lib/supabase';
 
 export type UserRole = 'admin' | 'cajero';
 
 export interface UserDoc {
     id: string; 
-    email: string;
+    email: string | undefined;
     role: UserRole;
-    password?: string; // Only for local fallback
 }
-
-export let initialUsers: UserDoc[] = [
-    { id: 'user-1-admin', email: 'evirt@bemstore.hn', role: 'admin', password: 'password' },
-    { id: 'user-2-cajero', email: 'cajero@bemstore.hn', role: 'cajero', password: 'password' },
-    { id: 'admin-user', email: 'admin@bemstore.hn', role: 'admin', password: 'password' },
-]
 
 type UsersState = {
   users: UserDoc[];
@@ -32,47 +26,53 @@ type UsersState = {
 };
 
 export const useUsersStore = create<UsersState>()(
-  persist(
     (set, get) => ({
-        users: initialUsers,
-        isLoading: false,
+        users: [],
+        isLoading: true,
         
-        fetchUsers: () => {
-            set({ isLoading: false });
+        fetchUsers: async () => {
+            set({ isLoading: true });
+            const { data, error } = await supabase
+                .from('users')
+                .select('id, email, role');
+            
+            if (error) {
+                toast({ title: 'Error al cargar usuarios', description: error.message, variant: 'destructive' });
+                set({ users: [], isLoading: false });
+            } else {
+                set({ users: data as UserDoc[], isLoading: false });
+            }
         },
 
-        updateUserRole: (userId, newRole) => {
+        updateUserRole: async (userId, newRole) => {
             const { user: currentUser } = useAuthStore.getState();
             if (currentUser?.id === userId) {
                 toast({ title: 'Acción no permitida', description: 'No puedes cambiar tu propio rol.', variant: 'destructive'});
                 return;
             }
-            
-            set(produce((state: UsersState) => {
-              const userToUpdate = state.users.find((user) => user.id === userId);
-              if (userToUpdate) {
-                  userToUpdate.role = newRole;
-              }
-            }));
 
-            toast({ title: '¡Rol Actualizado!', description: `El rol del usuario ha sido cambiado a ${newRole}.` });
+            const { error } = await supabase
+                .from('users')
+                .update({ role: newRole })
+                .eq('id', userId);
+
+            if (error) {
+                toast({ title: 'Error al actualizar rol', description: error.message, variant: 'destructive' });
+            } else {
+                set(produce((state: UsersState) => {
+                    const userToUpdate = state.users.find((user) => user.id === userId);
+                    if (userToUpdate) {
+                        userToUpdate.role = newRole;
+                    }
+                }));
+                toast({ title: '¡Rol Actualizado!', description: `El rol del usuario ha sido cambiado a ${newRole}.` });
+            }
         },
         
-        deleteUser: (userId: string) => {
-            set(produce((state: UsersState) => {
-              state.users = state.users.filter(user => user.id !== userId);
-            }));
-            toast({ title: 'Usuario eliminado', variant: 'destructive' });
+        deleteUser: async (userId: string) => {
+           toast({ title: 'Función no disponible', description: 'La eliminación de usuarios debe realizarse desde el panel de Supabase Auth.', variant: 'destructive' });
+           // Supabase handles user deletion via its admin API or dashboard, which also cascades to our 'users' table thanks to the 'on delete cascade' constraint.
+           // A direct frontend deletion is complex and requires admin privileges, so we're disabling it here.
         },
-    }),
-    {
-      name: 'bem-users-storage',
-      storage: createJSONStorage(() => localStorage),
-       onRehydrateStorage: () => (state) => {
-        if (state) {
-            state.isLoading = false;
-        }
-      },
-    }
-  )
+    })
 );
