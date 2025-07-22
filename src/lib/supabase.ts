@@ -1,14 +1,19 @@
 
-import { type SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-// This file is adapted for a fully local development environment.
-// All Supabase interactions are disabled.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-console.warn("Application is running in a fully local mode. No data will be sent to Supabase.");
+export const isSupabaseConfigured = supabaseUrl && supabaseAnonKey;
 
-// This constant will be checked by hooks to determine if they should use local data.
-export const isSupabaseConfigured = false;
+let supabase: SupabaseClient;
 
-// We export a null/mock object to prevent runtime errors in components
-// that might still import `supabase`.
-export const supabase = {} as SupabaseClient;
+if (isSupabaseConfigured) {
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
+} else {
+  console.warn("Supabase configuration is missing. The app will run in a simulated local mode. Ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in the .env file.");
+  // This mock object prevents runtime errors when Supabase is not configured.
+  supabase = {} as SupabaseClient;
+}
+
+export { supabase };
