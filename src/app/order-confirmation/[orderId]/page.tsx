@@ -17,9 +17,11 @@ import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import { useSettingsStore } from '@/hooks/use-settings-store';
 import { useCustomersStore } from '@/hooks/use-customers';
+import { useParams } from 'next/navigation';
 
-export default function OrderConfirmationPage({ params }: { params: { orderId: string } }) {
-  const { orderId } = params;
+export default function OrderConfirmationPage() {
+  const params = useParams();
+  const orderId = params.orderId as string;
   const getOrderById = useOrdersStore(state => state.getOrderById);
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
