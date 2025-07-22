@@ -100,7 +100,7 @@ export default function PosPage() {
                   <div className="sm:hidden">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="icon" className='h-12 w-12 rounded-full focus-visible:ring-0 focus-visible:ring-offset-0'>
+                          <Button variant="ghost" size="icon" className='h-12 w-12 rounded-full bg-primary/10 text-primary focus-visible:ring-0 focus-visible:ring-offset-0'>
                             <ListFilter className="h-5 w-5" />
                           </Button>
                         </DropdownMenuTrigger>
