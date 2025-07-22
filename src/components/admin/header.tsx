@@ -16,6 +16,8 @@ import {
     Leaf,
     ShoppingCart,
     Menu,
+    Sun,
+    Moon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -24,6 +26,7 @@ import { usePosCart } from '@/hooks/use-pos-cart';
 import { PosCart } from '@/components/pos-cart';
 import { useMobileSidebarStore } from '@/hooks/use-mobile-sidebar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { useTheme } from 'next-themes';
 
 const navItems = [
     { href: '/admin/dashboard-v2', icon: BarChart2, label: 'Dashboard' },
@@ -34,6 +37,29 @@ const navItems = [
     { href: '/admin/finance', icon: Building, label: 'Finanzas', role: 'admin' },
     { href: '/admin/settings', icon: Settings, label: 'Ajustes', role: 'admin'},
 ];
+
+const ThemeToggleButton = () => {
+    const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => setMounted(true), []);
+
+    if (!mounted) {
+        return <div className="h-11 w-11" />; // Placeholder
+    }
+
+    const toggleTheme = () => {
+        setTheme(theme === 'light' ? 'dark' : 'light');
+    };
+
+    return (
+        <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-11 w-11 rounded-full">
+            {theme === 'light' ? <Sun /> : <Moon />}
+            <span className="sr-only">Toggle theme</span>
+        </Button>
+    );
+};
+
 
 export function AdminHeader() {
     const { user, role, logout } = useAuthStore();
@@ -99,7 +125,8 @@ export function AdminHeader() {
                     </div>
                 </nav>
                 
-                <div className='flex-shrink-0 flex items-center gap-4'>
+                <div className='flex-shrink-0 flex items-center gap-2'>
+                     <ThemeToggleButton />
                      <Button asChild variant="ghost" size="icon" onClick={handleLogout} className="h-11 w-11 rounded-full bg-destructive/20 text-destructive hover:bg-destructive/20 hover:text-destructive">
                          <Link href="/login">
                             <LogOut className="h-5 w-5" />
