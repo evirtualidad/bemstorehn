@@ -47,6 +47,14 @@ import { es } from 'date-fns/locale/es';
 import Link from 'next/link';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
+const statusConfig = {
+    'pending-approval': { label: 'Pendiente Aprobación', color: 'bg-yellow-100 text-yellow-800' },
+    'pending-payment': { label: 'Pendiente Pago', color: 'bg-amber-100 text-amber-800' },
+    'paid': { label: 'Pagado', color: 'bg-green-100 text-green-800' },
+    'cancelled': { label: 'Cancelado', color: 'bg-red-100 text-red-800' },
+};
+
+
 export default function DashboardV2() {
   const { orders, isLoading: isLoadingOrders } = useOrdersStore();
   const { products, isLoading: isLoadingProducts } = useProductsStore();
@@ -288,29 +296,28 @@ export default function DashboardV2() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentTransactions.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>
-                      <div className="font-medium">{order.customer_name}</div>
-                      <div className="hidden text-sm text-muted-foreground md:inline">
-                        {order.customer_phone}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                       <Badge variant={order.status === 'paid' ? 'default' : 'secondary'}
-                       className={cn(
-                        order.status === 'pending-approval' && 'bg-yellow-100 text-yellow-800',
-                        order.status === 'pending-payment' && 'bg-amber-100 text-amber-800',
-                        order.status === 'paid' && 'bg-green-100 text-green-800',
-                       )}
-                       >{order.status}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(order.created_at), 'd MMM, yyyy', { locale: es })}
-                    </TableCell>
-                    <TableCell className="text-right">{formatCurrency(order.total, currency.code)}</TableCell>
-                  </TableRow>
-                ))}
+                {recentTransactions.map((order) => {
+                  const statusInfo = statusConfig[order.status as keyof typeof statusConfig] || { label: 'Desconocido', color: 'bg-gray-100 text-gray-800'};
+                  return (
+                    <TableRow key={order.id}>
+                      <TableCell>
+                        <div className="font-medium">{order.customer_name}</div>
+                        <div className="hidden text-sm text-muted-foreground md:inline">
+                          {order.customer_phone}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                         <Badge variant={'secondary'} className={statusInfo.color}>
+                          {statusInfo.label}
+                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(order.created_at), 'd MMM, yyyy', { locale: es })}
+                      </TableCell>
+                      <TableCell className="text-right">{formatCurrency(order.total, currency.code)}</TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           </CardContent>
