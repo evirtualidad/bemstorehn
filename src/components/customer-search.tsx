@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -96,7 +95,7 @@ export function CustomerSearch({ onCustomerSelect, form }: CustomerSearchProps) 
                             <Input 
                                 placeholder="Buscar o registrar cliente..." 
                                 {...field} 
-                                className="h-11 pl-10"
+                                className="h-11 pl-10 rounded-lg"
                                 onFocus={() => {
                                     if (searchQuery && results.length > 0) {
                                         setIsOpen(true);

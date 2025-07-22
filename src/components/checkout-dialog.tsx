@@ -166,7 +166,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
                                 <FormItem>
                                     <FormLabel>Teléfono (Opcional)</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Ej: 9988-7766" {...field}/>
+                                        <Input placeholder="Ej: 9988-7766" {...field} className="rounded-lg" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -186,7 +186,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
                                                     key={method.value}
                                                     type="button"
                                                     variant={field.value === method.value ? 'secondary' : 'outline'}
-                                                    className="flex flex-col h-20"
+                                                    className="flex flex-col h-20 rounded-lg"
                                                     onClick={() => field.onChange(method.value)}
                                                   >
                                                      <method.icon className="mb-2 h-6 w-6" />
@@ -203,9 +203,9 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
                 </Form>
                 <DialogFooter className="mt-6">
                     <DialogClose asChild>
-                        <Button variant="outline">Cancelar</Button>
+                        <Button variant="outline" className="rounded-full">Cancelar</Button>
                     </DialogClose>
-                    <Button type="submit" form="checkout-form">
+                    <Button type="submit" form="checkout-form" className="rounded-full">
                         Confirmar Venta ({formatCurrency(total, currency.code)})
                     </Button>
                 </DialogFooter>
