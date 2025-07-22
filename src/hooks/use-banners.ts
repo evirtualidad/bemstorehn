@@ -4,7 +4,6 @@
 import { create } from 'zustand';
 import { toast } from './use-toast';
 import { produce } from 'immer';
-import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/lib/supabase';
 import type { Banner } from '@/lib/types';
 
@@ -19,11 +18,16 @@ type BannersState = {
   deleteBanner: (bannerId: string) => Promise<void>;
 };
 
-const uploadBannerImage = async (file: File): Promise<string | null> => {
-    const fileName = `${uuidv4()}-${file.name}`;
+// --- NEW UPLOAD/DELETE LOGIC ---
+
+// Uploads an image using the banner's ID as the filename for easy association.
+const uploadBannerImage = async (bannerId: string, file: File): Promise<string | null> => {
     const { data, error } = await supabase.storage
         .from(BANNERS_STORAGE_PATH)
-        .upload(fileName, file);
+        .upload(bannerId, file, {
+            cacheControl: '3600',
+            upsert: true // Overwrite if a file with the same name exists
+        });
 
     if (error) {
         toast({ title: 'Error al subir imagen', description: error.message, variant: 'destructive' });
@@ -32,29 +36,19 @@ const uploadBannerImage = async (file: File): Promise<string | null> => {
     
     const { data: { publicUrl } } = supabase.storage
         .from(BANNERS_STORAGE_PATH)
-        .getPublicUrl(data.path);
+        .getPublicUrl(bannerId);
 
     return publicUrl;
 }
 
-const deleteBannerImage = async (imageUrl: string) => {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (!imageUrl || !supabaseUrl || !imageUrl.startsWith(supabaseUrl)) {
-        return; 
-    }
-    
-    // Path is of the form /storage/v1/object/public/bucket_name/file_name.ext
-    const pathWithBucket = new URL(imageUrl).pathname.split('/public/').pop();
-    if (!pathWithBucket) return;
-
-    const [bucketName, ...filePathParts] = pathWithBucket.split('/');
-    if (bucketName !== BANNERS_STORAGE_PATH || filePathParts.length === 0) return;
-
-    const filePath = filePathParts.join('/');
-
-    const { error } = await supabase.storage.from(BANNERS_STORAGE_PATH).remove([filePath]);
+// Deletes the image associated with a banner ID.
+const deleteBannerImage = async (bannerId: string) => {
+    const { error } = await supabase.storage
+        .from(BANNERS_STORAGE_PATH)
+        .remove([bannerId]);
+        
     if (error) {
-         toast({ title: 'Error al eliminar imagen antigua', description: error.message, variant: 'destructive' });
+        toast({ title: 'Error al eliminar imagen', description: `No se pudo eliminar la imagen del banner ${bannerId}. Puede que ya no exista.`, variant: 'destructive' });
     }
 }
 
@@ -77,43 +71,65 @@ export const useBannersStore = create<BannersState>()(
 
         addBanner: async (bannerData) => {
           const { imageFile, ...rest } = bannerData;
-          let imageUrl = `https://placehold.co/1200x600.png?text=${encodeURIComponent(rest.title || 'Nuevo Banner')}`;
-
-          if (imageFile) {
-              const uploadedUrl = await uploadBannerImage(imageFile);
-              if (uploadedUrl) {
-                  imageUrl = uploadedUrl;
-              } else {
-                  return; // Stop if upload fails
-              }
-          }
           
-          const { data: newBanner, error } = await supabase
+          if (!imageFile) {
+              toast({ title: 'Imagen requerida', description: 'Por favor, selecciona un archivo de imagen.', variant: 'destructive' });
+              return;
+          }
+
+          // Step 1: Insert banner record without image URL to get the ID
+          const { data: newBannerData, error: insertError } = await supabase
             .from('banners')
-            .insert({ ...rest, image: imageUrl })
-            .select()
+            .insert({ ...rest, image: '' }) // Placeholder image URL
+            .select('id')
             .single();
 
-          if (error) {
-              toast({ title: 'Error al añadir banner', description: error.message, variant: 'destructive' });
-          } else {
-              set(produce((state: BannersState) => {
-                  state.banners.unshift(newBanner as Banner);
-              }));
-              toast({ title: 'Banner añadido' });
+          if (insertError || !newBannerData) {
+              toast({ title: 'Error al crear banner (Paso 1)', description: insertError.message, variant: 'destructive' });
+              return;
           }
+
+          const newBannerId = newBannerData.id;
+
+          // Step 2: Upload image using the new banner ID
+          const imageUrl = await uploadBannerImage(newBannerId, imageFile);
+
+          if (!imageUrl) {
+              // If upload fails, clean up the record we just created
+              await supabase.from('banners').delete().eq('id', newBannerId);
+              toast({ title: 'Error al crear banner (Paso 2)', description: 'La subida de la imagen falló. Se canceló la operación.', variant: 'destructive' });
+              return;
+          }
+
+          // Step 3: Update the banner record with the final image URL
+          const { data: finalBanner, error: updateError } = await supabase
+            .from('banners')
+            .update({ image: imageUrl })
+            .eq('id', newBannerId)
+            .select()
+            .single();
+          
+           if (updateError) {
+              toast({ title: 'Error al crear banner (Paso 3)', description: updateError.message, variant: 'destructive' });
+              // Clean up storage and db record if final update fails
+              await deleteBannerImage(newBannerId);
+              await supabase.from('banners').delete().eq('id', newBannerId);
+              return;
+          }
+
+          set(produce((state: BannersState) => {
+              state.banners.unshift(finalBanner as Banner);
+          }));
+          toast({ title: 'Banner añadido con éxito' });
         },
 
         updateBanner: async (bannerData) => {
             const { imageFile, id, ...rest } = bannerData;
-            let imageUrl = rest.image; // Keep original image by default
+            let imageUrl = rest.image; 
 
+            // If a new image file is provided, upload it using the existing banner ID
             if (imageFile) {
-                const existingBanner = get().banners.find(b => b.id === id);
-                if (existingBanner?.image) {
-                   await deleteBannerImage(existingBanner.image);
-                }
-                const uploadedUrl = await uploadBannerImage(imageFile);
+                const uploadedUrl = await uploadBannerImage(id, imageFile);
                 if (uploadedUrl) {
                     imageUrl = uploadedUrl;
                 } else {
@@ -142,11 +158,10 @@ export const useBannersStore = create<BannersState>()(
         },
 
         deleteBanner: async (bannerId: string) => {
-            const bannerToDelete = get().banners.find(b => b.id === bannerId);
-            if(bannerToDelete?.image) {
-                await deleteBannerImage(bannerToDelete.image);
-            }
+            // Step 1: Delete the associated image from storage
+            await deleteBannerImage(bannerId);
 
+            // Step 2: Delete the banner record from the database
             const { error } = await supabase.from('banners').delete().eq('id', bannerId);
             
             if (error) {
