@@ -4,7 +4,6 @@
 import { create } from 'zustand';
 import { toast } from './use-toast';
 import type { UserRole } from './use-users-store';
-import { useUsersStore } from './use-users-store';
 import { supabase } from '@/lib/supabase';
 import { type User } from '@supabase/supabase-js';
 
@@ -17,6 +16,21 @@ type AuthState = {
   logout: () => void;
 };
 
+const fetchUserRole = async (userId: string): Promise<UserRole | null> => {
+    const { data, error } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', userId)
+        .single();
+    
+    if (error) {
+        // This can happen if the user record isn't created yet due to replication delay.
+        console.error('Error fetching user role on first attempt:', error.message);
+        return null;
+    }
+    return data.role;
+}
+
 // --- Zustand Store Definition ---
 export const useAuthStore = create<AuthState>()((set, get) => ({
       user: null,
@@ -24,25 +38,25 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       isAuthLoading: true,
 
       initializeSession: () => {
-        // Set loading to true whenever we start checking auth
         set({ isAuthLoading: true });
         
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (_event, session) => {
                 if (session?.user) {
-                    const { data: userData, error } = await supabase
-                        .from('users')
-                        .select('role')
-                        .eq('id', session.user.id)
-                        .single();
-
-                    if (error) {
-                        console.error('Error fetching user role:', error);
-                        // Still set the user, but with a null role
-                        set({ user: session.user, role: null, isAuthLoading: false });
-                    } else {
-                        set({ user: session.user, role: userData.role, isAuthLoading: false });
+                    let role = await fetchUserRole(session.user.id);
+                    
+                    // Retry logic to handle replication delay for new users
+                    if (!role) {
+                        await new Promise(resolve => setTimeout(resolve, 1000)); // wait 1 sec
+                        role = await fetchUserRole(session.user.id);
                     }
+
+                    if (!role) {
+                         console.error('Error fetching user role: Role not found after retry.');
+                    }
+                    
+                    set({ user: session.user, role, isAuthLoading: false });
+
                 } else {
                     // No session or user, clear everything and stop loading
                     set({ user: null, role: null, isAuthLoading: false });
@@ -69,6 +83,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       logout: async () => {
         await supabase.auth.signOut();
         // The onAuthStateChange listener will clear the user and role.
-        set({ user: null, role: null });
+        set({ user: null, role: null, isAuthLoading: false });
       },
 }));
