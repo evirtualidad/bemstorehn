@@ -24,8 +24,8 @@ import Image from 'next/image';
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 export const bannerFormSchema = z.object({
-  title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
-  description: z.string().min(10, 'La descripción debe tener al menos 10 caracteres.'),
+  title: z.string().optional(),
+  description: z.string().optional(),
   image: z.any().refine((file) => {
     if (typeof file === 'string' && file.length > 0) return true; // Already uploaded
     if (file instanceof File && file.name !== '') return true; // New file to upload
@@ -130,7 +130,7 @@ export function BannerForm({ banner, onSubmit, onCancel }: BannerFormProps) {
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Título del Banner</FormLabel>
+              <FormLabel>Título del Banner (Opcional)</FormLabel>
               <FormControl>
                 <Input placeholder="Novedades de Verano" {...field} />
               </FormControl>
@@ -143,7 +143,7 @@ export function BannerForm({ banner, onSubmit, onCancel }: BannerFormProps) {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Descripción</FormLabel>
+              <FormLabel>Descripción (Opcional)</FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Descubre nuestra nueva colección de temporada..."
