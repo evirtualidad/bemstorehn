@@ -124,7 +124,7 @@ function GeneralSettings() {
               <CardDescription>
                 Define los costos para las diferentes opciones de envío que ofreces a tus clientes.
               </CardDescription>
-            </CardHeader>
+            </Header>
             <CardContent className="space-y-4">
                <FormField
                 control={form.control}
@@ -195,65 +195,50 @@ function GeneralSettings() {
 }
 
 function BannersManager() {
-  const { banners, addBanner, updateBanner, deleteBanner, isLoading } = useBannersStore();
+  const { banners, addBanner, updateBanner, deleteBanner, isLoading, fetchBanners } = useBannersStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingBanner, setEditingBanner] = React.useState<Banner | null>(null);
-  const { toast } = useToast();
 
-  const uploadImage = async (file: File): Promise<string | null> => {
-    return new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            resolve(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-    });
-  }
+  React.useEffect(() => {
+    fetchBanners();
+  }, [fetchBanners]);
 
   const handleAddBanner = async (values: z.infer<typeof bannerFormSchema>) => {
-    let imageUrl = `https://placehold.co/1200x600.png?text=${values.title.replace(/\s/g, '+')}`;
-    
-    if (values.image && typeof values.image !== 'string') {
-        const uploadedUrl = await uploadImage(values.image);
-        if (!uploadedUrl) return;
-        imageUrl = uploadedUrl;
+    let imageFile: File | undefined;
+    if (values.image && typeof values.image === 'object' && 'name' in values.image) {
+        imageFile = values.image;
     }
-    
-    const newBannerData: Omit<Banner, 'id'> = {
-      title: values.title,
-      description: values.description,
-      image: imageUrl,
-      ...(values.aiHint && { aiHint: values.aiHint }),
-    };
 
-    await addBanner(newBannerData);
+    await addBanner({
+        title: values.title,
+        description: values.description,
+        aiHint: values.aiHint,
+        imageFile,
+    });
+    
     setIsDialogOpen(false);
   };
 
   const handleEditBanner = async (values: z.infer<typeof bannerFormSchema>) => {
     if (!editingBanner) return;
     
+    let imageFile: File | undefined;
     let imageUrl = editingBanner.image;
-    if (values.image && typeof values.image !== 'string') {
-        const uploadedUrl = await uploadImage(values.image);
-        if (!uploadedUrl) return;
-        imageUrl = uploadedUrl;
+    
+    if (values.image && typeof values.image === 'object' && 'name' in values.image) {
+        imageFile = values.image;
     } else if (typeof values.image === 'string') {
         imageUrl = values.image;
     }
 
-    const updatedBannerData: Banner = {
-      ...editingBanner,
-      ...values,
+    await updateBanner({
+      id: editingBanner.id,
+      title: values.title,
+      description: values.description,
       image: imageUrl,
-      ...(values.aiHint && { aiHint: values.aiHint }),
-    };
-    
-    if (!values.aiHint) {
-        delete (updatedBannerData as Partial<Banner>).aiHint;
-    }
-
-    await updateBanner(updatedBannerData);
+      aiHint: values.aiHint,
+      imageFile,
+    });
 
     setEditingBanner(null);
     setIsDialogOpen(false);
