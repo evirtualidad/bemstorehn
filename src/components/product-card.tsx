@@ -69,7 +69,7 @@ export function ProductCard({
             />
             <div className="absolute top-2 left-2">
                 <Badge variant={product.stock > 0 ? 'default' : 'destructive'} className={cn(product.stock > 0 && 'bg-green-100 text-green-800 border-green-200')}>
-                    {product.stock > 0 ? 'En Stock' : 'Agotado'}
+                    {product.stock > 0 ? `Stock: ${product.stock}` : 'Agotado'}
                 </Badge>
             </div>
              {isDiscounted && (
