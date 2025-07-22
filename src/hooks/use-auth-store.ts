@@ -12,7 +12,7 @@ type AuthState = {
   user: User | null;
   role: UserRole | null;
   isAuthLoading: boolean;
-  initializeSession: () => void;
+  initializeSession: () => () => void;
   login: (email: string, password: string) => Promise<string | null>;
   logout: () => void;
 };
@@ -34,7 +34,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
                         .single();
 
                     if (error) {
-                        toast({ title: 'Error obteniendo rol', description: error.message, variant: 'destructive' });
+                        console.error('Error fetching user role:', error);
                         set({ user: session.user, role: null, isAuthLoading: false });
                     } else {
                         set({ user: session.user, role: userData.role, isAuthLoading: false });
@@ -52,6 +52,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
                      if (!error) {
                         set({ user: session.user, role: data.role, isAuthLoading: false });
                      } else {
+                        console.error('Error fetching initial session role:', error);
                         set({ user: session.user, role: null, isAuthLoading: false });
                      }
                  })
@@ -64,23 +65,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       },
 
       login: async (email, password) => {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
           return error.message;
         }
-        
-        if (data.user) {
-            const { data: userData, error: roleError } = await supabase
-                .from('users')
-                .select('role')
-                .eq('id', data.user.id)
-                .single();
-            
-            if (roleError) {
-                return roleError.message;
-            }
-            set({ user: data.user, role: userData.role, isAuthLoading: false });
-        }
+        // The onAuthStateChange listener will handle setting the user and role.
         return null;
       },
 
