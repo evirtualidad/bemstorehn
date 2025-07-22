@@ -1,0 +1,46 @@
+# The project ID of your Supabase project.
+project_id = "jlxauahbvifndbmskoud"
+
+[api]
+# The port to use for the API proxy.
+port = 54321
+# A list of paths to ignore when generating types.
+# This is useful for ignoring paths that are not part of your API.
+# excluded_paths = []
+
+[db]
+# The port to use for the local database.
+port = 54322
+# Use a custom schema for migrations.
+# schemas = ["public"]
+
+[studio]
+# The port to use for Supabase Studio.
+port = 54323
+
+# Email testing settings.
+# To test emails, you can use a local SMTP server.
+# For example, you can use `mailhog` to test emails.
+# https://github.com/mailhog/MailHog
+[inbucket]
+# The port to use for the inbucket server.
+port = 54324
+# The SMTP port to use for the inbucket server.
+smtp_port = 54325
+# The POP3 port to use for the inbucket server.
+pop3_port = 54326
+
+[functions]
+# The directory where your functions are stored.
+# deno = "functions"
+
+# The import map file to use.
+# import_map = "functions/import_map.json"
+
+# You can define environment variables for your functions here.
+# [functions.my-function.env]
+# ENV_VAR = "value"
+
+# You can also specify a file to load environment variables from.
+# [functions.my-function]
+# env_file = ".env.my-function"
