@@ -95,7 +95,7 @@ export const useProductsStore = create<ProductsState>()(
         },
 
         addProduct: async (productData) => {
-            const { imageFile, ...rest } = productData;
+            const { imageFile, category, ...rest } = productData as any; // Exclude category from rest
             let imageUrl = `https://placehold.co/400x400.png?text=${encodeURIComponent(rest.name)}`;
 
             if (imageFile) {
@@ -132,7 +132,7 @@ export const useProductsStore = create<ProductsState>()(
         },
 
         updateProduct: async (productData) => {
-            const { imageFile, id, ...rest } = productData;
+            const { imageFile, id, category, ...rest } = productData as any; // Exclude category
             let imageUrl = rest.image; // Keep original image by default
 
             if (imageFile) {
