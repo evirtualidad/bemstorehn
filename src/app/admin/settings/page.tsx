@@ -342,7 +342,7 @@ function BannersManager() {
                 <TableRow key={banner.id}>
                   <TableCell className="hidden sm:table-cell">
                     <Image
-                      alt={banner.title}
+                      alt={banner.title || 'Banner Image'}
                       className="aspect-video rounded-md object-cover"
                       height="72"
                       src={banner.image || 'https://placehold.co/128x72.png'}
@@ -414,7 +414,7 @@ function LogoManager() {
 
     const handleSave = async () => {
         if (fileToUpload) {
-            const success = await updateLogo(fileToUpload);
+            const success = await updateLogo(fileToUpload, logoUrl);
             if (success) {
                 toast({ title: 'Logo actualizado' });
             }

@@ -38,7 +38,7 @@ const uploadBannerImage = async (file: File): Promise<string | null> => {
 }
 
 const deleteBannerImage = async (imageUrl: string) => {
-    if (!imageUrl.includes(BANNERS_STORAGE_PATH)) return; // Don't delete placeholders
+    if (!imageUrl || !imageUrl.includes(BANNERS_STORAGE_PATH)) return; // Don't delete placeholders or invalid URLs
     const fileName = imageUrl.split('/').pop();
     if (!fileName) return;
 
@@ -67,7 +67,7 @@ export const useBannersStore = create<BannersState>()(
 
         addBanner: async (bannerData) => {
           const { imageFile, ...rest } = bannerData;
-          let imageUrl = `https://placehold.co/1200x600.png?text=${encodeURIComponent(rest.title)}`;
+          let imageUrl = `https://placehold.co/1200x600.png?text=${encodeURIComponent(rest.title || 'Nuevo Banner')}`;
 
           if (imageFile) {
               const uploadedUrl = await uploadBannerImage(imageFile);
