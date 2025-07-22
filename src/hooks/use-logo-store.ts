@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { create } from 'zustand';
@@ -12,7 +13,7 @@ type LogoState = {
   logoUrl: string | null;
   isLoading: boolean;
   fetchLogo: () => Promise<void>;
-  updateLogo: (file: File) => Promise<void>;
+  updateLogo: (file: File) => Promise<boolean>;
 };
 
 const uploadLogoImage = async (file: File): Promise<string | null> => {
@@ -57,7 +58,7 @@ export const useLogoStore = create<LogoState>()((set, get) => ({
             .single();
 
         if (error || !data) {
-            toast({ title: 'Error al cargar el logo', description: error ? error.message : 'No se encontraron ajustes.', variant: 'destructive' });
+            console.error('Error fetching logo:', error ? error.message : 'No settings found.');
             set({ logoUrl: 'https://placehold.co/200x80.png?text=BEM+STORE', isLoading: false });
         } else {
             set({ logoUrl: data.logo_url, isLoading: false });
@@ -71,23 +72,30 @@ export const useLogoStore = create<LogoState>()((set, get) => ({
         const newLogoUrl = await uploadLogoImage(file);
 
         if (newLogoUrl) {
-            const { error } = await supabase
+            const { data: updatedSettings, error } = await supabase
                 .from('settings')
                 .update({ logo_url: newLogoUrl })
-                .eq('id', 1);
+                .eq('id', 1)
+                .select()
+                .single();
 
-            if (error) {
-                toast({ title: 'Error al guardar el logo', description: error.message, variant: 'destructive' });
+            if (error || !updatedSettings) {
+                toast({ title: 'Error al guardar el logo', description: error?.message, variant: 'destructive' });
                 await deleteLogoImage(newLogoUrl); // Clean up uploaded image if DB update fails
+                set({ isLoading: false });
+                return false;
             } else {
                 if(oldLogoUrl) await deleteLogoImage(oldLogoUrl); // Delete old logo after successful update
-                set({ logoUrl: newLogoUrl });
-                toast({ title: 'Logo actualizado correctamente' });
+                set({ logoUrl: updatedSettings.logo_url, isLoading: false });
+                return true;
             }
         }
         set({ isLoading: false });
+        return false;
     },
 }));
 
 // Auto-fetch logo on initial load
-useLogoStore.getState().fetchLogo();
+if (typeof window !== 'undefined') {
+    useLogoStore.getState().fetchLogo();
+}

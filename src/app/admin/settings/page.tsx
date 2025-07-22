@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -413,8 +414,11 @@ function LogoManager() {
 
     const handleSave = async () => {
         if (fileToUpload) {
-            await updateLogo(fileToUpload);
-            toast({ title: 'Logo actualizado' });
+            const success = await updateLogo(fileToUpload);
+            if (success) {
+                toast({ title: 'Logo actualizado' });
+            }
+            // Error toast is handled inside the hook
             setFileToUpload(null);
         }
     };
