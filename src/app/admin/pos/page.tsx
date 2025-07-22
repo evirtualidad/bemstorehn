@@ -15,8 +15,6 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { categoryIcons } from '@/components/admin/category-icons';
-import { Card } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -120,33 +118,24 @@ export default function PosPage() {
             </div>
         </div>
         <div className="mt-6 hidden sm:flex flex-row flex-nowrap items-center gap-3 overflow-x-auto pb-2 -mx-2 px-2">
-            <Card
+            <Button
                 key="all"
-                className={cn(
-                  'flex flex-col items-center justify-center p-3 rounded-lg cursor-pointer border-2 min-w-[100px] h-24',
-                  selectedCategory === 'all' ? 'border-primary bg-primary/10' : 'bg-card'
-                )}
+                variant={selectedCategory === 'all' ? 'default' : 'secondary'}
+                className="rounded-full"
                 onClick={() => setSelectedCategory('all')}
               >
-                <span className='text-2xl mb-1'>🍽️</span>
-                <span className='font-semibold text-sm'>Todos</span>
-            </Card>
-            {categories.map((cat) => {
-                const Icon = categoryIcons[cat.name as keyof typeof categoryIcons] || categoryIcons.default;
-                return (
-                  <Card
-                    key={cat.id}
-                    className={cn(
-                      'flex flex-col items-center justify-center p-3 rounded-lg cursor-pointer border-2 min-w-[100px] h-24',
-                      selectedCategory === cat.name ? 'border-primary bg-primary/10' : 'bg-card'
-                    )}
-                    onClick={() => setSelectedCategory(cat.name)}
-                  >
-                    <Icon className="h-6 w-6 mb-1 text-primary" />
-                    <span className='font-semibold text-sm text-center'>{cat.label}</span>
-                  </Card>
-                )
-            })}
+                Todos
+            </Button>
+            {categories.map((cat) => (
+              <Button
+                key={cat.id}
+                variant={selectedCategory === cat.name ? 'default' : 'secondary'}
+                className="rounded-full"
+                onClick={() => setSelectedCategory(cat.name)}
+              >
+                {cat.label}
+              </Button>
+            ))}
         </div>
       </header>
       
