@@ -141,7 +141,7 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
                     <CartSummary />
                     <Button 
                         size="lg" 
-                        className="w-full text-md" 
+                        className="w-full text-md rounded-full" 
                         onClick={handleOpenCheckout}
                         disabled={items.length === 0}
                     >
@@ -158,7 +158,7 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
                    <div className="flex-shrink-0 p-4 border-t">
                         <Button 
                             size="lg" 
-                            className="w-full text-md" 
+                            className="w-full text-md rounded-full" 
                             onClick={handleOpenCheckout}
                             disabled={items.length === 0}
                         >
