@@ -70,10 +70,6 @@ export default function PosPage() {
     <div className="h-full flex flex-col gap-5 overflow-hidden">
       {/* Header section with Search and Categories */}
       <header className="flex-shrink-0">
-        <div className="hidden sm:block">
-          <h1 className='text-2xl font-bold mb-1'>Menu</h1>
-          <p className="text-muted-foreground">Hola, {user?.email?.split('@')[0]}. ¡Felices ventas!</p>
-        </div>
         <div className="flex items-center justify-between gap-4">
             <div className="relative flex-grow hidden sm:block">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
