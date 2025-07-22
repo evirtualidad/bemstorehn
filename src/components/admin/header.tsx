@@ -71,7 +71,7 @@ export function AdminHeader() {
                      </Link>
                 </div>
                 
-                <nav className='flex-1 justify-center hidden md:flex items-center gap-4'>
+                <nav className='flex-1 justify-center hidden md:flex items-center gap-6'>
                     <TooltipProvider>
                         {navItems.map((item) => {
                             if (item.role && item.role !== role) {
@@ -81,14 +81,14 @@ export function AdminHeader() {
                             return (
                                 <Tooltip key={item.label} delayDuration={0}>
                                     <TooltipTrigger asChild>
-                                            <Button asChild variant={'ghost'} size="sm" className={cn("h-9 justify-start md:px-3", isActive && "bg-primary/10")}>
+                                            <Button asChild variant={'ghost'} size="icon" className={cn("h-11 w-11 rounded-full", isActive && "bg-primary/10")}>
                                             <Link href={item.href} className='flex items-center'>
-                                                <item.icon className="h-4 w-4" />
-                                                <span className="hidden 2xl:inline-block 2xl:ml-2">{item.label}</span>
+                                                <item.icon className="h-5 w-5" />
+                                                <span className="sr-only">{item.label}</span>
                                             </Link>
                                         </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent side="bottom" className='2xl:hidden'>
+                                    <TooltipContent side="bottom">
                                         <p>{item.label}</p>
                                     </TooltipContent>
                                 </Tooltip>
