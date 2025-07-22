@@ -26,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { PosFab } from '@/components/admin/pos-fab';
 
 export default function PosPage() {
   const { products, isLoading: isLoadingProducts, fetchProducts } = useProductsStore();
@@ -159,6 +160,7 @@ export default function PosPage() {
             </div>
         </ScrollArea>
       </div>
+      <PosFab />
     </div>
   );
 }
