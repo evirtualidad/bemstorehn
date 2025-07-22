@@ -59,43 +59,45 @@ export function AdminHeader() {
     return (
         <>
             <header className='flex items-center justify-between p-4 border-b bg-card'>
-                 <div className="md:hidden">
-                    <Button onClick={onOpen} variant="ghost" size="icon">
-                        <Menu />
-                    </Button>
-                </div>
-                <div className='flex items-center gap-6'>
+                <div className="flex-shrink-0 flex items-center gap-4">
+                     <div className="md:hidden">
+                        <Button onClick={onOpen} variant="ghost" size="icon">
+                            <Menu />
+                        </Button>
+                    </div>
                      <Link href="/admin/dashboard-v2" className="flex items-center gap-2">
                         <Leaf className="w-8 h-8 text-primary" />
                         <span className="text-xl font-bold hidden md:inline-block">BEM STORE</span>
                      </Link>
-                    <nav className='hidden md:flex items-center gap-1'>
-                        <TooltipProvider>
-                            {navItems.map((item) => {
-                                if (item.role && item.role !== role) {
-                                    return null;
-                                }
-                                const isActive = pathname.startsWith(item.href);
-                                return (
-                                    <Tooltip key={item.label} delayDuration={0}>
-                                        <TooltipTrigger asChild>
-                                             <Button asChild variant={isActive ? 'secondary' : 'ghost'} size="sm" className="h-9 justify-start md:px-3">
-                                                <Link href={item.href} className='flex items-center'>
-                                                    <item.icon className="h-4 w-4" />
-                                                    <span className="hidden 2xl:inline-block 2xl:ml-2">{item.label}</span>
-                                                </Link>
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="bottom" className='2xl:hidden'>
-                                            <p>{item.label}</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                )
-                            })}
-                        </TooltipProvider>
-                    </nav>
                 </div>
-                <div className='flex items-center gap-4'>
+                
+                <nav className='flex-1 justify-center hidden md:flex items-center gap-4'>
+                    <TooltipProvider>
+                        {navItems.map((item) => {
+                            if (item.role && item.role !== role) {
+                                return null;
+                            }
+                            const isActive = pathname.startsWith(item.href);
+                            return (
+                                <Tooltip key={item.label} delayDuration={0}>
+                                    <TooltipTrigger asChild>
+                                            <Button asChild variant={'ghost'} size="sm" className={cn("h-9 justify-start md:px-3", isActive && "bg-primary/10")}>
+                                            <Link href={item.href} className='flex items-center'>
+                                                <item.icon className="h-4 w-4" />
+                                                <span className="hidden 2xl:inline-block 2xl:ml-2">{item.label}</span>
+                                            </Link>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom" className='2xl:hidden'>
+                                        <p>{item.label}</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            )
+                        })}
+                    </TooltipProvider>
+                </nav>
+                
+                <div className='flex-shrink-0 flex items-center gap-4'>
                     <div className='relative'>
                         <Button
                             variant="outline"
