@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 export function formatCurrency(amount: number, currencyCode: string, maximumFractionDigits: number = 2) {
   const numberFormatter = new Intl.NumberFormat('es-HN', {
     maximumFractionDigits: maximumFractionDigits,
-    minimumFractionDigits: 2,
+    minimumFractionDigits: maximumFractionDigits,
   });
   
   // Custom logic to always display "L"
@@ -22,6 +22,7 @@ export function formatCurrency(amount: number, currencyCode: string, maximumFrac
     style: 'currency',
     currency: currencyCode,
     maximumFractionDigits: maximumFractionDigits,
+    minimumFractionDigits: maximumFractionDigits,
     currencyDisplay: 'symbol',
   }).format(amount);
 }
