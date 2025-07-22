@@ -124,7 +124,7 @@ function GeneralSettings() {
               <CardDescription>
                 Define los costos para las diferentes opciones de envío que ofreces a tus clientes.
               </CardDescription>
-            </Header>
+            </CardHeader>
             <CardContent className="space-y-4">
                <FormField
                 control={form.control}
@@ -191,7 +191,7 @@ function GeneralSettings() {
           <Button type="submit">Guardar Cambios</Button>
         </form>
       </Form>
-  )
+  );
 }
 
 function BannersManager() {
@@ -521,3 +521,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
