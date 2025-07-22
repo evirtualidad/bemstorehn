@@ -142,7 +142,13 @@ export function ProductsManager() {
     setIsDialogOpen(open);
   }
 
-  const onSubmit = editingProduct ? handleEditProduct : handleAddProduct;
+  const onSubmit = async (values: z.infer<typeof productFormSchema>) => {
+      if (editingProduct) {
+          await handleEditProduct(values);
+      } else {
+          await handleAddProduct(values);
+      }
+  };
 
   if (isLoading) {
     return (

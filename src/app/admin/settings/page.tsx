@@ -195,15 +195,20 @@ function GeneralSettings() {
   );
 }
 
-function BannersManager({ banners, addBanner, updateBanner, deleteBanner, isLoading }: {
+function BannersManager({ banners, addBanner, updateBanner, deleteBanner, isLoading, fetchBanners }: {
   banners: Banner[];
   addBanner: (bannerData: Omit<Banner, 'id' | 'created_at' | 'image'> & { imageFile?: File }) => Promise<void>;
   updateBanner: (bannerData: Omit<Banner, 'created_at'> & { imageFile?: File }) => Promise<void>;
   deleteBanner: (bannerId: string) => Promise<void>;
   isLoading: boolean;
+  fetchBanners: () => void;
 }) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingBanner, setEditingBanner] = React.useState<Banner | null>(null);
+  
+  React.useEffect(() => {
+    fetchBanners();
+  }, [fetchBanners]);
 
   const handleAddBanner = async (values: z.infer<typeof bannerFormSchema>) => {
     let imageFile: File | undefined;
@@ -267,7 +272,13 @@ function BannersManager({ banners, addBanner, updateBanner, deleteBanner, isLoad
     setIsDialogOpen(open);
   };
 
-  const onSubmit = editingBanner ? handleEditBanner : handleAddBanner;
+  const onSubmit = async (values: z.infer<typeof bannerFormSchema>) => {
+    if (editingBanner) {
+      await handleEditBanner(values);
+    } else {
+      await handleAddBanner(values);
+    }
+  };
   
   if (isLoading) {
     return (
@@ -497,10 +508,6 @@ export default function SettingsPage() {
     }
   }, [role, router]);
 
-  React.useEffect(() => {
-    fetchBanners();
-  }, [fetchBanners]);
-
   if (role !== 'admin') {
     return (
       <div className="flex h-[80vh] items-center justify-center">
@@ -531,6 +538,7 @@ export default function SettingsPage() {
                 updateBanner={updateBanner}
                 deleteBanner={deleteBanner}
                 isLoading={isLoadingBanners}
+                fetchBanners={fetchBanners}
             />
         </TabsContent>
         <TabsContent value="logo">
