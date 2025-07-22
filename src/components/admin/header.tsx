@@ -10,7 +10,6 @@ import {
     Package,
     Users2,
     Building,
-    Users,
     Settings,
     LogOut,
     ShoppingBag,
@@ -33,7 +32,6 @@ const navItems = [
     { href: '/admin/inventory', icon: Package, label: 'Inventario' },
     { href: '/admin/customers', icon: Users2, label: 'Clientes' },
     { href: '/admin/finance', icon: Building, label: 'Finanzas', role: 'admin' },
-    { href: '/admin/users', icon: Users, label: 'Usuarios', role: 'admin' },
     { href: '/admin/settings', icon: Settings, label: 'Ajustes', role: 'admin'},
 ];
 

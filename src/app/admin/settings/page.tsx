@@ -44,6 +44,7 @@ import {
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { useRouter } from 'next/navigation';
 import { useLogoStore } from '@/hooks/use-logo-store';
+import UsersManager from '../users/page';
 
 
 const settingsFormSchema = z.object({
@@ -516,6 +517,7 @@ export default function SettingsPage() {
             <TabsTrigger value="general">Generales</TabsTrigger>
             <TabsTrigger value="banners">Banners</TabsTrigger>
             <TabsTrigger value="logo">Logo</TabsTrigger>
+            <TabsTrigger value="users">Usuarios</TabsTrigger>
             </TabsList>
         </div>
         <TabsContent value="general">
@@ -526,6 +528,9 @@ export default function SettingsPage() {
         </TabsContent>
         <TabsContent value="logo">
             <LogoManager />
+        </TabsContent>
+        <TabsContent value="users">
+            <UsersManager />
         </TabsContent>
       </Tabs>
     </div>
