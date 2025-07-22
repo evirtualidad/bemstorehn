@@ -80,9 +80,6 @@ export function ProductCard({
         </div>
         <CardContent className="p-4 flex flex-col flex-1">
             <h3 className="font-bold leading-tight text-sm md:text-md line-clamp-2 flex-grow">{product.name}</h3>
-            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                {product.description}
-            </p>
             <div className="flex items-end justify-between mt-3">
                 <div className="flex flex-col items-start">
                     <span className="font-bold text-base md:text-lg text-foreground">
