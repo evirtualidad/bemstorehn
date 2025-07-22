@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
     BarChart2,
     ListOrdered,
@@ -29,13 +29,13 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/
 import { useTheme } from 'next-themes';
 
 const navItems = [
-    { href: '/admin/dashboard-v2', icon: BarChart2, label: 'Dashboard' },
-    { href: '/admin/pos', icon: ShoppingBag, label: 'POS' },
-    { href: '/admin/orders', icon: ListOrdered, label: 'Pedidos' },
-    { href: '/admin/inventory', icon: Package, label: 'Inventario' },
-    { href: '/admin/customers', icon: Users2, label: 'Clientes' },
-    { href: '/admin/finance', icon: Building, label: 'Finanzas', role: 'admin' },
-    { href: '/admin/settings', icon: Settings, label: 'Ajustes', role: 'admin'},
+    { href: '/admin/dashboard-v2', label: 'Dashboard', icon: BarChart2 },
+    { href: '/admin/pos', label: 'POS', icon: ShoppingBag },
+    { href: '/admin/orders', label: 'Pedidos', icon: ListOrdered },
+    { href: '/admin/inventory', label: 'Inventario', icon: Package, role: 'admin' },
+    { href: '/admin/customers', label: 'Clientes', icon: Users2 },
+    { href: '/admin/finance', label: 'Finanzas', icon: Building, role: 'admin' },
+    { href: '/admin/settings', label: 'Ajustes', icon: Settings, role: 'admin'},
 ];
 
 const ThemeToggleButton = () => {
@@ -67,10 +67,12 @@ export function AdminHeader() {
     const { onOpen } = useMobileSidebarStore();
     const [isCartOpen, setIsCartOpen] = React.useState(false);
     const pathname = usePathname();
+    const router = useRouter();
 
-    const handleLogout = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const handleLogout = async (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
-        logout();
+        await logout();
+        router.push('/login');
     };
     
     const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
@@ -127,10 +129,8 @@ export function AdminHeader() {
                 
                 <div className='flex-shrink-0 flex items-center gap-2'>
                      <ThemeToggleButton />
-                     <Button asChild variant="ghost" size="icon" onClick={handleLogout} className="h-11 w-11 rounded-full bg-destructive/20 text-destructive hover:bg-destructive/20 hover:text-destructive">
-                         <Link href="/login">
-                            <LogOut className="h-5 w-5" />
-                        </Link>
+                     <Button variant="ghost" size="icon" onMouseDown={handleLogout} className="h-11 w-11 rounded-full bg-destructive/20 text-destructive hover:bg-destructive/20 hover:text-destructive">
+                         <LogOut className="h-5 w-5" />
                      </Button>
                 </div>
             </header>

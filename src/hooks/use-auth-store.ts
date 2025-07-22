@@ -13,7 +13,7 @@ type AuthState = {
   isAuthLoading: boolean;
   initializeSession: () => () => void;
   login: (email: string, password: string) => Promise<string | null>;
-  logout: () => void;
+  logout: () => Promise<void>;
 };
 
 const fetchUserRole = async (userId: string): Promise<UserRole | null> => {
@@ -24,7 +24,6 @@ const fetchUserRole = async (userId: string): Promise<UserRole | null> => {
         .single();
     
     if (error) {
-        // This can happen if the user record isn't created yet due to replication delay.
         console.error('Error fetching user role on first attempt:', error.message);
         return null;
     }
@@ -45,9 +44,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
                 if (session?.user) {
                     let role = await fetchUserRole(session.user.id);
                     
-                    // Retry logic to handle replication delay for new users
                     if (!role) {
-                        await new Promise(resolve => setTimeout(resolve, 1000)); // wait 1 sec
+                        await new Promise(resolve => setTimeout(resolve, 1500)); 
                         role = await fetchUserRole(session.user.id);
                     }
 
@@ -58,7 +56,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
                     set({ user: session.user, role, isAuthLoading: false });
 
                 } else {
-                    // No session or user, clear everything and stop loading
+                    // This case handles signOut
                     set({ user: null, role: null, isAuthLoading: false });
                 }
             }
@@ -72,17 +70,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       login: async (email, password) => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
-          // Return the error message to be displayed in the toast
           return error.message;
         }
-        // If login is successful, onAuthStateChange will handle setting user and role.
-        // Return null to indicate success.
         return null;
       },
 
       logout: async () => {
         await supabase.auth.signOut();
-        // The onAuthStateChange listener will clear the user and role.
-        set({ user: null, role: null, isAuthLoading: false });
       },
 }));
