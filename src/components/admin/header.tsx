@@ -69,30 +69,34 @@ export function AdminHeader() {
                      </Link>
                 </div>
                 
-                <nav className='flex-1 justify-center hidden md:flex items-center gap-6'>
-                    <TooltipProvider>
-                        {navItems.map((item) => {
-                            if (item.role && item.role !== role) {
-                                return null;
-                            }
-                            const isActive = pathname.startsWith(item.href);
-                            return (
-                                <Tooltip key={item.label} delayDuration={0}>
-                                    <TooltipTrigger asChild>
-                                            <Button asChild variant={'ghost'} size="icon" className={cn("h-11 w-11 rounded-full", isActive && "bg-primary/10")}>
-                                            <Link href={item.href} className='flex items-center'>
-                                                <item.icon className="h-5 w-5" />
-                                                <span className="sr-only">{item.label}</span>
-                                            </Link>
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="bottom">
-                                        <p>{item.label}</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            )
-                        })}
-                    </TooltipProvider>
+                <nav className='flex-1 justify-center hidden md:flex'>
+                    <div className='bg-muted p-1 rounded-full'>
+                        <TooltipProvider>
+                            <div className='flex items-center gap-2'>
+                                {navItems.map((item) => {
+                                    if (item.role && item.role !== role) {
+                                        return null;
+                                    }
+                                    const isActive = pathname.startsWith(item.href);
+                                    return (
+                                        <Tooltip key={item.label} delayDuration={0}>
+                                            <TooltipTrigger asChild>
+                                                    <Button asChild variant={'ghost'} size="icon" className={cn("h-11 w-11 rounded-full", isActive && "bg-primary/10")}>
+                                                    <Link href={item.href} className='flex items-center'>
+                                                        <item.icon className="h-5 w-5" />
+                                                        <span className="sr-only">{item.label}</span>
+                                                    </Link>
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="bottom">
+                                                <p>{item.label}</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    )
+                                })}
+                            </div>
+                        </TooltipProvider>
+                    </div>
                 </nav>
                 
                 <div className='flex-shrink-0 flex items-center gap-4'>
