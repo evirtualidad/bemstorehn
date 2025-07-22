@@ -195,14 +195,15 @@ function GeneralSettings() {
   );
 }
 
-function BannersManager() {
-  const { banners, addBanner, updateBanner, deleteBanner, isLoading, fetchBanners } = useBannersStore();
+function BannersManager({ banners, addBanner, updateBanner, deleteBanner, isLoading }: {
+  banners: Banner[];
+  addBanner: (bannerData: Omit<Banner, 'id' | 'created_at' | 'image'> & { imageFile?: File }) => Promise<void>;
+  updateBanner: (bannerData: Omit<Banner, 'created_at'> & { imageFile?: File }) => Promise<void>;
+  deleteBanner: (bannerId: string) => Promise<void>;
+  isLoading: boolean;
+}) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingBanner, setEditingBanner] = React.useState<Banner | null>(null);
-
-  React.useEffect(() => {
-    fetchBanners();
-  }, [fetchBanners]);
 
   const handleAddBanner = async (values: z.infer<typeof bannerFormSchema>) => {
     let imageFile: File | undefined;
@@ -414,7 +415,7 @@ function LogoManager() {
 
     const handleSave = async () => {
         if (fileToUpload) {
-            const success = await updateLogo(fileToUpload, logoUrl);
+            const success = await updateLogo(fileToUpload);
             if (success) {
                 toast({ title: 'Logo actualizado' });
             }
@@ -487,6 +488,7 @@ function LogoManager() {
 
 export default function SettingsPage() {
   const { role } = useAuthStore();
+  const { banners, isLoading: isLoadingBanners, fetchBanners, addBanner, updateBanner, deleteBanner } = useBannersStore();
   const router = useRouter();
 
   React.useEffect(() => {
@@ -494,6 +496,10 @@ export default function SettingsPage() {
       router.replace('/admin/dashboard-v2');
     }
   }, [role, router]);
+
+  React.useEffect(() => {
+    fetchBanners();
+  }, [fetchBanners]);
 
   if (role !== 'admin') {
     return (
@@ -519,7 +525,13 @@ export default function SettingsPage() {
             <GeneralSettings />
         </TabsContent>
         <TabsContent value="banners">
-            <BannersManager />
+            <BannersManager 
+                banners={banners}
+                addBanner={addBanner}
+                updateBanner={updateBanner}
+                deleteBanner={deleteBanner}
+                isLoading={isLoadingBanners}
+            />
         </TabsContent>
         <TabsContent value="logo">
             <LogoManager />

@@ -38,11 +38,21 @@ const uploadBannerImage = async (file: File): Promise<string | null> => {
 }
 
 const deleteBannerImage = async (imageUrl: string) => {
-    if (!imageUrl || !imageUrl.includes(BANNERS_STORAGE_PATH)) return; // Don't delete placeholders or invalid URLs
-    const fileName = imageUrl.split('/').pop();
-    if (!fileName) return;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!imageUrl || !supabaseUrl || !imageUrl.startsWith(supabaseUrl)) {
+        return; 
+    }
+    
+    // Path is of the form /storage/v1/object/public/bucket_name/file_name.ext
+    const pathWithBucket = new URL(imageUrl).pathname.split('/public/').pop();
+    if (!pathWithBucket) return;
 
-    const { error } = await supabase.storage.from(BANNERS_STORAGE_PATH).remove([fileName]);
+    const [bucketName, ...filePathParts] = pathWithBucket.split('/');
+    if (bucketName !== BANNERS_STORAGE_PATH || filePathParts.length === 0) return;
+
+    const filePath = filePathParts.join('/');
+
+    const { error } = await supabase.storage.from(BANNERS_STORAGE_PATH).remove([filePath]);
     if (error) {
          toast({ title: 'Error al eliminar imagen antigua', description: error.message, variant: 'destructive' });
     }
