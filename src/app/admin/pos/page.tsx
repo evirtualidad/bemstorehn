@@ -81,7 +81,7 @@ export default function PosPage() {
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar por comida, café, etc.."
-                className="h-12 rounded-lg bg-card pl-12 text-base focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="h-12 rounded-full bg-card pl-12 text-base focus-visible:ring-0 focus-visible:ring-offset-0"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -92,7 +92,7 @@ export default function PosPage() {
                     <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       placeholder="Buscar por comida, café, etc.."
-                      className="h-12 rounded-lg bg-card pl-12 text-base focus-visible:ring-0 focus-visible:ring-offset-0"
+                      className="h-12 rounded-full bg-card pl-12 text-base focus-visible:ring-0 focus-visible:ring-offset-0"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -100,7 +100,7 @@ export default function PosPage() {
                   <div className="sm:hidden">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="icon" className='h-12 w-12 rounded-lg focus-visible:ring-0 focus-visible:ring-offset-0'>
+                          <Button variant="outline" size="icon" className='h-12 w-12 rounded-full focus-visible:ring-0 focus-visible:ring-offset-0'>
                             <ListFilter className="h-5 w-5" />
                           </Button>
                         </DropdownMenuTrigger>
