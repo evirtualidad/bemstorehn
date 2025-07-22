@@ -35,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { Product } from '@/lib/products';
+import type { Product } from '@/lib/types';
 import Image from 'next/image';
 import {
   Dialog,
@@ -53,23 +53,25 @@ import { formatCurrency } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useCategoriesStore } from '@/hooks/use-categories';
 
 export function ProductsManager() {
-  const { products, addProduct, updateProduct, deleteProduct, isLoading } = useProductsStore();
+  const { products, addProduct, updateProduct, deleteProduct, isLoading, fetchProducts } = useProductsStore();
+  const { categories, getCategoryById } = useCategoriesStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
+
+  React.useEffect(() => {
+      fetchProducts();
+  }, [fetchProducts]);
   
   const handleAddProduct = async (values: z.infer<typeof productFormSchema>) => {
     let imageFile: File | undefined;
-    let imageUrl: string | undefined;
 
-    // Check if image is a file object without using instanceof
-    if (values.image && typeof values.image === 'object' && typeof values.image.name === 'string') {
+    if (values.image && typeof values.image === 'object' && 'name' in values.image) {
         imageFile = values.image;
-    } else {
-        imageUrl = `https://placehold.co/400x400.png?text=${values.name.replace(/\s/g, '+')}`;
     }
 
     const { image, ...restOfValues } = values;
@@ -81,8 +83,8 @@ export function ProductsManager() {
         stock: Number(values.stock),
         featured: values.featured,
         aiHint: values.aiHint,
-        image: imageUrl, // Pass placeholder URL if no file
-        imageFile: imageFile, // Pass file if it exists
+        category_id: values.category,
+        imageFile: imageFile,
     };
     
     await addProduct(newProductData as any);
@@ -95,26 +97,24 @@ export function ProductsManager() {
     let imageUrl = editingProduct.image;
     let imageFile: File | undefined = undefined;
 
-    // Check if image is a file object without using instanceof
-    if (values.image && typeof values.image === 'object' && typeof values.image.name === 'string') {
+    if (values.image && typeof values.image === 'object' && 'name' in values.image) {
         imageFile = values.image;
-        // The upload and URL generation is handled within the updateProduct hook now
     } else if (typeof values.image === 'string') {
         imageUrl = values.image;
-    } else {
-        // If no image is set (was cleared), use a placeholder
-        imageUrl = `https://placehold.co/400x400.png?text=${values.name.replace(/\s/g, '+')}`;
     }
 
     await updateProduct({
-      ...editingProduct,
-      ...values,
-      image: imageUrl, // Pass original or placeholder image URL
-      imageFile: imageFile, // Pass new file if it exists
+      id: editingProduct.id,
+      name: values.name,
+      description: values.description,
       price: Number(values.price),
       original_price: values.original_price ? Number(values.original_price) : undefined,
       stock: Number(values.stock),
       featured: values.featured,
+      aiHint: values.aiHint,
+      category_id: values.category,
+      image: imageUrl,
+      imageFile: imageFile,
     } as any);
 
     setEditingProduct(null);
@@ -248,6 +248,7 @@ export function ProductsManager() {
             <TableBody>
               {products.map((product) => {
                 const isDiscounted = product.original_price && product.original_price > product.price;
+                const categoryLabel = getCategoryById(product.category_id as string)?.label || 'N/A';
                 return (
                   <TableRow key={product.id}>
                     <TableCell className="hidden sm:table-cell">
@@ -284,7 +285,7 @@ export function ProductsManager() {
                       {product.stock}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {product.category}
+                      {categoryLabel}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>

@@ -6,10 +6,10 @@ import { useProductsStore } from '@/hooks/use-products';
 import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Minus, Plus, Heart } from 'lucide-react';
+import { ShoppingCart, Minus, Plus } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
-import { cn, formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ProductHeader } from '@/components/product-header';
@@ -24,14 +24,16 @@ export default function ProductDetailPage() {
   const { currency } = useCurrencyStore();
   
   const [quantity, setQuantity] = React.useState(1);
+  const [isClient, setIsClient] = React.useState(false);
 
   React.useEffect(() => {
+    setIsClient(true);
     fetchProducts();
   }, [fetchProducts]);
 
   const product = getProductById(productId);
 
-  if (isLoadingProducts) {
+  if (isLoadingProducts || !isClient) {
     return (
         <div className="bg-background min-h-screen">
           <div className="flex-1 flex items-center justify-center h-screen">

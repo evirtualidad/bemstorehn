@@ -87,7 +87,8 @@ import {
 } from '@/components/ui/table';
 
 import { useCurrencyStore } from '@/hooks/use-currency';
-import { useOrdersStore, type Order } from '@/hooks/use-orders';
+import { useOrdersStore } from '@/hooks/use-orders';
+import type { Order } from '@/lib/types';
 import { useProductsStore } from '@/hooks/use-products';
 import { useToast } from '@/hooks/use-toast';
 import { cn, formatCurrency } from '@/lib/utils';
@@ -239,7 +240,7 @@ function OrderDetailsDialog({ order, isOpen, onOpenChange }: { order: Order | nu
 
 function ApproveOrderDialog({ order, children }: { order: Order; children: React.ReactNode }) {
     const { approveOrder } = useOrdersStore();
-    const { getProductById, decreaseStock } = useProductsStore();
+    const { getProductById } = useProductsStore();
     const { toast } = useToast();
     const [isOpen, setIsOpen] = React.useState(false);
     const [today, setToday] = React.useState<Date | null>(null);
@@ -270,20 +271,6 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
                 });
                 return; // Stop the process
             }
-        }
-        
-        // --- Decrease stock for each item ---
-        try {
-            for (const item of order.items) {
-                await decreaseStock(item.id, item.quantity);
-            }
-        } catch (error: any) {
-             toast({
-                title: '¡Error al actualizar stock!',
-                description: `No se pudo actualizar el stock: ${error.message}`,
-                variant: 'destructive',
-            });
-            return;
         }
 
         await approveOrder({
@@ -432,23 +419,9 @@ function RejectOrderDialog({ order, children }: { order: Order; children: React.
 
 function CancelOrderDialog({ order, children }: { order: Order; children: React.ReactNode }) {
     const { cancelOrder } = useOrdersStore();
-    const { increaseStock } = useProductsStore();
-    const { toast } = useToast();
 
     const handleCancel = async () => {
-        // Only return stock if the order was not in a 'pending-approval' or 'cancelled' state.
-        // This means it was a processed order.
-        if (order.status !== 'pending-approval' && order.status !== 'cancelled') {
-             for (const item of order.items) {
-                await increaseStock(item.id, item.quantity);
-            }
-        }
         await cancelOrder(order.id);
-        toast({
-            title: 'Pedido Cancelado',
-            description: `El pedido ${order.display_id} ha sido cancelado.`,
-            variant: 'destructive',
-        });
     };
 
     return (
@@ -474,7 +447,7 @@ function CancelOrderDialog({ order, children }: { order: Order; children: React.
 
 
 export default function OrdersPage() {
-  const { orders } = useOrdersStore();
+  const { orders, fetchOrders } = useOrdersStore();
   const { currency } = useCurrencyStore();
   
   const [detailsOrder, setDetailsOrder] = React.useState<Order | null>(null);
@@ -486,6 +459,10 @@ export default function OrdersPage() {
   const [channelFilter, setChannelFilter] = React.useState<string[]>([]);
   const [paymentMethodFilter, setPaymentMethodFilter] = React.useState<string[]>([]);
   const [deliveryMethodFilter, setDeliveryMethodFilter] = React.useState<string[]>([]);
+  
+  React.useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
 
   const sortedOrders = [...orders].sort((a, b) => {

@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { Product } from '@/lib/products';
+import type { Product } from '@/lib/types';
 import { DialogFooter } from './ui/dialog';
 import { Checkbox } from './ui/checkbox';
 import { useCategoriesStore } from '@/hooks/use-categories';
@@ -85,7 +85,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
       price: product?.price || 0,
       original_price: product?.original_price || '',
       stock: product?.stock || 0,
-      category: product?.category || '',
+      category: product?.category_id || '',
       image: product?.image || undefined,
       featured: product?.featured || false,
       aiHint: product?.aiHint || '',
@@ -252,7 +252,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
                 </FormControl>
                 <SelectContent>
                   {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.name}>{cat.label}</SelectItem>
+                    <SelectItem key={cat.id} value={cat.id}>{cat.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

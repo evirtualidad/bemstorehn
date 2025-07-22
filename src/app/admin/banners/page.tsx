@@ -44,7 +44,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import Image from 'next/image';
-import { useBannersStore, type Banner } from '@/hooks/use-banners';
+import { useBannersStore } from '@/hooks/use-banners';
+import type { Banner } from '@/lib/types';
 import { BannerForm, bannerFormSchema } from '@/components/banner-form';
 import { z } from 'zod';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -52,56 +53,50 @@ import { useToast } from '@/hooks/use-toast';
 
 
 export function BannersManager() {
-  const { banners, addBanner, updateBanner, deleteBanner, isLoading } = useBannersStore();
+  const { banners, addBanner, updateBanner, deleteBanner, isLoading, fetchBanners } = useBannersStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingBanner, setEditingBanner] = React.useState<Banner | null>(null);
   const { toast } = useToast();
-
-  const uploadImage = async (file: File): Promise<string | null> => {
-    // Simulate upload by creating a blob URL
-    return new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            resolve(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-    });
-  }
-
+  
+  React.useEffect(() => {
+    fetchBanners();
+  }, [fetchBanners]);
 
   const handleAddBanner = async (values: z.infer<typeof bannerFormSchema>) => {
-    let imageUrl = `https://placehold.co/1200x600.png?text=${values.title.replace(/\s/g, '+')}`;
-    
-    if (values.image && typeof values.image !== 'string') {
-        const uploadedUrl = await uploadImage(values.image);
-        if (!uploadedUrl) return;
-        imageUrl = uploadedUrl;
+    let imageFile: File | undefined;
+    if (values.image && typeof values.image === 'object' && 'name' in values.image) {
+        imageFile = values.image;
     }
+
+    await addBanner({
+        title: values.title,
+        description: values.description,
+        aiHint: values.aiHint,
+        imageFile,
+    });
     
-    const newBannerData = {
-      ...values,
-      image: imageUrl,
-    };
-    await addBanner(newBannerData);
     setIsDialogOpen(false);
   };
 
   const handleEditBanner = async (values: z.infer<typeof bannerFormSchema>) => {
     if (!editingBanner) return;
     
+    let imageFile: File | undefined;
     let imageUrl = editingBanner.image;
-    if (values.image && typeof values.image !== 'string') {
-        const uploadedUrl = await uploadImage(values.image);
-        if (!uploadedUrl) return;
-        imageUrl = uploadedUrl;
+    
+    if (values.image && typeof values.image === 'object' && 'name' in values.image) {
+        imageFile = values.image;
     } else if (typeof values.image === 'string') {
         imageUrl = values.image;
     }
 
     await updateBanner({
-      ...editingBanner,
-      ...values,
+      id: editingBanner.id,
+      title: values.title,
+      description: values.description,
       image: imageUrl,
+      aiHint: values.aiHint,
+      imageFile,
     });
 
     setEditingBanner(null);

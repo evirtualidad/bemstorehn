@@ -43,7 +43,8 @@ import {
 } from '@/components/ui/table';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useCategoriesStore, type Category } from '@/hooks/use-categories';
+import { useCategoriesStore } from '@/hooks/use-categories';
+import type { Category } from '@/lib/types';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -108,9 +109,14 @@ function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps) {
 
 
 export function CategoriesManager() {
-  const { categories, addCategory, updateCategory, deleteCategory, isLoading } = useCategoriesStore();
+  const { categories, addCategory, updateCategory, deleteCategory, isLoading, fetchCategories } = useCategoriesStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingCategory, setEditingCategory] = React.useState<Category | null>(null);
+
+  React.useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
 
   const handleAddCategory = async (values: z.infer<typeof categoryFormSchema>) => {
     await addCategory(values);
@@ -121,7 +127,7 @@ export function CategoriesManager() {
     if (!editingCategory) return;
     
     await updateCategory({
-      ...editingCategory,
+      id: editingCategory.id,
       ...values,
     });
 

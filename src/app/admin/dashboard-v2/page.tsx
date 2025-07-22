@@ -56,10 +56,16 @@ const statusConfig = {
 
 
 export default function DashboardV2() {
-  const { orders, isLoading: isLoadingOrders } = useOrdersStore();
-  const { products, isLoading: isLoadingProducts } = useProductsStore();
-  const { customers, isLoading: isLoadingCustomers } = useCustomersStore();
+  const { orders, isLoading: isLoadingOrders, fetchOrders } = useOrdersStore();
+  const { products, isLoading: isLoadingProducts, fetchProducts } = useProductsStore();
+  const { customers, isLoading: isLoadingCustomers, fetchCustomers } = useCustomersStore();
   const { currency } = useCurrencyStore();
+
+  React.useEffect(() => {
+    fetchOrders();
+    fetchProducts();
+    fetchCustomers();
+  }, [fetchOrders, fetchProducts, fetchCustomers]);
   
   const isLoading = isLoadingOrders || isLoadingProducts || isLoadingCustomers;
 

@@ -16,42 +16,58 @@ import { formatCurrency } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import { useSettingsStore } from '@/hooks/use-settings-store';
-import { useCustomersStore } from '@/hooks/use-customers';
 import { useParams } from 'next/navigation';
+import type { Order } from '@/lib/types';
 
 export default function OrderConfirmationPage() {
   const params = useParams();
   const orderId = params.orderId as string;
-  const getOrderById = useOrdersStore(state => state.getOrderById);
+  const { getOrderById, fetchOrders } = useOrdersStore();
   const { currency } = useCurrencyStore();
   const { taxRate } = useSettingsStore();
-  const [order, setOrder] = React.useState<ReturnType<typeof useOrdersStore.getState.getOrderById>>(undefined);
+  const [order, setOrder] = React.useState<Order | undefined>(undefined);
   const [isLoading, setIsLoading] = React.useState(true);
   
   React.useEffect(() => {
     // We poll for the order, as it might take a moment to appear in the listener
-    const interval = setInterval(() => {
-      const foundOrder = getOrderById(orderId);
-      if (foundOrder) {
-        setOrder(foundOrder);
-        setIsLoading(false);
-        clearInterval(interval);
-      }
-    }, 500); // Check every 500ms
-
-    // Timeout after 10 seconds if order not found
-    const timeout = setTimeout(() => {
-        clearInterval(interval);
-        if (!order) {
+    const findOrder = () => {
+        const foundOrder = getOrderById(orderId);
+        if (foundOrder) {
+            setOrder(foundOrder);
             setIsLoading(false);
+            return true;
         }
-    }, 10000);
+        return false;
+    }
 
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
-  }, [orderId, getOrderById, order]);
+    if (findOrder()) return;
+
+    // If not found, fetch all orders and try again
+    fetchOrders().then(() => {
+        if(!findOrder()) {
+             // If still not found after fetch, try polling
+            const interval = setInterval(() => {
+                if (findOrder()) {
+                    clearInterval(interval);
+                }
+            }, 1000);
+
+            // Timeout after 10 seconds if order not found
+            const timeout = setTimeout(() => {
+                clearInterval(interval);
+                 if (!order) {
+                    setIsLoading(false);
+                }
+            }, 10000);
+
+            return () => {
+                clearInterval(interval);
+                clearTimeout(timeout);
+            };
+        }
+    });
+
+  }, [orderId, getOrderById, fetchOrders, order]);
 
 
   if (isLoading) {

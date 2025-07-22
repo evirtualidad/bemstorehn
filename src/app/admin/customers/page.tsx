@@ -27,9 +27,13 @@ import { Search } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function CustomersPage() {
-  const { customers, isLoading } = useCustomersStore();
+  const { customers, isLoading, fetchCustomers } = useCustomersStore();
   const { currency } = useCurrencyStore();
   const [searchTerm, setSearchTerm] = React.useState('');
+
+  React.useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
   
   const sortedCustomers = React.useMemo(() => 
     [...customers].sort((a, b) => b.total_spent - a.total_spent),

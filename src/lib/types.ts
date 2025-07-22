@@ -10,19 +10,22 @@ export type Product = {
   price: number;
   original_price?: number;
   description: string;
-  category: string; 
+  category_id?: string;
+  category?: string; // This will be populated from a join
   stock: number;
   featured?: boolean;
 }
 
 export type Category = {
   id: string; 
+  created_at?: string;
   name: string; 
   label: string; 
 }
 
 export type Banner = {
   id: string;
+  created_at?: string;
   title: string;
   description: string;
   image: string;

@@ -10,9 +10,9 @@ import { useBannersStore } from '@/hooks/use-banners';
 import { HomePageContent } from '@/components/store/home-page-content';
 
 export default function Home() {
-  const { products, isLoading: isLoadingProducts, featuredProducts, fetchProducts } = useProductsStore();
+  const { products, isLoading: isLoadingProducts, fetchProducts } = useProductsStore();
   const { categories, isLoading: isLoadingCategories, fetchCategories } = useCategoriesStore();
-  const { banners, isLoading: isLoadingBanners, fetchBanners } = useBannersStore();
+  const { isLoading: isLoadingBanners, fetchBanners } = useBannersStore();
 
   React.useEffect(() => {
     fetchProducts();
