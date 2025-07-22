@@ -98,23 +98,6 @@ export function AdminHeader() {
                 </nav>
                 
                 <div className='flex-shrink-0 flex items-center gap-4'>
-                    {pathname.startsWith('/admin/pos') && (
-                        <div className='relative'>
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className='rounded-lg'
-                                onClick={() => setIsCartOpen(true)}
-                            >
-                                <ShoppingCart className="h-5 w-5" />
-                            </Button>
-                            {totalItems > 0 && (
-                                <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-background">
-                                    {totalItems}
-                                </div>
-                            )}
-                        </div>
-                    )}
                      <Button asChild variant="ghost" size="icon" onClick={handleLogout} className="h-11 w-11 rounded-full bg-destructive/20 text-destructive hover:bg-destructive/20 hover:text-destructive">
                          <Link href="/login">
                             <LogOut className="h-5 w-5" />
