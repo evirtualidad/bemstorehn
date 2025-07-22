@@ -39,6 +39,8 @@ export const useCustomersStore = create<CustomersState>()(
         },
 
         addOrUpdateCustomer: async ({ phone, name, address }) => {
+            // This logic is now primarily for the POS system.
+            // Online store customer creation is handled by the 'create-order' Edge Function.
             if ((!phone || phone.trim() === '') && (name.trim().toLowerCase() === 'consumidor final' || name.trim() === '')) {
                 return null;
             }
@@ -92,6 +94,9 @@ export const useCustomersStore = create<CustomersState>()(
         
         addPurchaseToCustomer: async (customerId, amount) => {
             if (!customerId) return;
+            // This logic is now handled by a database function 'increment_customer_stats'
+            // called from the 'create-order' Edge Function.
+            // This client-side function is kept for potential POS use or other scenarios.
             const customer = get().customers.find(c => c.id === customerId);
             if (!customer) return;
 
@@ -104,7 +109,8 @@ export const useCustomersStore = create<CustomersState>()(
                 .eq('id', customerId);
             
             if (error) {
-                toast({ title: 'Error actualizando compra del cliente', description: error.message, variant: 'destructive' });
+                // Silent failure is acceptable here as the source of truth is the backend.
+                console.error('Error updating customer purchase stats (client-side):', error.message);
             } else {
                 set(produce((state: CustomersState) => {
                     const customerToUpdate = state.customers.find(c => c.id === customerId);
