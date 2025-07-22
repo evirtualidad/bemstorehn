@@ -113,13 +113,9 @@ export function AdminHeader() {
                             </div>
                         )}
                     </div>
-                    <div className='text-right hidden sm:block'>
-                        <p className='font-semibold'>{user?.email}</p>
-                        <p className='text-xs text-muted-foreground'>{user?.role}</p>
-                    </div>
-                     <Button asChild variant="ghost" size="icon" onClick={handleLogout}>
+                     <Button asChild variant="ghost" size="icon" onClick={handleLogout} className="h-11 w-11 rounded-full bg-destructive/20 text-destructive hover:bg-destructive/20">
                          <Link href="/login">
-                            <LogOut className="h-5 w-5 text-muted-foreground" />
+                            <LogOut className="h-5 w-5" />
                         </Link>
                      </Button>
                 </div>
