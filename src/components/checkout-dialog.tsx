@@ -185,7 +185,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
                                 type="button"
                                 variant={customerType === 'consumidorFinal' ? 'secondary' : 'outline'}
                                 onClick={() => handleCustomerTypeChange('consumidorFinal')}
-                                className="h-12"
+                                className="h-12 rounded-xl"
                                >
                                   <User className="mr-2 h-4 w-4"/> Consumidor Final
                                </Button>
@@ -193,7 +193,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
                                 type="button"
                                 variant={customerType === 'specific' ? 'secondary' : 'outline'}
                                 onClick={() => handleCustomerTypeChange('specific')}
-                                className="h-12"
+                                className="h-12 rounded-xl"
                                >
                                  <UserSearch className="mr-2 h-4 w-4"/>  Buscar Cliente
                                </Button>
@@ -232,7 +232,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
                                                     key={method.value}
                                                     type="button"
                                                     variant={field.value === method.value ? 'secondary' : 'outline'}
-                                                    className="flex flex-col h-20 rounded-lg"
+                                                    className="flex flex-col h-20 rounded-xl"
                                                     onClick={() => field.onChange(method.value)}
                                                   >
                                                      <method.icon className="mb-2 h-6 w-6" />
