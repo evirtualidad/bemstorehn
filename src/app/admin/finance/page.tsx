@@ -404,7 +404,7 @@ function AccountsReceivable({ orders, currencyCode }: { orders: any[], currencyC
                           <TableCell className="text-right font-medium">{formatCurrency(order.balance, currencyCode)}</TableCell>
                           <TableCell className="text-right">
                               <RegisterPaymentDialog order={order}>
-                                  <Button variant="outline" size="sm">Registrar Pago</Button>
+                                  <Button variant="outline" size="sm" className="rounded-full">Registrar Pago</Button>
                               </RegisterPaymentDialog>
                           </TableCell>
                       </TableRow>
