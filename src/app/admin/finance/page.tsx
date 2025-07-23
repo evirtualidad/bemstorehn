@@ -509,7 +509,7 @@ export default function FinancePage() {
         <Tabs defaultValue="summary">
             <div className='flex justify-between items-center mb-4'>
                 <h1 className="text-2xl font-bold">Finanzas</h1>
-                <TabsList>
+                <TabsList className="rounded-full">
                     <TabsTrigger value="summary">Resumen</TabsTrigger>
                     <TabsTrigger value="accounts-receivable">Cuentas por Cobrar</TabsTrigger>
                     <TabsTrigger value="transactions">Transacciones</TabsTrigger>
