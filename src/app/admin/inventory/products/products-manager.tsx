@@ -174,7 +174,7 @@ export function ProductsManager() {
         <div className="ml-auto flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 gap-1">
+              <Button variant="outline" size="sm" className="h-8 gap-1 rounded-full">
                 <ListFilter className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                   Filtrar
@@ -191,7 +191,7 @@ export function ProductsManager() {
               <DropdownMenuCheckboxItem>Archivado</DropdownMenuCheckboxItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button size="sm" variant="outline" className="h-8 gap-1">
+          <Button size="sm" variant="outline" className="h-8 gap-1 rounded-full">
             <File className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
               Exportar
@@ -199,7 +199,7 @@ export function ProductsManager() {
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
             <DialogTrigger asChild>
-              <Button size="sm" className="h-8 gap-1" onClick={openAddDialog}>
+              <Button size="sm" className="h-8 gap-1 rounded-full" onClick={openAddDialog}>
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                   Añadir Producto
