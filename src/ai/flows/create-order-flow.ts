@@ -6,7 +6,6 @@
  *
  * - createOnlineOrder: The main function to call from the client.
  */
-import 'dotenv/config'; 
 import { ai } from '@/ai/genkit';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
