@@ -60,10 +60,30 @@ export const useOrdersStore = create<OrdersState>()(
                     toast({ title: 'Error al crear pedido', description: e.message || 'An unexpected error occurred', variant: 'destructive' });
                     return null;
                 }
-            } else { // POS orders (logic kept for now)
+            } else { // POS orders
+                const { data: lastOrder, error: lastOrderError } = await supabase
+                  .from('orders')
+                  .select('display_id')
+                  .order('created_at', { ascending: false })
+                  .limit(1)
+                  .single();
+                  
+                let nextId = 1;
+                if (lastOrder && !lastOrderError) {
+                    const numericPart = lastOrder.display_id.split('-')[1];
+                    if (numericPart) {
+                        nextId = parseInt(numericPart) + 1;
+                    }
+                }
+                const display_id = `ORD-${String(nextId).padStart(5, '0')}`;
+                
+                const finalOrderData = {
+                    ...orderData,
+                    display_id,
+                };
                  const { data: newOrder, error } = await supabase
                     .from('orders')
-                    .insert(orderData)
+                    .insert(finalOrderData)
                     .select()
                     .single();
 
