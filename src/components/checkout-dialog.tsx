@@ -10,12 +10,12 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePosCart } from '@/hooks/use-pos-cart';
 import { useCurrencyStore } from '@/hooks/use-currency';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { CustomerSearch } from './customer-search';
 import { useCustomersStore, type Customer } from '@/hooks/use-customers';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,7 +30,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { Banknote, CreditCard, Landmark, Coins } from 'lucide-react';
+import { Banknote, CreditCard, Landmark, Coins, User, UserSearch } from 'lucide-react';
 import { useOrdersStore, type NewOrderData } from '@/hooks/use-orders';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/hooks/use-auth-store';
@@ -57,11 +57,12 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
     const { user } = useAuthStore();
     const { toast } = useToast();
     const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
+    const [customerType, setCustomerType] = React.useState<'consumidorFinal' | 'specific'>('consumidorFinal');
 
     const form = useForm<z.infer<typeof checkoutFormSchema>>({
         resolver: zodResolver(checkoutFormSchema),
         defaultValues: {
-            name: '',
+            name: 'Consumidor Final',
             phone: '',
             paymentMethod: 'efectivo',
         },
@@ -70,11 +71,15 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
     React.useEffect(() => {
         if (!isOpen) {
             form.reset({
-                name: '',
+                name: 'Consumidor Final',
                 phone: '',
                 paymentMethod: 'efectivo',
             });
             setSelectedCustomer(null);
+            setCustomerType('consumidorFinal');
+        } else {
+             form.setValue('name', 'Consumidor Final');
+             form.setValue('phone', '');
         }
     }, [isOpen, form]);
 
@@ -85,6 +90,19 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
             form.setValue('phone', customer.phone || '');
         }
     };
+    
+    const handleCustomerTypeChange = (type: 'consumidorFinal' | 'specific') => {
+        setCustomerType(type);
+        if (type === 'consumidorFinal') {
+            form.setValue('name', 'Consumidor Final');
+            form.setValue('phone', '');
+            setSelectedCustomer(null);
+        } else {
+            form.setValue('name', '');
+            form.setValue('phone', '');
+        }
+    }
+
 
     const onSubmit = async (values: z.infer<typeof checkoutFormSchema>) => {
         const finalCustomerName = values.name.trim() === '' ? 'Consumidor Final' : values.name;
@@ -159,22 +177,48 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
                 </DialogHeader>
                 <Form {...form}>
                     <form id="checkout-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
-                        <CustomerSearch onCustomerSelect={handleCustomerSelect} form={form} />
                         
-                        <FormField
-                            control={form.control}
-                            name="phone"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Teléfono (Opcional)</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Ej: 9988-7766" {...field} className="rounded-lg" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        <div className="space-y-2">
+                           <FormLabel>Cliente</FormLabel>
+                           <div className="grid grid-cols-2 gap-2">
+                               <Button 
+                                type="button"
+                                variant={customerType === 'consumidorFinal' ? 'secondary' : 'outline'}
+                                onClick={() => handleCustomerTypeChange('consumidorFinal')}
+                                className="h-12"
+                               >
+                                  <User className="mr-2 h-4 w-4"/> Consumidor Final
+                               </Button>
+                               <Button 
+                                type="button"
+                                variant={customerType === 'specific' ? 'secondary' : 'outline'}
+                                onClick={() => handleCustomerTypeChange('specific')}
+                                className="h-12"
+                               >
+                                 <UserSearch className="mr-2 h-4 w-4"/>  Buscar Cliente
+                               </Button>
+                           </div>
+                        </div>
 
+                        {customerType === 'specific' && (
+                            <div className='space-y-4'>
+                                <CustomerSearch onCustomerSelect={handleCustomerSelect} form={form} />
+                                <FormField
+                                    control={form.control}
+                                    name="phone"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Teléfono (Opcional)</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Ej: 9988-7766" {...field} className="rounded-lg" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        )}
+                        
                         <FormField
                             control={form.control}
                             name="paymentMethod"
