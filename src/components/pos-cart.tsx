@@ -124,7 +124,7 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="text-red-500 bg-red-100 hover:bg-red-200 hover:text-red-600 h-7 w-7"
+                                        className="text-red-500 bg-red-100 hover:bg-red-200 hover:text-red-600 h-7 w-7 rounded-full"
                                         onClick={() => removeFromCart(item.id)}
                                     >
                                         <Trash2 className="h-4 w-4" />
