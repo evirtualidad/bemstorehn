@@ -119,13 +119,15 @@ export const useOrdersStore = create<OrdersState>()(
                 payment_reference: paymentReference || null,
             };
 
-            // This logic is simplified because the 'create-order' function now handles initial stock deduction for 'paid' POS orders.
-            // This function is primarily for 'pending-approval' orders from the online store.
             if (order.status === 'pending-approval') {
                 const { decreaseStock } = useProductsStore.getState();
                 for (const item of order.items) {
                     await decreaseStock(item.id, item.quantity);
                 }
+                 // --- THIS IS THE FIX ---
+                const { fetchProducts } = useProductsStore.getState();
+                fetchProducts(); 
+                 // --- END OF FIX ---
             }
             
             if (paymentMethod === 'credito') {
