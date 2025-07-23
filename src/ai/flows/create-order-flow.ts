@@ -7,7 +7,7 @@
  *
  * - createOnlineOrder: The main function to call from the client.
  */
-
+import 'dotenv/config'; // <-- AÑADIDO: Carga las variables de entorno
 import { ai } from '@/ai/genkit';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
@@ -100,6 +100,7 @@ const createOrderFlow = ai.defineFlow(
         return { success: true, orderId: newOrder.id };
 
     } catch (error: any) {
+        console.error('Error in createOrderFlow:', error);
         return { success: false, error: error.message };
     }
   }
