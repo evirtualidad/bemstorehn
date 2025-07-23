@@ -55,7 +55,24 @@ const checkoutFormSchema = z.object({
 }, {
     message: 'La fecha de pago es obligatoria para pagos a crédito.',
     path: ['paymentDueDate'],
+}).refine(data => {
+    if (data.paymentMethod === 'credito' && (data.name.trim().toLowerCase() === 'consumidor final' || data.name.trim() === '')) {
+        return false;
+    }
+    return true;
+}, {
+    message: 'El nombre del cliente es obligatorio para ventas a crédito.',
+    path: ['name'],
+}).refine(data => {
+    if (data.paymentMethod === 'credito' && (!data.phone || data.phone.trim().length < 8)) {
+        return false;
+    }
+    return true;
+}, {
+    message: 'El teléfono (mín. 8 dígitos) es obligatorio para ventas a crédito.',
+    path: ['phone'],
 });
+
 
 interface CheckoutDialogProps {
   isOpen: boolean;
@@ -233,7 +250,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
                                     name="phone"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Teléfono (Opcional)</FormLabel>
+                                            <FormLabel>Teléfono</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="Ej: 9988-7766" {...field} className="rounded-lg" />
                                             </FormControl>
