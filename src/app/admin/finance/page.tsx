@@ -485,10 +485,14 @@ function Transactions({ orders, currencyCode }: { orders: any[], currencyCode: s
 }
 
 export default function FinancePage() {
-  const { orders } = useOrdersStore();
+  const { orders, fetchOrders } = useOrdersStore();
   const { currency } = useCurrencyStore();
   const { role } = useAuthStore();
   const router = useRouter();
+
+  React.useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   React.useEffect(() => {
     if (role && role !== 'admin') {
@@ -510,9 +514,9 @@ export default function FinancePage() {
             <div className='flex justify-between items-center mb-4'>
                 <h1 className="text-2xl font-bold">Finanzas</h1>
                 <TabsList className="rounded-full">
-                    <TabsTrigger value="summary" className="rounded-full">Resumen</TabsTrigger>
-                    <TabsTrigger value="accounts-receivable" className="rounded-full">Cuentas por Cobrar</TabsTrigger>
-                    <TabsTrigger value="transactions" className="rounded-full">Transacciones</TabsTrigger>
+                    <TabsTrigger value="summary">Resumen</TabsTrigger>
+                    <TabsTrigger value="accounts-receivable">Cuentas por Cobrar</TabsTrigger>
+                    <TabsTrigger value="transactions">Transacciones</TabsTrigger>
                 </TabsList>
             </div>
             <TabsContent value="summary">
