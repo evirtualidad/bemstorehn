@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -30,17 +31,30 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { Banknote, CreditCard, Landmark, Coins, User, UserSearch } from 'lucide-react';
+import { Banknote, CreditCard, Landmark, Coins, User, UserSearch, CalendarIcon } from 'lucide-react';
 import { useOrdersStore, type NewOrderData } from '@/hooks/use-orders';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/hooks/use-auth-store';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale/es';
 
 const checkoutFormSchema = z.object({
-  name: z.string(), // Name can be empty initially, will be defaulted later
+  name: z.string(),
   phone: z.string().optional(),
   paymentMethod: z.enum(['efectivo', 'tarjeta', 'transferencia', 'credito'], {
     required_error: "Debes seleccionar un método de pago."
   }),
+  paymentDueDate: z.date().optional(),
+}).refine(data => {
+    if (data.paymentMethod === 'credito') {
+        return !!data.paymentDueDate;
+    }
+    return true;
+}, {
+    message: 'La fecha de pago es obligatoria para pagos a crédito.',
+    path: ['paymentDueDate'],
 });
 
 interface CheckoutDialogProps {
@@ -58,6 +72,13 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
     const { toast } = useToast();
     const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
     const [customerType, setCustomerType] = React.useState<'consumidorFinal' | 'specific'>('consumidorFinal');
+    const [today, setToday] = React.useState<Date | null>(null);
+
+    React.useEffect(() => {
+        if (isOpen) {
+            setToday(new Date());
+        }
+    }, [isOpen]);
 
     const form = useForm<z.infer<typeof checkoutFormSchema>>({
         resolver: zodResolver(checkoutFormSchema),
@@ -65,6 +86,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
             name: 'Consumidor Final',
             phone: '',
             paymentMethod: 'efectivo',
+            paymentDueDate: undefined,
         },
     });
     
@@ -74,6 +96,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
                 name: 'Consumidor Final',
                 phone: '',
                 paymentMethod: 'efectivo',
+                paymentDueDate: undefined,
             });
             setSelectedCustomer(null);
             setCustomerType('consumidorFinal');
@@ -138,7 +161,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
             delivery_method: 'pickup',
             balance: values.paymentMethod === 'credito' ? total : 0,
             payments: values.paymentMethod !== 'credito' ? [{ amount: total, date: new Date().toISOString(), method: values.paymentMethod }] : [],
-            payment_due_date: null,
+            payment_due_date: values.paymentDueDate ? values.paymentDueDate.toISOString() : null,
         };
         
         const newOrderId = createOrder(newOrderData);
@@ -165,6 +188,8 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
         { value: 'transferencia', label: 'Transferencia', icon: Landmark },
         { value: 'credito', label: 'Crédito', icon: Coins },
     ];
+    
+    const selectedPaymentMethod = form.watch('paymentMethod');
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -245,6 +270,45 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
                                 </FormItem>
                             )}
                         />
+
+                        {selectedPaymentMethod === 'credito' && (
+                            <FormField
+                                control={form.control}
+                                name="paymentDueDate"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel>Fecha Límite de Pago</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button
+                                                        variant={'outline'}
+                                                        className={cn("rounded-lg justify-start text-left font-normal", !field.value && "text-muted-foreground")}
+                                                    >
+                                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                                        {field.value ? format(field.value, 'PPP', { locale: es }) : <span>Selecciona fecha</span>}
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    locale={es}
+                                                    mode="single"
+                                                    selected={field.value}
+                                                    onSelect={field.onChange}
+                                                    disabled={(date) => {
+                                                        if (!today) return true;
+                                                        return date < today;
+                                                    }}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
                     </form>
                 </Form>
                 <DialogFooter className="mt-6">
