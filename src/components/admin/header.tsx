@@ -27,11 +27,12 @@ import { PosCart } from '@/components/pos-cart';
 import { useMobileSidebarStore } from '@/hooks/use-mobile-sidebar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { useTheme } from 'next-themes';
+import { useOrdersStore } from '@/hooks/use-orders';
 
 const navItems = [
     { href: '/admin/dashboard-v2', label: 'Dashboard', icon: BarChart2 },
     { href: '/admin/pos', label: 'POS', icon: ShoppingBag },
-    { href: '/admin/orders', label: 'Pedidos', icon: ListOrdered },
+    { href: '/admin/orders', label: 'Pedidos', icon: ListOrdered, id: 'orders' },
     { href: '/admin/inventory', label: 'Inventario', icon: Package, role: 'admin' },
     { href: '/admin/customers', label: 'Clientes', icon: Users2 },
     { href: '/admin/finance', label: 'Finanzas', icon: Building, role: 'admin' },
@@ -64,6 +65,7 @@ const ThemeToggleButton = () => {
 export function AdminHeader() {
     const { user, role, logout } = useAuthStore();
     const { items, clearCart } = usePosCart();
+    const { orders } = useOrdersStore();
     const { onOpen } = useMobileSidebarStore();
     const [isCartOpen, setIsCartOpen] = React.useState(false);
     const pathname = usePathname();
@@ -81,6 +83,10 @@ export function AdminHeader() {
         clearCart();
         setIsCartOpen(false);
     };
+
+    const pendingApprovalCount = React.useMemo(() => {
+        return orders.filter(order => order.status === 'pending-approval').length;
+    }, [orders]);
 
     return (
         <>
@@ -109,12 +115,19 @@ export function AdminHeader() {
                                     return (
                                         <Tooltip key={item.label} delayDuration={0}>
                                             <TooltipTrigger asChild>
+                                                <div className="relative">
                                                     <Button asChild variant={'ghost'} size="icon" className={cn("h-11 w-11 rounded-full", isActive && "bg-primary/10")}>
-                                                    <Link href={item.href} className='flex items-center'>
-                                                        <item.icon className="h-5 w-5" />
-                                                        <span className="sr-only">{item.label}</span>
-                                                    </Link>
-                                                </Button>
+                                                        <Link href={item.href} className='flex items-center'>
+                                                            <item.icon className="h-5 w-5" />
+                                                            <span className="sr-only">{item.label}</span>
+                                                        </Link>
+                                                    </Button>
+                                                    {item.id === 'orders' && pendingApprovalCount > 0 && (
+                                                        <div className="absolute top-0 right-0 h-4 w-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-muted">
+                                                            {pendingApprovalCount}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </TooltipTrigger>
                                             <TooltipContent side="bottom">
                                                 <p>{item.label}</p>
