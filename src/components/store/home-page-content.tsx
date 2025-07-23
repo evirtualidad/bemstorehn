@@ -126,8 +126,8 @@ export function HomePageContent({
             
             <div className="space-y-4 fade-in" style={{ animationDelay: '300ms' }}>
                  <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold">New Catalogs</h2>
-                    <Link href="#" className="text-sm font-semibold text-muted-foreground">See all</Link>
+                    <h2 className="text-xl font-bold">Nuevos Catálogos</h2>
+                    <Link href="#" className="text-sm font-semibold text-muted-foreground">Ver todos</Link>
                  </div>
                  {filteredProducts.length > 0 ? (
                     <ProductGridHomepage products={filteredProducts} />
