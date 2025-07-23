@@ -191,7 +191,7 @@ function OrderDetailsDialog({ order, isOpen, onOpenChange }: { order: Order | nu
                     <div className="space-y-4">
                         {order.items.map(item => (
                             <div key={item.id} className="flex items-center gap-4">
-                                <Image src={item.image} alt={item.name} width={56} height={56} className="rounded-md aspect-square object-cover" />
+                                <Image src={item.image} alt={item.name} width={56} height={56} className="rounded-lg aspect-square object-cover" />
                                 <div className="flex-1">
                                     <p className="font-medium">{item.name}</p>
                                     <p className="text-sm text-muted-foreground">
@@ -306,7 +306,7 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
                                                 key={method.value}
                                                 type="button"
                                                 variant={field.value === method.value ? 'secondary' : 'outline'}
-                                                className="h-12"
+                                                className="h-12 rounded-lg"
                                                 onClick={() => field.onChange(method.value)}
                                             >
                                                 <method.icon /> {method.label}
@@ -344,7 +344,7 @@ function ApproveOrderDialog({ order, children }: { order: Order; children: React
                                                 <FormControl>
                                                     <Button
                                                         variant={'outline'}
-                                                        className={cn(!field.value && 'text-muted-foreground')}
+                                                        className={cn("rounded-lg", !field.value && "text-muted-foreground")}
                                                     >
                                                         {field.value ? format(field.value, 'PPP', { locale: es }) : <span>Selecciona fecha</span>}
                                                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
