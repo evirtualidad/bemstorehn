@@ -137,7 +137,7 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
                 </ScrollArea>
                 
                 {/* --- Portrait Footer --- */}
-                <div className="flex-shrink-0 p-4 space-y-4 bg-card border-t landscape:hidden">
+                <div className="flex-shrink-0 p-4 space-y-4 bg-card border-t landscape:hidden rounded-b-2xl">
                     <CartSummary />
                     <Button 
                         size="lg" 
@@ -150,7 +150,7 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
                 </div>
                 
                 {/* --- Landscape Sidebar --- */}
-                <div className="hidden landscape:flex landscape:flex-col landscape:w-2/5 border-l bg-card">
+                <div className="hidden landscape:flex landscape:flex-col landscape:w-2/5 border-l bg-card rounded-r-2xl">
                    <div className="flex-1 p-4 space-y-4">
                         <h3 className="text-lg font-semibold">Resumen del Pedido</h3>
                         <CartSummary />
