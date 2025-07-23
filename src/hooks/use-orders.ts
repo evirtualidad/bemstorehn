@@ -44,24 +44,16 @@ export const useOrdersStore = create<OrdersState>()(
             if (orderData.source === 'online-store') {
                 try {
                     const result = await createOnlineOrder(orderData);
-                    if (result && result.orderId) {
-                         // The function handles stock deduction, so we just need to update the client state for products
+                    if (result && result.success && result.order) {
                         const { fetchProducts } = useProductsStore.getState();
-                        fetchProducts();
+                        fetchProducts(); // Update product stock in the client state
                         
-                        // We need to fetch the new order to add it to the state
-                        const { data: newOrder, error } = await supabase.from('orders').select('*').eq('id', result.orderId).single();
+                        // Add the new order directly to the state, no need to re-fetch
+                        set(produce((state: OrdersState) => {
+                            state.orders.unshift(result.order as Order);
+                        }));
 
-                        if (error) {
-                             console.error("Could not fetch the new order, but it was created.", error);
-                             // Manually refetch all orders as a fallback
-                             get().fetchOrders();
-                        } else {
-                             set(produce((state: OrdersState) => {
-                                state.orders.unshift(newOrder as Order);
-                            }));
-                        }
-                        return result.orderId;
+                        return result.order.id;
                     }
                     throw new Error(result?.error || 'Unknown error from order creation flow');
                 } catch (e: any) {

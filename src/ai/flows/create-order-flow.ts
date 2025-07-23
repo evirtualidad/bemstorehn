@@ -10,7 +10,15 @@ import 'dotenv/config';
 import { ai } from '@/ai/genkit';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { CreateOrderInputSchema, CreateOrderOutputSchema } from '../schemas';
+import { CreateOrderInputSchema } from '../schemas';
+import type { Order } from '@/lib/types';
+
+
+const CreateOrderOutputSchema = z.object({
+    order: z.any().optional(), // We'll pass the full order object back
+    success: z.boolean(),
+    error: z.string().optional(),
+});
 
 // This flow is defined to run on the server and is not directly exposed to the client.
 const createOrderFlow = ai.defineFlow(
@@ -100,7 +108,7 @@ const createOrderFlow = ai.defineFlow(
         const { data: newOrder, error: orderError } = await supabaseAdmin
             .from('orders')
             .insert(finalOrderData)
-            .select('id')
+            .select('*') // <<<--- CHANGE: Fetch the full order object
             .single();
             
         if (orderError) throw new Error(`Error creating order: ${orderError.message}`);
@@ -111,7 +119,7 @@ const createOrderFlow = ai.defineFlow(
             p_purchase_amount: total
         });
 
-        return { success: true, orderId: newOrder.id };
+        return { success: true, order: newOrder };
 
     } catch (error: any) {
         console.error('Error in createOrderFlow:', error);
@@ -121,6 +129,10 @@ const createOrderFlow = ai.defineFlow(
 );
 
 // This is the exported function that the client-side code will call.
-export async function createOnlineOrder(input: z.infer<typeof CreateOrderInputSchema>) {
-    return await createOrderFlow(input);
+export async function createOnlineOrder(input: z.infer<typeof CreateOrderInputSchema>): Promise<{order: Order, success: boolean, error?: string} | null> {
+    const result = await createOrderFlow(input);
+    if(result.success) {
+        return { order: result.order, success: true };
+    }
+    return { order: null as any, success: false, error: result.error };
 }
