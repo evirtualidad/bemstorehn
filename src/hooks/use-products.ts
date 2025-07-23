@@ -157,7 +157,8 @@ export const useProductsStore = create<ProductsState>()(
             const dbPayload = {
               ...rest,
               image: imageUrl,
-              original_price: rest.original_price ? Number(rest.original_price) : undefined,
+              // If original_price is a valid number, use it. Otherwise, set it to null.
+              original_price: rest.original_price && Number(rest.original_price) > 0 ? Number(rest.original_price) : null,
             };
 
             const { data: updatedProduct, error } = await supabase
@@ -236,5 +237,3 @@ export const useProductsStore = create<ProductsState>()(
         },
     })
 );
-
-
