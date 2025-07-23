@@ -150,7 +150,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className="rounded-2xl">
                 <DialogHeader>
                     <DialogTitle>Completar Venta</DialogTitle>
                     <DialogDescription>
