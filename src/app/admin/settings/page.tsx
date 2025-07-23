@@ -71,11 +71,11 @@ function GeneralSettings() {
   
   React.useEffect(() => {
     if (settings) {
-      form.reset({ 
-        taxRate: settings.tax_rate * 100,
-        shippingLocalCost: settings.shipping_local_cost,
-        shippingNationalCost: settings.shipping_national_cost,
-        pickupAddress: settings.pickup_address,
+      form.reset({
+        taxRate: (settings.tax_rate ?? 0) * 100,
+        shippingLocalCost: settings.shipping_local_cost ?? 0,
+        shippingNationalCost: settings.shipping_national_cost ?? 0,
+        pickupAddress: settings.pickup_address ?? '',
       });
     }
   }, [settings, form]);
