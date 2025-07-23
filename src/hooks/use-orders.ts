@@ -92,6 +92,14 @@ export const useOrdersStore = create<OrdersState>()(
                     return null;
                 }
                 
+                // --- FIX: Decrease stock for POS orders ---
+                const { decreaseStock, fetchProducts } = useProductsStore.getState();
+                for (const item of newOrder.items) {
+                    await decreaseStock(item.id, item.quantity);
+                }
+                fetchProducts(); // Refresh products state to reflect new stock
+                // --- END FIX ---
+                
                 set(produce((state: OrdersState) => {
                     state.orders.unshift(newOrder as Order);
                 }));
