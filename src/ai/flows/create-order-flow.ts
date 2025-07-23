@@ -1,0 +1,111 @@
+
+'use server';
+/**
+ * @fileOverview A server-side flow to securely create an online order.
+ * This flow handles customer creation/lookup, stock validation, and order insertion
+ * with elevated privileges to bypass RLS policies for anonymous users.
+ *
+ * - createOnlineOrder: The main function to call from the client.
+ */
+
+import { ai } from '@/ai/genkit';
+import { createClient } from '@supabase/supabase-js';
+import { z } from 'zod';
+import { CreateOrderInputSchema, CreateOrderOutputSchema } from '../schemas';
+
+// This flow is defined to run on the server and is not directly exposed to the client.
+const createOrderFlow = ai.defineFlow(
+  {
+    name: 'createOrderFlow',
+    inputSchema: CreateOrderInputSchema,
+    outputSchema: CreateOrderOutputSchema,
+  },
+  async (orderData) => {
+    // IMPORTANT: Use the SERVICE_ROLE_KEY for elevated privileges.
+    // This key should only be used in secure, server-side environments.
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
+    try {
+        const { customer_name, customer_phone, customer_address, items, total } = orderData;
+        
+        // --- 1. Create or find the customer ---
+        let customerId;
+        if (customer_phone) {
+            const { data: existingCustomer } = await supabaseAdmin
+                .from('customers')
+                .select('id')
+                .eq('phone', customer_phone)
+                .single();
+            if (existingCustomer) customerId = existingCustomer.id;
+        }
+
+        if (!customerId) {
+            const { data: newCustomer, error: createCustomerError } = await supabaseAdmin
+                .from('customers')
+                .insert({ name: customer_name, phone: customer_phone, address: customer_address })
+                .select('id')
+                .single();
+            if (createCustomerError) throw new Error(`Error creating customer: ${createCustomerError.message}`);
+            customerId = newCustomer!.id;
+        }
+
+        // --- 2. Verify stock and update it ---
+        for (const item of items) {
+            const { data: product, error: productError } = await supabaseAdmin
+                .from('products')
+                .select('stock, name')
+                .eq('id', item.id)
+                .single();
+            
+            if (productError) throw new Error(`Error fetching product ${item.name}: ${productError.message}`);
+            if (!product || product.stock < item.quantity) {
+                throw new Error(`Insufficient stock for: ${product.name}.`);
+            }
+
+            const newStock = product.stock - item.quantity;
+            const { error: stockUpdateError } = await supabaseAdmin
+                .from('products')
+                .update({ stock: newStock })
+                .eq('id', item.id);
+            if (stockUpdateError) throw new Error(`Error updating stock for ${item.name}: ${stockUpdateError.message}`);
+        }
+        
+        // --- 3. Create the order ---
+        const finalOrderData = {
+            ...orderData,
+            customer_id: customerId,
+            status: 'pending-approval',
+            balance: total,
+            payments: [],
+            payment_due_date: null,
+        };
+        
+        const { data: newOrder, error: orderError } = await supabaseAdmin
+            .from('orders')
+            .insert(finalOrderData)
+            .select('id')
+            .single();
+            
+        if (orderError) throw new Error(`Error creating order: ${orderError.message}`);
+
+        // --- 4. Update customer stats ---
+        await supabaseAdmin.rpc('increment_customer_stats', {
+            p_customer_id: customerId,
+            p_purchase_amount: total
+        });
+
+        return { success: true, orderId: newOrder.id };
+
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+  }
+);
+
+// This is the exported function that the client-side code will call.
+export async function createOnlineOrder(input: z.infer<typeof CreateOrderInputSchema>) {
+    return await createOrderFlow(input);
+}

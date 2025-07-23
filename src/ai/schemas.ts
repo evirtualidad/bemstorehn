@@ -45,14 +45,13 @@ export const CreateOrderInputSchema = z.object({
   balance: z.number(),
   payments: z.array(z.any()), // Simplified for now
   payment_due_date: z.string().nullable(),
-}) as z.ZodType<NewOrderData>;
-
-
-export type CreateOrderInput = z.infer<typeof CreateOrderInputSchema>;
-
-export const CreateOrderOutputSchema = z.object({
-  orderId: z.string(),
-  success: z.boolean(),
 });
 
+export const CreateOrderOutputSchema = z.object({
+  orderId: z.string().optional(),
+  success: z.boolean(),
+  error: z.string().optional(),
+});
+
+export type CreateOrderInput = z.infer<typeof CreateOrderInputSchema>;
 export type CreateOrderOutput = z.infer<typeof CreateOrderOutputSchema>;

@@ -7,6 +7,7 @@ import { produce } from 'immer';
 import { supabase } from '@/lib/supabase';
 import type { Order, NewOrderData } from '@/lib/types';
 import { useProductsStore } from './use-products';
+import { createOnlineOrder } from '@/ai/flows/create-order-flow';
 
 type OrdersState = {
   orders: Order[];
@@ -40,32 +41,51 @@ export const useOrdersStore = create<OrdersState>()(
         },
 
         createOrder: async (orderData) => {
-            // This now calls a Supabase Edge Function to handle the entire process securely.
-            const { data, error } = await supabase.functions.invoke('create-order', {
-                body: { orderData },
-            });
+            if (orderData.source === 'online-store') {
+                try {
+                    const result = await createOnlineOrder(orderData);
+                    if (result && result.orderId) {
+                         // The function handles stock deduction, so we just need to update the client state for products
+                        const { fetchProducts } = useProductsStore.getState();
+                        fetchProducts();
+                        
+                        // We need to fetch the new order to add it to the state
+                        const { data: newOrder, error } = await supabase.from('orders').select('*').eq('id', result.orderId).single();
 
-            if (error) {
-                toast({ title: 'Error al crear pedido', description: `Error del servidor: ${error.message}`, variant: 'destructive' });
-                return null;
+                        if (error) {
+                             console.error("Could not fetch the new order, but it was created.", error);
+                             // Manually refetch all orders as a fallback
+                             get().fetchOrders();
+                        } else {
+                             set(produce((state: OrdersState) => {
+                                state.orders.unshift(newOrder as Order);
+                            }));
+                        }
+                        return result.orderId;
+                    }
+                    throw new Error(result?.error || 'Unknown error from order creation flow');
+                } catch (e: any) {
+                    toast({ title: 'Error al crear pedido', description: e.message || 'An unexpected error occurred', variant: 'destructive' });
+                    return null;
+                }
+            } else { // POS orders (logic kept for now)
+                 const { data: newOrder, error } = await supabase
+                    .from('orders')
+                    .insert(orderData)
+                    .select()
+                    .single();
+
+                if (error) {
+                    toast({ title: 'Error al crear pedido (POS)', description: error.message, variant: 'destructive' });
+                    return null;
+                }
+                
+                set(produce((state: OrdersState) => {
+                    state.orders.unshift(newOrder as Order);
+                }));
+
+                return newOrder.id;
             }
-
-            if (data.error) {
-                toast({ title: 'Error al procesar pedido', description: data.error, variant: 'destructive' });
-                return null;
-            }
-            
-            const newOrder = data.order;
-            
-            // The function handles stock deduction, so we just need to update the client state for products
-            const { fetchProducts } = useProductsStore.getState();
-            fetchProducts();
-
-            set(produce((state: OrdersState) => {
-                state.orders.unshift(newOrder as Order);
-            }));
-            
-            return newOrder.id;
         },
 
         addPayment: async (orderId, amount, method) => {
@@ -180,4 +200,3 @@ export const useOrdersStore = create<OrdersState>()(
         },
     })
 );
-
