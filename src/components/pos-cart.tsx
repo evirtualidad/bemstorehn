@@ -90,12 +90,12 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
                     <div className="p-4 flex flex-col gap-4">
                         {items.map((item) => (
                             <div key={item.id} className="flex items-start gap-4 bg-background p-3 rounded-xl shadow-sm">
-                                <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border bg-secondary">
+                                <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl">
                                     <Image
                                     src={item.image}
                                     alt={item.name}
                                     fill
-                                    className="object-cover p-1"
+                                    className="object-cover"
                                     />
                                 </div>
                                 <div className="flex-1">
