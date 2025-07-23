@@ -73,8 +73,23 @@ const createOrderFlow = ai.defineFlow(
         }
         
         // --- 3. Create the order ---
+        const { data: lastOrder, error: lastOrderError } = await supabaseAdmin
+          .from('orders')
+          .select('display_id')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        let nextId = 1;
+        if (lastOrder && !lastOrderError) {
+            nextId = parseInt(lastOrder.display_id.split('-')[1]) + 1;
+        }
+        
+        const display_id = `ORD-${String(nextId).padStart(5, '0')}`;
+
         const finalOrderData = {
             ...orderData,
+            display_id,
             customer_id: customerId,
             status: 'pending-approval',
             balance: total,
