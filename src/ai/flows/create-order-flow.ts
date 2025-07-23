@@ -7,7 +7,7 @@
  *
  * - createOnlineOrder: The main function to call from the client.
  */
-import 'dotenv/config'; // <-- AÑADIDO: Carga las variables de entorno
+import 'dotenv/config'; 
 import { ai } from '@/ai/genkit';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
@@ -25,7 +25,7 @@ const createOrderFlow = ai.defineFlow(
     // This key should only be used in secure, server-side environments.
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_KEY!
     );
     
     try {
