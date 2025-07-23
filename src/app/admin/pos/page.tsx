@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PosFab } from '@/components/admin/pos-fab';
+import { type Product } from '@/lib/types';
 
 export default function PosPage() {
   const { products, isLoading: isLoadingProducts, fetchProducts } = useProductsStore();
@@ -42,8 +43,17 @@ export default function PosPage() {
 
   const isLoading = isLoadingProducts || isLoadingCategories;
 
-  const filteredProducts = React.useMemo(() => {
-    let prods = products;
+  const sortedProducts = React.useMemo(() => {
+    let prods = [...products];
+
+    // Prioritize featured and on-sale products
+    prods.sort((a, b) => {
+        const aIsSpecial = a.featured || (a.original_price && a.original_price > a.price);
+        const bIsSpecial = b.featured || (b.original_price && b.original_price > b.price);
+        if (aIsSpecial && !bIsSpecial) return -1;
+        if (!aIsSpecial && bIsSpecial) return 1;
+        return 0;
+    });
 
     if (selectedCategory !== 'all') {
         prods = prods.filter(p => p.category === selectedCategory);
@@ -139,7 +149,7 @@ export default function PosPage() {
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full pb-4 no-scrollbar">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-5">
-                {filteredProducts.map((product) => (
+                {sortedProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
             </div>

@@ -60,14 +60,22 @@ export function HomePageContent({
         return prods;
     }, [products, selectedCategory, searchQuery, getCategoryByName]);
     
+    const featuredAndOnSaleProducts = React.useMemo(() => {
+        return filteredProducts.filter(p => p.featured || (p.original_price && p.original_price > p.price));
+    }, [filteredProducts]);
+
+    const regularProducts = React.useMemo(() => {
+        return filteredProducts.filter(p => !p.featured && !(p.original_price && p.original_price > p.price));
+    }, [filteredProducts]);
+
     const categoriesWithProducts = React.useMemo(() => {
         return initialCategories
             .map(category => ({
                 ...category,
-                products: filteredProducts.filter(p => p.category_id === category.id)
+                products: regularProducts.filter(p => p.category_id === category.id)
             }))
             .filter(category => category.products.length > 0);
-    }, [initialCategories, filteredProducts]);
+    }, [initialCategories, regularProducts]);
 
     const selectedCategoryLabel = React.useMemo(() => {
         if (selectedCategory === 'all') {
@@ -139,6 +147,15 @@ export function HomePageContent({
             </div>
             
             <div className="space-y-8 fade-in" style={{ animationDelay: '300ms' }}>
+                 {featuredAndOnSaleProducts.length > 0 && (
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-xl font-bold">Ofertas y Destacados</h2>
+                        </div>
+                        <ProductGridHomepage products={featuredAndOnSaleProducts} />
+                    </div>
+                 )}
+
                  {categoriesWithProducts.length > 0 ? (
                     categoriesWithProducts.map(category => (
                         <div key={category.id} className="space-y-4">
@@ -150,9 +167,11 @@ export function HomePageContent({
                         </div>
                     ))
                  ) : (
-                    <div className="text-center py-10 text-muted-foreground">
-                        <p>No se encontraron productos que coincidan con tu búsqueda.</p>
-                    </div>
+                    featuredAndOnSaleProducts.length === 0 && (
+                        <div className="text-center py-10 text-muted-foreground">
+                            <p>No se encontraron productos que coincidan con tu búsqueda.</p>
+                        </div>
+                    )
                  )}
             </div>
         </main>
