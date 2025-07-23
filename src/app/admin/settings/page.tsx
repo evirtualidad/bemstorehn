@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -12,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useSettingsStore } from '@/hooks/use-settings-store';
 import { useToast } from '@/hooks/use-toast';
-import { Percent, DollarSign, Store, MoreHorizontal, PlusCircle, Upload, X } from 'lucide-react';
+import { Percent, DollarSign, Store, MoreHorizontal, PlusCircle, Upload, X, Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useBannersStore, type Banner } from '@/hooks/use-banners';
@@ -56,38 +55,61 @@ const settingsFormSchema = z.object({
 });
 
 function GeneralSettings() {
-  const { taxRate, setTaxRate, shippingLocalCost, setShippingLocalCost, shippingNationalCost, setShippingNationalCost, pickupAddress, setPickupAddress } = useSettingsStore();
+  const { settings, isLoading, updateSettings } = useSettingsStore();
   const { toast } = useToast();
+  const [isSaving, setIsSaving] = React.useState(false);
 
   const form = useForm<z.infer<typeof settingsFormSchema>>({
     resolver: zodResolver(settingsFormSchema),
     defaultValues: {
-      taxRate: taxRate * 100, // Display as percentage
-      shippingLocalCost: shippingLocalCost,
-      shippingNationalCost: shippingNationalCost,
-      pickupAddress: pickupAddress,
+      taxRate: 0,
+      shippingLocalCost: 0,
+      shippingNationalCost: 0,
+      pickupAddress: '',
     },
   });
   
   React.useEffect(() => {
-    form.reset({ 
-      taxRate: taxRate * 100,
-      shippingLocalCost: shippingLocalCost,
-      shippingNationalCost: shippingNationalCost,
-      pickupAddress: pickupAddress,
-    });
-  }, [taxRate, shippingLocalCost, shippingNationalCost, pickupAddress, form]);
+    if (settings) {
+      form.reset({ 
+        taxRate: settings.tax_rate * 100,
+        shippingLocalCost: settings.shipping_local_cost,
+        shippingNationalCost: settings.shipping_national_cost,
+        pickupAddress: settings.pickup_address,
+      });
+    }
+  }, [settings, form]);
 
-  const onSubmit = (values: z.infer<typeof settingsFormSchema>) => {
-    setTaxRate(values.taxRate / 100); // Store as decimal
-    setShippingLocalCost(values.shippingLocalCost);
-    setShippingNationalCost(values.shippingNationalCost);
-    setPickupAddress(values.pickupAddress);
+  const onSubmit = async (values: z.infer<typeof settingsFormSchema>) => {
+    setIsSaving(true);
+    await updateSettings({
+      tax_rate: values.taxRate / 100,
+      shipping_local_cost: values.shippingLocalCost,
+      shipping_national_cost: values.shippingNationalCost,
+      pickup_address: values.pickupAddress,
+    });
     toast({
       title: 'Ajustes Guardados',
       description: 'La configuración ha sido actualizada.',
     });
+    setIsSaving(false);
   };
+  
+  if (isLoading) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Ajustes Generales</CardTitle>
+                 <CardDescription>Cargando configuración...</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex justify-center items-center h-48">
+                    <LoadingSpinner />
+                </div>
+            </CardContent>
+        </Card>
+    );
+  }
 
   return (
     <Form {...form}>
@@ -189,7 +211,10 @@ function GeneralSettings() {
             </CardContent>
           </Card>
 
-          <Button type="submit">Guardar Cambios</Button>
+          <Button type="submit" disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Guardar Cambios
+          </Button>
         </form>
       </Form>
   );

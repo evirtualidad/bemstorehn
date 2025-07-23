@@ -25,7 +25,7 @@ export default function CartPage() {
     clearCart,
   } = useCart();
   const { currency } = useCurrencyStore();
-  const { taxRate } = useSettingsStore();
+  const { settings } = useSettingsStore();
   const router = useRouter();
   const [isClient, setIsClient] = React.useState(false);
 
@@ -36,6 +36,8 @@ export default function CartPage() {
   if (!isClient) {
     return null;
   }
+
+  const taxRate = settings?.tax_rate ?? 0.15;
 
   return (
     <div className="flex flex-col h-screen bg-muted/40">

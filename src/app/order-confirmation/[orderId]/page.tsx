@@ -24,7 +24,7 @@ export default function OrderConfirmationPage() {
   const orderId = params.orderId as string;
   const { getOrderById, fetchOrders } = useOrdersStore();
   const { currency } = useCurrencyStore();
-  const { taxRate } = useSettingsStore();
+  const { settings } = useSettingsStore();
   const [order, setOrder] = React.useState<Order | undefined>(undefined);
   const [isLoading, setIsLoading] = React.useState(true);
   
@@ -70,7 +70,7 @@ export default function OrderConfirmationPage() {
   }, [orderId, getOrderById, fetchOrders, order]);
 
 
-  if (isLoading) {
+  if (isLoading || !settings) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
@@ -96,6 +96,7 @@ export default function OrderConfirmationPage() {
     );
   }
 
+  const taxRate = settings.tax_rate;
   const subtotal = order.total / (1 + taxRate);
   const tax = order.total - subtotal;
 

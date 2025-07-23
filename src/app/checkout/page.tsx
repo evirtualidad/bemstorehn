@@ -96,7 +96,7 @@ function ShippingDialog({
     onSave: (address: Address, cost: number, type: 'local' | 'national') => void;
     currentAddress: Address | undefined;
 }) {
-    const { shippingLocalCost, shippingNationalCost } = useSettingsStore();
+    const { settings } = useSettingsStore();
 
     const shippingFormSchema = z.object({
         shippingOption: z.enum(['local', 'national'], {
@@ -143,7 +143,8 @@ function ShippingDialog({
     const selectedShippingOption = form.watch('shippingOption');
 
     const handleSave = (values: z.infer<typeof shippingFormSchema>) => {
-        const cost = values.shippingOption === 'local' ? shippingLocalCost : shippingNationalCost;
+        if (!settings) return;
+        const cost = values.shippingOption === 'local' ? settings.shipping_local_cost : settings.shipping_national_cost;
         const finalDepartment = values.shippingOption === 'local' ? 'Francisco Morazán' : values.department!;
         const finalMunicipality = values.shippingOption === 'local' ? 'Distrito Central' : values.municipality!;
         onSave({
@@ -155,6 +156,8 @@ function ShippingDialog({
         onOpenChange(false);
     };
     
+    if (!settings) return null;
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md rounded-xl">
@@ -299,7 +302,7 @@ export default function CheckoutPage() {
   const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart } = useCart();
   const { createOrder, fetchOrders } = useOrdersStore();
   const { addOrUpdateCustomer, addPurchaseToCustomer, fetchCustomers } = useCustomersStore();
-  const { taxRate, pickupAddress } = useSettingsStore();
+  const { settings } = useSettingsStore();
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -427,6 +430,14 @@ export default function CheckoutPage() {
     );
   }
 
+  if (!settings) {
+    return (
+        <div className="flex h-screen items-center justify-center">
+            <Loader2 className="mr-2 h-8 w-8 animate-spin" />
+        </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -498,7 +509,7 @@ export default function CheckoutPage() {
                                         {field.value === 'pickup' && (
                                             <div className="pl-8 pt-2 text-sm text-muted-foreground">
                                                 <p className='font-medium'>Dirección de Recogida:</p>
-                                                <p>{pickupAddress}</p>
+                                                <p>{settings.pickup_address}</p>
                                             </div>
                                         )}
                                     </label>
@@ -641,7 +652,7 @@ export default function CheckoutPage() {
                         <p>{formatCurrency(subtotal, currency.code)}</p>
                       </div>
                       <div className="flex justify-between">
-                        <p>ISV ({taxRate * 100}%)</p>
+                        <p>ISV ({settings.tax_rate * 100}%)</p>
                         <p>{formatCurrency(taxAmount, currency.code)}</p>
                       </div>
                       <div className="flex justify-between">

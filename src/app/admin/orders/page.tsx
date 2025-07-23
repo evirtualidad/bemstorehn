@@ -133,10 +133,11 @@ const statusConfig = {
 
 function OrderDetailsDialog({ order, isOpen, onOpenChange }: { order: Order | null; isOpen: boolean, onOpenChange: (open: boolean) => void }) {
     const { currency } = useCurrencyStore();
-    const { taxRate } = useSettingsStore();
+    const { settings } = useSettingsStore();
     
-    if (!order) return null;
+    if (!order || !settings) return null;
 
+    const taxRate = settings.tax_rate;
     const subtotal = order.total / (1 + taxRate);
     const tax = order.total - subtotal;
     

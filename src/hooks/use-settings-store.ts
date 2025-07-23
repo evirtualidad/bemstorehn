@@ -2,34 +2,76 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { produce } from 'immer';
+import { toast } from './use-toast';
+import { supabase } from '@/lib/supabase';
 
-type SettingsState = {
-  taxRate: number; // Stored as a decimal, e.g., 0.15 for 15%
-  shippingLocalCost: number;
-  shippingNationalCost: number;
-  pickupAddress: string;
-  setTaxRate: (rate: number) => void;
-  setShippingLocalCost: (cost: number) => void;
-  setShippingNationalCost: (cost: number) => void;
-  setPickupAddress: (address: string) => void;
+type Settings = {
+  id?: number;
+  created_at?: string;
+  tax_rate: number;
+  shipping_local_cost: number;
+  shipping_national_cost: number;
+  pickup_address: string;
+  logo_url?: string;
 };
 
+type SettingsState = {
+  settings: Settings | null;
+  isLoading: boolean;
+  fetchSettings: () => Promise<void>;
+  updateSettings: (newSettings: Partial<Omit<Settings, 'id' | 'created_at'>>) => Promise<void>;
+};
+
+const defaultSettings: Settings = {
+    tax_rate: 0.15,
+    shipping_local_cost: 50,
+    shipping_national_cost: 150,
+    pickup_address: 'Col. Las Hadas, Boulevard Morazán, frente a Automall, Tegucigalpa, Honduras',
+};
+
+
 export const useSettingsStore = create<SettingsState>()(
-  persist(
-    (set) => ({
-        taxRate: 0.15, // Default to 15%
-        shippingLocalCost: 50, // Default HNL 50
-        shippingNationalCost: 150, // Default HNL 150
-        pickupAddress: 'Col. Las Hadas, Boulevard Morazán, frente a Automall, Tegucigalpa, Honduras',
-        setTaxRate: (rate: number) => set({ taxRate: rate }),
-        setShippingLocalCost: (cost: number) => set({ shippingLocalCost: cost }),
-        setShippingNationalCost: (cost: number) => set({ shippingNationalCost: cost }),
-        setPickupAddress: (address: string) => set({ pickupAddress: address }),
-    }),
-    {
-      name: 'bem-settings-storage',
-      storage: createJSONStorage(() => localStorage),
+  (set, get) => ({
+    settings: null,
+    isLoading: true,
+    
+    fetchSettings: async () => {
+        set({ isLoading: true });
+        const { data, error } = await supabase
+            .from('settings')
+            .select('*')
+            .eq('id', 1)
+            .single();
+        
+        if (error || !data) {
+            console.error('Failed to fetch settings, using defaults.', error?.message);
+            set({ settings: defaultSettings, isLoading: false });
+        } else {
+            set({ settings: data, isLoading: false });
+        }
+    },
+
+    updateSettings: async (newSettings) => {
+        const { error } = await supabase
+            .from('settings')
+            .update(newSettings)
+            .eq('id', 1);
+
+        if (error) {
+            toast({ title: 'Error al guardar ajustes', description: error.message, variant: 'destructive'});
+        } else {
+            set(produce((state: SettingsState) => {
+                if (state.settings) {
+                    Object.assign(state.settings, newSettings);
+                }
+            }));
+        }
     }
-  )
+  })
 );
+
+// Auto-fetch settings on initial load
+if (typeof window !== 'undefined') {
+    useSettingsStore.getState().fetchSettings();
+}

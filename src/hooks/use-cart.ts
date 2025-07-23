@@ -27,7 +27,7 @@ export const useCart = create<CartState>()(
   persist(
     (set, get) => {
       const calculateTotals = (items: CartItem[], shippingCost: number) => {
-        const { taxRate } = useSettingsStore.getState();
+        const taxRate = useSettingsStore.getState().settings?.tax_rate ?? 0.15;
         const itemsTotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
         const total = itemsTotal + shippingCost;
         const subtotal = total / (1 + taxRate);
