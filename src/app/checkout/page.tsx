@@ -283,9 +283,11 @@ function ShippingDialog({
                         />
                     </form>
                 </Form>
-                <DialogFooter className="pt-4 space-y-2">
+                <DialogFooter className="pt-4 flex-col gap-2">
+                    <DialogClose asChild>
+                        <Button variant="ghost" className="rounded-full w-full">Cancelar</Button>
+                    </DialogClose>
                     <Button type="submit" form="shipping-form" className="rounded-full w-full">Guardar Dirección</Button>
-                    <DialogClose asChild><Button variant="ghost" className="rounded-full w-full">Cancelar</Button></DialogClose>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
