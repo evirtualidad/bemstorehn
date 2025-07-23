@@ -201,7 +201,7 @@ export function ProductsManager() {
             <DialogTrigger asChild>
               <Button size="sm" className="h-8 gap-1 rounded-full" onClick={openAddDialog}>
                 <PlusCircle className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                <span className="sr-only sm:not-sr-only sm:whitespace-rap">
                   Añadir Producto
                 </span>
               </Button>
@@ -260,7 +260,7 @@ export function ProductsManager() {
                     <TableCell className="hidden sm:table-cell">
                       <Image
                         alt={product.name}
-                        className="aspect-square rounded-md object-cover"
+                        className="aspect-square rounded-xl object-cover"
                         height="64"
                         src={product.image || 'https://placehold.co/64x64.png'}
                         width="64"
