@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A server-side flow to securely create an online order.
@@ -62,7 +61,7 @@ const createOrderFlow = ai.defineFlow(
             
             if (productError) throw new Error(`Error fetching product ${item.name}: ${productError.message}`);
             if (!product || product.stock < item.quantity) {
-                throw new Error(`Insufficient stock for: ${product.name}.`);
+                throw new Error(`Insufficient stock for: ${item.name}.`);
             }
 
             const newStock = product.stock - item.quantity;
