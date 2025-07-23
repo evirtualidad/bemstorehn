@@ -283,9 +283,9 @@ function ShippingDialog({
                         />
                     </form>
                 </Form>
-                <DialogFooter className="pt-4">
-                    <DialogClose asChild><Button variant="outline" className="rounded-full">Cancelar</Button></DialogClose>
-                    <Button type="submit" form="shipping-form" className="rounded-full">Guardar Dirección</Button>
+                <DialogFooter className="pt-4 space-y-2">
+                    <Button type="submit" form="shipping-form" className="rounded-full w-full">Guardar Dirección</Button>
+                    <DialogClose asChild><Button variant="ghost" className="rounded-full w-full">Cancelar</Button></DialogClose>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -684,4 +684,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-
