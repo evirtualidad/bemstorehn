@@ -91,12 +91,6 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
     const [customerType, setCustomerType] = React.useState<'consumidorFinal' | 'specific'>('consumidorFinal');
     const [today, setToday] = React.useState<Date | null>(null);
 
-    React.useEffect(() => {
-        if (isOpen) {
-            setToday(new Date());
-        }
-    }, [isOpen]);
-
     const form = useForm<z.infer<typeof checkoutFormSchema>>({
         resolver: zodResolver(checkoutFormSchema),
         defaultValues: {
@@ -106,7 +100,23 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
             paymentDueDate: undefined,
         },
     });
-    
+
+    const selectedPaymentMethod = form.watch('paymentMethod');
+
+    React.useEffect(() => {
+        if (selectedPaymentMethod === 'credito' && customerType !== 'specific') {
+            setCustomerType('specific');
+            form.setValue('name', '');
+            form.setValue('phone', '');
+        }
+    }, [selectedPaymentMethod, customerType, form]);
+
+    React.useEffect(() => {
+        if (isOpen) {
+            setToday(new Date());
+        }
+    }, [isOpen]);
+
     React.useEffect(() => {
         if (!isOpen) {
             form.reset({
@@ -205,8 +215,6 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
         { value: 'transferencia', label: 'Transferencia', icon: Landmark },
         { value: 'credito', label: 'Crédito', icon: Coins },
     ];
-    
-    const selectedPaymentMethod = form.watch('paymentMethod');
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -228,6 +236,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
                                 variant={customerType === 'consumidorFinal' ? 'secondary' : 'outline'}
                                 onClick={() => handleCustomerTypeChange('consumidorFinal')}
                                 className="h-12 rounded-xl"
+                                disabled={selectedPaymentMethod === 'credito'}
                                >
                                   <User className="mr-2 h-4 w-4"/> Consumidor Final
                                </Button>
