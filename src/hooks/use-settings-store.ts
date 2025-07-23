@@ -53,19 +53,17 @@ export const useSettingsStore = create<SettingsState>()(
     },
 
     updateSettings: async (newSettings) => {
-        const { error } = await supabase
+        const { data: updatedSettings, error } = await supabase
             .from('settings')
             .update(newSettings)
-            .eq('id', 1);
+            .eq('id', 1)
+            .select()
+            .single();
 
-        if (error) {
-            toast({ title: 'Error al guardar ajustes', description: error.message, variant: 'destructive'});
+        if (error || !updatedSettings) {
+            toast({ title: 'Error al guardar ajustes', description: error?.message, variant: 'destructive'});
         } else {
-            set(produce((state: SettingsState) => {
-                if (state.settings) {
-                    Object.assign(state.settings, newSettings);
-                }
-            }));
+            set({ settings: updatedSettings });
         }
     }
   })
