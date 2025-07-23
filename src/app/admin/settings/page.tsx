@@ -546,7 +546,7 @@ export default function SettingsPage() {
       <Tabs defaultValue="general">
         <div className='flex justify-between items-center mb-4'>
             <h1 className="text-2xl font-bold">Ajustes</h1>
-            <TabsList>
+            <TabsList className="rounded-full">
             <TabsTrigger value="general">Generales</TabsTrigger>
             <TabsTrigger value="banners">Banners</TabsTrigger>
             <TabsTrigger value="logo">Logo</TabsTrigger>
