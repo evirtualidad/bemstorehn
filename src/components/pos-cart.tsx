@@ -89,8 +89,8 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
                 <ScrollArea className="flex-1 landscape:w-3/5">
                     <div className="p-4 flex flex-col gap-4">
                         {items.map((item) => (
-                            <div key={item.id} className="flex items-start gap-4 bg-background p-3 rounded-lg shadow-sm">
-                                <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border bg-secondary">
+                            <div key={item.id} className="flex items-start gap-4 bg-background p-3 rounded-xl shadow-sm">
+                                <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border bg-secondary">
                                     <Image
                                     src={item.image}
                                     alt={item.name}
