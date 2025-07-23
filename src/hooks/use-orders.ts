@@ -14,7 +14,7 @@ type OrdersState = {
   isLoading: boolean;
   fetchOrders: () => Promise<void>;
   createOrder: (order: NewOrderData) => Promise<string | null>; 
-  addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia') => Promise<void>;
+  addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia', reference?: string) => Promise<void>;
   approveOrder: (data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
   getOrderById: (orderId: string) => Order | undefined;
@@ -108,13 +108,13 @@ export const useOrdersStore = create<OrdersState>()(
             }
         },
 
-        addPayment: async (orderId, amount, method) => {
+        addPayment: async (orderId, amount, method, reference) => {
             const order = get().orders.find(o => o.id === orderId);
             if (!order) return;
 
             const newBalance = order.balance - amount;
             const newStatus = newBalance <= 0 ? 'paid' : order.status;
-            const newPayment = { amount, method, date: new Date().toISOString() };
+            const newPayment = { amount, method, date: new Date().toISOString(), reference: reference || undefined };
             const updatedPayments = [...order.payments, newPayment];
             
             const { error } = await supabase

@@ -227,10 +227,21 @@ function RegisterPaymentDialog({ order, children }: { order: Order, children: Re
     const [isOpen, setIsOpen] = React.useState(false);
     const [amount, setAmount] = React.useState('');
     const [paymentMethod, setPaymentMethod] = React.useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo');
+    const [paymentReference, setPaymentReference] = React.useState('');
     const [error, setError] = React.useState('');
     const { addPayment } = useOrdersStore();
     const { toast } = useToast();
     const { currency } = useCurrencyStore();
+    
+    React.useEffect(() => {
+        if (!isOpen) {
+            // Reset form on close
+            setAmount('');
+            setPaymentMethod('efectivo');
+            setPaymentReference('');
+            setError('');
+        }
+    }, [isOpen]);
 
     const handleRegisterPayment = () => {
         const paymentAmount = parseFloat(amount);
@@ -242,14 +253,19 @@ function RegisterPaymentDialog({ order, children }: { order: Order, children: Re
             setError('El monto no puede ser mayor que el saldo pendiente.');
             return;
         }
+        if ((paymentMethod === 'tarjeta' || paymentMethod === 'transferencia') && !paymentReference) {
+            setError('Se requiere un número de referencia para este método de pago.');
+            return;
+        }
         setError('');
-        addPayment(order.id, paymentAmount, paymentMethod);
+        
+        addPayment(order.id, paymentAmount, paymentMethod, paymentReference);
+
         toast({
             title: '¡Pago Registrado!',
             description: `Se registró un pago de ${formatCurrency(paymentAmount, currency.code)} para el pedido ${order.display_id}.`,
         });
         setIsOpen(false);
-        setAmount('');
     }
 
     const paymentOptions = [
@@ -286,7 +302,6 @@ function RegisterPaymentDialog({ order, children }: { order: Order, children: Re
                                 Pagar Total
                             </Button>
                         </div>
-                        {error && <p className="text-sm text-destructive">{error}</p>}
                     </div>
                      <div className="space-y-2">
                         <Label>Forma de Pago</Label>
@@ -303,6 +318,20 @@ function RegisterPaymentDialog({ order, children }: { order: Order, children: Re
                            ))}
                         </div>
                     </div>
+                    
+                    {(paymentMethod === 'tarjeta' || paymentMethod === 'transferencia') && (
+                        <div className="space-y-2">
+                            <Label htmlFor="reference">Número de Referencia</Label>
+                            <Input
+                                id="reference"
+                                value={paymentReference}
+                                onChange={(e) => setPaymentReference(e.target.value)}
+                                placeholder='Ej: 123456789'
+                            />
+                        </div>
+                    )}
+                    
+                    {error && <p className="text-sm text-destructive pt-2">{error}</p>}
                 </div>
                 <DialogFooter>
                     <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
