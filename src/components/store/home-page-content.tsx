@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from '@/lib/utils';
+import { useCategoriesStore } from '@/hooks/use-categories';
 
 interface HomePageContentProps {
   products: Product[];
@@ -30,8 +31,9 @@ interface HomePageContentProps {
 
 export function HomePageContent({ 
     products, 
-    categories 
+    categories: initialCategories
 }: HomePageContentProps) {
+    const { getCategoryByName } = useCategoriesStore();
     const [selectedCategory, setSelectedCategory] = React.useState('all');
     const [searchQuery, setSearchQuery] = React.useState('');
     const { banners } = useBannersStore();
@@ -43,7 +45,10 @@ export function HomePageContent({
         let prods = products;
 
         if (selectedCategory !== 'all') {
-            prods = prods.filter(p => p.category === selectedCategory);
+            const categoryId = getCategoryByName(selectedCategory)?.id;
+            if (categoryId) {
+                prods = prods.filter(p => p.category_id === categoryId);
+            }
         }
 
         if (searchQuery) {
@@ -53,15 +58,24 @@ export function HomePageContent({
         }
         
         return prods;
-    }, [products, selectedCategory, searchQuery]);
+    }, [products, selectedCategory, searchQuery, getCategoryByName]);
+    
+    const categoriesWithProducts = React.useMemo(() => {
+        return initialCategories
+            .map(category => ({
+                ...category,
+                products: filteredProducts.filter(p => p.category_id === category.id)
+            }))
+            .filter(category => category.products.length > 0);
+    }, [initialCategories, filteredProducts]);
 
     const selectedCategoryLabel = React.useMemo(() => {
         if (selectedCategory === 'all') {
             return 'Categorías';
         }
-        const category = categories.find(c => c.name === selectedCategory);
+        const category = initialCategories.find(c => c.name === selectedCategory);
         return category ? category.label : 'Categorías';
-    }, [selectedCategory, categories]);
+    }, [selectedCategory, initialCategories]);
 
     return (
         <main className="px-4 pt-4 pb-8 space-y-8">
@@ -96,7 +110,7 @@ export function HomePageContent({
                 <div className="relative flex-grow">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input 
-                        placeholder="Search..." 
+                        placeholder="Buscar producto..." 
                         className="bg-secondary rounded-full h-14 pl-12 text-base border-none" 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -116,7 +130,7 @@ export function HomePageContent({
                         <DropdownMenuSeparator />
                         <DropdownMenuRadioGroup value={selectedCategory} onValueChange={setSelectedCategory}>
                             <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
-                            {categories.map((cat) => (
+                            {initialCategories.map((cat) => (
                                 <DropdownMenuRadioItem key={cat.id} value={cat.name}>{cat.label}</DropdownMenuRadioItem>
                             ))}
                         </DropdownMenuRadioGroup>
@@ -124,13 +138,17 @@ export function HomePageContent({
                 </DropdownMenu>
             </div>
             
-            <div className="space-y-4 fade-in" style={{ animationDelay: '300ms' }}>
-                 <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold">Nuevos Catálogos</h2>
-                    <Link href="#" className="text-sm font-semibold text-muted-foreground">Ver todos</Link>
-                 </div>
-                 {filteredProducts.length > 0 ? (
-                    <ProductGridHomepage products={filteredProducts} />
+            <div className="space-y-8 fade-in" style={{ animationDelay: '300ms' }}>
+                 {categoriesWithProducts.length > 0 ? (
+                    categoriesWithProducts.map(category => (
+                        <div key={category.id} className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-xl font-bold">{category.label}</h2>
+                                <Link href="#" className="text-sm font-semibold text-muted-foreground">Ver todos</Link>
+                            </div>
+                            <ProductGridHomepage products={category.products} />
+                        </div>
+                    ))
                  ) : (
                     <div className="text-center py-10 text-muted-foreground">
                         <p>No se encontraron productos que coincidan con tu búsqueda.</p>
