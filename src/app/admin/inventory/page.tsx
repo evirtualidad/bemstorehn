@@ -37,9 +37,9 @@ export default function InventoryPage() {
       <Tabs defaultValue="products">
         <div className='flex justify-between items-center mb-4'>
             <h1 className="text-2xl font-bold">Inventario</h1>
-            <TabsList>
-            <TabsTrigger value="products">Productos</TabsTrigger>
-            <TabsTrigger value="categories">Categorías</TabsTrigger>
+            <TabsList className="rounded-full">
+            <TabsTrigger value="products" className="rounded-full">Productos</TabsTrigger>
+            <TabsTrigger value="categories" className="rounded-full">Categorías</TabsTrigger>
             </TabsList>
         </div>
         <TabsContent value="products">
