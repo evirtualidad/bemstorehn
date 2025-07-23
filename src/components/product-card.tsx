@@ -67,11 +67,13 @@ export function ProductCard({
               className="w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
               data-ai-hint={product.aiHint}
             />
-            <div className="absolute top-2 left-2">
-                <Badge variant={product.stock > 0 ? 'default' : 'destructive'} className={cn(product.stock > 0 && 'bg-green-100 text-green-800 border-green-200')}>
-                    {product.stock > 0 ? `Stock: ${product.stock}` : 'Agotado'}
-                </Badge>
-            </div>
+            {isPos && (
+                <div className="absolute top-2 left-2">
+                    <Badge variant={product.stock > 0 ? 'default' : 'destructive'} className={cn(product.stock > 0 && 'bg-green-100 text-green-800 border-green-200')}>
+                        {product.stock > 0 ? `Stock: ${product.stock}` : 'Agotado'}
+                    </Badge>
+                </div>
+            )}
              {isDiscounted && (
                 <div className="absolute top-2 right-2">
                     <Badge variant="offer">Oferta</Badge>
