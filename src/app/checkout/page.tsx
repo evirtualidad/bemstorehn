@@ -157,7 +157,7 @@ function ShippingDialog({
     
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md rounded-lg">
+            <DialogContent className="sm:max-w-md rounded-xl">
                 <DialogHeader>
                     <DialogTitle>Información de Envío</DialogTitle>
                     <DialogDescription>
@@ -180,7 +180,7 @@ function ShippingDialog({
                                 >
                                   <FormItem>
                                     <FormControl>
-                                      <label className={cn('flex flex-col justify-center items-center gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50 min-h-[100px]', field.value === 'local' && 'bg-primary/10')}>
+                                      <label className={cn('flex flex-col justify-center items-center gap-2 rounded-xl border p-4 cursor-pointer hover:bg-accent/50 min-h-[100px]', field.value === 'local' && 'bg-primary/10')}>
                                         <RadioGroupItem value="local" className="sr-only" />
                                         <MapPin className="h-6 w-6 text-primary" />
                                         <div className="text-center">
@@ -192,7 +192,7 @@ function ShippingDialog({
                                   </FormItem>
                                   <FormItem>
                                     <FormControl>
-                                      <label className={cn('flex flex-col justify-center items-center gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50 min-h-[100px]', field.value === 'national' && 'bg-primary/10')}>
+                                      <label className={cn('flex flex-col justify-center items-center gap-2 rounded-xl border p-4 cursor-pointer hover:bg-accent/50 min-h-[100px]', field.value === 'national' && 'bg-primary/10')}>
                                         <RadioGroupItem value="national" className="sr-only"/>
                                         <Truck className="h-6 w-6 text-primary" />
                                         <div className="text-center">
@@ -217,7 +217,7 @@ function ShippingDialog({
                                         <FormLabel>Departamento</FormLabel>
                                         <Select onValueChange={(value) => { field.onChange(value); form.setValue('municipality', undefined); }} value={field.value}>
                                         <FormControl>
-                                            <SelectTrigger className="rounded-lg">
+                                            <SelectTrigger className="rounded-xl">
                                             <SelectValue placeholder="Selecciona un departamento" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -239,7 +239,7 @@ function ShippingDialog({
                                         <FormLabel>Municipio</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value} disabled={!selectedDepartment}>
                                         <FormControl>
-                                            <SelectTrigger className="rounded-lg">
+                                            <SelectTrigger className="rounded-xl">
                                             <SelectValue placeholder="Selecciona un municipio" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -262,7 +262,7 @@ function ShippingDialog({
                             <FormItem>
                                 <FormLabel>Colonia / Residencial</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Ej: Colonia Kennedy" {...field} className="rounded-lg"/>
+                                    <Input placeholder="Ej: Colonia Kennedy" {...field} className="rounded-xl"/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -275,7 +275,7 @@ function ShippingDialog({
                             <FormItem>
                                 <FormLabel>Dirección Exacta</FormLabel>
                                 <FormControl>
-                                <Textarea placeholder="Bloque, número de casa, referencias, etc." {...field} className="rounded-lg"/>
+                                <Textarea placeholder="Bloque, número de casa, referencias, etc." {...field} className="rounded-xl"/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -436,7 +436,7 @@ export default function CheckoutPage() {
             <div className="flex-grow flex items-center justify-center">
               <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-12">
                 <div className="space-y-8">
-                  <Card className="rounded-lg">
+                  <Card className="rounded-xl">
                     <CardHeader>
                       <CardTitle>1. Información de Contacto</CardTitle>
                     </CardHeader>
@@ -448,7 +448,7 @@ export default function CheckoutPage() {
                           <FormItem>
                             <FormLabel>Nombre Completo</FormLabel>
                             <FormControl>
-                              <Input placeholder="Jane Doe" {...field} className="rounded-lg"/>
+                              <Input placeholder="Jane Doe" {...field} className="rounded-xl"/>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -461,7 +461,7 @@ export default function CheckoutPage() {
                           <FormItem>
                             <FormLabel>Teléfono</FormLabel>
                             <FormControl>
-                              <Input placeholder="(123) 456-7890" {...field} className="rounded-lg"/>
+                              <Input placeholder="(123) 456-7890" {...field} className="rounded-xl"/>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -470,7 +470,7 @@ export default function CheckoutPage() {
                     </CardContent>
                   </Card>
                   
-                  <Card className="rounded-lg">
+                  <Card className="rounded-xl">
                     <CardHeader>
                       <CardTitle>2. Método de Entrega</CardTitle>
                     </CardHeader>
@@ -484,7 +484,7 @@ export default function CheckoutPage() {
                                     value={field.value}
                                     className="grid grid-cols-1 gap-4"
                                 >
-                                    <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'pickup' && "bg-primary/10")}>
+                                    <label className={cn("flex flex-col gap-2 rounded-xl border p-4 cursor-pointer hover:bg-accent/50", field.value === 'pickup' && "bg-primary/10")}>
                                         <div className="flex items-center gap-4">
                                             <RadioGroupItem value="pickup" id="pickup"/>
                                             <div className="flex-1 flex items-center gap-2">
@@ -501,7 +501,7 @@ export default function CheckoutPage() {
                                         )}
                                     </label>
 
-                                     <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'delivery' && "bg-primary/10")}>
+                                     <label className={cn("flex flex-col gap-2 rounded-xl border p-4 cursor-pointer hover:bg-accent/50", field.value === 'delivery' && "bg-primary/10")}>
                                         <div className="flex items-center gap-4">
                                             <RadioGroupItem value="delivery" id="delivery"/>
                                             <div className="flex-1 flex items-center gap-2">
@@ -533,7 +533,7 @@ export default function CheckoutPage() {
                      </CardContent>
                   </Card>
 
-                   <Card className="rounded-lg">
+                   <Card className="rounded-xl">
                     <CardHeader>
                       <CardTitle>3. Método de Pago</CardTitle>
                        <FormMessage>{form.formState.errors.paymentMethod?.message}</FormMessage>
@@ -548,7 +548,7 @@ export default function CheckoutPage() {
                                     value={field.value}
                                     className="grid grid-cols-1 gap-4"
                                 >
-                                    <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer", field.value === 'tarjeta' && "bg-primary/10", "has-[input:disabled]:opacity-50 has-[input:disabled]:cursor-not-allowed")}>
+                                    <label className={cn("flex flex-col gap-2 rounded-xl border p-4 cursor-pointer", field.value === 'tarjeta' && "bg-primary/10", "has-[input:disabled]:opacity-50 has-[input:disabled]:cursor-not-allowed")}>
                                         <div className="flex items-center gap-4">
                                             <RadioGroupItem value="tarjeta" id="tarjeta" disabled/>
                                             <div className="flex-1 flex items-center gap-2">
@@ -560,7 +560,7 @@ export default function CheckoutPage() {
                                            Serás contactado para completar el pago de forma segura.
                                         </p>
                                     </label>
-                                     <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'transferencia' && "bg-primary/10")}>
+                                     <label className={cn("flex flex-col gap-2 rounded-xl border p-4 cursor-pointer hover:bg-accent/50", field.value === 'transferencia' && "bg-primary/10")}>
                                         <div className="flex items-center gap-4">
                                             <RadioGroupItem value="transferencia" id="transferencia"/>
                                             <div className="flex-1 flex items-center gap-2">
@@ -577,7 +577,7 @@ export default function CheckoutPage() {
                                                         <FormItem>
                                                             <FormLabel>Número de Referencia</FormLabel>
                                                             <FormControl>
-                                                            <Input placeholder="Ej: 987654321" {...field} className="rounded-lg"/>
+                                                            <Input placeholder="Ej: 987654321" {...field} className="rounded-xl"/>
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
@@ -586,7 +586,7 @@ export default function CheckoutPage() {
                                             </div>
                                         )}
                                     </label>
-                                     <label className={cn("flex flex-col gap-2 rounded-lg border p-4 cursor-pointer hover:bg-accent/50", field.value === 'efectivo' && "bg-primary/10")}>
+                                     <label className={cn("flex flex-col gap-2 rounded-xl border p-4 cursor-pointer hover:bg-accent/50", field.value === 'efectivo' && "bg-primary/10")}>
                                         <div className="flex items-center gap-4">
                                             <RadioGroupItem value="efectivo" id="efectivo"/>
                                             <div className="flex-1 flex items-center gap-2">
@@ -605,7 +605,7 @@ export default function CheckoutPage() {
                 {/* Order Summary */}
                 <div>
                   <h2 className="text-2xl font-bold mb-6">Resumen del Pedido</h2>
-                  <div className="bg-muted/30 rounded-lg p-6">
+                  <div className="bg-muted/30 rounded-xl p-6">
                     <div className="space-y-4">
                       {items.map((item) => (
                         <div key={item.id} className="flex items-center gap-4">
@@ -684,3 +684,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
