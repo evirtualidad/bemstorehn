@@ -36,7 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/hooks/use-auth-store';
 
 const checkoutFormSchema = z.object({
-  name: z.string().min(1, "El nombre del cliente es obligatorio."),
+  name: z.string(), // Name can be empty initially, will be defaulted later
   phone: z.string().optional(),
   paymentMethod: z.enum(['efectivo', 'tarjeta', 'transferencia', 'credito'], {
     required_error: "Debes seleccionar un método de pago."
@@ -61,7 +61,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
     const form = useForm<z.infer<typeof checkoutFormSchema>>({
         resolver: zodResolver(checkoutFormSchema),
         defaultValues: {
-            name: 'Consumidor Final',
+            name: '',
             phone: '',
             paymentMethod: 'efectivo',
         },
@@ -70,7 +70,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
     React.useEffect(() => {
         if (!isOpen) {
             form.reset({
-                name: 'Consumidor Final',
+                name: '',
                 phone: '',
                 paymentMethod: 'efectivo',
             });
@@ -87,8 +87,10 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
     };
 
     const onSubmit = async (values: z.infer<typeof checkoutFormSchema>) => {
+        const finalCustomerName = values.name.trim() === '' ? 'Consumidor Final' : values.name;
+
         const customerId = await addOrUpdateCustomer({
-            name: values.name,
+            name: finalCustomerName,
             phone: values.phone
         });
 
@@ -99,7 +101,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
         const newOrderData: NewOrderData = {
             user_id: user?.id || null,
             customer_id: customerId,
-            customer_name: values.name,
+            customer_name: finalCustomerName,
             customer_phone: values.phone || '',
             customer_address: null,
             items: items.map(item => ({
@@ -126,7 +128,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
         if (newOrderId) {
             toast({
                 title: "¡Venta Registrada!",
-                description: `Se completó la venta a ${values.name} por ${formatCurrency(total, currency.code)}.`
+                description: `Se completó la venta a ${finalCustomerName} por ${formatCurrency(total, currency.code)}.`
             });
             
             onCheckoutSuccess();

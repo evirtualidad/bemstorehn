@@ -25,8 +25,10 @@ export function CustomerSearch({ onCustomerSelect, form }: CustomerSearchProps) 
     const initialName = form.getValues('name');
     if (initialName) {
         setSearchQuery(initialName);
+    } else {
+        setSearchQuery(''); // Ensure it's empty if form name is empty
     }
-  }, []);
+  }, [form]);
 
 
   React.useEffect(() => {
