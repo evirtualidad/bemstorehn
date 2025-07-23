@@ -81,7 +81,7 @@ export const useProductsStore = create<ProductsState>()(
               toast({ title: 'Error al cargar productos', description: error.message, variant: 'destructive' });
               set({ products: [], isLoading: false });
           } else {
-              const formattedProducts = data.map(p => ({ ...p, category: (p.category as any)?.name || 'uncategorized' }));
+              const formattedProducts = data.map(p => ({ ...p, category: (p.category as any)?.name || 'uncategorized', original_price: p.original_price === 0 ? undefined : p.original_price }));
               set({ 
                   products: formattedProducts, 
                   featuredProducts: formattedProducts.filter(p => p.featured),
@@ -107,9 +107,15 @@ export const useProductsStore = create<ProductsState>()(
                 }
             }
             
+            const dbPayload = {
+              ...rest,
+              image: imageUrl,
+              original_price: rest.original_price ? Number(rest.original_price) : undefined,
+            };
+
             const { data: newProduct, error } = await supabase
                 .from('products')
-                .insert({ ...rest, image: imageUrl })
+                .insert(dbPayload)
                 .select()
                 .single();
 
@@ -148,9 +154,15 @@ export const useProductsStore = create<ProductsState>()(
                 }
             }
             
+            const dbPayload = {
+              ...rest,
+              image: imageUrl,
+              original_price: rest.original_price ? Number(rest.original_price) : undefined,
+            };
+
             const { data: updatedProduct, error } = await supabase
                 .from('products')
-                .update({ ...rest, image: imageUrl })
+                .update(dbPayload)
                 .eq('id', id)
                 .select()
                 .single();
@@ -224,4 +236,5 @@ export const useProductsStore = create<ProductsState>()(
         },
     })
 );
+
 

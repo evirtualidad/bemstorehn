@@ -37,7 +37,8 @@ export const productFormSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
   description: z.string().min(10, 'La descripción debe tener al menos 10 caracteres.'),
   price: z.coerce.number().positive('El precio debe ser un número positivo.'),
-  original_price: z.coerce.number().positive('El precio debe ser un número positivo.').optional().or(z.literal('')),
+  onSale: z.boolean().default(false),
+  original_price: z.coerce.number().optional().or(z.literal('')),
   stock: z.coerce.number().int().min(0, 'El stock no puede ser negativo.'),
   category: z.string({ required_error: 'Debes seleccionar una categoría.' }),
   image: z.any().optional().refine(file => {
@@ -51,8 +52,11 @@ export const productFormSchema = z.object({
   featured: z.boolean().default(false),
   aiHint: z.string().optional(),
 }).refine(data => {
-    if (data.original_price && data.price >= data.original_price) {
-      return false;
+    if (data.onSale) {
+        if (!data.original_price || data.original_price === '') {
+            return false; // original_price is required if onSale
+        }
+        return data.price < Number(data.original_price);
     }
     return true;
 }, {
@@ -83,6 +87,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
       name: product?.name || '',
       description: product?.description || '',
       price: product?.price || 0,
+      onSale: !!(product?.original_price && product.original_price > 0),
       original_price: product?.original_price || '',
       stock: product?.stock || 0,
       category: product?.category_id || '',
@@ -91,6 +96,16 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
       aiHint: product?.aiHint || '',
     },
   });
+  
+  const isOnSale = form.watch('onSale');
+
+  const handleFormSubmit = (values: z.infer<typeof productFormSchema>) => {
+    const finalValues = { ...values };
+    if (!finalValues.onSale) {
+        finalValues.original_price = undefined;
+    }
+    onSubmit(finalValues);
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -114,7 +129,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
         
          <FormField
           control={form.control}
@@ -190,6 +205,30 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
             </FormItem>
           )}
         />
+        
+        <FormField
+            control={form.control}
+            name="onSale"
+            render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                    <FormLabel className="text-base">
+                    Producto en Oferta
+                    </FormLabel>
+                    <FormDescription>
+                    Activa para establecer un precio original y mostrar un descuento.
+                    </FormDescription>
+                </div>
+                <FormControl>
+                    <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    />
+                </FormControl>
+                </FormItem>
+            )}
+         />
+
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -204,22 +243,21 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="original_price"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Precio Original</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="55.00" {...field} />
-                </FormControl>
-                 <FormDescription>
-                  Opcional. Para mostrar oferta.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {isOnSale && (
+            <FormField
+              control={form.control}
+              name="original_price"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Precio Original</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="55.00" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
         </div>
          <FormField
             control={form.control}
