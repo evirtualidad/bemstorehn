@@ -51,7 +51,7 @@ function LoginPageContent() {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof loginFormSchema>>) => {
+  const onSubmit = async (values: z.infer<typeof loginFormSchema>) => {
     setIsSubmitting(true);
     const error = await login(values.email, values.password);
     
