@@ -4,6 +4,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
     BarChart2,
     ListOrdered,
@@ -29,6 +30,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/
 import { useTheme } from 'next-themes';
 import { useOrdersStore } from '@/hooks/use-orders';
 import { InstallPwaButton } from './install-pwa-button';
+import { useLogoStore } from '@/hooks/use-logo-store';
 
 const navItems = [
     { href: '/admin/dashboard-v2', label: 'Dashboard', icon: BarChart2 },
@@ -68,6 +70,7 @@ export function AdminHeader() {
     const { items, clearCart } = usePosCart();
     const { orders } = useOrdersStore();
     const { onOpen } = useMobileSidebarStore();
+    const { logoUrl } = useLogoStore();
     const [isCartOpen, setIsCartOpen] = React.useState(false);
     const pathname = usePathname();
     const router = useRouter();
@@ -99,8 +102,12 @@ export function AdminHeader() {
                         </Button>
                     </div>
                      <Link href="/admin/dashboard-v2" className="flex items-center gap-2">
-                        <Leaf className="w-8 h-8 text-primary" />
-                        <span className="text-xl font-bold hidden md:inline-block">BEM STORE</span>
+                        {logoUrl ? (
+                          <Image src={logoUrl} alt="BEM STORE HN Logo" width={40} height={40} className="object-contain h-8 w-auto" />
+                        ) : (
+                          <Leaf className="w-8 h-8 text-primary" />
+                        )}
+                        <span className="text-xl font-bold hidden md:inline-block">BEM STORE HN</span>
                      </Link>
                 </div>
                 
