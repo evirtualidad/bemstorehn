@@ -13,7 +13,7 @@ type OrdersState = {
   orders: Order[];
   isLoading: boolean;
   fetchOrders: () => Promise<void>;
-  createOrder: (order: NewOrderData) => Promise<string | null>; 
+  createOrder: (order: NewOrderData) => Promise<Order | null>; 
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia', reference?: string) => Promise<void>;
   approveOrder: (data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => Promise<void>;
   cancelOrder: (orderId: string) => Promise<void>;
@@ -53,7 +53,7 @@ export const useOrdersStore = create<OrdersState>()(
                             state.orders.unshift(result.order as Order);
                         }));
 
-                        return result.order.id;
+                        return result.order;
                     }
                     throw new Error(result?.error || 'Unknown error from order creation flow');
                 } catch (e: any) {
@@ -104,7 +104,7 @@ export const useOrdersStore = create<OrdersState>()(
                     state.orders.unshift(newOrder as Order);
                 }));
 
-                return newOrder.id;
+                return newOrder;
             }
         },
 
