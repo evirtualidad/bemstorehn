@@ -55,7 +55,7 @@ const PrintableReceipt = React.forwardRef<HTMLDivElement, { order: Order }>(({ o
             <div className="text-xs space-y-1">
                 <div className="flex justify-between">
                     <span>Fecha:</span>
-                    <span>{format(parseISO(order.created_at), 'd/MM/yy, hh:mm a')}</span>
+                    <span>{order.created_at ? format(parseISO(order.created_at), 'd/MM/yy, hh:mm a') : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                     <span>Cliente:</span>
