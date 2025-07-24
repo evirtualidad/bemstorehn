@@ -207,15 +207,15 @@ export function ProductsManager() {
                 </span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px] max-h-[90vh] flex flex-col">
-              <DialogHeader>
+            <DialogContent className="sm:max-w-[525px] max-h-[90vh] flex flex-col p-0">
+              <DialogHeader className="p-6 pb-0">
                 <DialogTitle>{editingProduct ? 'Editar Producto' : 'Añadir Nuevo Producto'}</DialogTitle>
                 <DialogDescription>
                   {editingProduct ? 'Modifica los detalles del producto.' : 'Rellena los detalles de la nueva producto.'} Haz clic en guardar cuando termines.
                 </DialogDescription>
               </DialogHeader>
-               <ScrollArea className="flex-1 -mx-6">
-                <div className="px-6">
+               <ScrollArea className="flex-1 min-h-0">
+                <div className="px-6 py-4">
                     <ProductForm
                       key={editingProduct?.id || 'new'}
                       product={editingProduct}
