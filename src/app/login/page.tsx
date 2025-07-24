@@ -21,9 +21,7 @@ import { Loader2, Leaf } from 'lucide-react';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { InstallPwaButton } from '@/components/admin/install-pwa-button';
 import { ThemeProvider } from '@/components/theme-provider';
-import Head from 'next/head';
 
 const loginFormSchema = z.object({
   email: z.string().email({ message: 'Por favor, ingresa un correo válido.' }),
@@ -152,14 +150,6 @@ export default function LoginPage() {
       enableSystem
       disableTransitionOnChange
     >
-      <Head>
-        <link rel="manifest" href="/admin/manifest.json" />
-        <meta name="theme-color" content="#793F5C" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="BEM Admin" />
-        <link rel="apple-touch-icon" href="/admin/icons/apple-touch-icon.png" />
-      </Head>
       <LoginPageContent />
     </ThemeProvider>
   );

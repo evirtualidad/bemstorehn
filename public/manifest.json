@@ -1,22 +1,28 @@
 {
-  "name": "BEM Admin",
-  "short_name": "BEM Store",
-  "description": "Panel de administración para BEM Store.",
-  "start_url": "/login",
-  "display": "standalone",
-  "background_color": "#292939",
-  "theme_color": "#793F5C",
-  "scope": "/",
-  "icons": [
-    {
-      "src": "/admin/icons/android-chrome-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/admin/icons/android-chrome-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+    "name": "BEM Admin",
+    "short_name": "BEM Admin",
+    "description": "Panel de administración para BEM Store.",
+    "start_url": "/login",
+    "display": "standalone",
+    "background_color": "#292939",
+    "theme_color": "#793F5C",
+    "scope": "/",
+    "icons": [
+        {
+            "src": "/admin/icons/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/admin/icons/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "/admin/icons/maskable_icon.png",
+            "sizes": "196x196",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
 }

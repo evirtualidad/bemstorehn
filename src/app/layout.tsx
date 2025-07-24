@@ -16,6 +16,11 @@ export const metadata: Metadata = {
   title: 'BEM STORE',
   description: 'Tu tienda de cosméticos y cuidado de la piel.',
   manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "BEM Admin",
+  },
 };
 
 export default function RootLayout({
@@ -27,6 +32,7 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
        <head>
         <meta name="theme-color" content="#793F5C" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
       <body className={`${fontSans.variable} font-sans antialiased`}>
         <ThemeProvider

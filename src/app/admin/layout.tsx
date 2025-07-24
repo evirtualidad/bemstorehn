@@ -8,7 +8,6 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AdminHeader } from '@/components/admin/header';
 import { MobileSidebar } from '@/components/admin/mobile-sidebar';
-import Head from 'next/head';
 
 export default function AdminLayout({
   children,
@@ -17,7 +16,6 @@ export default function AdminLayout({
 }) {
   const { user, isAuthLoading, initializeSession } = useAuthStore();
   const router = useRouter();
-  const pathname = usePathname();
 
   React.useEffect(() => {
     const unsubscribe = initializeSession();
@@ -50,12 +48,6 @@ export default function AdminLayout({
         enableSystem
         disableTransitionOnChange
       >
-          <Head>
-            <meta name="apple-mobile-web-app-capable" content="yes" />
-            <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-            <meta name="apple-mobile-web-app-title" content="BEM Admin" />
-            <link rel="apple-touch-icon" href="/admin/icons/apple-touch-icon.png" />
-          </Head>
           <div className="h-screen w-full flex flex-col">
               <AdminHeader />
               <main className="flex-1 overflow-y-auto p-6 bg-muted/40">
