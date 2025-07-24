@@ -17,11 +17,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Loader2, Leaf } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ThemeProvider } from '@/components/theme-provider';
+import Image from 'next/image';
+import { useLogoStore } from '@/hooks/use-logo-store';
 
 const loginFormSchema = z.object({
   email: z.string().email({ message: 'Por favor, ingresa un correo válido.' }),
@@ -30,6 +32,7 @@ const loginFormSchema = z.object({
 
 function LoginPageContent() {
   const { login, user, isAuthLoading } = useAuthStore();
+  const { logoUrl } = useLogoStore();
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -84,8 +87,17 @@ function LoginPageContent() {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
               <div className="flex justify-center items-center gap-2 mb-4">
-                  <Leaf className="w-8 h-8 text-primary" />
-                  <h1 className="text-2xl font-bold">BEM STORE</h1>
+                   {logoUrl ? (
+                      <Image
+                        src={logoUrl}
+                        alt="BEM STORE HN Logo"
+                        width={150}
+                        height={50}
+                        className="object-contain h-12"
+                      />
+                    ) : (
+                      <h1 className="text-2xl font-bold">BEM STORE HN</h1>
+                    )}
               </div>
             <CardTitle>Iniciar Sesión</CardTitle>
             <CardDescription>Ingresa a tu panel de administración</CardDescription>
