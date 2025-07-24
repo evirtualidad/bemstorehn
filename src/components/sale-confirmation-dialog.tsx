@@ -110,11 +110,9 @@ PrintableReceipt.displayName = 'PrintableReceipt';
 export function SaleConfirmationDialog({ order, onNewSale }: SaleConfirmationDialogProps) {
   const [isOpen, setIsOpen] = React.useState(true);
   const receiptRef = React.useRef<HTMLDivElement>(null);
-  const printTriggerRef = React.useRef<HTMLButtonElement>(null);
   
   const handlePrint = useReactToPrint({
       content: () => receiptRef.current,
-      trigger: () => printTriggerRef.current,
   });
 
   const handleClose = () => {
@@ -131,17 +129,17 @@ export function SaleConfirmationDialog({ order, onNewSale }: SaleConfirmationDia
       <Dialog open={isOpen} onOpenChange={handleClose}>
           <DialogContent className="max-w-sm w-full p-0 flex flex-col gap-0 no-print" hideClose>
               <div className="p-6">
-                 <DialogHeader className="text-center items-center">
+                 <div className="text-center items-center flex flex-col space-y-2">
                     <CheckCircle2 className="h-16 w-16 text-green-500 mb-4" />
-                    <DialogTitle className="text-2xl">¡Venta Exitosa!</DialogTitle>
-                    <DialogDescription>
+                    <h2 className="text-2xl font-semibold leading-none tracking-tight">¡Venta Exitosa!</h2>
+                    <p className="text-sm text-muted-foreground">
                         Pedido: {order.display_id}
-                    </DialogDescription>
-                </DialogHeader>
+                    </p>
+                </div>
               </div>
 
               <DialogFooter className="p-4 bg-muted/50 flex-row gap-2">
-                  <button ref={printTriggerRef} className={cn(buttonVariants({ variant: 'outline' }), "w-full")}>
+                  <button onClick={handlePrint} className={cn(buttonVariants({ variant: 'outline' }), "w-full")}>
                       <Printer className="mr-2 h-4 w-4" />
                       Imprimir Recibo
                   </button>
