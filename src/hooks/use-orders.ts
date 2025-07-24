@@ -92,15 +92,15 @@ export const useOrdersStore = create<OrdersState>()(
                     return null;
                 }
                 
-                // --- Decrease stock for POS orders ---
-                const { decreaseStock, fetchProducts } = useProductsStore.getState();
+                // --- Decrease stock for POS orders only after successful creation ---
+                const { decreaseStock } = useProductsStore.getState();
                 for (const item of newOrder.items) {
                     await decreaseStock(item.id, item.quantity);
                 }
-                fetchProducts(); // Refresh products state to reflect new stock
                 
                 set(produce((state: OrdersState) => {
                     state.orders.unshift(newOrder as Order);
+                    state.orders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
                 }));
 
                 return newOrder;
@@ -153,7 +153,7 @@ export const useOrdersStore = create<OrdersState>()(
             } else {
                 updateData.status = 'paid';
                 updateData.balance = 0;
-                updateData.payments = [{ amount: order.total, date: new Date().toISOString(), method: paymentMethod }];
+                updateData.payments = [{ amount: order.total, date: new Date().toISOString(), method: paymentMethod, reference: paymentReference }];
             }
 
             const { data: updatedOrder, error } = await supabase
@@ -168,11 +168,10 @@ export const useOrdersStore = create<OrdersState>()(
             } else {
                 // If the order was approved successfully, THEN decrease stock.
                 if (order.status === 'pending-approval') {
-                    const { decreaseStock, fetchProducts } = useProductsStore.getState();
+                    const { decreaseStock } = useProductsStore.getState();
                     for (const item of order.items) {
                         await decreaseStock(item.id, item.quantity);
                     }
-                    await fetchProducts(); // Refresh products state to reflect new stock
                 }
                 
                 set(produce((state: OrdersState) => {
@@ -190,6 +189,9 @@ export const useOrdersStore = create<OrdersState>()(
             const orderToCancel = get().orders.find(o => o.id === orderId);
             if (!orderToCancel) return;
             
+            // Only return stock if the order was not pending approval or already cancelled
+            const shouldReturnStock = orderToCancel.status !== 'pending-approval' && orderToCancel.status !== 'cancelled';
+            
             const { error } = await supabase
                 .from('orders')
                 .update({ status: 'cancelled' })
@@ -198,7 +200,7 @@ export const useOrdersStore = create<OrdersState>()(
             if (error) {
                 toast({ title: 'Error al cancelar pedido', description: error.message, variant: 'destructive' });
             } else {
-                 if (orderToCancel.status !== 'pending-approval' && orderToCancel.status !== 'cancelled') {
+                 if (shouldReturnStock) {
                     const { increaseStock } = useProductsStore.getState();
                     for (const item of orderToCancel.items) {
                         await increaseStock(item.id, item.quantity);

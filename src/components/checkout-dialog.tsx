@@ -48,6 +48,7 @@ const checkoutFormSchema = z.object({
     required_error: "Debes seleccionar un método de pago."
   }),
   paymentDueDate: z.date().optional(),
+  paymentReference: z.string().optional(),
 }).refine(data => {
     if (data.paymentMethod === 'credito') {
         return !!data.paymentDueDate;
@@ -72,6 +73,14 @@ const checkoutFormSchema = z.object({
 }, {
     message: 'El teléfono (mín. 8 dígitos) es obligatorio para ventas a crédito.',
     path: ['phone'],
+}).refine(data => {
+    if ((data.paymentMethod === 'tarjeta' || data.paymentMethod === 'transferencia') && (!data.paymentReference || data.paymentReference.trim() === '')) {
+        return false;
+    }
+    return true;
+}, {
+    message: 'El número de referencia es obligatorio para este método de pago.',
+    path: ['paymentReference'],
 });
 
 
@@ -100,6 +109,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
             phone: '',
             paymentMethod: 'efectivo',
             paymentDueDate: undefined,
+            paymentReference: '',
         },
     });
 
@@ -126,6 +136,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
                 phone: '',
                 paymentMethod: 'efectivo',
                 paymentDueDate: undefined,
+                paymentReference: '',
             });
             setSelectedCustomer(null);
             setCustomerType('consumidorFinal');
@@ -185,12 +196,12 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
             total: total,
             shipping_cost: 0,
             payment_method: values.paymentMethod,
-            payment_reference: null,
+            payment_reference: values.paymentReference || null,
             status: values.paymentMethod === 'credito' ? 'pending-payment' : 'paid',
             source: 'pos',
             delivery_method: 'pickup',
             balance: values.paymentMethod === 'credito' ? total : 0,
-            payments: values.paymentMethod !== 'credito' ? [{ amount: total, date: new Date().toISOString(), method: values.paymentMethod }] : [],
+            payments: values.paymentMethod !== 'credito' ? [{ amount: total, date: new Date().toISOString(), method: values.paymentMethod, reference: values.paymentReference || undefined }] : [],
             payment_due_date: values.paymentDueDate ? values.paymentDueDate.toISOString() : null,
         };
         
@@ -301,6 +312,22 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
                                     </FormItem>
                                 )}
                             />
+
+                            {(selectedPaymentMethod === 'tarjeta' || selectedPaymentMethod === 'transferencia') && (
+                               <FormField
+                                    control={form.control}
+                                    name="paymentReference"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Número de Referencia</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Ej: 123456789" {...field} className="rounded-lg" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
 
                             {selectedPaymentMethod === 'credito' && (
                                 <FormField
