@@ -92,13 +92,12 @@ export const useOrdersStore = create<OrdersState>()(
                     return null;
                 }
                 
-                // --- FIX: Decrease stock for POS orders ---
+                // --- Decrease stock for POS orders ---
                 const { decreaseStock, fetchProducts } = useProductsStore.getState();
                 for (const item of newOrder.items) {
                     await decreaseStock(item.id, item.quantity);
                 }
                 fetchProducts(); // Refresh products state to reflect new stock
-                // --- END FIX ---
                 
                 set(produce((state: OrdersState) => {
                     state.orders.unshift(newOrder as Order);
@@ -146,22 +145,11 @@ export const useOrdersStore = create<OrdersState>()(
                 payment_due_date: paymentDueDate ? paymentDueDate.toISOString() : null,
                 payment_reference: paymentReference || null,
             };
-
-            if (order.status === 'pending-approval') {
-                const { decreaseStock } = useProductsStore.getState();
-                for (const item of order.items) {
-                    await decreaseStock(item.id, item.quantity);
-                }
-                 // --- THIS IS THE FIX ---
-                const { fetchProducts } = useProductsStore.getState();
-                fetchProducts(); 
-                 // --- END OF FIX ---
-            }
             
             if (paymentMethod === 'credito') {
                 updateData.status = 'pending-payment';
                 updateData.balance = order.total;
-                 updateData.payments = [];
+                updateData.payments = [];
             } else {
                 updateData.status = 'paid';
                 updateData.balance = 0;
@@ -178,6 +166,15 @@ export const useOrdersStore = create<OrdersState>()(
             if (error) {
                 toast({ title: 'Error al aprobar pedido', description: error.message, variant: 'destructive' });
             } else {
+                // If the order was approved successfully, THEN decrease stock.
+                if (order.status === 'pending-approval') {
+                    const { decreaseStock, fetchProducts } = useProductsStore.getState();
+                    for (const item of order.items) {
+                        await decreaseStock(item.id, item.quantity);
+                    }
+                    await fetchProducts(); // Refresh products state to reflect new stock
+                }
+                
                 set(produce((state: OrdersState) => {
                     const orderToUpdate = state.orders.find(o => o.id === orderId);
                     if (orderToUpdate) {
