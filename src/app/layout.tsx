@@ -15,12 +15,6 @@ const fontSans = Inter({
 export const metadata: Metadata = {
   title: 'BEM STORE',
   description: 'Tu tienda de cosméticos y cuidado de la piel.',
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'BEM STORE',
-  },
 };
 
 export default function RootLayout({
