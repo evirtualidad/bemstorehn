@@ -28,6 +28,7 @@ import { useMobileSidebarStore } from '@/hooks/use-mobile-sidebar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { useTheme } from 'next-themes';
 import { useOrdersStore } from '@/hooks/use-orders';
+import { InstallPwaButton } from './install-pwa-button';
 
 const navItems = [
     { href: '/admin/dashboard-v2', label: 'Dashboard', icon: BarChart2 },
@@ -141,6 +142,7 @@ export function AdminHeader() {
                 </nav>
                 
                 <div className='flex-shrink-0 flex items-center gap-2'>
+                     <InstallPwaButton />
                      <ThemeToggleButton />
                      <Button variant="ghost" size="icon" onMouseDown={handleLogout} className="h-11 w-11 rounded-full bg-destructive/20 text-destructive hover:bg-destructive/20 hover:text-destructive">
                          <LogOut className="h-5 w-5" />

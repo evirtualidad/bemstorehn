@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AdminHeader } from '@/components/admin/header';
 import { MobileSidebar } from '@/components/admin/mobile-sidebar';
+import Head from 'next/head';
 
 
 export default function AdminLayout({
@@ -45,6 +46,14 @@ export default function AdminLayout({
 
   return (
     <>
+      <Head>
+        <link rel="manifest" href="/admin/manifest.json" />
+        <meta name="theme-color" content="#793F5C" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="BEM Admin" />
+        <link rel="apple-touch-icon" href="/admin/icons/apple-touch-icon.png" />
+      </Head>
       <ThemeProvider
         attribute="class"
         defaultTheme="light"

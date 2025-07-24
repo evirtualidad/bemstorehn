@@ -35,9 +35,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   
   React.useEffect(() => {
-      // This now sets up the Supabase auth listener
       const unsubscribe = initializeSession();
-      // Cleanup subscription on unmount
       return () => {
         if (typeof unsubscribe === 'function') {
             unsubscribe();
@@ -75,7 +73,6 @@ export default function LoginPage() {
         title: '¡Bienvenido!',
         description: 'Has iniciado sesión correctamente.',
       });
-      // The redirect will be handled by the layout component
     }
   };
   
@@ -90,7 +87,6 @@ export default function LoginPage() {
   return (
     <>
       <Head>
-        <title>BEM Admin - Login</title>
         <link rel="manifest" href="/admin/manifest.json" />
         <meta name="theme-color" content="#793F5C" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
