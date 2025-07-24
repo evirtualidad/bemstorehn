@@ -138,9 +138,6 @@ function LoginPageContent() {
                 </Button>
               </form>
             </Form>
-             <div className="mt-4 flex justify-center">
-               <InstallPwaButton />
-             </div>
           </CardContent>
         </Card>
       </main>
@@ -167,4 +164,3 @@ export default function LoginPage() {
     </ThemeProvider>
   );
 }
-

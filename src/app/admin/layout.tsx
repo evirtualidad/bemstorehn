@@ -34,7 +34,6 @@ export default function AdminLayout({
     }
   }, [user, isAuthLoading, router]);
   
-  // For any other admin page, protect the route.
   if (isAuthLoading || !user) {
     return (
       <div className="flex h-screen items-center justify-center">

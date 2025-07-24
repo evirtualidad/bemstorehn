@@ -15,6 +15,7 @@ const fontSans = Inter({
 export const metadata: Metadata = {
   title: 'BEM STORE',
   description: 'Tu tienda de cosméticos y cuidado de la piel.',
+  manifest: '/manifest.json', // Link to the general manifest
 };
 
 export default function RootLayout({
