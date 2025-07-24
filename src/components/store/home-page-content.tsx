@@ -42,7 +42,8 @@ export function HomePageContent({
     );
 
     const filteredProducts = React.useMemo(() => {
-        let prods = products;
+        // Filter out-of-stock products first
+        let prods = products.filter(p => p.stock > 0);
 
         if (selectedCategory !== 'all') {
             const categoryId = getCategoryByName(selectedCategory)?.id;

@@ -7,6 +7,7 @@ import {
   ListFilter,
   MoreHorizontal,
   PlusCircle,
+  AlertTriangle,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,37 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useCategoriesStore } from '@/hooks/use-categories';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+const LOW_STOCK_THRESHOLD = 5;
+
+function InventoryAlerts({ products }: { products: Product[] }) {
+  const lowStockProducts = React.useMemo(() => {
+    return products.filter(p => p.stock <= LOW_STOCK_THRESHOLD).sort((a, b) => a.stock - b.stock);
+  }, [products]);
+
+  if (lowStockProducts.length === 0) {
+    return null;
+  }
+
+  return (
+    <Alert variant="destructive" className="mb-4">
+      <AlertTriangle className="h-4 w-4" />
+      <AlertTitle>Alertas de Inventario</AlertTitle>
+      <AlertDescription>
+        <p className="mb-2">Los siguientes productos tienen stock bajo o están agotados:</p>
+        <ul className="list-disc pl-5">
+            {lowStockProducts.map(p => (
+                <li key={p.id}>
+                    <span className="font-semibold">{p.name}</span> - Stock actual: <span className={cn(p.stock === 0 ? "text-destructive font-bold" : "font-bold")}>{p.stock}</span>
+                </li>
+            ))}
+        </ul>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
 
 export function ProductsManager() {
   const { products, addProduct, updateProduct, deleteProduct, isLoading, fetchProducts } = useProductsStore();
@@ -170,6 +202,7 @@ export function ProductsManager() {
 
   return (
     <>
+      <InventoryAlerts products={products} />
       <div className="flex items-center mb-4">
         <div className="ml-auto flex items-center gap-2">
           <DropdownMenu>
