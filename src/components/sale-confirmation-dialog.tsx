@@ -110,9 +110,11 @@ PrintableReceipt.displayName = 'PrintableReceipt';
 export function SaleConfirmationDialog({ order, onNewSale }: SaleConfirmationDialogProps) {
   const [isOpen, setIsOpen] = React.useState(true);
   const receiptRef = React.useRef<HTMLDivElement>(null);
+  const printTriggerRef = React.useRef<HTMLButtonElement>(null);
   
   const handlePrint = useReactToPrint({
       content: () => receiptRef.current,
+      trigger: () => printTriggerRef.current,
   });
 
   const handleClose = () => {
@@ -139,7 +141,7 @@ export function SaleConfirmationDialog({ order, onNewSale }: SaleConfirmationDia
               </div>
 
               <DialogFooter className="p-4 bg-muted/50 flex-row gap-2">
-                  <button onClick={handlePrint} className={cn(buttonVariants({ variant: 'outline' }), "w-full")}>
+                  <button ref={printTriggerRef} className={cn(buttonVariants({ variant: 'outline' }), "w-full")}>
                       <Printer className="mr-2 h-4 w-4" />
                       Imprimir Recibo
                   </button>
