@@ -77,12 +77,54 @@ const generateReceiptPdfFlow = ai.defineFlow(
         
     // 3. Create PDF
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([226.77, 600]); // 80mm width, increased height
-    const { width, height } = page.getSize();
-    const margin = 10;
-    
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    
+    const pageWidth = 226.77; // 80mm
+    const margin = 10;
+    
+    // --- Calculate dynamic height ---
+    let calculatedHeight = 40; // Initial top/bottom margin
+
+    // Logo height
+    calculatedHeight += 80;
+
+    // Header text height
+    calculatedHeight += 15; // Bem Store HN
+    if (settings?.pickup_address) {
+        calculatedHeight += wrapText(settings.pickup_address, font, 7, pageWidth - (margin*2)).length * 8;
+    }
+    calculatedHeight += 20; // Spacing + line
+    
+    // Order Info height
+    calculatedHeight += (4 * 12) + 10;
+    
+    // Items height
+    for (const item of order.items) {
+        calculatedHeight += wrapText(item.name, font, 8, pageWidth - (margin*2) - 30).length * 10;
+        calculatedHeight += 2;
+    }
+    calculatedHeight += 15; // Spacing + line
+
+    // Totals height
+    calculatedHeight += 5 + (12 * 3) + 10;
+
+    // Payment Info height
+    calculatedHeight += 15 + 15; // Title + spacing
+    calculatedHeight += 12; // Method
+    if (order.payment_reference) calculatedHeight += 12;
+    if (order.payment_method === 'credito') {
+        calculatedHeight += 12; // Due date
+        calculatedHeight += 12; // Balance
+    }
+    calculatedHeight += 20; // Spacing + line
+    
+    // Footer height
+    calculatedHeight += 10; // "Gracias"
+
+    // --- Create Page with dynamic height ---
+    const page = pdfDoc.addPage([pageWidth, calculatedHeight]);
+    const { width, height } = page.getSize();
     
     let y = height - 20;
 
@@ -174,7 +216,7 @@ const generateReceiptPdfFlow = ai.defineFlow(
     drawLine();
 
     // --- Totals ---
-    y -= 5;
+    y -= 10; // Increased space before subtotal
     const taxRate = settings?.tax_rate ?? 0.15;
     const subtotal = order.total / (1 + taxRate);
     const tax = order.total - subtotal;
