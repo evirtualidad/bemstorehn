@@ -8,6 +8,8 @@ import {
   MoreHorizontal,
   PlusCircle,
   AlertTriangle,
+  Search,
+  X
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -56,12 +58,13 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
 
 const LOW_STOCK_THRESHOLD = 5;
 
 function InventoryAlerts({ products }: { products: Product[] }) {
   const lowStockProducts = React.useMemo(() => {
-    return products.filter(p => p.stock <= LOW_STOCK_THRESHOLD).sort((a, b) => a.stock - b.stock);
+    return products.filter(p => p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD).sort((a, b) => a.stock - b.stock);
   }, [products]);
 
   if (lowStockProducts.length === 0) {
@@ -73,11 +76,11 @@ function InventoryAlerts({ products }: { products: Product[] }) {
       <AlertTriangle className="h-4 w-4" />
       <AlertTitle>Alertas de Inventario</AlertTitle>
       <AlertDescription>
-        <p className="mb-2">Los siguientes productos tienen stock bajo o están agotados:</p>
+        <p className="mb-2">Los siguientes productos tienen stock bajo:</p>
         <ul className="list-disc pl-5">
             {lowStockProducts.map(p => (
                 <li key={p.id}>
-                    <span className="font-semibold">{p.name}</span> - Stock actual: <span className={cn(p.stock === 0 ? "text-destructive font-bold" : "font-bold")}>{p.stock}</span>
+                    <span className="font-semibold">{p.name}</span> - Stock actual: <span className="font-bold">{p.stock}</span>
                 </li>
             ))}
         </ul>
@@ -89,16 +92,50 @@ function InventoryAlerts({ products }: { products: Product[] }) {
 
 export function ProductsManager() {
   const { products, addProduct, updateProduct, deleteProduct, isLoading, fetchProducts } = useProductsStore();
-  const { categories, getCategoryById } = useCategoriesStore();
+  const { categories, getCategoryById, fetchCategories } = useCategoriesStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
   const { currency } = useCurrencyStore();
   const { toast } = useToast();
 
+  // --- Filter and Search States ---
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [stockStatusFilter, setStockStatusFilter] = React.useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = React.useState<string[]>([]);
+
   React.useEffect(() => {
       fetchProducts();
-  }, [fetchProducts]);
+      fetchCategories();
+  }, [fetchProducts, fetchCategories]);
   
+  const filteredProducts = React.useMemo(() => {
+    let filtered = [...products];
+
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+
+    // Stock Status filter
+    if (stockStatusFilter) {
+      if (stockStatusFilter === 'in-stock') {
+        filtered = filtered.filter(p => p.stock > LOW_STOCK_THRESHOLD);
+      } else if (stockStatusFilter === 'low-stock') {
+        filtered = filtered.filter(p => p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD);
+      } else if (stockStatusFilter === 'out-of-stock') {
+        filtered = filtered.filter(p => p.stock === 0);
+      }
+    }
+    
+    // Category filter
+    if (categoryFilter.length > 0) {
+        filtered = filtered.filter(p => categoryFilter.includes(p.category_id as string));
+    }
+
+    return filtered;
+  }, [products, searchQuery, stockStatusFilter, categoryFilter]);
+
+
   const handleAddProduct = async (values: z.infer<typeof productFormSchema>) => {
     let imageFile: File | undefined;
 
@@ -181,6 +218,32 @@ export function ProductsManager() {
           await handleAddProduct(values);
       }
   };
+  
+  const handleExport = () => {
+    const dataToExport = filteredProducts.map(p => ({
+      ID: p.id,
+      Nombre: p.name,
+      Precio: p.price,
+      'Precio Original': p.original_price || 'N/A',
+      Stock: p.stock,
+      Categoria: getCategoryById(p.category_id as string)?.label || 'N/A',
+      Destacado: p.featured ? 'Sí' : 'No',
+    }));
+
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + [
+          Object.keys(dataToExport[0]).join(","),
+          ...dataToExport.map(item => Object.values(item).map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))
+        ].join("\n");
+        
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `reporte_productos_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (isLoading) {
     return (
@@ -203,11 +266,25 @@ export function ProductsManager() {
   return (
     <>
       <InventoryAlerts products={products} />
-      <div className="flex items-center mb-4">
-        <div className="ml-auto flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
+        <div className="relative w-full sm:flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+                placeholder="Buscar por nombre de producto..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 rounded-full h-10"
+            />
+            {searchQuery && (
+                <Button variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setSearchQuery('')}>
+                    <X className="h-4 w-4"/>
+                </Button>
+            )}
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 gap-1 rounded-full">
+              <Button variant="outline" size="sm" className="h-10 gap-1 rounded-full w-full sm:w-auto">
                 <ListFilter className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                   Filtrar
@@ -215,16 +292,45 @@ export function ProductsManager() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Filtrar por</DropdownMenuLabel>
+              <DropdownMenuLabel>Filtrar por Estado</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuCheckboxItem checked>
-                Activo
+              <DropdownMenuCheckboxItem
+                checked={stockStatusFilter === 'in-stock'}
+                onCheckedChange={(checked) => setStockStatusFilter(checked ? 'in-stock' : null)}
+              >
+                En Stock
               </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem>Borrador</DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem>Archivado</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={stockStatusFilter === 'low-stock'}
+                onCheckedChange={(checked) => setStockStatusFilter(checked ? 'low-stock' : null)}
+              >
+                Poco Stock
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={stockStatusFilter === 'out-of-stock'}
+                onCheckedChange={(checked) => setStockStatusFilter(checked ? 'out-of-stock' : null)}
+              >
+                Agotado
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuSeparator />
+               <DropdownMenuLabel>Filtrar por Categoría</DropdownMenuLabel>
+               <DropdownMenuSeparator />
+               {categories.map(category => (
+                 <DropdownMenuCheckboxItem
+                    key={category.id}
+                    checked={categoryFilter.includes(category.id)}
+                    onCheckedChange={(checked) => {
+                        setCategoryFilter(prev => 
+                            checked ? [...prev, category.id] : prev.filter(id => id !== category.id)
+                        )
+                    }}
+                 >
+                    {category.label}
+                 </DropdownMenuCheckboxItem>
+               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button size="sm" variant="outline" className="h-8 gap-1 rounded-full">
+          <Button size="sm" variant="outline" className="h-10 gap-1 rounded-full w-full sm:w-auto" onClick={handleExport} disabled={filteredProducts.length === 0}>
             <File className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-rap">
               Exportar
@@ -232,7 +338,7 @@ export function ProductsManager() {
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
             <DialogTrigger asChild>
-              <Button size="sm" className="h-8 gap-1 rounded-full" onClick={openAddDialog}>
+              <Button size="sm" className="h-10 gap-1 rounded-full w-full sm:w-auto" onClick={openAddDialog}>
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-rap">
                   Añadir Producto
@@ -288,9 +394,19 @@ export function ProductsManager() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((product) => {
+              {filteredProducts.map((product) => {
                 const isDiscounted = product.original_price && product.original_price > product.price;
                 const categoryLabel = getCategoryById(product.category_id as string)?.label || 'N/A';
+                
+                let stockBadge;
+                if (product.stock === 0) {
+                    stockBadge = <Badge variant="destructive">Agotado</Badge>;
+                } else if (product.stock <= LOW_STOCK_THRESHOLD) {
+                    stockBadge = <Badge variant="secondary" className="bg-amber-100 text-amber-800">Poco Stock</Badge>;
+                } else {
+                    stockBadge = <Badge variant="default" className="bg-green-100 text-green-800">En Stock</Badge>;
+                }
+
                 return (
                   <TableRow key={product.id}>
                     <TableCell className="hidden sm:table-cell">
@@ -306,10 +422,10 @@ export function ProductsManager() {
                       {product.name}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={product.stock > 0 ? 'default' : 'destructive'}>
-                        {product.stock > 0 ? 'En Stock' : 'Agotado'}
-                      </Badge>
-                      {isDiscounted && <Badge variant="offer" className="ml-2">Oferta</Badge>}
+                      <div className="flex flex-col gap-1 items-start">
+                        {stockBadge}
+                        {isDiscounted && <Badge variant="offer">Oferta</Badge>}
+                      </div>
                     </TableCell>
                     <TableCell>
                         <div className="flex flex-col">
@@ -356,7 +472,7 @@ export function ProductsManager() {
         </CardContent>
         <CardFooter>
           <div className="text-xs text-muted-foreground">
-            Mostrando <strong>1-{products.length}</strong> de <strong>{products.length}</strong> productos
+            Mostrando <strong>{filteredProducts.length}</strong> de <strong>{products.length}</strong> productos
           </div>
         </CardFooter>
       </Card>
