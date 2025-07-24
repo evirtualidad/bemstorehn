@@ -104,7 +104,7 @@ export default function OrderConfirmationPage() {
     <div className="flex flex-col min-h-screen bg-muted/40">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-16 flex items-center justify-center">
-        <div className="bg-card p-6 md:p-8 rounded-lg shadow-lg max-w-2xl w-full">
+        <div className="bg-card p-6 md:p-8 rounded-xl shadow-lg max-w-2xl w-full">
           <div className="text-center">
             <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-6" />
             <h1 className="text-3xl md:text-4xl font-bold mb-2">¡Gracias por tu pedido!</h1>
@@ -122,7 +122,7 @@ export default function OrderConfirmationPage() {
              <h2 className="text-xl font-semibold mb-4 text-center">Resumen del Pedido</h2>
             {order.items.map(item => (
               <div key={item.id} className="flex items-center gap-4">
-                <div className="relative h-16 w-16 rounded-md overflow-hidden border">
+                <div className="relative h-16 w-16 rounded-xl overflow-hidden border">
                   <Image src={item.image} alt={item.name} fill className="object-cover" />
                 </div>
                 <div className="flex-grow">
@@ -165,7 +165,7 @@ export default function OrderConfirmationPage() {
           </div>
           
           <div className="mt-8 text-center">
-            <Button asChild size="lg">
+            <Button asChild size="lg" className="rounded-full">
               <Link href="/">Continuar Comprando</Link>
             </Button>
             <p className="text-xs text-muted-foreground mt-4">
