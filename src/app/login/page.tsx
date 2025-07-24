@@ -21,6 +21,7 @@ import { Loader2, Leaf } from 'lucide-react';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import Head from 'next/head';
 
 const loginFormSchema = z.object({
   email: z.string().email({ message: 'Por favor, ingresa un correo válido.' }),
@@ -87,58 +88,67 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-            <div className="flex justify-center items-center gap-2 mb-4">
-                <Leaf className="w-8 h-8 text-primary" />
-                <h1 className="text-2xl font-bold">BEM STORE</h1>
-            </div>
-          <CardTitle>Iniciar Sesión</CardTitle>
-          <CardDescription>Ingresa a tu panel de administración</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Correo Electrónico</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="admin@bemstore.hn"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contraseña</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                Iniciar Sesión
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </main>
+    <>
+      <Head>
+        <link rel="manifest" href="/admin/manifest.json" />
+        <meta name="theme-color" content="#793F5C" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="BEM Admin" />
+      </Head>
+      <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+              <div className="flex justify-center items-center gap-2 mb-4">
+                  <Leaf className="w-8 h-8 text-primary" />
+                  <h1 className="text-2xl font-bold">BEM STORE</h1>
+              </div>
+            <CardTitle>Iniciar Sesión</CardTitle>
+            <CardDescription>Ingresa a tu panel de administración</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Correo Electrónico</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="admin@bemstore.hn"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contraseña</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Iniciar Sesión
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </main>
+    </>
   );
 }
