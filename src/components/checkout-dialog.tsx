@@ -208,8 +208,8 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
         const newOrder = await createOrder(newOrderData);
 
         if (newOrder) {
+            onOpenChange(false); // Close the checkout dialog
             setLastCompletedOrder(newOrder); // This will show the confirmation dialog
-            onOpenChange(false); // This closes the checkout dialog itself
         } else {
              toast({
                 title: "Error al registrar la venta",

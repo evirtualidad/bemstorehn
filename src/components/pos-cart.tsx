@@ -37,10 +37,11 @@ export function PosCart({ isOpen, onOpenChange, onCheckoutSuccess }: PosCartProp
     }
   };
 
+  // This function will be called from CheckoutDialog on success
   const handleCheckoutSuccess = () => {
-    onCheckoutSuccess();
+    onCheckoutSuccess(); // This clears the cart items from PosFab
     setIsCheckoutOpen(false); // Close checkout dialog
-    onOpenChange(false); // Close main cart dialog
+    onOpenChange(false); // Close the main cart dialog
   };
 
   const taxRate = 0.15; // Example tax rate
