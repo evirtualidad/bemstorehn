@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -19,7 +20,8 @@ export function BottomNav() {
     pathname.startsWith('/checkout') ||
     pathname.startsWith('/product/') ||
     pathname.startsWith('/order-confirmation') ||
-    pathname === '/cart'
+    pathname === '/cart' ||
+    pathname === '/login'
   ) {
     return null;
   }
