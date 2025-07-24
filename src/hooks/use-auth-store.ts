@@ -17,17 +17,25 @@ type AuthState = {
 };
 
 const fetchUserRole = async (userId: string): Promise<UserRole | null> => {
-    const { data, error } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', userId)
-        .single();
-    
-    if (error) {
-        console.error('Error fetching user role on first attempt:', error.message);
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', userId)
+            .single();
+        
+        if (error) {
+            // PGRST116: "no rows found", which is expected for new users.
+            if (error.code !== 'PGRST116') {
+                 console.error('Error fetching user role:', error.message);
+            }
+            return null;
+        }
+        return data.role;
+    } catch (e: any) {
+        console.error('Exception fetching user role:', e.message);
         return null;
     }
-    return data.role;
 }
 
 // --- Zustand Store Definition ---
@@ -37,30 +45,29 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       isAuthLoading: true,
 
       initializeSession: () => {
-        set({ isAuthLoading: true });
-        
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (_event, session) => {
                 if (session?.user) {
-                    let role = await fetchUserRole(session.user.id);
-                    
-                    if (!role) {
-                        await new Promise(resolve => setTimeout(resolve, 1500)); 
-                        role = await fetchUserRole(session.user.id);
-                    }
-
-                    if (!role) {
-                         console.error('Error fetching user role: Role not found after retry.');
-                    }
-                    
+                    const role = await fetchUserRole(session.user.id);
                     set({ user: session.user, role, isAuthLoading: false });
-
                 } else {
-                    // This case handles signOut
                     set({ user: null, role: null, isAuthLoading: false });
                 }
             }
         );
+
+        // Immediately check the current session without waiting for an event
+        const checkCurrentSession = async () => {
+             const { data: { session } } = await supabase.auth.getSession();
+             if (session?.user) {
+                const role = await fetchUserRole(session.user.id);
+                set({ user: session.user, role, isAuthLoading: false });
+             } else {
+                set({ user: null, role: null, isAuthLoading: false });
+             }
+        };
+
+        checkCurrentSession();
 
         return () => {
             subscription.unsubscribe();
