@@ -18,7 +18,7 @@ type CustomersState = {
       address?: Address | null;
     }
   ) => Promise<string | null>; 
-  addPurchaseToCustomer: (customerId: string, amount: number) => Promise<void>;
+  addPurchaseToCustomer: (customerId: string, amount: number, quantity: number) => Promise<void>;
   getCustomerById: (id: string) => Customer | undefined;
 };
 
@@ -92,16 +92,14 @@ export const useCustomersStore = create<CustomersState>()(
             }
         },
         
-        addPurchaseToCustomer: async (customerId, amount) => {
+        addPurchaseToCustomer: async (customerId, amount, quantity) => {
             if (!customerId) return;
-            // This logic is now handled by a database function 'increment_customer_stats'
-            // called from the 'create-order' Edge Function.
-            // This client-side function is kept for potential POS use or other scenarios.
+
             const customer = get().customers.find(c => c.id === customerId);
             if (!customer) return;
 
             const newTotalSpent = customer.total_spent + amount;
-            const newOrderCount = customer.order_count + 1;
+            const newOrderCount = customer.order_count + 1; // Increment by 1 for each order
 
             const { error } = await supabase
                 .from('customers')

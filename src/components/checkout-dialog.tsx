@@ -163,7 +163,8 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
         });
 
         if (customerId) {
-            await addPurchaseToCustomer(customerId, total);
+            const totalQuantity = items.reduce((acc, item) => acc + item.quantity, 0);
+            await addPurchaseToCustomer(customerId, total, totalQuantity);
         }
         
         const newOrderData: NewOrderData = {
@@ -218,7 +219,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="rounded-2xl">
+            <DialogContent className="rounded-xl">
                 <DialogHeader>
                     <DialogTitle>Completar Venta</DialogTitle>
                     <DialogDescription>
