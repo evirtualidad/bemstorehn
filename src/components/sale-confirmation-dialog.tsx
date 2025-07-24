@@ -11,13 +11,12 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { CheckCircle2, Printer } from 'lucide-react';
 import type { Order } from '@/lib/types';
 import { useCurrencyStore } from '@/hooks/use-currency';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import Image from 'next/image';
 import { format } from 'date-fns/format';
 import { parseISO } from 'date-fns/parseISO';
@@ -140,10 +139,10 @@ export function SaleConfirmationDialog({ order, onNewSale }: SaleConfirmationDia
               </div>
 
               <DialogFooter className="p-4 bg-muted/50 flex-row gap-2">
-                  <Button variant="outline" className="w-full" onClick={handlePrint}>
+                  <button onClick={handlePrint} className={cn(buttonVariants({ variant: 'outline' }), "w-full")}>
                       <Printer className="mr-2 h-4 w-4" />
                       Imprimir Recibo
-                  </Button>
+                  </button>
                   <Button className="w-full" onClick={handleClose}>
                       Nueva Venta
                   </Button>
