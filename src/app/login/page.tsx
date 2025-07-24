@@ -29,21 +29,14 @@ const loginFormSchema = z.object({
 });
 
 function LoginPageContent() {
-  const { login, user, isAuthLoading, initializeSession } = useAuthStore();
+  const { login, user, isAuthLoading } = useAuthStore();
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   React.useEffect(() => {
-    const unsubscribe = initializeSession();
-    return () => {
-      if (typeof unsubscribe === 'function') {
-        unsubscribe();
-      }
-    };
-  }, [initializeSession]);
-
-  React.useEffect(() => {
+    // If the session is loaded and a user exists, redirect to the dashboard.
+    // This handles cases where a logged-in user navigates to the login page.
     if (!isAuthLoading && user) {
       router.replace('/admin/dashboard-v2');
     }
@@ -58,7 +51,7 @@ function LoginPageContent() {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof loginFormSchema>) => {
+  const onSubmit = async (values: z.infer<typeof loginFormSchema>>) => {
     setIsSubmitting(true);
     const error = await login(values.email, values.password);
     
@@ -74,6 +67,7 @@ function LoginPageContent() {
         title: '¡Bienvenido!',
         description: 'Has iniciado sesión correctamente.',
       });
+      // The onAuthStateChange listener in AdminLayout will handle the redirect.
     }
   };
   
