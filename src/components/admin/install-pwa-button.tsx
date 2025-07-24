@@ -4,12 +4,6 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Share } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: Array<string>;
@@ -28,7 +22,7 @@ export function InstallPwaButton() {
   React.useEffect(() => {
     if (typeof window === 'undefined' || typeof navigator === 'undefined') return;
 
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
       setIsInstalled(true);
     }
     
@@ -63,19 +57,12 @@ export function InstallPwaButton() {
 
   if (isIOS) {
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-             <Button variant="outline" className="gap-2">
-                <Share />
-                <span>Instalar App en iOS</span>
-             </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-xs text-center">
-            <p>Para instalar: toca el ícono de Compartir en Safari y luego 'Agregar a la pantalla de inicio'.</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+        <div className="hidden sm:flex items-center gap-2 p-2 rounded-lg bg-secondary text-sm">
+            <p className="font-medium">Instalar:</p>
+            <Share className="h-4 w-4" />
+            <p className="text-muted-foreground mr-1">→</p>
+            <p className="font-medium">'Agregar a inicio'</p>
+        </div>
     );
   }
 
