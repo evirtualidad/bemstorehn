@@ -2,7 +2,6 @@
 'use client';
 
 import * as React from 'react';
-import { useReactToPrint } from 'react-to-print';
 import {
   Dialog,
   DialogContent,
@@ -29,7 +28,7 @@ interface SaleConfirmationDialogProps {
   onNewSale: () => void;
 }
 
-const PrintableReceipt = React.forwardRef<HTMLDivElement, { order: Order }>(({ order }, ref) => {
+const PrintableReceipt = ({ order, receiptRef }: { order: Order; receiptRef: React.Ref<HTMLDivElement> }) => {
     const { currency } = useCurrencyStore();
     const { settings } = useSettingsStore();
     const { logoUrl } = useLogoStore();
@@ -41,7 +40,7 @@ const PrintableReceipt = React.forwardRef<HTMLDivElement, { order: Order }>(({ o
     const tax = order.total - subtotal;
 
     return (
-        <div ref={ref} className="p-6 bg-white text-black font-mono" style={{ width: '302px' }}>
+        <div ref={receiptRef} className="printable-receipt p-6 bg-white text-black font-mono" style={{ width: '302px' }}>
             <div className="text-center items-center flex flex-col space-y-1.5">
                 {logoUrl && <Image src={logoUrl} alt="Logo" width={100} height={40} className="object-contain mb-4"/>}
                 <h2 className="text-lg font-semibold leading-none tracking-tight">BEM STORE</h2>
@@ -104,16 +103,16 @@ const PrintableReceipt = React.forwardRef<HTMLDivElement, { order: Order }>(({ o
             </p>
       </div>
     );
-});
-PrintableReceipt.displayName = 'PrintableReceipt';
+};
+
 
 export function SaleConfirmationDialog({ order, onNewSale }: SaleConfirmationDialogProps) {
   const [isOpen, setIsOpen] = React.useState(true);
   const receiptRef = React.useRef<HTMLDivElement>(null);
   
-  const handlePrint = useReactToPrint({
-      content: () => receiptRef.current,
-  });
+  const handlePrint = () => {
+    window.print();
+  };
 
   const handleClose = () => {
     setIsOpen(false);
@@ -122,9 +121,7 @@ export function SaleConfirmationDialog({ order, onNewSale }: SaleConfirmationDia
   
   return (
     <>
-      <div className="hidden">
-        <PrintableReceipt order={order} ref={receiptRef} />
-      </div>
+      <PrintableReceipt order={order} receiptRef={receiptRef} />
 
       <Dialog open={isOpen} onOpenChange={handleClose}>
           <DialogContent className="max-w-sm w-full p-0 flex flex-col gap-0 no-print" hideClose>

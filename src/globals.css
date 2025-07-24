@@ -96,4 +96,21 @@
     scrollbar-width: none; /* Firefox */
   }
 
+  /* Print Styles */
+  .printable-receipt {
+    display: none;
+  }
+
+  @media print {
+    body > * {
+      display: none !important;
+    }
+    .printable-receipt {
+      display: block !important;
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+    }
+  }
 }
