@@ -53,13 +53,13 @@ export function SaleConfirmationDialog({ order, onNewSale }: SaleConfirmationDia
   
   const ReceiptContent = () => (
      <div className="p-6">
-        <DialogHeader className="text-center items-center">
+        <div className="text-center items-center flex flex-col space-y-1.5">
             {logoUrl && <Image src={logoUrl} alt="Logo" width={100} height={40} className="object-contain mb-4"/>}
-            <DialogTitle className="text-2xl">¡Venta Exitosa!</DialogTitle>
-            <DialogDescription>
+            <h2 className="text-2xl font-semibold leading-none tracking-tight">¡Venta Exitosa!</h2>
+            <p className="text-sm text-muted-foreground">
                 Pedido: {order.display_id}
-            </DialogDescription>
-        </DialogHeader>
+            </p>
+        </div>
         
         <Separator className="my-4" />
         
