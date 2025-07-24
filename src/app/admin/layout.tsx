@@ -39,15 +39,7 @@ export default function AdminLayout({
     }
   }, [user, isAuthLoading, router, isLoginPage]);
 
-  if ((isAuthLoading || !user) && !isLoginPage) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-  // Si estamos en la página de login, solo mostramos el contenido
+  // Si estamos en la página de login, solo mostramos el contenido sin importar el estado de la sesión.
   if (isLoginPage) {
     return (
         <ThemeProvider
@@ -66,6 +58,15 @@ export default function AdminLayout({
             </Head>
             {children}
         </ThemeProvider>
+    );
+  }
+  
+  // Para cualquier otra página de admin, protegemos la ruta.
+  if (isAuthLoading || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <LoadingSpinner />
+      </div>
     );
   }
 
