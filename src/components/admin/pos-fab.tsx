@@ -21,7 +21,7 @@ export function PosFab() {
     setIsCartOpen(false);
   };
 
-  if (!pathname.startsWith('/admin/pos')) {
+  if (pathname !== '/admin/pos') {
     return null;
   }
 
