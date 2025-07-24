@@ -3,9 +3,9 @@
   "name": "BEM Admin",
   "short_name": "BEM Admin",
   "description": "Panel de administración para BEM Store.",
-  "start_url": "/login",
+  "start_url": "/admin/dashboard-v2",
   "display": "standalone",
-  "background_color": "#292939",
+  "background_color": "#ffffff",
   "theme_color": "#793F5C",
   "icons": [
     {

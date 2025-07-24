@@ -90,6 +90,7 @@ export default function LoginPage() {
   return (
     <>
       <Head>
+        <title>BEM Admin - Login</title>
         <link rel="manifest" href="/admin/manifest.json" />
         <meta name="theme-color" content="#793F5C" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
