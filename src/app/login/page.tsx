@@ -95,6 +95,7 @@ export default function LoginPage() {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="BEM Admin" />
+        <link rel="apple-touch-icon" href="/admin/icons/apple-touch-icon.png" />
       </Head>
       <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
         <Card className="w-full max-w-md">
