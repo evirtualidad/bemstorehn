@@ -1,33 +1,22 @@
 {
-  "name": "BEM STORE",
-  "short_name": "BEM STORE",
-  "description": "Tu tienda de cosméticos y cuidado de la piel.",
-  "start_url": "/",
+  "name": "BEM Admin",
+  "short_name": "BEM Store",
+  "description": "Panel de administración para BEM Store.",
+  "start_url": "/login",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#292939",
   "theme_color": "#793F5C",
+  "scope": "/",
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "/admin/icons/android-chrome-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-512x512.png",
+      "src": "/admin/icons/android-chrome-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ]
 }
