@@ -13,8 +13,14 @@ const fontSans = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Fashion Store',
-  description: 'AI-powered fashion recommendations.',
+  title: 'BEM STORE',
+  description: 'Tu tienda de cosméticos y cuidado de la piel.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'BEM STORE',
+  },
 };
 
 export default function RootLayout({
@@ -24,6 +30,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
+       <head>
+        <meta name="theme-color" content="#793F5C" />
+      </head>
       <body className={`${fontSans.variable} font-sans antialiased`}>
         <ThemeProvider
             attribute="class"
