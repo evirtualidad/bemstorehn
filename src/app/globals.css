@@ -95,4 +95,25 @@
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
   }
+
+  /* Print Styles */
+  .printable-receipt {
+    display: none;
+  }
+
+  @media print {
+    body > *:not(.printable-receipt) {
+      display: none;
+    }
+    .printable-receipt {
+      display: block;
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+    }
+    .no-print {
+      display: none !important;
+    }
+  }
 }
