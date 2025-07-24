@@ -11,9 +11,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { usePathname } from 'next/navigation';
 
 export function InstallPwaButton() {
   const { canInstall, install, isIOS, isInstalled } = usePwaInstall();
+  const pathname = usePathname();
+
+  // Only show the button within the admin panel
+  if (!pathname.startsWith('/admin')) {
+    return null;
+  }
 
   if (isInstalled) {
     return null; // Don't show the button if the app is already installed

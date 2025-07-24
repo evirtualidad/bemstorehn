@@ -22,6 +22,7 @@ import { useAuthStore } from '@/hooks/use-auth-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import Head from 'next/head';
+import { InstallPwaButton } from '@/components/admin/install-pwa-button';
 
 const loginFormSchema = z.object({
   email: z.string().email({ message: 'Por favor, ingresa un correo válido.' }),
