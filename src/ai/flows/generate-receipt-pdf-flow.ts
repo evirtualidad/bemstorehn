@@ -25,6 +25,26 @@ const formatCurrency = (amount: number) => {
     }).format(amount);
 };
 
+// Helper function to wrap text
+const wrapText = (text: string, font: PDFFont, fontSize: number, maxWidth: number) => {
+    const words = text.split(' ');
+    let lines = [];
+    let currentLine = words[0];
+
+    for (let i = 1; i < words.length; i++) {
+        const word = words[i];
+        const width = font.widthOfTextAtSize(currentLine + " " + word, fontSize);
+        if (width < maxWidth) {
+            currentLine += " " + word;
+        } else {
+            lines.push(currentLine);
+            currentLine = word;
+        }
+    }
+    lines.push(currentLine);
+    return lines;
+}
+
 // This flow is defined to run on the server and is not directly exposed to the client.
 const generateReceiptPdfFlow = ai.defineFlow(
   {
@@ -69,14 +89,14 @@ const generateReceiptPdfFlow = ai.defineFlow(
         try {
             const logoImageBytes = await fetch(settings.logo_url).then(res => res.arrayBuffer());
             const logoImage = await pdfDoc.embedPng(logoImageBytes);
-            const logoDims = logoImage.scale(0.25);
+            const logoDims = logoImage.scale(0.15); // Adjusted scale for a smaller logo
             page.drawImage(logoImage, {
                 x: width / 2 - logoDims.width / 2,
-                y: y - logoDims.height + 10,
+                y: y,
                 width: logoDims.width,
                 height: logoDims.height,
             });
-            y -= logoDims.height + 5;
+            y -= (logoDims.height + 15);
         } catch(e) {
             console.error("Could not embed logo:", e);
         }
@@ -90,7 +110,7 @@ const generateReceiptPdfFlow = ai.defineFlow(
     drawText('BEM STORE', width / 2 - fontBold.widthOfTextAtSize('BEM STORE', 12) / 2, y, fontBold, 12);
     y -= 15;
     if (settings?.pickup_address) {
-        const addressLines = settings.pickup_address.split(',');
+        const addressLines = wrapText(settings.pickup_address, font, 7, width - 20); // Wrap address text
         for(const line of addressLines) {
             drawText(line.trim(), width / 2 - font.widthOfTextAtSize(line.trim(), 7) / 2, y, font, 7);
             y -= 8;
@@ -118,8 +138,13 @@ const generateReceiptPdfFlow = ai.defineFlow(
     
     // --- Items ---
     for (const item of order.items) {
-        drawText(item.name, 10, y, font, 8);
-        y -= 10;
+        // Wrap item name if it's too long
+        const itemLines = wrapText(item.name, font, 8, width - 20);
+        for(const line of itemLines) {
+            drawText(line, 10, y, font, 8);
+            y -= 10;
+        }
+
         const priceLine = `${item.quantity} x ${formatCurrency(item.price)}`;
         const itemTotal = formatCurrency(item.price * item.quantity);
         drawText(priceLine, 15, y, font, 8);
