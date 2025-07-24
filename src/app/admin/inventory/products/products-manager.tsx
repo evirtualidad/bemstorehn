@@ -29,6 +29,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
 import {
   Table,
@@ -100,7 +102,7 @@ export function ProductsManager() {
 
   // --- Filter and Search States ---
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [stockStatusFilter, setStockStatusFilter] = React.useState<string | null>(null);
+  const [stockStatusFilter, setStockStatusFilter] = React.useState('all');
   const [categoryFilter, setCategoryFilter] = React.useState<string[]>([]);
 
   React.useEffect(() => {
@@ -117,7 +119,7 @@ export function ProductsManager() {
     }
 
     // Stock Status filter
-    if (stockStatusFilter) {
+    if (stockStatusFilter !== 'all') {
       if (stockStatusFilter === 'in-stock') {
         filtered = filtered.filter(p => p.stock > LOW_STOCK_THRESHOLD);
       } else if (stockStatusFilter === 'low-stock') {
@@ -294,24 +296,12 @@ export function ProductsManager() {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Filtrar por Estado</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuCheckboxItem
-                checked={stockStatusFilter === 'in-stock'}
-                onCheckedChange={(checked) => setStockStatusFilter(checked ? 'in-stock' : null)}
-              >
-                En Stock
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={stockStatusFilter === 'low-stock'}
-                onCheckedChange={(checked) => setStockStatusFilter(checked ? 'low-stock' : null)}
-              >
-                Poco Stock
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={stockStatusFilter === 'out-of-stock'}
-                onCheckedChange={(checked) => setStockStatusFilter(checked ? 'out-of-stock' : null)}
-              >
-                Agotado
-              </DropdownMenuCheckboxItem>
+              <DropdownMenuRadioGroup value={stockStatusFilter} onValueChange={setStockStatusFilter}>
+                <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="in-stock">En Stock</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="low-stock">Poco Stock</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="out-of-stock">Agotado</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
               <DropdownMenuSeparator />
                <DropdownMenuLabel>Filtrar por Categoría</DropdownMenuLabel>
                <DropdownMenuSeparator />
@@ -346,7 +336,7 @@ export function ProductsManager() {
               </Button>
             </DialogTrigger>
             <DialogContent 
-              className="sm:max-w-xl"
+              className="sm:max-w-xl flex flex-col h-[90vh]"
               onOpenAutoFocus={(e) => e.preventDefault()}
             >
               <DialogHeader>
