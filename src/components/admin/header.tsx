@@ -105,9 +105,8 @@ export function AdminHeader() {
                         {logoUrl ? (
                           <Image src={logoUrl} alt="BEM STORE HN Logo" width={160} height={160} className="object-contain h-8 w-auto" />
                         ) : (
-                          <Leaf className="w-8 h-8 text-primary" />
+                          <span className="text-xl font-bold">BEM STORE HN</span>
                         )}
-                        <span className="text-xl font-bold hidden md:inline-block">BEM STORE HN</span>
                      </Link>
                 </div>
                 
