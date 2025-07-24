@@ -342,7 +342,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
               />
             </div>
         </ScrollArea>
-        <DialogFooter className='pt-6 flex-shrink-0'>
+        <DialogFooter className='pt-6 flex-shrink-0 flex-row justify-end space-x-2'>
             <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
             <Button type="submit">Guardar Producto</Button>
         </DialogFooter>
