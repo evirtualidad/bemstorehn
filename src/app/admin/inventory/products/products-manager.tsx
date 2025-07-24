@@ -193,7 +193,7 @@ export function ProductsManager() {
           </DropdownMenu>
           <Button size="sm" variant="outline" className="h-8 gap-1 rounded-full">
             <File className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+            <span className="sr-only sm:not-sr-only sm:whitespace-rap">
               Exportar
             </span>
           </Button>
@@ -206,7 +206,10 @@ export function ProductsManager() {
                 </span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-xl">
+            <DialogContent 
+              className="sm:max-w-xl"
+              onOpenAutoFocus={(e) => e.preventDefault()}
+            >
               <DialogHeader>
                 <DialogTitle>{editingProduct ? 'Editar Producto' : 'Añadir Nuevo Producto'}</DialogTitle>
                 <DialogDescription>

@@ -130,7 +130,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex flex-col h-full max-h-[80vh]">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex flex-col h-full max-h-[75vh]">
         <ScrollArea className="flex-1 pr-6 -mr-6">
             <div className="space-y-4">
               <FormField
