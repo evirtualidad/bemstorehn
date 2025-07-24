@@ -19,20 +19,25 @@ const CreateOrderOutputSchema = z.object({
     error: z.string().optional(),
 });
 
+// Extend the input schema to include Supabase credentials
+const FlowInputSchema = CreateOrderInputSchema.extend({
+    supabaseUrl: z.string(),
+    supabaseServiceKey: z.string(),
+});
+
 // This flow is defined to run on the server and is not directly exposed to the client.
 const createOrderFlow = ai.defineFlow(
   {
     name: 'createOrderFlow',
-    inputSchema: CreateOrderInputSchema,
+    inputSchema: FlowInputSchema,
     outputSchema: CreateOrderOutputSchema,
   },
-  async (orderData) => {
-    // IMPORTANT: Use the SERVICE_ROLE_KEY for elevated privileges.
-    // This key should only be used in secure, server-side environments.
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_KEY!
-    );
+  async (flowInput) => {
+    // Destructure credentials and order data from the new input schema
+    const { supabaseUrl, supabaseServiceKey, ...orderData } = flowInput;
+    
+    // Create the admin client using the passed-in credentials
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     
     try {
         const { customer_name, customer_phone, customer_address, items, total } = orderData;
@@ -128,8 +133,13 @@ const createOrderFlow = ai.defineFlow(
 );
 
 // This is the exported function that the client-side code will call.
+// It will now read the environment variables and pass them to the flow.
 export async function createOnlineOrder(input: z.infer<typeof CreateOrderInputSchema>): Promise<{order: Order, success: boolean, error?: string} | null> {
-    const result = await createOrderFlow(input);
+    const result = await createOrderFlow({
+        ...input,
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY!,
+    });
     if(result.success) {
         return { order: result.order, success: true };
     }
