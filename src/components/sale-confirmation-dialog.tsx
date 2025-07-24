@@ -128,15 +128,13 @@ export function SaleConfirmationDialog({ order, onNewSale }: SaleConfirmationDia
 
       <Dialog open={isOpen} onOpenChange={handleClose}>
           <DialogContent className="max-w-sm w-full p-0 flex flex-col gap-0 no-print" hideClose>
-              <div className="p-6">
-                 <div className="text-center items-center flex flex-col space-y-2">
-                    <CheckCircle2 className="h-16 w-16 text-green-500 mb-4" />
-                    <h2 className="text-2xl font-semibold leading-none tracking-tight">¡Venta Exitosa!</h2>
-                    <p className="text-sm text-muted-foreground">
-                        Pedido: {order.display_id}
-                    </p>
-                </div>
-              </div>
+              <DialogHeader className="p-6 text-center items-center flex flex-col">
+                <CheckCircle2 className="h-16 w-16 text-green-500 mb-4" />
+                <DialogTitle className="text-2xl">¡Venta Exitosa!</DialogTitle>
+                <DialogDescription>
+                    Pedido: {order.display_id}
+                </DialogDescription>
+              </DialogHeader>
 
               <DialogFooter className="p-4 bg-muted/50 flex-row gap-2">
                   <button onClick={handlePrint} className={cn(buttonVariants({ variant: 'outline' }), "w-full")}>
