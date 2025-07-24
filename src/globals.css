@@ -1,0 +1,118 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%; /* Pure White */
+    --foreground: 240 10% 19%; /* 292939 */
+    --card: 240 5% 96%; /* Light Grey for cards */
+    --card-foreground: 240 10% 19%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 19%;
+    --primary: 326 30% 36%; /* 793F5C */
+    --primary-foreground: 60 43% 95%;
+    --secondary: 240 5% 93%; /* Grey for search bar */
+    --secondary-foreground: 240 10% 19%;
+    --muted: 240 5% 93%;
+    --muted-foreground: 240 5% 45%;
+    --accent: 60 43% 95%; /* #F2F2E6 */
+    --accent-foreground: 240 10% 19%; /* #292939 */
+    --destructive: 0 82% 70%; /* ED6767 */
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5% 90%;
+    --input: 240 5% 93%;
+    --ring: 240 10% 19%;
+    --chart-1: 326 30% 36%;
+    --chart-2: 0 82% 70%;
+    --chart-3: 240 10% 19%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+  }
+ 
+  .dark {
+    --background: 240 10% 19%; /* 292939 */
+    --foreground: 60 43% 95%; /* F2F2E6 */
+    --card: 240 10% 22%;
+    --card-foreground: 60 43% 95%;
+    --popover: 240 10% 22%;
+    --popover-foreground: 60 43% 95%;
+    --primary: 60 43% 95%;
+    --primary-foreground: 240 10% 19%;
+    --secondary: 240 10% 25%;
+    --secondary-foreground: 60 43% 95%;
+    --muted: 240 10% 25%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 326 30% 36%;
+    --accent-foreground: 60 43% 95%;
+    --destructive: 0 72% 61%; /* ED6767 with slightly less lightness */
+    --destructive-foreground: 60 43% 95%;
+    --border: 240 10% 25%;
+    --input: 240 10% 25%;
+    --ring: 60 43% 95%;
+    --chart-1: 326 30% 46%;
+    --chart-2: 0 82% 70%;
+    --chart-3: 60 43% 95%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .fade-in {
+    animation: fadeIn 1s ease-in-out forwards;
+  }
+  
+  @keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  /* Print Styles */
+  .printable-receipt {
+    display: none;
+  }
+
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    .printable-receipt, .printable-receipt * {
+      visibility: visible;
+    }
+    .printable-receipt {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+    }
+  }
+}
