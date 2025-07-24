@@ -3,7 +3,6 @@
 
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { usePwaInstall } from '@/hooks/use-pwa-install';
 import { Download, Share } from 'lucide-react';
 import {
   Tooltip,
@@ -11,19 +10,55 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { usePathname } from 'next/navigation';
+
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: Array<string>;
+  readonly userChoice: Promise<{
+    outcome: 'accepted' | 'dismissed';
+    platform: string;
+  }>;
+  prompt(): Promise<void>;
+}
 
 export function InstallPwaButton() {
-  const { canInstall, install, isIOS, isInstalled } = usePwaInstall();
-  const pathname = usePathname();
+  const [installPromptEvent, setInstallPromptEvent] = React.useState<BeforeInstallPromptEvent | null>(null);
+  const [isIOS, setIsIOS] = React.useState(false);
+  const [isInstalled, setIsInstalled] = React.useState(false);
 
-  // Only show the button within the admin panel
-  if (!pathname.startsWith('/admin')) {
-    return null;
-  }
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') return;
+
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true);
+    }
+    
+    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    setIsIOS(isIOSDevice);
+
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPromptEvent(event as BeforeInstallPromptEvent);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const install = async () => {
+    if (!installPromptEvent) return;
+    installPromptEvent.prompt();
+    const { outcome } = await installPromptEvent.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstalled(true);
+    }
+    setInstallPromptEvent(null);
+  };
 
   if (isInstalled) {
-    return null; // Don't show the button if the app is already installed
+    return null;
   }
 
   if (isIOS) {
@@ -31,34 +66,25 @@ export function InstallPwaButton() {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-full">
-              <Share />
-              <span className="sr-only">Instalar App</span>
-            </Button>
+             <Button variant="outline" className="gap-2">
+                <Share />
+                <span>Instalar App en iOS</span>
+             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>Para instalar: toca Compartir y luego 'Agregar a la pantalla de inicio'</p>
+          <TooltipContent side="bottom" className="max-w-xs text-center">
+            <p>Para instalar: toca el ícono de Compartir en Safari y luego 'Agregar a la pantalla de inicio'.</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
     );
   }
 
-  if (canInstall) {
+  if (installPromptEvent) {
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={install} className="h-11 w-11 rounded-full">
-              <Download />
-              <span className="sr-only">Instalar App</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>Instalar App</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Button onClick={install} variant="outline" className="gap-2">
+        <Download />
+        <span>Instalar App</span>
+      </Button>
     );
   }
 

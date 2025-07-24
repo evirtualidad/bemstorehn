@@ -21,7 +21,6 @@ import { Loader2, Leaf } from 'lucide-react';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import Head from 'next/head';
 import { InstallPwaButton } from '@/components/admin/install-pwa-button';
 
 const loginFormSchema = z.object({
@@ -30,25 +29,9 @@ const loginFormSchema = z.object({
 });
 
 export default function LoginPage() {
-  const { login, user, isAuthLoading, initializeSession } = useAuthStore();
+  const { login, user, isAuthLoading } = useAuthStore();
   const { toast } = useToast();
-  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  
-  React.useEffect(() => {
-      const unsubscribe = initializeSession();
-      return () => {
-        if (typeof unsubscribe === 'function') {
-            unsubscribe();
-        }
-      };
-  }, [initializeSession]);
-
-  React.useEffect(() => {
-    if (!isAuthLoading && user) {
-      router.replace('/admin/dashboard-v2');
-    }
-  }, [user, isAuthLoading, router]);
 
   const form = useForm<z.infer<typeof loginFormSchema>>({
     resolver: zodResolver(loginFormSchema),
@@ -86,15 +69,6 @@ export default function LoginPage() {
   }
 
   return (
-    <>
-      <Head>
-        <link rel="manifest" href="/admin/manifest.json" />
-        <meta name="theme-color" content="#793F5C" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="BEM Admin" />
-        <link rel="apple-touch-icon" href="/admin/icons/apple-touch-icon.png" />
-      </Head>
       <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
@@ -145,9 +119,11 @@ export default function LoginPage() {
                 </Button>
               </form>
             </Form>
+             <div className="mt-4 flex justify-center">
+               <InstallPwaButton />
+             </div>
           </CardContent>
         </Card>
       </main>
-    </>
   );
 }
