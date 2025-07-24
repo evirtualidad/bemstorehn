@@ -30,6 +30,7 @@ import { Checkbox } from './ui/checkbox';
 import { useCategoriesStore } from '@/hooks/use-categories';
 import { Upload, X } from 'lucide-react';
 import Image from 'next/image';
+import { ScrollArea } from './ui/scroll-area';
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
@@ -129,216 +130,219 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
-        
-         <FormField
-          control={form.control}
-          name="image"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Imagen del Producto</FormLabel>
-              <FormControl>
-                <div>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    className="hidden"
-                    accept={ACCEPTED_IMAGE_TYPES.join(",")}
-                  />
-                  {preview ? (
-                    <div className="relative group w-full h-48 rounded-md border border-dashed flex items-center justify-center">
-                        <Image src={preview} alt="Vista previa" fill className="object-contain rounded-md p-2"/>
-                         <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={clearImage}
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                  ) : (
-                     <div
-                        className="w-full h-48 rounded-md border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-accent/50 transition-colors"
-                        onClick={() => fileInputRef.current?.click()}
-                    >
-                        <Upload className="h-8 w-8 text-muted-foreground" />
-                        <p className="mt-2 text-sm text-muted-foreground">Haz clic para subir una imagen</p>
-                    </div>
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex flex-col h-full max-h-[80vh]">
+        <ScrollArea className="flex-1 pr-6 -mr-6">
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="image"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Imagen del Producto</FormLabel>
+                    <FormControl>
+                      <div>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleFileChange}
+                          className="hidden"
+                          accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                        />
+                        {preview ? (
+                          <div className="relative group w-full h-48 rounded-md border border-dashed flex items-center justify-center">
+                              <Image src={preview} alt="Vista previa" fill className="object-contain rounded-md p-2"/>
+                              <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="icon"
+                                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={clearImage}
+                              >
+                                  <X className="h-4 w-4" />
+                              </Button>
+                          </div>
+                        ) : (
+                          <div
+                              className="w-full h-48 rounded-md border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-accent/50 transition-colors"
+                              onClick={() => fileInputRef.current?.click()}
+                          >
+                              <Upload className="h-8 w-8 text-muted-foreground" />
+                              <p className="mt-2 text-sm text-muted-foreground">Haz clic para subir una imagen</p>
+                          </div>
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nombre del Producto</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Glow Serum" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descripción</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Un suero con vitamina C para un tono de piel radiante..."
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                  control={form.control}
+                  name="onSale"
+                  render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                          <FormLabel className="text-base">
+                          Producto en Oferta
+                          </FormLabel>
+                          <FormDescription>
+                          Activa para establecer un precio original y mostrar un descuento.
+                          </FormDescription>
+                      </div>
+                      <FormControl>
+                          <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          />
+                      </FormControl>
+                      </FormItem>
                   )}
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nombre del Producto</FormLabel>
-              <FormControl>
-                <Input placeholder="Glow Serum" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descripción</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Un suero con vitamina C para un tono de piel radiante..."
-                  className="resize-none"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-            control={form.control}
-            name="onSale"
-            render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                    <FormLabel className="text-base">
-                    Producto en Oferta
-                    </FormLabel>
-                    <FormDescription>
-                    Activa para establecer un precio original y mostrar un descuento.
-                    </FormDescription>
-                </div>
-                <FormControl>
-                    <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                    />
-                </FormControl>
-                </FormItem>
-            )}
-         />
+              />
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="price"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Precio (de Venta)</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="45.00" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          {isOnSale && (
-            <FormField
-              control={form.control}
-              name="original_price"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Precio Original</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="55.00" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-        </div>
-         <FormField
-            control={form.control}
-            name="stock"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Stock</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="25" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        
-        <FormField
-          control={form.control}
-          name="category"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Categoría</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una categoría" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>{cat.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-            control={form.control}
-            name="aiHint"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Pista para IA (Opcional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="cosmetics flatlay" {...field} />
-                </FormControl>
-                <FormMessage />
-                 <FormDescription>
-                  Palabras clave para generar una imagen de marcador de posición.
-                </FormDescription>
-              </FormItem>
-            )}
-        />
-        
-         <FormField
-          control={form.control}
-          name="featured"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Precio (de Venta)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="45.00" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>
-                  Producto Destacado
-                </FormLabel>
-                <FormDescription>
-                  Los productos destacados se mostrarán en una sección especial en la página principal.
-                </FormDescription>
+                {isOnSale && (
+                  <FormField
+                    control={form.control}
+                    name="original_price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Precio Original</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="55.00" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
-            </FormItem>
-          )}
-        />
-        <DialogFooter className='pt-4'>
+              <FormField
+                  control={form.control}
+                  name="stock"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Stock</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="25" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Categoría</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una categoría" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>{cat.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                  control={form.control}
+                  name="aiHint"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Pista para IA (Opcional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="cosmetics flatlay" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                      <FormDescription>
+                        Palabras clave para generar una imagen de marcador de posición.
+                      </FormDescription>
+                    </FormItem>
+                  )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="featured"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Producto Destacado
+                      </FormLabel>
+                      <FormDescription>
+                        Los productos destacados se mostrarán en una sección especial en la página principal.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+        </ScrollArea>
+        <DialogFooter className='pt-6 flex-shrink-0'>
             <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
             <Button type="submit">Guardar Producto</Button>
         </DialogFooter>

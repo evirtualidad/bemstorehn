@@ -54,7 +54,6 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useCategoriesStore } from '@/hooks/use-categories';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 export function ProductsManager() {
   const { products, addProduct, updateProduct, deleteProduct, isLoading, fetchProducts } = useProductsStore();
@@ -207,23 +206,19 @@ export function ProductsManager() {
                 </span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px] max-h-[90vh] flex flex-col p-0">
-              <DialogHeader className="p-6 pb-0">
+            <DialogContent className="sm:max-w-xl">
+              <DialogHeader>
                 <DialogTitle>{editingProduct ? 'Editar Producto' : 'Añadir Nuevo Producto'}</DialogTitle>
                 <DialogDescription>
                   {editingProduct ? 'Modifica los detalles del producto.' : 'Rellena los detalles de la nueva producto.'} Haz clic en guardar cuando termines.
                 </DialogDescription>
               </DialogHeader>
-               <ScrollArea className="flex-1 min-h-0">
-                <div className="px-6 py-4">
-                    <ProductForm
-                      key={editingProduct?.id || 'new'}
-                      product={editingProduct}
-                      onSubmit={onSubmit}
-                      onCancel={() => handleDialogChange(false)}
-                    />
-                </div>
-              </ScrollArea>
+              <ProductForm
+                key={editingProduct?.id || 'new'}
+                product={editingProduct}
+                onSubmit={onSubmit}
+                onCancel={() => handleDialogChange(false)}
+              />
             </DialogContent>
           </Dialog>
         </div>
