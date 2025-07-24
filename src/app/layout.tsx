@@ -33,6 +33,9 @@ export default function RootLayout({
        <head>
         <meta name="theme-color" content="#793F5C" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/icons/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="167x167" href="/icons/apple-touch-icon.png" />
       </head>
       <body className={`${fontSans.variable} font-sans antialiased`}>
         <ThemeProvider
