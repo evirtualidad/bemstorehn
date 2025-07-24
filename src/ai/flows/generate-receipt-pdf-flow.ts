@@ -93,11 +93,11 @@ const generateReceiptPdfFlow = ai.defineFlow(
             const logoImage = await pdfDoc.embedPng(logoImageBytes);
             
             const targetWidth = width - (margin * 2);
-            const logoDims = logoImage.scaleToFit(targetWidth, 100);
+            const logoDims = logoImage.scaleToFit(targetWidth, 80);
 
             page.drawImage(logoImage, {
                 x: width / 2 - logoDims.width / 2,
-                y: y,
+                y: y - logoDims.height,
                 width: logoDims.width,
                 height: logoDims.height,
             });
@@ -118,7 +118,7 @@ const generateReceiptPdfFlow = ai.defineFlow(
         page.drawText(text, { x, y: yPos, font, size, color: rgb(0, 0, 0) });
     };
 
-    drawText('BEM STORE', margin, y, fontBold, 12, { align: 'center' });
+    drawText('BEM STORE HN', margin, y, fontBold, 12, { align: 'center' });
     y -= 15;
     if (settings?.pickup_address) {
         const addressLines = wrapText(settings.pickup_address, font, 7, width - (margin*2));
@@ -127,7 +127,7 @@ const generateReceiptPdfFlow = ai.defineFlow(
             y -= 8;
         }
     }
-     y -= 5;
+     y -= 10;
     
     const drawLine = () => {
         page.drawLine({
@@ -161,7 +161,6 @@ const generateReceiptPdfFlow = ai.defineFlow(
         }
         
         const priceLine = `${item.quantity}x ${formatCurrency(item.price)}`;
-        const itemTotal = formatCurrency(item.price * item.quantity);
         drawText(priceLine, width - margin, y, font, 8, { align: 'right' });
         y -= 10;
 
@@ -175,6 +174,7 @@ const generateReceiptPdfFlow = ai.defineFlow(
     drawLine();
 
     // --- Totals ---
+    y -= 5;
     const taxRate = settings?.tax_rate ?? 0.15;
     const subtotal = order.total / (1 + taxRate);
     const tax = order.total - subtotal;
