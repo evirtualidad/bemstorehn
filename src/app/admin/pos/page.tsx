@@ -84,7 +84,7 @@ export default function PosPage() {
             <div className="relative flex-grow hidden sm:block">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Buscar por comida, café, etc.."
+                placeholder="Buscar por producto..."
                 className="h-12 rounded-full bg-card pl-12 text-base focus-visible:ring-0 focus-visible:ring-offset-0"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -95,7 +95,7 @@ export default function PosPage() {
                   <div className="relative flex-grow">
                     <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                      placeholder="Buscar por comida, café, etc.."
+                      placeholder="Buscar por producto..."
                       className="h-12 rounded-full bg-card pl-12 text-base focus-visible:ring-0 focus-visible:ring-offset-0"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
