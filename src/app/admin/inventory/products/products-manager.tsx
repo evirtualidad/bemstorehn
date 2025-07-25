@@ -140,7 +140,7 @@ export function ProductsManager() {
         imageFile = values.image;
     }
 
-    const { image, category, onSale, ...restOfValues } = values;
+    const { image, category, ...restOfValues } = values;
 
     const newProductData = {
         ...restOfValues,
@@ -169,7 +169,7 @@ export function ProductsManager() {
         imageUrl = values.image;
     }
     
-    const { category, onSale, ...restOfValues } = values;
+    const { category, ...restOfValues } = values;
 
     await updateProduct({
       id: editingProduct.id,
@@ -330,7 +330,7 @@ export function ProductsManager() {
               </Button>
             </DialogTrigger>
             <DialogContent 
-              className="sm:max-w-xl flex flex-col h-[90vh]"
+              className="sm:max-w-2xl flex flex-col h-[90vh]"
               onOpenAutoFocus={(e) => e.preventDefault()}
             >
               <DialogHeader>
