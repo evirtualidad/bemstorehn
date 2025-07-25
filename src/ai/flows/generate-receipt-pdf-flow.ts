@@ -8,8 +8,8 @@ import { ai } from '@/ai/genkit';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { PDFDocument, rgb, StandardFonts, PDFFont } from 'pdf-lib';
-import { format as formatDate, parseISO } from 'date-fns';
-import { toZonedTime, format as formatInTimeZone } from 'date-fns-tz';
+import { format, parseISO } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 import { es } from 'date-fns/locale/es';
 import { paymentMethodLabels } from '@/lib/payment-methods';
 
@@ -186,7 +186,7 @@ const generateReceiptPdfFlow = ai.defineFlow(
     // --- Order Info ---
     const timeZone = 'America/Tegucigalpa';
     const zonedDate = toZonedTime(parseISO(order.created_at), timeZone);
-    const formattedDate = formatInTimeZone(zonedDate, timeZone, 'dd/MM/yy, h:mm aa', { locale: es });
+    const formattedDate = format(zonedDate, 'dd/MM/yy, h:mm aa', { locale: es });
 
     drawLine();
     drawText(`Pedido: ${order.display_id}`, margin, y, font, 8); y -= 12;
@@ -255,7 +255,7 @@ const generateReceiptPdfFlow = ai.defineFlow(
     }
 
     if (order.payment_method === 'credito' && order.payment_due_date) {
-        drawText(`Fecha de Pago: ${formatDate(parseISO(order.payment_due_date), 'dd MMMM, yyyy', {locale: es})}`, margin, y, font, 8);
+        drawText(`Fecha de Pago: ${format(parseISO(order.payment_due_date), 'dd MMMM, yyyy', {locale: es})}`, margin, y, font, 8);
         y -= 12;
         drawText('Saldo Pendiente:', margin, y, fontBold, 8);
         drawText(formatCurrency(order.balance), width-margin, y, fontBold, 8, {align: 'right'});
