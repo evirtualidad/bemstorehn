@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -153,7 +154,7 @@ export function ProductsManager() {
         imageFile: imageFile,
     };
     
-    await addProduct(newProductData as any);
+    await addProduct(newProductData);
     setIsDialogOpen(false);
   };
   
@@ -330,7 +331,7 @@ export function ProductsManager() {
               </Button>
             </DialogTrigger>
             <DialogContent 
-              className="sm:max-w-2xl flex flex-col h-[90vh] p-0"
+              className="sm:max-w-2xl flex flex-col h-[90vh]"
               onOpenAutoFocus={(e) => e.preventDefault()}
             >
               <DialogHeader className="p-6 pb-0">

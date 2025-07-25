@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -133,8 +134,8 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex flex-col h-full">
-        <ScrollArea className="flex-1 -mx-6">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex flex-col h-full overflow-hidden">
+        <ScrollArea className="flex-1">
             <div className="space-y-4 px-6">
               <FormField
                 control={form.control}
