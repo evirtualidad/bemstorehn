@@ -103,7 +103,7 @@ export function AdminHeader() {
                     </div>
                      <Link href="/admin/dashboard-v2" className="flex items-center gap-2">
                         {logoUrl ? (
-                          <Image src={logoUrl} alt="BEM STORE HN Logo" width={160} height={160} className="object-contain h-8 w-auto" />
+                          <Image src={logoUrl} alt="BEM STORE HN Logo" width={160} height={160} className="object-contain h-12 w-auto" />
                         ) : (
                           <span className="text-xl font-bold">BEM STORE HN</span>
                         )}
