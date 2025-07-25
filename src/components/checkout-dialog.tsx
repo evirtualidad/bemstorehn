@@ -368,7 +368,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
                             )}
                         </form>
                     </Form>
-                    <DialogFooter className="mt-6">
+                    <DialogFooter className="mt-6 sm:flex-row flex-col-reverse gap-2">
                         <DialogClose asChild>
                             <Button variant="outline" className="rounded-full">Cancelar</Button>
                         </DialogClose>
