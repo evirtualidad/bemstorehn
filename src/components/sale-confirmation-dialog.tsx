@@ -30,27 +30,22 @@ export function SaleConfirmationDialog({ order, onNewSale }: SaleConfirmationDia
     try {
         const result = await generateReceiptPdf(order.id);
         if (result.pdfBase64) {
-            const pdfBlob = new Blob(
-                [Uint8Array.from(atob(result.pdfBase64), c => c.charCodeAt(0))],
-                { type: 'application/pdf' }
-            );
-            const url = URL.createObjectURL(pdfBlob);
-            
-            // Create a temporary link element to trigger the download
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `Recibo-${order.display_id}.pdf`);
-            document.body.appendChild(link);
-            link.click();
-
-            // Clean up by removing the link and revoking the object URL
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+            const pdfWindow = window.open("");
+            if (pdfWindow) {
+                pdfWindow.document.write(
+                    "<html><head><title>Recibo " + order.display_id + "</title></head><body style='margin:0; padding:0;'>" +
+                    "<iframe width='100%' height='100%' style='border:none;' src='data:application/pdf;base64, " +
+                    encodeURI(result.pdfBase64) + "'></iframe></body></html>"
+                );
+            } else {
+                 throw new Error("No se pudo abrir la ventana emergente. Por favor, deshabilita el bloqueador de pop-ups.");
+            }
         } else {
             throw new Error("La generación del PDF no devolvió datos.");
         }
-    } catch(error) {
-        console.error("Error generating PDF:", error);
+    } catch(error: any) {
+        console.error("Error generating or opening PDF:", error);
+        alert(`Error: ${error.message}`);
     } finally {
         setIsGeneratingPdf(false);
     }
@@ -75,7 +70,7 @@ export function SaleConfirmationDialog({ order, onNewSale }: SaleConfirmationDia
               <DialogFooter className="p-4 bg-muted/50 flex-row gap-2">
                   <Button variant="outline" className="w-full" onClick={handleDownload} disabled={isGeneratingPdf}>
                       {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                      Descargar PDF
+                      Ver Ticket
                   </Button>
                   <Button className="w-full" onClick={handleClose}>
                       Nueva Venta
