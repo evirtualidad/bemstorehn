@@ -140,7 +140,7 @@ export function ProductsManager() {
         imageFile = values.image;
     }
 
-    const { image, ...restOfValues } = values;
+    const { image, category, ...restOfValues } = values;
 
     const newProductData = {
         ...restOfValues,
@@ -149,7 +149,7 @@ export function ProductsManager() {
         stock: Number(values.stock),
         featured: values.featured,
         aiHint: values.aiHint,
-        category_id: values.category,
+        category_id: category,
         imageFile: imageFile,
     };
     
@@ -168,17 +168,16 @@ export function ProductsManager() {
     } else if (typeof values.image === 'string') {
         imageUrl = values.image;
     }
+    
+    const { category, ...restOfValues } = values;
 
     await updateProduct({
       id: editingProduct.id,
-      name: values.name,
-      description: values.description,
+      ...restOfValues,
       price: Number(values.price),
       original_price: values.original_price ? Number(values.original_price) : undefined,
       stock: Number(values.stock),
-      featured: values.featured,
-      aiHint: values.aiHint,
-      category_id: values.category,
+      category_id: category,
       image: imageUrl,
       imageFile: imageFile,
     } as any);
