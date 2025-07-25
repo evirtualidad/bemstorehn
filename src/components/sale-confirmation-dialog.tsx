@@ -30,20 +30,13 @@ export function SaleConfirmationDialog({ order, onNewSale }: SaleConfirmationDia
     try {
         const result = await generateReceiptPdf(order.id);
         if (result.pdfBase64) {
-            const byteCharacters = atob(result.pdfBase64);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'application/pdf' });
-            
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `Recibo-${order.display_id}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const pdfBlob = new Blob(
+                [Uint8Array.from(atob(result.pdfBase64), c => c.charCodeAt(0))],
+                { type: 'application/pdf' }
+            );
+            const url = URL.createObjectURL(pdfBlob);
+            window.open(url, '_blank');
+            URL.revokeObjectURL(url); // Clean up the object URL
         } else {
             throw new Error("La generación del PDF no devolvió datos.");
         }
