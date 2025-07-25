@@ -95,7 +95,7 @@ export const useProductsStore = create<ProductsState>()(
         },
 
         addProduct: async (productData) => {
-            const { imageFile, category_id, ...rest } = productData;
+            const { imageFile, ...rest } = productData;
             let imageUrl = `https://placehold.co/400x400.png?text=${encodeURIComponent(rest.name)}`;
 
             if (imageFile) {
@@ -111,7 +111,6 @@ export const useProductsStore = create<ProductsState>()(
               ...rest,
               image: imageUrl,
               original_price: rest.original_price ? Number(rest.original_price) : undefined,
-              category_id: category_id,
             };
 
             const { data: newProduct, error } = await supabase
@@ -158,7 +157,6 @@ export const useProductsStore = create<ProductsState>()(
             const dbPayload = {
               ...rest,
               image: imageUrl,
-              // If original_price is a valid number, use it. Otherwise, set it to null.
               original_price: rest.original_price && Number(rest.original_price) > 0 ? Number(rest.original_price) : null,
             };
 
