@@ -91,7 +91,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
       onSale: !!(product?.original_price && product.original_price > 0),
       original_price: product?.original_price || '',
       stock: product?.stock || 0,
-      category: product?.category_id || '',
+      category_id: product?.category_id || '',
       image: product?.image || undefined,
       featured: product?.featured || false,
       aiHint: product?.aiHint || '',
@@ -101,11 +101,14 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
   const isOnSale = form.watch('onSale');
 
   const handleFormSubmit = (values: z.infer<typeof productFormSchema>) => {
-    const finalValues = { ...values };
-    if (!finalValues.onSale) {
+    const { onSale, ...rest } = values;
+    const finalValues = { ...rest };
+
+    if (!isOnSale) {
         finalValues.original_price = undefined;
     }
-    onSubmit(finalValues);
+    
+    onSubmit(finalValues as any);
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,8 +134,8 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex flex-col h-full max-h-[75vh]">
-        <ScrollArea className="flex-1 pr-4">
-            <div className="space-y-4">
+        <ScrollArea className="flex-1">
+            <div className="space-y-4 pr-6">
               <FormField
                 control={form.control}
                 name="image"
