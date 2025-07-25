@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import type { Order, NewOrderData } from '@/lib/types';
 import { useProductsStore } from './use-products';
 import { createOnlineOrder } from '@/ai/flows/create-order-flow';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 type OrdersState = {
   orders: Order[];
@@ -21,6 +22,7 @@ type OrdersState = {
 };
 
 export const useOrdersStore = create<OrdersState>()(
+    persist(
     (set, get) => ({
         orders: [],
         isLoading: true,
@@ -219,5 +221,12 @@ export const useOrdersStore = create<OrdersState>()(
         getOrderById: (orderId: string) => {
           return get().orders.find((o) => o.id === orderId);
         },
-    })
+    }),
+    {
+        name: 'bem-orders-store',
+        storage: createJSONStorage(() => localStorage),
+        // Only persist the 'orders' and 'isLoading' fields. Functions are not serializable.
+        partialize: (state) => ({ orders: state.orders, isLoading: state.isLoading }),
+    }
+    )
 );
