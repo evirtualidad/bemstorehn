@@ -35,8 +35,17 @@ export function SaleConfirmationDialog({ order, onNewSale }: SaleConfirmationDia
                 { type: 'application/pdf' }
             );
             const url = URL.createObjectURL(pdfBlob);
-            window.open(url, '_blank');
-            URL.revokeObjectURL(url); // Clean up the object URL
+            
+            // Create a temporary link element to trigger the download
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Recibo-${order.display_id}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+
+            // Clean up by removing the link and revoking the object URL
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         } else {
             throw new Error("La generación del PDF no devolvió datos.");
         }
