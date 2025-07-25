@@ -93,8 +93,8 @@ function InventoryAlerts({ products }: { products: Product[] }) {
 
 
 export function ProductsManager() {
-  const { products, addProduct, updateProduct, deleteProduct, isLoading, fetchProducts } = useProductsStore();
-  const { categories, getCategoryById, fetchCategories } = useCategoriesStore();
+  const { products, addProduct, updateProduct, deleteProduct, isLoading } = useProductsStore();
+  const { categories, getCategoryById } = useCategoriesStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
   const { currency } = useCurrencyStore();
@@ -104,11 +104,6 @@ export function ProductsManager() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [stockStatusFilter, setStockStatusFilter] = React.useState('all');
   const [categoryFilter, setCategoryFilter] = React.useState<string[]>([]);
-
-  React.useEffect(() => {
-      fetchProducts();
-      fetchCategories();
-  }, [fetchProducts, fetchCategories]);
   
   const filteredProducts = React.useMemo(() => {
     let filtered = [...products];

@@ -485,14 +485,10 @@ function Transactions({ orders, currencyCode }: { orders: any[], currencyCode: s
 }
 
 export default function FinancePage() {
-  const { orders, fetchOrders } = useOrdersStore();
+  const { orders, isLoading } = useOrdersStore();
   const { currency } = useCurrencyStore();
   const { role } = useAuthStore();
   const router = useRouter();
-
-  React.useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
 
   React.useEffect(() => {
     if (role && role !== 'admin') {
@@ -500,7 +496,7 @@ export default function FinancePage() {
     }
   }, [role, router]);
 
-  if (role !== 'admin') {
+  if (role !== 'admin' || isLoading) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
         <LoadingSpinner />

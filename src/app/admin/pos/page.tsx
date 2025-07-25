@@ -28,18 +28,12 @@ import { PosFab } from '@/components/admin/pos-fab';
 import { type Product } from '@/lib/types';
 
 export default function PosPage() {
-  const { products, isLoading: isLoadingProducts, fetchProducts } = useProductsStore();
-  const { categories, isLoading: isLoadingCategories, fetchCategories } = useCategoriesStore();
+  const { products, isLoading: isLoadingProducts } = useProductsStore();
+  const { categories, isLoading: isLoadingCategories } = useCategoriesStore();
   const { user } = useAuthStore();
 
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('all');
-  
-  React.useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, [fetchProducts, fetchCategories]);
-
 
   const isLoading = isLoadingProducts || isLoadingCategories;
 

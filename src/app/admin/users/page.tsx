@@ -52,13 +52,9 @@ import { useUsersStore } from '@/hooks/use-users-store';
 
 
 export default function UsersPage() {
-  const { users, isLoading, fetchUsers, updateUserRole, deleteUser } = useUsersStore();
+  const { users, isLoading, updateUserRole, deleteUser } = useUsersStore();
   const { role: adminRole, user: currentUser } = useAuthStore();
   
-  React.useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
   const handleRoleChange = async (userId: string, newRole: 'admin' | 'cajero') => {
     await updateUserRole(userId, newRole);
   };
@@ -180,4 +176,3 @@ export default function UsersPage() {
     </div>
   );
 }
-

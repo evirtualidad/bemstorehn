@@ -27,13 +27,9 @@ import { Search } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function CustomersPage() {
-  const { customers, isLoading, fetchCustomers } = useCustomersStore();
+  const { customers, isLoading } = useCustomersStore();
   const { currency } = useCurrencyStore();
   const [searchTerm, setSearchTerm] = React.useState('');
-
-  React.useEffect(() => {
-    fetchCustomers();
-  }, [fetchCustomers]);
   
   const sortedCustomers = React.useMemo(() => 
     [...customers].sort((a, b) => b.total_spent - a.total_spent),
@@ -60,19 +56,9 @@ export default function CustomersPage() {
   
   if (isLoading) {
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Lista de Clientes</CardTitle>
-                <CardDescription>
-                  Un listado de todos los clientes que han realizado compras.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex justify-center items-center h-48">
-                    <LoadingSpinner />
-                </div>
-            </CardContent>
-        </Card>
+        <div className="flex justify-center items-center h-full">
+            <LoadingSpinner />
+        </div>
     );
   }
 

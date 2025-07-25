@@ -98,6 +98,7 @@ import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { paymentMethods, paymentMethodIcons, paymentMethodLabels } from '@/lib/payment-methods.tsx';
 import { Input } from '@/components/ui/input';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const deliveryMethodLabels = {
   pickup: 'Recoger en Tienda',
@@ -448,7 +449,7 @@ function CancelOrderDialog({ order, children }: { order: Order; children: React.
 
 
 export default function OrdersPage() {
-  const { orders, fetchOrders } = useOrdersStore();
+  const { orders, isLoading } = useOrdersStore();
   const { currency } = useCurrencyStore();
   
   const [detailsOrder, setDetailsOrder] = React.useState<Order | null>(null);
@@ -460,11 +461,6 @@ export default function OrdersPage() {
   const [channelFilter, setChannelFilter] = React.useState<string[]>([]);
   const [paymentMethodFilter, setPaymentMethodFilter] = React.useState<string[]>([]);
   const [deliveryMethodFilter, setDeliveryMethodFilter] = React.useState<string[]>([]);
-  
-  React.useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
-
 
   const sortedOrders = [...orders].sort((a, b) => {
     if (!a.created_at || !b.created_at) return 0;
@@ -521,6 +517,14 @@ export default function OrdersPage() {
   };
 
   const isFiltered = dateRange || statusFilter.length > 0 || channelFilter.length > 0 || paymentMethodFilter.length > 0 || deliveryMethodFilter.length > 0;
+
+  if (isLoading) {
+    return (
+        <div className="flex justify-center items-center h-full">
+            <LoadingSpinner />
+        </div>
+    );
+  }
 
   return (
     <div className="grid flex-1 items-start gap-4">

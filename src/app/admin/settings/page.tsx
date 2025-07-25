@@ -221,13 +221,9 @@ function GeneralSettings() {
 }
 
 function BannersManager() {
-  const { banners, addBanner, updateBanner, deleteBanner, isLoading, fetchBanners } = useBannersStore();
+  const { banners, addBanner, updateBanner, deleteBanner, isLoading } = useBannersStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingBanner, setEditingBanner] = React.useState<Banner | null>(null);
-  
-  React.useEffect(() => {
-    fetchBanners();
-  }, [fetchBanners]);
 
   const handleAddBanner = async (values: z.infer<typeof bannerFormSchema>) => {
     let imageFile: File | undefined;
