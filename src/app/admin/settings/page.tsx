@@ -220,14 +220,8 @@ function GeneralSettings() {
   );
 }
 
-function BannersManager({ banners, addBanner, updateBanner, deleteBanner, isLoading, fetchBanners }: {
-  banners: Banner[];
-  addBanner: (bannerData: Omit<Banner, 'id' | 'created_at' | 'image'> & { imageFile?: File }) => Promise<void>;
-  updateBanner: (bannerData: Omit<Banner, 'created_at'> & { imageFile?: File }) => Promise<void>;
-  deleteBanner: (bannerId: string) => Promise<void>;
-  isLoading: boolean;
-  fetchBanners: () => void;
-}) {
+function BannersManager() {
+  const { banners, addBanner, updateBanner, deleteBanner, isLoading, fetchBanners } = useBannersStore();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingBanner, setEditingBanner] = React.useState<Banner | null>(null);
   
@@ -524,7 +518,6 @@ function LogoManager() {
 
 export default function SettingsPage() {
   const { role } = useAuthStore();
-  const { banners, isLoading: isLoadingBanners, fetchBanners, addBanner, updateBanner, deleteBanner } = useBannersStore();
   const router = useRouter();
 
   React.useEffect(() => {
@@ -557,14 +550,7 @@ export default function SettingsPage() {
             <GeneralSettings />
         </TabsContent>
         <TabsContent value="banners">
-            <BannersManager 
-                banners={banners}
-                addBanner={addBanner}
-                updateBanner={updateBanner}
-                deleteBanner={deleteBanner}
-                isLoading={isLoadingBanners}
-                fetchBanners={fetchBanners}
-            />
+            <BannersManager />
         </TabsContent>
         <TabsContent value="logo">
             <LogoManager />
