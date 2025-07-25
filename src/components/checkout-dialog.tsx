@@ -176,8 +176,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
         });
 
         if (customerId) {
-            const totalQuantity = items.reduce((acc, item) => acc + item.quantity, 0);
-            await addPurchaseToCustomer(customerId, total, totalQuantity);
+            await addPurchaseToCustomer(customerId, total);
         }
         
         const newOrderData: NewOrderData = {
