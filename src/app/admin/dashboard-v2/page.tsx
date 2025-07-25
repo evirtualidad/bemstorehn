@@ -210,7 +210,7 @@ export default function DashboardV2() {
                   tickFormatter={(value) => formatCurrency(value, currency.code, 0)}
                 />
                 <Tooltip
-                  cursor={{ fill: 'hsl(var(--primary-light))' }}
+                  cursor={{ fill: 'hsl(var(--accent))' }}
                   content={({ active, payload, label }) =>
                     active && payload && payload.length ? (
                       <div className="rounded-lg border bg-background p-2 shadow-sm">
