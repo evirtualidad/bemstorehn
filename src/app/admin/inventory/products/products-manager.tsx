@@ -140,7 +140,7 @@ export function ProductsManager() {
         imageFile = values.image;
     }
 
-    const { image, category, ...restOfValues } = values;
+    const { onSale, ...restOfValues } = values;
 
     const newProductData = {
         ...restOfValues,
@@ -149,7 +149,7 @@ export function ProductsManager() {
         stock: Number(values.stock),
         featured: values.featured,
         aiHint: values.aiHint,
-        category_id: category,
+        category_id: values.category,
         imageFile: imageFile,
     };
     
@@ -169,7 +169,7 @@ export function ProductsManager() {
         imageUrl = values.image;
     }
     
-    const { category, ...restOfValues } = values;
+    const { onSale, category, ...restOfValues } = values;
 
     await updateProduct({
       id: editingProduct.id,
@@ -330,10 +330,10 @@ export function ProductsManager() {
               </Button>
             </DialogTrigger>
             <DialogContent 
-              className="sm:max-w-2xl flex flex-col h-[90vh]"
+              className="sm:max-w-2xl flex flex-col h-[90vh] p-0"
               onOpenAutoFocus={(e) => e.preventDefault()}
             >
-              <DialogHeader>
+              <DialogHeader className="p-6 pb-0">
                 <DialogTitle>{editingProduct ? 'Editar Producto' : 'Añadir Nuevo Producto'}</DialogTitle>
                 <DialogDescription>
                   {editingProduct ? 'Modifica los detalles del producto.' : 'Rellena los detalles de la nueva producto.'} Haz clic en guardar cuando termines.

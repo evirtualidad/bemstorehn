@@ -91,7 +91,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
       onSale: !!(product?.original_price && product.original_price > 0),
       original_price: product?.original_price || '',
       stock: product?.stock || 0,
-      category_id: product?.category_id || '',
+      category: product?.category_id || undefined,
       image: product?.image || undefined,
       featured: product?.featured || false,
       aiHint: product?.aiHint || '',
@@ -101,7 +101,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
   const isOnSale = form.watch('onSale');
 
   const handleFormSubmit = (values: z.infer<typeof productFormSchema>) => {
-    const { onSale, ...rest } = values;
+    const { ...rest } = values;
     const finalValues = { ...rest };
 
     if (!isOnSale) {
@@ -133,9 +133,9 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex flex-col h-full max-h-[75vh]">
-        <ScrollArea className="flex-1">
-            <div className="space-y-4 pr-6">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex flex-col h-full">
+        <ScrollArea className="flex-1 -mx-6">
+            <div className="space-y-4 px-6">
               <FormField
                 control={form.control}
                 name="image"
@@ -345,7 +345,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
               />
             </div>
         </ScrollArea>
-        <DialogFooter className='pt-6 flex-shrink-0 flex-row justify-end space-x-2'>
+        <DialogFooter className='p-6 pt-6 flex-shrink-0 flex-row justify-end space-x-2 bg-background'>
             <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
             <Button type="submit">Guardar Producto</Button>
         </DialogFooter>
