@@ -45,17 +45,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       isAuthLoading: true,
 
       initializeSession: () => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (_event, session) => {
-                if (session?.user) {
-                    const role = await fetchUserRole(session.user.id);
-                    set({ user: session.user, role, isAuthLoading: false });
-                } else {
-                    set({ user: null, role: null, isAuthLoading: false });
-                }
-            }
-        );
-
         // Immediately check the current session without waiting for an event
         const checkCurrentSession = async () => {
              const { data: { session } } = await supabase.auth.getSession();
@@ -68,6 +57,17 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         };
 
         checkCurrentSession();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            async (_event, session) => {
+                if (session?.user) {
+                    const role = await fetchUserRole(session.user.id);
+                    set({ user: session.user, role, isAuthLoading: false });
+                } else {
+                    set({ user: null, role: null, isAuthLoading: false });
+                }
+            }
+        );
 
         return () => {
             subscription.unsubscribe();
