@@ -140,7 +140,7 @@ export function ProductsManager() {
         imageFile = values.image;
     }
 
-    const { image, category, ...restOfValues } = values;
+    const { image, category, onSale, ...restOfValues } = values;
 
     const newProductData = {
         ...restOfValues,
@@ -169,7 +169,7 @@ export function ProductsManager() {
         imageUrl = values.image;
     }
     
-    const { category, ...restOfValues } = values;
+    const { category, onSale, ...restOfValues } = values;
 
     await updateProduct({
       id: editingProduct.id,
