@@ -129,8 +129,9 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
         }
     }, [isOpen]);
 
-    React.useEffect(() => {
-        if (!isOpen) {
+    const handleOpenChange = (open: boolean) => {
+        if (!open) {
+            // Reset form when dialog closes
             form.reset({
                 name: 'Consumidor Final',
                 phone: '',
@@ -140,11 +141,9 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
             });
             setSelectedCustomer(null);
             setCustomerType('consumidorFinal');
-        } else {
-             form.setValue('name', 'Consumidor Final');
-             form.setValue('phone', '');
         }
-    }, [isOpen, form]);
+        onOpenChange(open);
+    };
 
     const handleCustomerSelect = (customer: Customer | null) => {
         setSelectedCustomer(customer);
@@ -232,7 +231,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
 
     return (
         <>
-            <Dialog open={isOpen && !lastCompletedOrder} onOpenChange={onOpenChange}>
+            <Dialog open={isOpen && !lastCompletedOrder} onOpenChange={handleOpenChange}>
                 <DialogContent className="rounded-xl">
                     <DialogHeader>
                         <DialogTitle>Completar Venta</DialogTitle>
@@ -368,7 +367,7 @@ export function CheckoutDialog({ isOpen, onOpenChange, onCheckoutSuccess }: Chec
                             )}
                         </form>
                     </Form>
-                    <DialogFooter className="mt-6 sm:flex-row flex-col-reverse gap-2">
+                    <DialogFooter className="mt-6 sm:flex-row flex-col-reverse gap-4">
                         <DialogClose asChild>
                             <Button variant="outline" className="rounded-full">Cancelar</Button>
                         </DialogClose>
