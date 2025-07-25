@@ -186,7 +186,7 @@ const generateReceiptPdfFlow = ai.defineFlow(
     // --- Order Info ---
     const timeZone = 'America/Tegucigalpa';
     const zonedDate = toZonedTime(parseISO(order.created_at), timeZone);
-    const formattedDate = formatInTimeZone(zonedDate, timeZone, 'dd/MM/yy, hh:mm a', { locale: es });
+    const formattedDate = formatInTimeZone(zonedDate, timeZone, 'dd/MM/yy, h:mm aa', { locale: es });
 
     drawLine();
     drawText(`Pedido: ${order.display_id}`, margin, y, font, 8); y -= 12;
