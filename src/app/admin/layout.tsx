@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -32,30 +32,40 @@ export default function AdminLayout({
     }
   }, [user, isAuthLoading, router]);
   
-  if (isAuthLoading || !user) {
+  // Render loading spinner only when auth state is being determined.
+  // If not loading and no user, the effect above will redirect.
+  if (isAuthLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingSpinner />
       </div>
     );
   }
-
+  
+  // If there is a user, render the admin layout.
+  if (user) {
+    return (
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
+            <div className="h-screen w-full flex flex-col">
+                <AdminHeader />
+                <main className="flex-1 overflow-y-auto p-6 bg-muted/40">
+                    {children}
+                </main>
+            </div>
+            <MobileSidebar />
+        </ThemeProvider>
+    );
+  }
+  
+  // Render a loading spinner as a fallback while redirecting.
   return (
-    <>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="light"
-        enableSystem
-        disableTransitionOnChange
-      >
-          <div className="h-screen w-full flex flex-col">
-              <AdminHeader />
-              <main className="flex-1 overflow-y-auto p-6 bg-muted/40">
-                  {children}
-              </main>
-          </div>
-          <MobileSidebar />
-      </ThemeProvider>
-    </>
+    <div className="flex h-screen items-center justify-center">
+      <LoadingSpinner />
+    </div>
   );
 }

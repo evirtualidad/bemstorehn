@@ -70,7 +70,7 @@ function LoginPageContent() {
         title: '¡Bienvenido!',
         description: 'Has iniciado sesión correctamente.',
       });
-      // The onAuthStateChange listener in AdminLayout will handle the redirect.
+      router.push('/admin/dashboard-v2');
     }
   };
   
@@ -149,6 +149,17 @@ function LoginPageContent() {
 }
 
 export default function LoginPage() {
+  const { initializeSession } = useAuthStore();
+
+  React.useEffect(() => {
+    const unsubscribe = initializeSession();
+    return () => {
+        if (typeof unsubscribe === 'function') {
+            unsubscribe();
+        }
+    };
+  }, [initializeSession]);
+
   return (
     <ThemeProvider
       attribute="class"
