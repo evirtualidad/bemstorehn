@@ -25,18 +25,22 @@ export default function AdminLayout({
 }) {
   const { user, isAuthLoading, initializeSession } = useAuthStore();
   const router = useRouter();
+  const [hasDataBeenFetched, setHasDataBeenFetched] = React.useState(false);
 
-  // Data fetching hooks
-  const { fetchOrders } = useOrdersStore();
-  const { fetchProducts } = useProductsStore();
-  const { fetchCategories } = useCategoriesStore();
-  const { fetchCustomers } = useCustomersStore();
-  const { fetchSettings } = useSettingsStore();
-  const { fetchUsers } = useUsersStore();
-  const { fetchBanners } = useBannersStore();
-  const { fetchLogo } = useLogoStore();
-
-
+  // Data fetching hooks from Zustand stores
+  const dataFetchers = [
+      useOrdersStore(state => state.fetchOrders),
+      useProductsStore(state => state.fetchProducts),
+      useCategoriesStore(state => state.fetchCategories),
+      useCustomersStore(state => state.fetchCustomers),
+      useSettingsStore(state => state.fetchSettings),
+      useUsersStore(state => state.fetchUsers),
+      useBannersStore(state => state.fetchBanners),
+      useLogoStore(state => state.fetchLogo),
+  ];
+  
+  // Effect to initialize the user's session on mount.
+  // This is the first thing that should run.
   React.useEffect(() => {
     const unsubscribe = initializeSession();
     return () => {
@@ -45,28 +49,26 @@ export default function AdminLayout({
         }
     };
   }, [initializeSession]);
-  
-  // Effect to fetch all necessary data once the user is authenticated.
-  React.useEffect(() => {
-    if (user) {
-        fetchOrders();
-        fetchProducts();
-        fetchCategories();
-        fetchCustomers();
-        fetchSettings();
-        fetchUsers();
-        fetchBanners();
-        fetchLogo();
-    }
-  }, [user, fetchOrders, fetchProducts, fetchCategories, fetchCustomers, fetchSettings, fetchUsers, fetchBanners, fetchLogo]);
 
+  // Effect to fetch all necessary application data once the user is authenticated.
+  // This runs only when the user object appears and data hasn't been fetched yet.
+  React.useEffect(() => {
+    if (user && !hasDataBeenFetched) {
+        Promise.all(dataFetchers.map(fetcher => fetcher())).then(() => {
+            setHasDataBeenFetched(true);
+        });
+    }
+  }, [user, hasDataBeenFetched, dataFetchers]);
+
+  // Effect to handle redirection if the user is not authenticated.
   React.useEffect(() => {
     if (!isAuthLoading && !user) {
         router.replace('/login');
     }
   }, [user, isAuthLoading, router]);
-  
-  if (isAuthLoading || !user) {
+
+  // Render a loading spinner while the auth state is being determined or initial data is loading.
+  if (isAuthLoading || !user || !hasDataBeenFetched) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingSpinner />
