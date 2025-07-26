@@ -23,13 +23,17 @@ import { formatCurrency } from '@/lib/utils';
 import { useCurrencyStore } from '@/hooks/use-currency';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Button } from '@/components/ui/button';
+
+const ITEMS_PER_PAGE = 30;
 
 export default function CustomersPage() {
   const { customers, isLoading } = useCustomersStore();
   const { currency } = useCurrencyStore();
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [currentPage, setCurrentPage] = React.useState(1);
   
   const sortedCustomers = React.useMemo(() => 
     [...customers].sort((a, b) => b.total_spent - a.total_spent),
@@ -45,6 +49,12 @@ export default function CustomersPage() {
     );
   }, [searchTerm, sortedCustomers]);
 
+  const totalPages = Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE);
+  const paginatedCustomers = filteredCustomers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   const getInitials = (name: string) => {
       if (!name) return 'CF';
       const names = name.split(' ');
@@ -53,6 +63,10 @@ export default function CustomersPage() {
       }
       return name.substring(0, 2).toUpperCase();
   }
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
   
   if (isLoading) {
     return (
@@ -98,7 +112,7 @@ export default function CustomersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCustomers.length > 0 ? filteredCustomers.map((customer) => (
+              {paginatedCustomers.length > 0 ? paginatedCustomers.map((customer) => (
                 <TableRow key={customer.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -129,8 +143,31 @@ export default function CustomersPage() {
           </Table>
         </CardContent>
         <CardFooter>
-          <div className="text-xs text-muted-foreground">
-            Mostrando <strong>{filteredCustomers.length}</strong> de <strong>{customers.length}</strong> clientes.
+          <div className="flex items-center justify-between w-full">
+            <div className="text-xs text-muted-foreground">
+                Mostrando <strong>{paginatedCustomers.length}</strong> de <strong>{filteredCustomers.length}</strong> clientes.
+            </div>
+            <div className="flex items-center gap-2">
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                    Anterior
+                </Button>
+                <span className="text-sm text-muted-foreground">{currentPage} de {totalPages}</span>
+                <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                >
+                    Siguiente
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
+            </div>
           </div>
         </CardFooter>
       </Card>

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -10,7 +9,9 @@ import {
   PlusCircle,
   AlertTriangle,
   Search,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 
 const LOW_STOCK_THRESHOLD = 5;
+const ITEMS_PER_PAGE = 30;
 
 function InventoryAlerts({ products }: { products: Product[] }) {
   const lowStockProducts = React.useMemo(() => {
@@ -105,6 +107,7 @@ export function ProductsManager() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [stockStatusFilter, setStockStatusFilter] = React.useState('all');
   const [categoryFilter, setCategoryFilter] = React.useState<string[]>([]);
+  const [currentPage, setCurrentPage] = React.useState(1);
   
   const filteredProducts = React.useMemo(() => {
     let filtered = [...products];
@@ -132,6 +135,16 @@ export function ProductsManager() {
 
     return filtered;
   }, [products, searchQuery, stockStatusFilter, categoryFilter]);
+
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+  
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, stockStatusFilter, categoryFilter]);
 
 
   const handleAddProduct = async (values: z.infer<typeof productFormSchema>) => {
@@ -331,7 +344,7 @@ export function ProductsManager() {
               </Button>
             </DialogTrigger>
             <DialogContent 
-              className="sm:max-w-2xl flex flex-col h-[90vh]"
+              className="sm:max-w-2xl flex flex-col h-[90vh] p-0"
               onOpenAutoFocus={(e) => e.preventDefault()}
             >
               <DialogHeader className="p-6 pb-0">
@@ -379,7 +392,7 @@ export function ProductsManager() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProducts.map((product) => {
+              {paginatedProducts.map((product) => {
                 const isDiscounted = product.original_price && product.original_price > product.price;
                 const categoryLabel = getCategoryById(product.category_id as string)?.label || 'N/A';
                 
@@ -456,8 +469,31 @@ export function ProductsManager() {
           </Table>
         </CardContent>
         <CardFooter>
-          <div className="text-xs text-muted-foreground">
-            Mostrando <strong>{filteredProducts.length}</strong> de <strong>{products.length}</strong> productos
+          <div className="flex items-center justify-between w-full">
+              <div className="text-xs text-muted-foreground">
+                Mostrando <strong>{paginatedProducts.length}</strong> de <strong>{filteredProducts.length}</strong> productos
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                    Anterior
+                </Button>
+                <span className="text-sm text-muted-foreground">{currentPage} de {totalPages}</span>
+                <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                >
+                    Siguiente
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
           </div>
         </CardFooter>
       </Card>

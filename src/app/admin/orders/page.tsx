@@ -20,7 +20,9 @@ import {
   Truck,
   ListFilter,
   X,
-  ClipboardList
+  ClipboardList,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 import {
@@ -99,6 +101,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { paymentMethods, paymentMethodIcons, paymentMethodLabels } from '@/lib/payment-methods.tsx';
 import { Input } from '@/components/ui/input';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+
+const ITEMS_PER_PAGE = 30;
 
 const deliveryMethodLabels = {
   pickup: 'Recoger en Tienda',
@@ -455,12 +459,13 @@ export default function OrdersPage() {
   const [detailsOrder, setDetailsOrder] = React.useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
 
-  // Filter states
+  // Filter and pagination states
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined);
   const [statusFilter, setStatusFilter] = React.useState<string[]>([]);
   const [channelFilter, setChannelFilter] = React.useState<string[]>([]);
   const [paymentMethodFilter, setPaymentMethodFilter] = React.useState<string[]>([]);
   const [deliveryMethodFilter, setDeliveryMethodFilter] = React.useState<string[]>([]);
+  const [currentPage, setCurrentPage] = React.useState(1);
 
   const sortedOrders = [...orders].sort((a, b) => {
     if (!a.created_at || !b.created_at) return 0;
@@ -496,6 +501,16 @@ export default function OrdersPage() {
       return true;
     });
   }, [sortedOrders, dateRange, statusFilter, channelFilter, paymentMethodFilter, deliveryMethodFilter]);
+
+  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+  
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [dateRange, statusFilter, channelFilter, paymentMethodFilter, deliveryMethodFilter]);
 
   const handleFilterChange = (setter: React.Dispatch<React.SetStateAction<string[]>>) => (value: string, checked: boolean) => {
     setter(prev => 
@@ -659,7 +674,7 @@ export default function OrdersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredOrders.length > 0 ? filteredOrders.map((order) => {
+              {paginatedOrders.length > 0 ? paginatedOrders.map((order) => {
                 const statusInfo = statusConfig[order.status as keyof typeof statusConfig] || { label: 'Desconocido', color: 'bg-gray-100 text-gray-800'};
                 return (
                     <TableRow key={order.id}>
@@ -753,8 +768,31 @@ export default function OrdersPage() {
           </Table>
         </CardContent>
         <CardFooter>
-            <div className="text-xs text-muted-foreground">
-                Mostrando <strong>{filteredOrders.length}</strong> de <strong>{orders.length}</strong> pedidos.
+            <div className="flex items-center justify-between w-full">
+                <div className="text-xs text-muted-foreground">
+                    Mostrando <strong>{paginatedOrders.length}</strong> de <strong>{filteredOrders.length}</strong> pedidos.
+                </div>
+                 <div className="flex items-center gap-2">
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                        Anterior
+                    </Button>
+                    <span className="text-sm text-muted-foreground">{currentPage} de {totalPages}</span>
+                    <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                    >
+                        Siguiente
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                 </div>
             </div>
         </CardFooter>
       </Card>
