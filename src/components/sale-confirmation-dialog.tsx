@@ -30,22 +30,18 @@ export function SaleConfirmationDialog({ order, onNewSale }: SaleConfirmationDia
     try {
         const result = await generateReceiptPdf(order.id);
         if (result.pdfBase64) {
-            const pdfWindow = window.open("");
-            if (pdfWindow) {
-                pdfWindow.document.write(
-                    "<html><head><title>Recibo " + order.display_id + "</title></head><body style='margin:0; padding:0;'>" +
-                    "<iframe width='100%' height='100%' style='border:none;' src='data:application/pdf;base64, " +
-                    encodeURI(result.pdfBase64) + "'></iframe></body></html>"
-                );
-            } else {
-                 throw new Error("No se pudo abrir la ventana emergente. Por favor, deshabilita el bloqueador de pop-ups.");
-            }
+            const link = document.createElement('a');
+            link.href = `data:application/pdf;base64,${result.pdfBase64}`;
+            link.download = `Recibo-${order.display_id}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         } else {
             throw new Error("La generación del PDF no devolvió datos.");
         }
     } catch(error: any) {
-        console.error("Error generating or opening PDF:", error);
-        alert(`Error: ${error.message}`);
+        console.error("Error generating or downloading PDF:", error);
+        alert(`Error al generar el PDF: ${error.message}`);
     } finally {
         setIsGeneratingPdf(false);
     }
@@ -70,7 +66,7 @@ export function SaleConfirmationDialog({ order, onNewSale }: SaleConfirmationDia
               <DialogFooter className="p-4 bg-muted/50 flex-row gap-2">
                   <Button variant="outline" className="w-full" onClick={handleDownload} disabled={isGeneratingPdf}>
                       {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                      Ver Ticket
+                      Descargar Ticket
                   </Button>
                   <Button className="w-full" onClick={handleClose}>
                       Nueva Venta
