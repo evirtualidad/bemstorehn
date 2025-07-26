@@ -18,7 +18,7 @@ export default function AdminLayout({
   const router = useRouter();
 
   // Effect to initialize the user's session on mount.
-  // The data stores will now handle their own initial fetching.
+  // This is the central point for auth checking in the admin panel.
   React.useEffect(() => {
     const unsubscribe = initializeSession();
     return () => {
@@ -29,6 +29,7 @@ export default function AdminLayout({
   }, [initializeSession]);
 
   // Effect to handle redirection if the user is not authenticated.
+  // This runs whenever the loading state or user state changes.
   React.useEffect(() => {
     if (!isAuthLoading && !user) {
         router.replace('/login');
@@ -36,6 +37,7 @@ export default function AdminLayout({
   }, [user, isAuthLoading, router]);
 
   // Render a loading spinner while the auth state is being determined.
+  // This also prevents rendering children until the user is confirmed.
   if (isAuthLoading || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -44,6 +46,7 @@ export default function AdminLayout({
     );
   }
   
+  // If authentication is successful, render the admin layout.
   return (
       <ThemeProvider
         attribute="class"

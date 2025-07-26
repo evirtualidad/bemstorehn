@@ -31,11 +31,21 @@ const loginFormSchema = z.object({
 });
 
 function LoginPageContent() {
-  const { login, user, isAuthLoading } = useAuthStore();
+  const { login, user, isAuthLoading, initializeSession } = useAuthStore();
   const { logoUrl } = useLogoStore();
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  React.useEffect(() => {
+    // Initialize session to check if a user is already logged in.
+    const unsubscribe = initializeSession();
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
+  }, [initializeSession]);
 
   React.useEffect(() => {
     // If the session is loaded and a user exists, redirect to the dashboard.
@@ -70,7 +80,8 @@ function LoginPageContent() {
         title: '¡Bienvenido!',
         description: 'Has iniciado sesión correctamente.',
       });
-      router.push('/admin/dashboard-v2');
+      // The onAuthStateChange listener will handle the redirection.
+      // No need to push manually.
     }
   };
   
@@ -149,17 +160,6 @@ function LoginPageContent() {
 }
 
 export default function LoginPage() {
-  const { initializeSession } = useAuthStore();
-
-  React.useEffect(() => {
-    const unsubscribe = initializeSession();
-    return () => {
-        if (typeof unsubscribe === 'function') {
-            unsubscribe();
-        }
-    };
-  }, [initializeSession]);
-
   return (
     <ThemeProvider
       attribute="class"
