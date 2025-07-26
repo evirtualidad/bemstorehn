@@ -6,27 +6,24 @@ import { toast } from './use-toast';
 import { produce } from 'immer';
 import { supabase } from '@/lib/supabase';
 import type { Banner } from '@/lib/types';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 const BANNERS_STORAGE_PATH = 'banners';
 
 type BannersState = {
   banners: Banner[];
   isLoading: boolean;
-  fetchBanners: () => Promise<void>;
   addBanner: (bannerData: Omit<Banner, 'id' | 'created_at' | 'image'> & { imageFile?: File }) => Promise<void>;
   updateBanner: (bannerData: Omit<Banner, 'created_at'> & { imageFile?: File }) => Promise<void>;
   deleteBanner: (bannerId: string) => Promise<void>;
 };
 
-// --- NEW UPLOAD/DELETE LOGIC ---
-
-// Uploads an image using the banner's ID as the filename for easy association.
 const uploadBannerImage = async (bannerId: string, file: File): Promise<string | null> => {
     const { data, error } = await supabase.storage
         .from(BANNERS_STORAGE_PATH)
         .upload(bannerId, file, {
             cacheControl: '3600',
-            upsert: true // Overwrite if a file with the same name exists
+            upsert: true
         });
 
     if (error) {
@@ -41,7 +38,6 @@ const uploadBannerImage = async (bannerId: string, file: File): Promise<string |
     return publicUrl;
 }
 
-// Deletes the image associated with a banner ID.
 const deleteBannerImage = async (bannerId: string) => {
     const { error } = await supabase.storage
         .from(BANNERS_STORAGE_PATH)
@@ -54,20 +50,12 @@ const deleteBannerImage = async (bannerId: string) => {
 
 
 export const useBannersStore = create<BannersState>()(
+  persist(
     (set, get) => ({
         banners: [],
         isLoading: true,
         
-        fetchBanners: async () => {
-            set({ isLoading: true });
-            const { data, error } = await supabase.from('banners').select('*').order('created_at', { ascending: false });
-            if (error) {
-                toast({ title: 'Error al cargar banners', description: error.message, variant: 'destructive' });
-                set({ banners: [], isLoading: false });
-            } else {
-                set({ banners: data as Banner[], isLoading: false });
-            }
-        },
+        // Removed fetchBanners as real-time subscription will handle initial load and updates.
 
         addBanner: async (bannerData) => {
           const { imageFile, ...rest } = bannerData;
@@ -77,10 +65,9 @@ export const useBannersStore = create<BannersState>()(
               return;
           }
 
-          // Step 1: Insert banner record without image URL to get the ID
           const { data: newBannerData, error: insertError } = await supabase
             .from('banners')
-            .insert({ ...rest, image: '' }) // Placeholder image URL
+            .insert({ ...rest, image: '' }) 
             .select('id')
             .single();
 
@@ -90,36 +77,27 @@ export const useBannersStore = create<BannersState>()(
           }
 
           const newBannerId = newBannerData.id;
-
-          // Step 2: Upload image using the new banner ID
           const imageUrl = await uploadBannerImage(newBannerId, imageFile);
 
           if (!imageUrl) {
-              // If upload fails, clean up the record we just created
               await supabase.from('banners').delete().eq('id', newBannerId);
               toast({ title: 'Error al crear banner (Paso 2)', description: 'La subida de la imagen falló. Se canceló la operación.', variant: 'destructive' });
               return;
           }
 
-          // Step 3: Update the banner record with the final image URL
-          const { data: finalBanner, error: updateError } = await supabase
+          const { error: updateError } = await supabase
             .from('banners')
             .update({ image: imageUrl })
-            .eq('id', newBannerId)
-            .select()
-            .single();
+            .eq('id', newBannerId);
           
            if (updateError) {
               toast({ title: 'Error al crear banner (Paso 3)', description: updateError.message, variant: 'destructive' });
-              // Clean up storage and db record if final update fails
               await deleteBannerImage(newBannerId);
               await supabase.from('banners').delete().eq('id', newBannerId);
               return;
           }
 
-          set(produce((state: BannersState) => {
-              state.banners.unshift(finalBanner as Banner);
-          }));
+          // The real-time listener will automatically add the banner to the state.
           toast({ title: 'Banner añadido con éxito' });
         },
 
@@ -127,51 +105,83 @@ export const useBannersStore = create<BannersState>()(
             const { imageFile, id, ...rest } = bannerData;
             let imageUrl = rest.image; 
 
-            // If a new image file is provided, upload it using the existing banner ID
             if (imageFile) {
                 const uploadedUrl = await uploadBannerImage(id, imageFile);
-                if (uploadedUrl) {
-                    imageUrl = uploadedUrl;
-                } else {
-                    return; // Stop if upload fails
-                }
+                if (uploadedUrl) imageUrl = uploadedUrl;
+                else return;
             }
             
-            const { data: updatedBanner, error } = await supabase
+            const { error } = await supabase
                 .from('banners')
                 .update({ ...rest, image: imageUrl })
-                .eq('id', id)
-                .select()
-                .single();
+                .eq('id', id);
             
             if (error) {
                 toast({ title: 'Error al actualizar banner', description: error.message, variant: 'destructive' });
             } else {
-                 set(produce((state: BannersState) => {
-                    const index = state.banners.findIndex(b => b.id === id);
-                    if (index !== -1) {
-                        state.banners[index] = updatedBanner as Banner;
-                    }
-                 }));
+                 // The real-time listener will automatically update the banner in the state.
                  toast({ title: 'Banner actualizado' });
             }
         },
 
         deleteBanner: async (bannerId: string) => {
-            // Step 1: Delete the associated image from storage
             await deleteBannerImage(bannerId);
-
-            // Step 2: Delete the banner record from the database
             const { error } = await supabase.from('banners').delete().eq('id', bannerId);
             
             if (error) {
                 toast({ title: 'Error al eliminar banner', description: error.message, variant: 'destructive' });
             } else {
-                 set(produce((state: BannersState) => {
-                    state.banners = state.banners.filter(b => b.id !== bannerId);
-                 }));
+                 // The real-time listener will automatically remove the banner from the state.
                  toast({ title: 'Banner eliminado', variant: 'destructive' });
             }
         },
-    })
+    }),
+    {
+      name: 'bem-banners-store',
+      storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state) state.isLoading = !state.banners.length;
+      }
+    }
+  )
 );
+
+// Subscribe to real-time changes
+if (typeof window !== 'undefined') {
+  supabase
+    .channel('banners')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'banners' }, (payload) => {
+      const { getState, setState } = useBannersStore;
+
+      if (payload.eventType === 'INSERT') {
+        setState(produce(draft => {
+            draft.banners.unshift(payload.new as Banner);
+            draft.banners.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+        }));
+      }
+
+      if (payload.eventType === 'UPDATE') {
+        setState(produce(draft => {
+            const index = draft.banners.findIndex(b => b.id === payload.new.id);
+            if (index !== -1) draft.banners[index] = payload.new as Banner;
+        }));
+      }
+
+      if (payload.eventType === 'DELETE') {
+        setState(produce(draft => {
+            draft.banners = draft.banners.filter(b => b.id !== payload.old.id);
+        }));
+      }
+    })
+    .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+            // Initial fetch after subscription is established
+            const { data, error } = await supabase.from('banners').select('*').order('created_at', { ascending: false });
+            if (error) {
+                toast({ title: 'Error al sincronizar banners', description: error.message, variant: 'destructive' });
+            } else {
+                useBannersStore.setState({ banners: data as Banner[], isLoading: false });
+            }
+        }
+    });
+}

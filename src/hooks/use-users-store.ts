@@ -5,7 +5,6 @@ import { create } from 'zustand';
 import { produce } from 'immer';
 import { toast } from './use-toast';
 import { useAuthStore } from './use-auth-store';
-import { v4 as uuidv4 } from 'uuid';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '@/lib/supabase';
 
@@ -20,30 +19,16 @@ export interface UserDoc {
 type UsersState = {
   users: UserDoc[];
   isLoading: boolean;
-  fetchUsers: () => void;
   updateUserRole: (userId: string, newRole: 'admin' | 'cajero') => void;
   deleteUser: (userId: string) => void;
 };
 
 export const useUsersStore = create<UsersState>()(
+  persist(
     (set, get) => ({
         users: [],
         isLoading: true,
         
-        fetchUsers: async () => {
-            set({ isLoading: true });
-            const { data, error } = await supabase
-                .from('users')
-                .select('id, email, role');
-            
-            if (error) {
-                toast({ title: 'Error al cargar usuarios', description: error.message, variant: 'destructive' });
-                set({ users: [], isLoading: false });
-            } else {
-                set({ users: data as UserDoc[], isLoading: false });
-            }
-        },
-
         updateUserRole: async (userId, newRole) => {
             const { user: currentUser } = useAuthStore.getState();
             if (currentUser?.id === userId) {
@@ -59,20 +44,56 @@ export const useUsersStore = create<UsersState>()(
             if (error) {
                 toast({ title: 'Error al actualizar rol', description: error.message, variant: 'destructive' });
             } else {
-                set(produce((state: UsersState) => {
-                    const userToUpdate = state.users.find((user) => user.id === userId);
-                    if (userToUpdate) {
-                        userToUpdate.role = newRole;
-                    }
-                }));
                 toast({ title: '¡Rol Actualizado!', description: `El rol del usuario ha sido cambiado a ${newRole}.` });
             }
         },
         
         deleteUser: async (userId: string) => {
            toast({ title: 'Función no disponible', description: 'La eliminación de usuarios debe realizarse desde el panel de Supabase Auth.', variant: 'destructive' });
-           // Supabase handles user deletion via its admin API or dashboard, which also cascades to our 'users' table thanks to the 'on delete cascade' constraint.
-           // A direct frontend deletion is complex and requires admin privileges, so we're disabling it here.
         },
-    })
+    }),
+    {
+      name: 'bem-users-store',
+      storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state) state.isLoading = !state.users.length;
+      }
+    }
+  )
 );
+
+// Subscribe to real-time changes
+if (typeof window !== 'undefined') {
+  supabase
+    .channel('users')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, (payload) => {
+      const { setState } = useUsersStore;
+
+      if (payload.eventType === 'INSERT') {
+        setState(produce(draft => {
+            draft.users.push(payload.new as UserDoc);
+        }));
+      }
+      if (payload.eventType === 'UPDATE') {
+        setState(produce(draft => {
+            const index = draft.users.findIndex(u => u.id === payload.new.id);
+            if (index !== -1) draft.users[index] = payload.new as UserDoc;
+        }));
+      }
+      if (payload.eventType === 'DELETE') {
+        setState(produce(draft => {
+            draft.users = draft.users.filter(u => u.id !== payload.old.id);
+        }));
+      }
+    })
+    .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+            const { data, error } = await supabase.from('users').select('id, email, role');
+            if (error) {
+                toast({ title: 'Error al sincronizar usuarios', description: error.message, variant: 'destructive' });
+            } else {
+                useUsersStore.setState({ users: data as UserDoc[], isLoading: false });
+            }
+        }
+    });
+}

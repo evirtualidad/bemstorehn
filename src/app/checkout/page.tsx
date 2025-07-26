@@ -300,8 +300,8 @@ function ShippingDialog({
 
 export default function CheckoutPage() {
   const { items, total, subtotal, taxAmount, shippingCost, setShippingCost, clearCart } = useCart();
-  const { createOrder, fetchOrders } = useOrdersStore();
-  const { addOrUpdateCustomer, addPurchaseToCustomer, fetchCustomers } = useCustomersStore();
+  const { createOrder } = useOrdersStore();
+  const { addOrUpdateCustomer, addPurchaseToCustomer } = useCustomersStore();
   const { settings } = useSettingsStore();
   const { toast } = useToast();
   const router = useRouter();
@@ -311,11 +311,6 @@ export default function CheckoutPage() {
 
   const [shippingAddress, setShippingAddress] = useState<Address | undefined>(undefined);
   
-  useEffect(() => {
-    fetchOrders();
-    fetchCustomers();
-  }, [fetchOrders, fetchCustomers]);
-
   const form = useForm<z.infer<typeof checkoutFormSchema>>({
     resolver: zodResolver(checkoutFormSchema),
     defaultValues: {
@@ -398,17 +393,16 @@ export default function CheckoutPage() {
       payment_due_date: null,
     };
     
-    const newOrderId = await createOrder(newOrderData);
+    const newOrder = await createOrder(newOrderData);
 
-    if (newOrderId) {
+    if (newOrder) {
         toast({
           title: '¡Pedido Recibido!',
           description: 'Gracias por tu compra. Tu pedido está siendo procesado.',
         });
         clearCart();
-        router.push(`/order-confirmation/${newOrderId}`);
+        router.push(`/order-confirmation/${newOrder.id}`);
     }
-    // If newOrderId is null, the toast error is handled within the createOrder function
     
     setIsSubmitting(false);
   }

@@ -13,7 +13,6 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 type OrdersState = {
   orders: Order[];
   isLoading: boolean;
-  fetchOrders: () => Promise<void>;
   createOrder: (order: NewOrderData) => Promise<Order | null>; 
   addPayment: (orderId: string, amount: number, method: 'efectivo' | 'tarjeta' | 'transferencia', reference?: string) => Promise<void>;
   approveOrder: (data: { orderId: string, paymentMethod: Order['payment_method'], paymentDueDate?: Date, paymentReference?: string }) => Promise<void>;
@@ -27,34 +26,11 @@ export const useOrdersStore = create<OrdersState>()(
         orders: [],
         isLoading: true,
 
-        fetchOrders: async () => {
-            set({ isLoading: true });
-            const { data, error } = await supabase
-                .from('orders')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                toast({ title: 'Error al cargar pedidos', description: error.message, variant: 'destructive' });
-                set({ orders: [], isLoading: false });
-            } else {
-                set({ orders: data, isLoading: false });
-            }
-        },
-
         createOrder: async (orderData) => {
             if (orderData.source === 'online-store') {
                 try {
                     const result = await createOnlineOrder(orderData);
                     if (result && result.success && result.order) {
-                        const { fetchProducts } = useProductsStore.getState();
-                        fetchProducts(); // Update product stock in the client state
-                        
-                        // Add the new order directly to the state, no need to re-fetch
-                        set(produce((state: OrdersState) => {
-                            state.orders.unshift(result.order as Order);
-                        }));
-
                         return result.order;
                     }
                     throw new Error(result?.error || 'Unknown error from order creation flow');
@@ -73,16 +49,11 @@ export const useOrdersStore = create<OrdersState>()(
                 let nextId = 1;
                 if (lastOrder && !lastOrderError) {
                     const numericPart = lastOrder.display_id.split('-')[1];
-                    if (numericPart) {
-                        nextId = parseInt(numericPart) + 1;
-                    }
+                    if (numericPart) nextId = parseInt(numericPart) + 1;
                 }
                 const display_id = `ORD-${String(nextId).padStart(5, '0')}`;
                 
-                const finalOrderData = {
-                    ...orderData,
-                    display_id,
-                };
+                const finalOrderData = { ...orderData, display_id };
                  const { data: newOrder, error } = await supabase
                     .from('orders')
                     .insert(finalOrderData)
@@ -94,16 +65,10 @@ export const useOrdersStore = create<OrdersState>()(
                     return null;
                 }
                 
-                // --- Decrease stock for POS orders only after successful creation ---
                 const { decreaseStock } = useProductsStore.getState();
                 for (const item of newOrder.items) {
                     await decreaseStock(item.id, item.quantity);
                 }
-                
-                set(produce((state: OrdersState) => {
-                    state.orders.unshift(newOrder as Order);
-                    state.orders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-                }));
 
                 return newOrder;
             }
@@ -126,15 +91,7 @@ export const useOrdersStore = create<OrdersState>()(
             if (error) {
                 toast({ title: 'Error al registrar pago', description: error.message, variant: 'destructive' });
             } else {
-                set(produce((state: OrdersState) => {
-                    const orderToUpdate = state.orders.find(o => o.id === orderId);
-                    if (orderToUpdate) {
-                        orderToUpdate.balance = newBalance;
-                        orderToUpdate.status = newStatus;
-                        orderToUpdate.payments = updatedPayments;
-                    }
-                }));
-                toast({ title: 'Pago Registrado', description: 'El pago se registró con éxito.' });
+                toast({ title: 'Pago Registrado' });
             }
         },
 
@@ -158,32 +115,21 @@ export const useOrdersStore = create<OrdersState>()(
                 updateData.payments = [{ amount: order.total, date: new Date().toISOString(), method: paymentMethod, reference: paymentReference }];
             }
 
-            const { data: updatedOrder, error } = await supabase
+            const { error } = await supabase
                 .from('orders')
                 .update(updateData)
-                .eq('id', orderId)
-                .select()
-                .single();
+                .eq('id', orderId);
 
             if (error) {
                 toast({ title: 'Error al aprobar pedido', description: error.message, variant: 'destructive' });
             } else {
-                // If the order was approved successfully, THEN decrease stock.
                 if (order.status === 'pending-approval') {
                     const { decreaseStock } = useProductsStore.getState();
                     for (const item of order.items) {
                         await decreaseStock(item.id, item.quantity);
                     }
                 }
-                
-                set(produce((state: OrdersState) => {
-                    const orderToUpdate = state.orders.find(o => o.id === orderId);
-                    if (orderToUpdate) {
-                        Object.assign(orderToUpdate, updatedOrder);
-                    }
-                }));
-
-                toast({ title: 'Pedido Aprobado', description: 'El pedido ha sido facturado.' });
+                toast({ title: 'Pedido Aprobado' });
             }
         },
 
@@ -191,7 +137,6 @@ export const useOrdersStore = create<OrdersState>()(
             const orderToCancel = get().orders.find(o => o.id === orderId);
             if (!orderToCancel) return;
             
-            // Only return stock if the order was not pending approval or already cancelled
             const shouldReturnStock = orderToCancel.status !== 'pending-approval' && orderToCancel.status !== 'cancelled';
             
             const { error } = await supabase
@@ -208,12 +153,6 @@ export const useOrdersStore = create<OrdersState>()(
                         await increaseStock(item.id, item.quantity);
                     }
                 }
-                set(produce((state: OrdersState) => {
-                    const order = state.orders.find(o => o.id === orderId);
-                    if (order) {
-                        order.status = 'cancelled';
-                    }
-                }));
                 toast({ title: 'Pedido Cancelado', variant: 'destructive' });
             }
         },
@@ -225,8 +164,49 @@ export const useOrdersStore = create<OrdersState>()(
     {
         name: 'bem-orders-store',
         storage: createJSONStorage(() => localStorage),
-        // Only persist the 'orders' and 'isLoading' fields. Functions are not serializable.
         partialize: (state) => ({ orders: state.orders, isLoading: state.isLoading }),
+        onRehydrateStorage: () => (state) => {
+          if (state) state.isLoading = !state.orders.length;
+        }
     }
     )
 );
+
+// Subscribe to real-time changes
+if (typeof window !== 'undefined') {
+  supabase
+    .channel('orders')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+      const { setState } = useOrdersStore;
+      
+      if (payload.eventType === 'INSERT') {
+        setState(produce(draft => {
+            draft.orders.unshift(payload.new as Order);
+            draft.orders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        }));
+      }
+
+      if (payload.eventType === 'UPDATE') {
+        setState(produce(draft => {
+            const index = draft.orders.findIndex(o => o.id === payload.new.id);
+            if (index !== -1) draft.orders[index] = payload.new as Order;
+        }));
+      }
+
+      if (payload.eventType === 'DELETE') {
+        setState(produce(draft => {
+            draft.orders = draft.orders.filter(o => o.id !== payload.old.id);
+        }));
+      }
+    })
+    .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+            const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+            if (error) {
+                toast({ title: 'Error al sincronizar pedidos', description: error.message, variant: 'destructive' });
+            } else {
+                useOrdersStore.setState({ orders: data, isLoading: false });
+            }
+        }
+    });
+}

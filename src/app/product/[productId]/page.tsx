@@ -18,7 +18,7 @@ export default function ProductDetailPage() {
   const params = useParams();
   const productId = params.productId as string;
 
-  const { getProductById, isLoading: isLoadingProducts, fetchProducts } = useProductsStore();
+  const { getProductById, isLoading: isLoadingProducts } = useProductsStore();
   const addToCart = useCart.getState().addToCart;
   const { toast } = useToast();
   const { currency } = useCurrencyStore();
@@ -28,8 +28,7 @@ export default function ProductDetailPage() {
 
   React.useEffect(() => {
     setIsClient(true);
-    fetchProducts();
-  }, [fetchProducts]);
+  }, []);
 
   const product = getProductById(productId);
 

@@ -22,7 +22,7 @@ import type { Order } from '@/lib/types';
 export default function OrderConfirmationPage() {
   const params = useParams();
   const orderId = params.orderId as string;
-  const { getOrderById, fetchOrders } = useOrdersStore();
+  const { getOrderById } = useOrdersStore();
   const { currency } = useCurrencyStore();
   const { settings } = useSettingsStore();
   const [order, setOrder] = React.useState<Order | undefined>(undefined);
@@ -42,32 +42,27 @@ export default function OrderConfirmationPage() {
 
     if (findOrder()) return;
 
-    // If not found, fetch all orders and try again
-    fetchOrders().then(() => {
-        if(!findOrder()) {
-             // If still not found after fetch, try polling
-            const interval = setInterval(() => {
-                if (findOrder()) {
-                    clearInterval(interval);
-                }
-            }, 1000);
-
-            // Timeout after 10 seconds if order not found
-            const timeout = setTimeout(() => {
-                clearInterval(interval);
-                 if (!order) {
-                    setIsLoading(false);
-                }
-            }, 10000);
-
-            return () => {
-                clearInterval(interval);
-                clearTimeout(timeout);
-            };
+    // If not found, try polling, as the real-time update might take a moment
+    const interval = setInterval(() => {
+        if (findOrder()) {
+            clearInterval(interval);
         }
-    });
+    }, 500);
 
-  }, [orderId, getOrderById, fetchOrders, order]);
+    // Timeout after 10 seconds if order not found
+    const timeout = setTimeout(() => {
+        clearInterval(interval);
+          if (!getOrderById(orderId)) {
+            setIsLoading(false);
+        }
+    }, 10000);
+
+    return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+    };
+    
+  }, [orderId, getOrderById]);
 
 
   if (isLoading || !settings) {

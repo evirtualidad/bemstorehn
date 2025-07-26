@@ -6,13 +6,13 @@ import { create } from 'zustand';
 import { toast } from './use-toast';
 import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 const LOGO_STORAGE_PATH = 'logos';
 
 type LogoState = {
   logoUrl: string | null;
   isLoading: boolean;
-  fetchLogo: () => Promise<void>;
   updateLogo: (file: File) => Promise<boolean>;
 };
 
@@ -20,7 +20,7 @@ const uploadLogoImage = async (file: File): Promise<string | null> => {
     const fileName = `${uuidv4()}-${file.name}`;
     const { data, error } = await supabase.storage
         .from(LOGO_STORAGE_PATH)
-        .upload(fileName, file, { upsert: true }); // Use upsert for simplicity, overwrites if name collides
+        .upload(fileName, file, { upsert: true });
 
     if (error) {
         toast({ title: 'Error al subir el logo', description: error.message, variant: 'destructive' });
@@ -35,7 +35,7 @@ const uploadLogoImage = async (file: File): Promise<string | null> => {
 };
 
 const deleteLogoImage = async (imageUrl: string) => {
-    if (!imageUrl || !imageUrl.includes(LOGO_STORAGE_PATH)) return; // Don't delete placeholders
+    if (!imageUrl || !imageUrl.includes(LOGO_STORAGE_PATH)) return;
     const fileName = imageUrl.split('/').pop();
     if (!fileName) return;
 
@@ -45,57 +45,69 @@ const deleteLogoImage = async (imageUrl: string) => {
     }
 }
 
-export const useLogoStore = create<LogoState>()((set, get) => ({
-    logoUrl: null,
-    isLoading: true,
-    
-    fetchLogo: async () => {
-        set({ isLoading: true });
-        const { data, error } = await supabase
-            .from('settings')
-            .select('logo_url')
-            .eq('id', 1)
-            .single();
-
-        if (error || !data) {
-            console.error('Error fetching logo:', error ? error.message : 'No settings found.');
-            set({ logoUrl: 'https://placehold.co/200x80.png?text=BEM+STORE', isLoading: false });
-        } else {
-            set({ logoUrl: data.logo_url, isLoading: false });
-        }
-    },
-
-    updateLogo: async (file: File) => {
-        set({ isLoading: true });
-        const oldLogoUrl = get().logoUrl;
+export const useLogoStore = create<LogoState>()(
+  persist(
+    (set, get) => ({
+        logoUrl: null,
+        isLoading: true,
         
-        const newLogoUrl = await uploadLogoImage(file);
+        updateLogo: async (file: File) => {
+            set({ isLoading: true });
+            const oldLogoUrl = get().logoUrl;
+            
+            const newLogoUrl = await uploadLogoImage(file);
 
-        if (newLogoUrl) {
-            const { data: updatedSettings, error } = await supabase
-                .from('settings')
-                .update({ logo_url: newLogoUrl })
-                .eq('id', 1)
-                .select()
-                .single();
+            if (newLogoUrl) {
+                const { data: updatedSettings, error } = await supabase
+                    .from('settings')
+                    .update({ logo_url: newLogoUrl })
+                    .eq('id', 1)
+                    .select('logo_url')
+                    .single();
 
-            if (error || !updatedSettings) {
-                toast({ title: 'Error al guardar el logo', description: error?.message, variant: 'destructive' });
-                await deleteLogoImage(newLogoUrl); // Clean up uploaded image if DB update fails
-                set({ isLoading: false });
-                return false;
-            } else {
-                if(oldLogoUrl) await deleteLogoImage(oldLogoUrl); // Delete old logo after successful update
-                set({ logoUrl: updatedSettings.logo_url, isLoading: false });
-                return true;
+                if (error || !updatedSettings) {
+                    toast({ title: 'Error al guardar el logo', description: error?.message, variant: 'destructive' });
+                    await deleteLogoImage(newLogoUrl);
+                    set({ isLoading: false });
+                    return false;
+                } else {
+                    if(oldLogoUrl) await deleteLogoImage(oldLogoUrl);
+                    set({ logoUrl: updatedSettings.logo_url, isLoading: false });
+                    return true;
+                }
             }
-        }
-        set({ isLoading: false });
-        return false;
-    },
-}));
+            set({ isLoading: false });
+            return false;
+        },
+    }),
+    {
+      name: 'bem-logo-store',
+      storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state) state.isLoading = !state.logoUrl;
+      }
+    }
+  )
+);
 
-// Auto-fetch logo on initial load
+// Subscribe to logo changes (part of settings table)
 if (typeof window !== 'undefined') {
-    useLogoStore.getState().fetchLogo();
+    supabase
+      .channel('settings_logo')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'settings', filter: 'id=eq.1' }, (payload) => {
+          if (payload.new.logo_url !== useLogoStore.getState().logoUrl) {
+              useLogoStore.setState({ logoUrl: payload.new.logo_url, isLoading: false });
+          }
+      })
+      .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+              const { data, error } = await supabase.from('settings').select('logo_url').eq('id', 1).single();
+              if (error || !data) {
+                  console.error('Error fetching initial logo:', error?.message);
+                  useLogoStore.setState({ logoUrl: 'https://placehold.co/200x80.png?text=BEM+STORE', isLoading: false });
+              } else {
+                  useLogoStore.setState({ logoUrl: data.logo_url, isLoading: false });
+              }
+          }
+      });
 }
